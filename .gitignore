@@ -1,0 +1,12 @@
+property-backend/target/
+property-backend/.idea/
+property-backend/.vscode/
+
+property-frontend/node_modules/
+property-frontend/dist/
+property-frontend/.angular/
+property-frontend/.idea/
+property-frontend/.vscode/
+
+**/.DS_Store
+**/Thumbs.db

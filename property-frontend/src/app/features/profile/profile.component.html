@@ -1,0 +1,55 @@
+<div class="app-page">
+  <app-page-header
+    title="My Profile"
+    subtitle="Update your personal information and picture">
+  </app-page-header>
+
+  <div class="profile-card surface-glow">
+    <div class="loading-center" *ngIf="loading">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
+
+    <form *ngIf="!loading" [formGroup]="form" (ngSubmit)="save()">
+      <div class="profile-header">
+        <img *ngIf="form.get('profileImageUrl')?.value" class="profile-avatar" [src]="form.get('profileImageUrl')?.value" alt="profile">
+        <div *ngIf="!form.get('profileImageUrl')?.value" class="profile-avatar profile-avatar-fallback">
+          {{ (form.get('fullName')?.value || 'U').slice(0, 1) }}
+        </div>
+        <div class="profile-header-text">
+          <h3>{{ form.get('fullName')?.value || 'User' }}</h3>
+          <span>Profile picture updates instantly after save.</span>
+        </div>
+      </div>
+
+      <div class="profile-grid">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Full name</mat-label>
+          <input matInput formControlName="fullName">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Phone</mat-label>
+          <input matInput formControlName="phone">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Profile image URL</mat-label>
+          <input matInput formControlName="profileImageUrl" placeholder="https://...">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Bio</mat-label>
+          <textarea matInput rows="4" formControlName="bio"></textarea>
+        </mat-form-field>
+      </div>
+
+      <div class="profile-actions">
+        <button mat-stroked-button type="button" routerLink="/">Cancel</button>
+        <button mat-flat-button type="submit" [disabled]="form.invalid || saving">
+          <mat-spinner *ngIf="saving" diameter="18"></mat-spinner>
+          <span *ngIf="!saving">Save profile</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

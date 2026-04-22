@@ -1,0 +1,57 @@
+.loading-center { display: flex; justify-content: center; padding: 48px; }
+
+.filters-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  animation: fadeIn 260ms ease both;
+}
+
+.filter-field {
+  min-width: 180px;
+}
+
+.filter-count {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-inline-start: auto;
+  font-weight: 600;
+}
+
+.req-number {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--primary);
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.req-title {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--text-main);
+}
+
+.property-info {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.unit-info {
+  display: block;
+  font-size: 0.73rem;
+  color: var(--text-subtle);
+}
+
+.action-btns {
+  display: flex;
+  gap: 6px;
+}
+
+.app-card {
+  animation: fadeUp 280ms ease both;
+}

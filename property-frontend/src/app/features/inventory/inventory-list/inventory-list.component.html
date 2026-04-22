@@ -1,0 +1,88 @@
+<div class="app-page">
+  <app-page-header
+    title="إدارة المخزن"
+    subtitle="تتبع كميات المواد ومستلزمات الصيانة"
+    [breadcrumbs]="[{label:'الرئيسية', route:'/admin/dashboard'}, {label:'المخزن'}]">
+    <button mat-flat-button>
+      <span class="material-icons">add</span>
+      إضافة صنف
+    </button>
+    <button mat-stroked-button>
+      <span class="material-icons">swap_vert</span>
+      حركة مخزون
+    </button>
+  </app-page-header>
+
+  <div class="loading-center" *ngIf="loading"><mat-spinner diameter="40"></mat-spinner></div>
+
+  <app-empty-state
+    *ngIf="!loading && items.length === 0"
+    icon="inventory_2"
+    title="المخزن فارغ"
+    message="لا توجد أصناف مسجَّلة بعد.">
+  </app-empty-state>
+
+  <div class="app-card" *ngIf="!loading && items.length > 0">
+    <div class="app-table-wrap">
+      <table class="app-data-table">
+        <thead>
+          <tr>
+            <th>الكود</th>
+            <th>اسم الصنف</th>
+            <th>الوحدة</th>
+            <th>الكمية الحالية</th>
+            <th>حد التنبيه</th>
+            <th>المستوى</th>
+            <th>الموقع</th>
+            <th>الحالة</th>
+            <th>الإجراءات</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of items" [class.low-row]="item.isLowStock">
+            <td>
+              <span class="item-code">{{ item.itemCode }}</span>
+            </td>
+            <td>
+              <div class="item-name-ar">{{ item.itemNameAr }}</div>
+              <div class="item-name-en" *ngIf="item.itemNameEn">{{ item.itemNameEn }}</div>
+            </td>
+            <td>{{ item.unitOfMeasure || '—' }}</td>
+            <td>
+              <span class="qty-value" [class.low]="item.isLowStock">{{ item.quantity }}</span>
+            </td>
+            <td>{{ item.minQuantity }}</td>
+            <td>
+              <div class="stock-bar">
+                <div class="stock-bar-fill"
+                  [style.width]="stockPercent(item) + '%'"
+                  [class.low]="item.isLowStock">
+                </div>
+              </div>
+              <span class="stock-pct">{{ stockPercent(item) }}%</span>
+            </td>
+            <td>{{ item.location || '—' }}</td>
+            <td>
+              <span class="status-badge" [attr.data-status]="item.isLowStock ? 'URGENT' : 'COMPLETED'">
+                {{ item.isLowStock ? '⚠ منخفض' : '✓ كافٍ' }}
+              </span>
+            </td>
+            <td>
+              <div class="action-btns">
+                <button class="app-icon-btn success" matTooltip="إضافة كمية">
+                  <span class="material-icons">add</span>
+                </button>
+                <button class="app-icon-btn" matTooltip="تعديل">
+                  <span class="material-icons">edit</span>
+                </button>
+                <button class="app-icon-btn" matTooltip="حركات المخزن">
+                  <span class="material-icons">history</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,135 @@
+{
+  "APP": {
+    "NAME": "Property Management",
+    "TAGLINE": "Integrated Property Management System"
+  },
+  "NAV": {
+    "DASHBOARD": "Dashboard",
+    "PROPERTIES": "Properties",
+    "UNITS": "Units",
+    "TENANTS": "Tenants",
+    "MAINTENANCE": "Maintenance",
+    "INVENTORY": "Inventory",
+    "REPORTS": "Reports",
+    "USERS": "Users",
+    "MY_REQUESTS": "My Requests",
+    "SCHEDULE": "Schedule",
+    "MY_UNIT": "My Unit",
+    "NEW_REQUEST": "New Request"
+  },
+  "AUTH": {
+    "LOGIN": "Sign In",
+    "LOGOUT": "Logout",
+    "EMAIL": "Email Address",
+    "PASSWORD": "Password",
+    "ENTER": "Login"
+  },
+  "STATUS": {
+    "PENDING": "Pending",
+    "ASSIGNED": "Assigned",
+    "SCHEDULED": "Scheduled",
+    "IN_PROGRESS": "In Progress",
+    "COMPLETED": "Completed",
+    "CANCELLED": "Cancelled",
+    "TENANT_ABSENT": "Tenant Absent",
+    "NEEDS_REVISIT": "Needs Revisit"
+  },
+  "PRIORITY": {
+    "LOW": "Low",
+    "NORMAL": "Normal",
+    "HIGH": "High",
+    "URGENT": "Urgent"
+  },
+  "PROPERTY_TYPE": {
+    "RESIDENTIAL": "Residential",
+    "COMMERCIAL": "Commercial",
+    "MIXED": "Mixed"
+  },
+  "ROLE": {
+    "SUPER_ADMIN": "Super Admin",
+    "PROPERTY_ADMIN": "Property Admin",
+    "MAINTENANCE_OFFICER": "Maintenance Officer",
+    "TENANT": "Tenant"
+  },
+  "ACTIONS": {
+    "ADD": "Add",
+    "EDIT": "Edit",
+    "DELETE": "Delete",
+    "SAVE": "Save",
+    "CANCEL": "Cancel",
+    "VIEW": "View",
+    "SEARCH": "Search",
+    "FILTER": "Filter",
+    "EXPORT": "Export"
+  },
+  "COMMON": {
+    "LOADING": "Loading...",
+    "NO_DATA": "No data found",
+    "SUCCESS": "Operation successful",
+    "ERROR": "An error occurred"
+  },
+  "DASHBOARD": {
+    "TITLE": "Dashboard",
+    "TOTAL_PROPERTIES": "Total Properties",
+    "TOTAL_UNITS": "Total Units",
+    "RENTED_UNITS": "Rented Units",
+    "VACANT_UNITS": "Vacant Units",
+    "PENDING_REQUESTS": "Pending Requests",
+    "IN_PROGRESS_REQUESTS": "In Progress Requests",
+    "COMPLETED_THIS_MONTH": "Completed This Month",
+    "LOW_STOCK_ITEMS": "Low Stock Items",
+    "REQUESTS_BY_STATUS": "Requests by Status"
+  },
+  "MAINTENANCE": {
+    "TITLE": "Maintenance Requests",
+    "NEW_REQUEST": "New Maintenance Request",
+    "REQUEST_NUMBER": "Request Number",
+    "DESCRIPTION": "Description",
+    "CATEGORY": "Category",
+    "PRIORITY": "Priority",
+    "STATUS": "Status",
+    "ASSIGN": "Assign",
+    "SCHEDULE": "Schedule",
+    "START_WORK": "Start Work",
+    "SUBMIT_REPORT": "Submit Visit Report",
+    "CANCEL_REQUEST": "Cancel Request",
+    "VISIT_REPORT": "Visit Report"
+  },
+  "VISIT": {
+    "TITLE": "Visit Report",
+    "VISIT_DATE": "Visit Date",
+    "OUTCOME": "Visit Outcome",
+    "OFFICER_NOTES": "Officer Notes",
+    "WORK_DONE": "Work Done",
+    "HAS_PURCHASE": "Has Purchase",
+    "PURCHASE_AMOUNT": "Purchase Amount",
+    "PURCHASE_NOTES": "Purchase Notes",
+    "RECEIPT_URL": "Receipt Image",
+    "OUTCOME_COMPLETED": "Completed",
+    "OUTCOME_ABSENT": "Tenant Absent",
+    "OUTCOME_REVISIT": "Needs Revisit"
+  },
+  "INVENTORY": {
+    "TITLE": "Inventory",
+    "ITEM_NAME": "Item Name",
+    "ITEM_CODE": "Item Code",
+    "QUANTITY": "Quantity",
+    "MIN_QUANTITY": "Minimum Quantity",
+    "UNIT": "Unit of Measure",
+    "LOCATION": "Storage Location",
+    "LOW_STOCK": "Low Stock",
+    "STOCK_IN": "Stock In",
+    "STOCK_OUT": "Stock Out",
+    "TRANSACTIONS": "Transactions"
+  },
+  "NOTIFICATIONS": {
+    "TITLE": "Notifications",
+    "EMPTY": "No notifications yet",
+    "MARK_ALL_READ": "Mark all as read",
+    "REQUEST_CREATED": "A new maintenance request was created",
+    "REQUEST_ASSIGNED": "Maintenance request was assigned",
+    "REQUEST_SCHEDULED": "Maintenance request was scheduled",
+    "REQUEST_VISIT_REPORTED": "Visit report was submitted",
+    "REQUEST_CANCELLED": "Maintenance request was cancelled"
+  }
+}

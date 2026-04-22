@@ -1,0 +1,119 @@
+<div class="app-page">
+  <app-page-header
+    title="طلب صيانة جديد"
+    subtitle="أدخل تفاصيل طلب الصيانة وارفق الصور أو الفيديو"
+    [breadcrumbs]="[{label:'الرئيسية', route:auth.getDashboardRoute()}, {label:'طلب جديد'}]">
+  </app-page-header>
+
+  <div class="form-layout">
+    <div class="form-card surface-glow">
+      <form [formGroup]="form" (ngSubmit)="submit()">
+
+        <!-- Category -->
+        <div class="form-section">
+          <h3 class="form-section-title">
+            <span class="material-icons">category</span>
+            نوع الصيانة
+          </h3>
+          <div class="category-grid" *ngIf="categories.length > 0">
+            <button type="button" class="category-btn"
+              *ngFor="let cat of categories"
+              [class.selected]="form.get('categoryId')?.value === cat.id"
+              (click)="form.patchValue({categoryId: cat.id})">
+              <span class="material-icons cat-icon">{{ cat.icon || 'build' }}</span>
+              <span>{{ cat.nameAr }}</span>
+            </button>
+          </div>
+          <mat-error *ngIf="form.get('categoryId')?.touched && form.get('categoryId')?.invalid">
+            اختر نوع الصيانة
+          </mat-error>
+        </div>
+
+        <!-- Title -->
+        <div class="form-section">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>عنوان الطلب</mat-label>
+            <input matInput formControlName="title" placeholder="مثال: تسرب مياه في الحمام">
+            <mat-icon matSuffix>title</mat-icon>
+            <mat-error *ngIf="form.get('title')?.hasError('required')">العنوان مطلوب</mat-error>
+            <mat-error *ngIf="form.get('title')?.hasError('maxlength')">لا يتجاوز 255 حرف</mat-error>
+          </mat-form-field>
+        </div>
+
+        <!-- Description -->
+        <div class="form-section">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>وصف المشكلة</mat-label>
+            <textarea matInput formControlName="description" rows="5"
+              placeholder="اشرح المشكلة بالتفصيل، متى بدأت، وما الأضرار الظاهرة..."></textarea>
+            <mat-error *ngIf="form.get('description')?.hasError('required')">الوصف مطلوب</mat-error>
+          </mat-form-field>
+        </div>
+
+        <!-- Priority -->
+        <div class="form-section">
+          <h3 class="form-section-title">
+            <span class="material-icons">flag</span>
+            درجة الأولوية
+          </h3>
+          <div class="priority-selector">
+            <button type="button" class="priority-btn"
+              *ngFor="let p of priorities"
+              [class]="'priority-btn ' + p.value"
+              [class.selected]="form.get('priority')?.value === p.value"
+              (click)="form.patchValue({priority: p.value})">
+              {{ p.label }}
+            </button>
+          </div>
+        </div>
+
+        <!-- File Upload -->
+        <div class="form-section">
+          <h3 class="form-section-title">
+            <span class="material-icons">attach_file</span>
+            المرفقات (صور / فيديو / مستندات)
+          </h3>
+          <app-upload-zone
+            [multiple]="true"
+            label="اسحب الصور أو الفيديو هنا أو انقر للرفع"
+            (filesChanged)="onFilesChanged($event)"
+            (filesUploaded)="onFilesUploaded($event)">
+          </app-upload-zone>
+        </div>
+
+        <!-- Actions -->
+        <div class="form-actions">
+          <button mat-stroked-button type="button" routerLink="/tenant/dashboard">إلغاء</button>
+          <button mat-flat-button type="submit" [disabled]="form.invalid || submitting">
+            <mat-spinner *ngIf="submitting" diameter="18"></mat-spinner>
+            <span *ngIf="!submitting">
+              <span class="material-icons">send</span>
+              إرسال الطلب
+            </span>
+          </button>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- Side Hints -->
+    <div class="form-hints">
+      <div class="hint-card">
+        <h4><span class="material-icons">info</span> نصائح مفيدة</h4>
+        <ul>
+          <li>ارفع صوراً واضحة للمشكلة</li>
+          <li>حدد موقع المشكلة بدقة في الوصف</li>
+          <li>اختر الأولوية المناسبة للحالة</li>
+          <li>ستصلك إشعارات بتحديثات الطلب</li>
+        </ul>
+      </div>
+      <div class="hint-card status-flow">
+        <h4><span class="material-icons">timeline</span> مراحل الطلب</h4>
+        <div class="flow-step" *ngFor="let step of ['إرسال الطلب','التحقق والتعيين','الجدولة','الزيارة والإنجاز']">
+          <div class="flow-dot"></div>
+          <span>{{ step }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

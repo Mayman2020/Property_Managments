@@ -1,0 +1,156 @@
+<div class="app-page">
+
+  <app-page-header
+    title="لوحة التحكم"
+    subtitle="نظرة عامة على أداء العقارات والصيانة">
+    <button mat-flat-button routerLink="/admin/maintenance">
+      <span class="material-icons">add</span>
+      طلب صيانة جديد
+    </button>
+  </app-page-header>
+
+  <!-- Loading -->
+  <div class="loading-center" *ngIf="loading">
+    <mat-spinner diameter="48"></mat-spinner>
+  </div>
+
+  <ng-container *ngIf="!loading && stats">
+
+    <!-- KPI Grid -->
+    <div class="stat-grid">
+      <div class="stat-card navy">
+        <div class="stat-icon"><span class="material-icons">apartment</span></div>
+        <div class="stat-content">
+          <div class="stat-value">{{ stats.totalProperties }}</div>
+          <div class="stat-label">إجمالي العقارات</div>
+        </div>
+      </div>
+
+      <div class="stat-card teal">
+        <div class="stat-icon"><span class="material-icons">meeting_room</span></div>
+        <div class="stat-content">
+          <div class="stat-value">{{ stats.totalUnits }}</div>
+          <div class="stat-label">إجمالي الوحدات</div>
+        </div>
+      </div>
+
+      <div class="stat-card gold">
+        <div class="stat-icon"><span class="material-icons">key</span></div>
+        <div class="stat-content">
+          <div class="stat-value">{{ stats.rentedUnits }}</div>
+          <div class="stat-label">وحدات مؤجَّرة</div>
+          <div class="stat-bar">
+            <div class="stat-bar-fill" [style.width]="rentedPercent + '%'"></div>
+          </div>
+          <div class="stat-pct">{{ rentedPercent }}% نسبة الإشغال</div>
+        </div>
+      </div>
+
+      <div class="stat-card danger">
+        <div class="stat-icon"><span class="material-icons">pending_actions</span></div>
+        <div class="stat-content">
+          <div class="stat-value">{{ stats.pendingRequests }}</div>
+          <div class="stat-label">طلبات معلَّقة</div>
+        </div>
+      </div>
+
+      <div class="stat-card green">
+        <div class="stat-icon"><span class="material-icons">task_alt</span></div>
+        <div class="stat-content">
+          <div class="stat-value">{{ stats.completedThisMonth }}</div>
+          <div class="stat-label">مكتملة هذا الشهر</div>
+        </div>
+      </div>
+
+      <div class="stat-card orange" *ngIf="stats.lowStockItems > 0">
+        <div class="stat-icon"><span class="material-icons">inventory_2</span></div>
+        <div class="stat-content">
+          <div class="stat-value">{{ stats.lowStockItems }}</div>
+          <div class="stat-label">تنبيهات المخزن</div>
+          <div class="stat-alert">مخزون منخفض</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="content-grid">
+
+      <!-- Recent Requests -->
+      <div class="app-card surface-glow">
+        <div class="app-card-header">
+          <span class="app-card-title">آخر طلبات الصيانة</span>
+          <a class="view-all-link" routerLink="/admin/maintenance">عرض الكل ←</a>
+        </div>
+        <div *ngIf="recentRequests.length === 0" class="card-empty">
+          <span class="material-icons">build_circle</span>
+          <span>لا توجد طلبات حالياً</span>
+        </div>
+        <div class="request-list" *ngIf="recentRequests.length > 0">
+          <div class="request-row" *ngFor="let req of recentRequests">
+            <div class="req-number">{{ req.requestNumber }}</div>
+            <div class="req-info">
+              <span class="req-title">{{ req.title }}</span>
+              <span class="req-meta">{{ req.propertyName }} · {{ req.unitNumber }}</span>
+            </div>
+            <span class="status-badge" [attr.data-status]="req.status">{{ statusLabel(req.status) }}</span>
+            <span class="priority-badge" [class]="req.priority">{{ req.priority }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Low Stock Alerts -->
+      <div class="app-card surface-glow">
+        <div class="app-card-header">
+          <span class="app-card-title">تنبيهات المخزن</span>
+          <a class="view-all-link" routerLink="/admin/inventory">إدارة المخزن ←</a>
+        </div>
+        <div *ngIf="lowStockItems.length === 0" class="card-empty">
+          <span class="material-icons">inventory</span>
+          <span>المخزن ممتاز، لا تنبيهات</span>
+        </div>
+        <div class="stock-list" *ngIf="lowStockItems.length > 0">
+          <div class="stock-row" *ngFor="let item of lowStockItems">
+            <div class="stock-icon-wrap">
+              <span class="material-icons">warning_amber</span>
+            </div>
+            <div class="stock-info">
+              <span class="stock-name">{{ item.itemNameAr }}</span>
+              <span class="stock-meta">الكمية: {{ item.quantity }} {{ item.unitOfMeasure }} / الحد: {{ item.minQuantity }}</span>
+            </div>
+            <div class="stock-qty-bar">
+              <div class="stock-qty-fill" [style.width]="(item.quantity / item.minQuantity) * 100 + '%'"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Status Overview -->
+    <div class="app-card status-overview-card surface-glow">
+      <div class="app-card-header">
+        <span class="app-card-title">توزيع حالات الصيانة</span>
+      </div>
+      <div class="status-overview-grid">
+        <div class="status-overview-item" data-status="PENDING">
+          <span class="soi-value">{{ stats.pendingRequests }}</span>
+          <span class="soi-label">معلَّق</span>
+        </div>
+        <div class="status-overview-item" data-status="IN_PROGRESS">
+          <span class="soi-value">{{ stats.inProgressRequests }}</span>
+          <span class="soi-label">جاري</span>
+        </div>
+        <div class="status-overview-item" data-status="COMPLETED">
+          <span class="soi-value">{{ stats.completedThisMonth }}</span>
+          <span class="soi-label">مكتمل هذا الشهر</span>
+        </div>
+        <div class="status-overview-item" data-status="TENANT_ABSENT">
+          <span class="soi-value">—</span>
+          <span class="soi-label">غياب مستأجر</span>
+        </div>
+      </div>
+    </div>
+
+  </ng-container>
+
+</div>

@@ -1,0 +1,54 @@
+.loading-center { display: flex; justify-content: center; padding: 48px; }
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+
+  @media (max-width: 900px) { grid-template-columns: 1fr; }
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+
+  .full { grid-column: 1 / -1; }
+  @media (max-width: 600px) { grid-template-columns: 1fr; }
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-subtle);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+
+  span { font-size: 0.875rem; color: var(--text-main); }
+  p.desc-text { margin: 0; font-size: 0.875rem; color: var(--text-muted); line-height: 1.6; white-space: pre-wrap; }
+}
+
+.mono { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--primary); }
+
+.card-empty {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 8px; padding: 24px; color: var(--text-subtle); font-size: 0.875rem;
+  .material-icons { font-size: 36px; opacity: 0.3; }
+}
+
+.schedule-info { display: flex; flex-direction: column; gap: 14px; }
+
+.schedule-row {
+  display: flex; align-items: flex-start; gap: 12px;
+
+  .material-icons { color: var(--accent); font-size: 22px; margin-top: 2px; }
+  div { display: flex; flex-direction: column; gap: 2px; }
+  strong { font-size: 0.75rem; font-weight: 600; color: var(--text-subtle); text-transform: uppercase; }
+  span { font-size: 0.875rem; color: var(--text-main); }
+}

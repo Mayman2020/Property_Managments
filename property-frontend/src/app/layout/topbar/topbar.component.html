@@ -1,0 +1,73 @@
+<header class="topbar">
+  <div class="topbar-start">
+    <button class="topbar-toggle" (click)="sidebarToggle.emit()" matTooltip="Toggle menu">
+      <span class="material-icons">{{ sidebarCollapsed ? 'menu_open' : 'menu' }}</span>
+    </button>
+    <span class="topbar-title">{{ pageTitle }}</span>
+  </div>
+
+  <div class="topbar-end">
+    <!-- Lang -->
+    <button class="tb-action-btn" [matMenuTriggerFor]="langMenu" matTooltip="Language">
+      <span class="lang-flag">{{ activeLanguage.flag }}</span>
+      <span class="lang-code">{{ activeLanguage.code | uppercase }}</span>
+    </button>
+    <mat-menu #langMenu>
+      <button mat-menu-item *ngFor="let lang of languages" (click)="switchLang(lang)">
+        <span>{{ lang.flag }}</span>&nbsp; {{ lang.nativeLabel }}
+      </button>
+    </mat-menu>
+
+    <!-- Theme -->
+    <button class="tb-action-btn" (click)="toggleTheme()" [matTooltip]="(theme.isDark$ | async) ? 'Light mode' : 'Dark mode'">
+      <span class="material-icons">{{ (theme.isDark$ | async) ? 'light_mode' : 'dark_mode' }}</span>
+    </button>
+
+    <!-- Notifications -->
+    <button class="tb-action-btn tb-notify-btn" [matMenuTriggerFor]="notifyMenu" matTooltip="Notifications">
+      <span class="material-icons">notifications</span>
+      <span *ngIf="unreadCount > 0" class="tb-notify-count">{{ unreadCount }}</span>
+    </button>
+    <mat-menu #notifyMenu="matMenu" class="tb-notify-menu">
+      <div class="tb-notify-header">
+        <strong>Notifications</strong>
+        <button class="tb-link-btn" (click)="markAllRead()">Mark all as read</button>
+      </div>
+      <mat-divider></mat-divider>
+      <div class="tb-notify-empty" *ngIf="notifications.length === 0">No notifications yet</div>
+      <button mat-menu-item *ngFor="let n of notifications" (click)="markAsRead(n)" class="tb-notify-item">
+        <div class="tb-notify-item-content">
+          <div class="tb-notify-title">
+            <span>{{ n.title }}</span>
+            <span class="tb-dot" *ngIf="!n.read"></span>
+          </div>
+          <div class="tb-notify-message">{{ n.message }}</div>
+        </div>
+      </button>
+    </mat-menu>
+
+    <!-- User menu -->
+    <button class="tb-user-btn" [matMenuTriggerFor]="userMenu">
+      <div class="tb-avatar" *ngIf="!currentUser?.profileImageUrl">{{ currentUser?.initials || 'U' }}</div>
+      <img class="tb-avatar tb-avatar-img" *ngIf="currentUser?.profileImageUrl" [src]="currentUser?.profileImageUrl" alt="profile">
+      <span class="tb-user-name">{{ currentUser?.fullName }}</span>
+      <span class="material-icons" style="font-size:16px; opacity:0.6">expand_more</span>
+    </button>
+
+    <mat-menu #userMenu>
+      <div class="user-menu-header">
+        <strong>{{ currentUser?.fullName }}</strong>
+        <span style="font-size:0.75rem; color: var(--text-muted)">{{ currentUser?.email }}</span>
+      </div>
+      <mat-divider></mat-divider>
+      <button mat-menu-item [routerLink]="profileRoute()">
+        <span class="material-icons">person</span>
+        My Profile
+      </button>
+      <button mat-menu-item (click)="logout()">
+        <span class="material-icons">logout</span>
+        Logout
+      </button>
+    </mat-menu>
+  </div>
+</header>

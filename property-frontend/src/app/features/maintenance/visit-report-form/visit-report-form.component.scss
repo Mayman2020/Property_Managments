@@ -1,0 +1,81 @@
+.form-layout { max-width: 700px; }
+
+.form-card {
+  background: var(--surface);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  box-shadow: var(--shadow-card);
+  animation: fadeUp 300ms ease both;
+}
+
+.full-width { width: 100%; }
+
+.section-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 10px;
+}
+
+.outcome-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.outcome-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 10px;
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  transition: all 0.18s;
+  text-align: center;
+
+  .material-icons { font-size: 24px; }
+
+  &:hover { border-color: var(--primary); transform: translateY(-1px); }
+  &.selected { border-color: var(--primary); background: rgba(26,60,94,0.08); color: var(--primary); }
+}
+
+.purchase-section {
+  margin: 16px 0;
+  padding: 16px;
+  background: var(--surface-2);
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  transition: border-color 0.2s ease, background 0.2s ease;
+
+  &:hover {
+    border-color: rgba(26, 60, 94, 0.28);
+    background: rgba(26, 60, 94, 0.03);
+  }
+}
+
+.purchase-details {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.receipt-upload { margin-top: 4px; }
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}

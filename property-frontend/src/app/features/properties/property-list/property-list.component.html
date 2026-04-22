@@ -1,0 +1,75 @@
+<div class="app-page">
+  <app-page-header
+    title="إدارة العقارات"
+    subtitle="قائمة جميع العقارات المسجَّلة في النظام"
+    [breadcrumbs]="[{label:'الرئيسية', route:'/admin/dashboard'}, {label:'العقارات'}]">
+    <button mat-flat-button routerLink="/admin/properties/new">
+      <span class="material-icons">add</span>
+      إضافة عقار
+    </button>
+  </app-page-header>
+
+  <div class="loading-center" *ngIf="loading">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <app-empty-state
+    *ngIf="!loading && properties.length === 0"
+    icon="apartment"
+    title="لا توجد عقارات"
+    message="لم تُضَف أي عقارات بعد. ابدأ بإضافة عقارك الأول.">
+    <button mat-flat-button routerLink="/admin/properties/new" style="margin-top: 16px">
+      <span class="material-icons">add</span> إضافة عقار
+    </button>
+  </app-empty-state>
+
+  <div class="property-grid" *ngIf="!loading && properties.length > 0">
+    <div class="property-card" *ngFor="let prop of properties">
+      <div class="property-cover" [style.background-image]="prop.coverImageUrl ? 'url(' + prop.coverImageUrl + ')' : ''">
+        <div class="property-cover-fallback" *ngIf="!prop.coverImageUrl">
+          <span class="material-icons">apartment</span>
+        </div>
+        <div class="property-type-badge" [class]="typeBadgeClass(prop.propertyType)">
+          {{ typeLabel(prop.propertyType) }}
+        </div>
+        <div class="property-status-dot" [class.active]="prop.isActive" [class.inactive]="!prop.isActive"
+             [matTooltip]="prop.isActive ? 'نشط' : 'غير نشط'"></div>
+      </div>
+
+      <div class="property-body">
+        <div class="property-code">{{ prop.propertyCode }}</div>
+        <h3 class="property-name">{{ prop.propertyName }}</h3>
+        <p class="property-address">
+          <span class="material-icons">location_on</span>
+          {{ prop.city }}, {{ prop.country }}
+        </p>
+        <p class="property-address" style="margin-top:4px">{{ prop.address }}</p>
+
+        <div class="property-stats">
+          <div class="pstat">
+            <span class="pstat-value">{{ prop.totalFloors }}</span>
+            <span class="pstat-label">أدوار</span>
+          </div>
+          <div class="pstat">
+            <span class="pstat-value">{{ prop.totalUnits }}</span>
+            <span class="pstat-label">وحدة</span>
+          </div>
+          <div class="pstat">
+            <span class="pstat-value">{{ prop.ownerName || '—' }}</span>
+            <span class="pstat-label">المالك</span>
+          </div>
+        </div>
+
+        <div class="property-actions">
+          <a mat-stroked-button [routerLink]="['/admin/properties', prop.id]">
+            <span class="material-icons">visibility</span>
+            التفاصيل
+          </a>
+          <a mat-icon-button class="app-icon-btn" [routerLink]="['/admin/properties', prop.id, 'edit']" matTooltip="تعديل">
+            <span class="material-icons">edit</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,71 @@
+<div class="app-page">
+  <app-page-header
+    title="إضافة عقار جديد"
+    [breadcrumbs]="[{label:'الرئيسية', route:'/admin/dashboard'}, {label:'العقارات', route:'/admin/properties'}, {label:'إضافة'}]">
+  </app-page-header>
+
+  <div class="form-card">
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <div class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>اسم العقار</mat-label>
+          <input matInput formControlName="propertyName">
+          <mat-error *ngIf="form.get('propertyName')?.invalid">مطلوب</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>كود العقار</mat-label>
+          <input matInput formControlName="propertyCode" placeholder="PROP-001">
+          <mat-error *ngIf="form.get('propertyCode')?.invalid">مطلوب</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>نوع العقار</mat-label>
+          <mat-select formControlName="propertyType">
+            <mat-option *ngFor="let t of types" [value]="t.value">{{ t.label }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>عدد الأدوار</mat-label>
+          <input matInput formControlName="totalFloors" type="number" min="1">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-col">
+          <mat-label>العنوان</mat-label>
+          <input matInput formControlName="address">
+          <mat-error *ngIf="form.get('address')?.invalid">مطلوب</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>المدينة</mat-label>
+          <input matInput formControlName="city">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>الدولة</mat-label>
+          <input matInput formControlName="country">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>رقم المالك</mat-label>
+          <input matInput formControlName="ownerId" type="number">
+          <mat-error *ngIf="form.get('ownerId')?.invalid">مطلوب</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-col">
+          <mat-label>الوصف</mat-label>
+          <textarea matInput formControlName="description" rows="3"></textarea>
+        </mat-form-field>
+      </div>
+
+      <div class="form-actions">
+        <button mat-stroked-button type="button" routerLink="/admin/properties">إلغاء</button>
+        <button mat-flat-button type="submit" [disabled]="form.invalid || submitting">
+          <mat-spinner *ngIf="submitting" diameter="18"></mat-spinner>
+          <span *ngIf="!submitting">حفظ العقار</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

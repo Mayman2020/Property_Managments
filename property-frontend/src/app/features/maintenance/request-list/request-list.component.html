@@ -1,0 +1,99 @@
+<div class="app-page">
+  <app-page-header
+    title="طلبات الصيانة"
+    subtitle="إدارة ومتابعة جميع طلبات الصيانة"
+    [breadcrumbs]="[{label:'الرئيسية', route:'/admin/dashboard'}, {label:'الصيانة'}]">
+    <button mat-flat-button routerLink="/admin/maintenance/new">
+      <span class="material-icons">add</span>
+      طلب جديد
+    </button>
+  </app-page-header>
+
+  <!-- Filters -->
+  <div class="filters-bar">
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-label>الحالة</mat-label>
+      <mat-select [(ngModel)]="filterStatus" (ngModelChange)="applyFilter()">
+        <mat-option *ngFor="let s of statuses" [value]="s.value">{{ s.label }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-label>الأولوية</mat-label>
+      <mat-select [(ngModel)]="filterPriority" (ngModelChange)="applyFilter()">
+        <mat-option *ngFor="let p of priorities" [value]="p.value">{{ p.label }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <div class="filter-count" *ngIf="totalElements > 0">
+      {{ totalElements }} طلب
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-center" *ngIf="loading">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <!-- Empty -->
+  <app-empty-state
+    *ngIf="!loading && requests.length === 0"
+    icon="build_circle"
+    title="لا توجد طلبات"
+    message="لا توجد طلبات صيانة تطابق الفلتر الحالي.">
+  </app-empty-state>
+
+  <!-- Table -->
+  <div class="app-card surface-glow" *ngIf="!loading && requests.length > 0">
+    <div class="app-table-wrap">
+      <table class="app-data-table">
+        <thead>
+          <tr>
+            <th>رقم الطلب</th>
+            <th>العنوان</th>
+            <th>العقار / الوحدة</th>
+            <th>المستأجر</th>
+            <th>الأولوية</th>
+            <th>الحالة</th>
+            <th>الضابط</th>
+            <th>تاريخ الإنشاء</th>
+            <th>الإجراءات</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let req of requests">
+            <td>
+              <span class="req-number">{{ req.requestNumber }}</span>
+            </td>
+            <td>
+              <span class="req-title">{{ req.title }}</span>
+            </td>
+            <td>
+              <span class="property-info">{{ req.propertyName }}</span>
+              <span class="unit-info">وحدة {{ req.unitNumber }}</span>
+            </td>
+            <td>{{ req.tenantName || '—' }}</td>
+            <td>
+              <span class="priority-badge" [class]="req.priority">{{ priorityLabel(req.priority) }}</span>
+            </td>
+            <td>
+              <span class="status-badge" [attr.data-status]="req.status">{{ statusLabel(req.status) }}</span>
+            </td>
+            <td>{{ req.assignedOfficerName || '—' }}</td>
+            <td>{{ req.createdAt | date:'dd/MM/yyyy' }}</td>
+            <td>
+              <div class="action-btns">
+                <a class="app-icon-btn" [routerLink]="['/admin/maintenance', req.id]" matTooltip="عرض التفاصيل">
+                  <span class="material-icons">visibility</span>
+                </a>
+                <button class="app-icon-btn accent" matTooltip="تعيين ضابط">
+                  <span class="material-icons">person_add</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,135 @@
+{
+  "APP": {
+    "NAME": "إدارة العقارات",
+    "TAGLINE": "نظام متكامل لإدارة العقارات"
+  },
+  "NAV": {
+    "DASHBOARD": "لوحة التحكم",
+    "PROPERTIES": "العقارات",
+    "UNITS": "الوحدات",
+    "TENANTS": "المستأجرون",
+    "MAINTENANCE": "طلبات الصيانة",
+    "INVENTORY": "المخزن",
+    "REPORTS": "التقارير",
+    "USERS": "المستخدمون",
+    "MY_REQUESTS": "طلباتي",
+    "SCHEDULE": "جدول الزيارات",
+    "MY_UNIT": "وحدتي",
+    "NEW_REQUEST": "طلب جديد"
+  },
+  "AUTH": {
+    "LOGIN": "تسجيل الدخول",
+    "LOGOUT": "تسجيل الخروج",
+    "EMAIL": "البريد الإلكتروني",
+    "PASSWORD": "كلمة المرور",
+    "ENTER": "دخول"
+  },
+  "STATUS": {
+    "PENDING": "قيد الانتظار",
+    "ASSIGNED": "مُسنَّد",
+    "SCHEDULED": "مُجدوَل",
+    "IN_PROGRESS": "جاري",
+    "COMPLETED": "مكتمل",
+    "CANCELLED": "ملغي",
+    "TENANT_ABSENT": "مستأجر غائب",
+    "NEEDS_REVISIT": "تحتاج مراجعة"
+  },
+  "PRIORITY": {
+    "LOW": "منخفضة",
+    "NORMAL": "عادية",
+    "HIGH": "عالية",
+    "URGENT": "عاجلة"
+  },
+  "PROPERTY_TYPE": {
+    "RESIDENTIAL": "سكني",
+    "COMMERCIAL": "تجاري",
+    "MIXED": "مختلط"
+  },
+  "ROLE": {
+    "SUPER_ADMIN": "مدير عام",
+    "PROPERTY_ADMIN": "مدير عقار",
+    "MAINTENANCE_OFFICER": "مسؤول صيانة",
+    "TENANT": "مستأجر"
+  },
+  "ACTIONS": {
+    "ADD": "إضافة",
+    "EDIT": "تعديل",
+    "DELETE": "حذف",
+    "SAVE": "حفظ",
+    "CANCEL": "إلغاء",
+    "VIEW": "عرض",
+    "SEARCH": "بحث",
+    "FILTER": "فلتر",
+    "EXPORT": "تصدير"
+  },
+  "COMMON": {
+    "LOADING": "جاري التحميل...",
+    "NO_DATA": "لا توجد بيانات",
+    "SUCCESS": "تمت العملية بنجاح",
+    "ERROR": "حدث خطأ"
+  },
+  "DASHBOARD": {
+    "TITLE": "لوحة التحكم",
+    "TOTAL_PROPERTIES": "إجمالي العقارات",
+    "TOTAL_UNITS": "إجمالي الوحدات",
+    "RENTED_UNITS": "الوحدات المؤجرة",
+    "VACANT_UNITS": "الوحدات الشاغرة",
+    "PENDING_REQUESTS": "طلبات معلقة",
+    "IN_PROGRESS_REQUESTS": "طلبات جارية",
+    "COMPLETED_THIS_MONTH": "مكتملة هذا الشهر",
+    "LOW_STOCK_ITEMS": "مواد قاربت على النفاد",
+    "REQUESTS_BY_STATUS": "الطلبات حسب الحالة"
+  },
+  "MAINTENANCE": {
+    "TITLE": "طلبات الصيانة",
+    "NEW_REQUEST": "طلب صيانة جديد",
+    "REQUEST_NUMBER": "رقم الطلب",
+    "DESCRIPTION": "الوصف",
+    "CATEGORY": "التصنيف",
+    "PRIORITY": "الأولوية",
+    "STATUS": "الحالة",
+    "ASSIGN": "إسناد",
+    "SCHEDULE": "جدولة",
+    "START_WORK": "بدء العمل",
+    "SUBMIT_REPORT": "تقديم تقرير الزيارة",
+    "CANCEL_REQUEST": "إلغاء الطلب",
+    "VISIT_REPORT": "تقرير الزيارة"
+  },
+  "VISIT": {
+    "TITLE": "تقرير الزيارة",
+    "VISIT_DATE": "تاريخ الزيارة",
+    "OUTCOME": "نتيجة الزيارة",
+    "OFFICER_NOTES": "ملاحظات المسؤول",
+    "WORK_DONE": "الأعمال المنجزة",
+    "HAS_PURCHASE": "تم الشراء",
+    "PURCHASE_AMOUNT": "قيمة الشراء",
+    "PURCHASE_NOTES": "ملاحظات الشراء",
+    "RECEIPT_URL": "صورة الإيصال",
+    "OUTCOME_COMPLETED": "مكتملة",
+    "OUTCOME_ABSENT": "مستأجر غائب",
+    "OUTCOME_REVISIT": "تحتاج مراجعة"
+  },
+  "INVENTORY": {
+    "TITLE": "المخزن",
+    "ITEM_NAME": "اسم المادة",
+    "ITEM_CODE": "كود المادة",
+    "QUANTITY": "الكمية",
+    "MIN_QUANTITY": "الحد الأدنى",
+    "UNIT": "وحدة القياس",
+    "LOCATION": "موقع التخزين",
+    "LOW_STOCK": "مخزون منخفض",
+    "STOCK_IN": "إدخال مخزون",
+    "STOCK_OUT": "إخراج مخزون",
+    "TRANSACTIONS": "حركات المخزون"
+  },
+  "NOTIFICATIONS": {
+    "TITLE": "الإشعارات",
+    "EMPTY": "لا توجد إشعارات حالياً",
+    "MARK_ALL_READ": "تحديد الكل كمقروء",
+    "REQUEST_CREATED": "تم إنشاء طلب صيانة جديد",
+    "REQUEST_ASSIGNED": "تم تعيين طلب الصيانة",
+    "REQUEST_SCHEDULED": "تمت جدولة طلب الصيانة",
+    "REQUEST_VISIT_REPORTED": "تم إرسال تقرير الزيارة",
+    "REQUEST_CANCELLED": "تم إلغاء طلب الصيانة"
+  }
+}

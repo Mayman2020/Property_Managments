@@ -1,0 +1,98 @@
+<div class="app-page">
+  <div class="loading-center" *ngIf="loading"><mat-spinner diameter="40"></mat-spinner></div>
+
+  <ng-container *ngIf="!loading && request">
+    <app-page-header
+      [title]="request.requestNumber"
+      [subtitle]="request.title"
+      [breadcrumbs]="[{label:'الصيانة', route:auth.getDashboardRoute()}, {label:request.requestNumber}]">
+      <span class="status-badge" [attr.data-status]="request.status">{{ statusLabel(request.status) }}</span>
+      <span class="priority-badge" [class]="request.priority">{{ request.priority }}</span>
+      <button mat-stroked-button *ngIf="auth.isAdmin()" [routerLink]="['.', 'assign']">
+        <span class="material-icons">person_add</span>
+        تعيين ضابط
+      </button>
+      <button mat-flat-button *ngIf="auth.isOfficer()" [routerLink]="['visit-report']">
+        <span class="material-icons">assignment_turned_in</span>
+        تقرير الزيارة
+      </button>
+    </app-page-header>
+
+    <div class="detail-grid">
+      <!-- Main Info -->
+      <div class="app-card">
+        <div class="app-card-header"><span class="app-card-title">تفاصيل الطلب</span></div>
+        <div class="app-card-body">
+          <div class="info-grid">
+            <div class="info-item">
+              <label>رقم الطلب</label>
+              <span class="mono">{{ request.requestNumber }}</span>
+            </div>
+            <div class="info-item">
+              <label>تاريخ الإنشاء</label>
+              <span>{{ request.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+            <div class="info-item">
+              <label>المستأجر</label>
+              <span>{{ request.tenantName || '—' }}</span>
+            </div>
+            <div class="info-item">
+              <label>العقار / الوحدة</label>
+              <span>{{ request.propertyName }} — وحدة {{ request.unitNumber }}</span>
+            </div>
+            <div class="info-item">
+              <label>الفئة</label>
+              <span>{{ request.categoryNameAr || '—' }}</span>
+            </div>
+            <div class="info-item">
+              <label>الأولوية</label>
+              <span class="priority-badge" [class]="request.priority">{{ request.priority }}</span>
+            </div>
+            <div class="info-item full">
+              <label>وصف المشكلة</label>
+              <p class="desc-text">{{ request.description }}</p>
+            </div>
+            <div class="info-item" *ngIf="request.tenantNotes">
+              <label>ملاحظات المستأجر</label>
+              <span>{{ request.tenantNotes }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Schedule -->
+      <div class="app-card">
+        <div class="app-card-header"><span class="app-card-title">جدولة الزيارة</span></div>
+        <div class="app-card-body">
+          <div *ngIf="!request.scheduledDate" class="card-empty">
+            <span class="material-icons">event_busy</span>
+            <span>لم تُجدَّل الزيارة بعد</span>
+          </div>
+          <div class="schedule-info" *ngIf="request.scheduledDate">
+            <div class="schedule-row">
+              <span class="material-icons">calendar_today</span>
+              <div>
+                <strong>التاريخ</strong>
+                <span>{{ request.scheduledDate | date:'fullDate' }}</span>
+              </div>
+            </div>
+            <div class="schedule-row" *ngIf="request.scheduledTimeFrom">
+              <span class="material-icons">schedule</span>
+              <div>
+                <strong>الوقت</strong>
+                <span>{{ request.scheduledTimeFrom }} — {{ request.scheduledTimeTo }}</span>
+              </div>
+            </div>
+            <div class="schedule-row" *ngIf="request.assignedOfficerName">
+              <span class="material-icons">engineering</span>
+              <div>
+                <strong>المسؤول</strong>
+                <span>{{ request.assignedOfficerName }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</div>

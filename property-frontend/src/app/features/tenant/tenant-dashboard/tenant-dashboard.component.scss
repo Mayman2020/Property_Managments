@@ -1,0 +1,185 @@
+.loading-center { display: flex; justify-content: center; padding: 32px; }
+
+/* Welcome */
+.tenant-welcome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  background: var(--primary-gradient);
+  border-radius: var(--radius-lg);
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-soft);
+  flex-wrap: wrap;
+}
+
+.welcome-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.welcome-avatar {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: rgba(201,168,76,0.85);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.welcome-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 4px;
+}
+
+.welcome-sub {
+  font-size: 0.875rem;
+  color: rgba(255,255,255,0.75);
+  margin: 0;
+}
+
+.welcome-btn {
+  background: var(--accent) !important;
+  color: #fff !important;
+  border-radius: 12px !important;
+  font-weight: 700 !important;
+  white-space: nowrap;
+}
+
+/* Quick Stats */
+.tenant-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+
+  @media (max-width: 640px) { grid-template-columns: repeat(2, 1fr); }
+}
+
+.ts-card {
+  background: var(--surface);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: var(--shadow-card);
+}
+
+.ts-icon {
+  font-size: 28px;
+
+  &.pending { color: var(--warning); }
+  &.scheduled { color: var(--info); }
+  &.progress { color: var(--accent); }
+  &.done { color: var(--success); }
+}
+
+.ts-value {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.ts-label {
+  font-size: 0.75rem;
+  color: var(--text-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+/* Timeline */
+.timeline {
+  padding: 8px 0;
+}
+
+.timeline-item {
+  display: flex;
+  gap: 16px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+  transition: background 0.15s;
+
+  &:last-child { border-bottom: none; }
+  &:hover { background: var(--table-row-hover); }
+}
+
+.tl-icon {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+
+  .material-icons { font-size: 18px; }
+
+  &[data-status='PENDING']     { background: var(--chip-pending-bg); color: var(--chip-pending-color); }
+  &[data-status='ASSIGNED']    { background: var(--chip-assigned-bg); color: var(--chip-assigned-color); }
+  &[data-status='SCHEDULED']   { background: var(--chip-scheduled-bg); color: var(--chip-scheduled-color); }
+  &[data-status='IN_PROGRESS'] { background: var(--chip-inprogress-bg); color: var(--chip-inprogress-color); }
+  &[data-status='COMPLETED']   { background: var(--chip-completed-bg); color: var(--chip-completed-color); }
+  &[data-status='CANCELLED']   { background: var(--chip-cancelled-bg); color: var(--chip-cancelled-color); }
+}
+
+.tl-content { flex: 1; min-width: 0; }
+
+.tl-header { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+
+.tl-number {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--text-subtle);
+}
+
+.tl-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tl-desc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: 0 0 8px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tl-footer { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+
+.tl-date, .tl-schedule {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 0.75rem; color: var(--text-subtle);
+
+  .material-icons { font-size: 14px; }
+}
+
+.tl-detail-link {
+  font-size: 0.8rem;
+  color: var(--accent-dark);
+  font-weight: 600;
+  margin-inline-start: auto;
+}
+
+.view-all {
+  font-size: 0.8rem;
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+  &:hover { color: var(--accent-dark); }
+}

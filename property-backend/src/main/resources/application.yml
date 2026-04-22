@@ -1,0 +1,54 @@
+spring:
+  datasource:
+    url: ${DB_URL:${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/postgres?currentSchema=property_mgmt}}
+    username: ${DB_USER:${SPRING_DATASOURCE_USERNAME:postgres}}
+    password: ${DB_PASS:${SPRING_DATASOURCE_PASSWORD:${DB_PASSWORD:admin}}}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      connection-timeout: 30000
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    create-schemas: true
+    default-schema: property_mgmt
+    schemas: property_mgmt,public
+    baseline-on-migrate: true
+    validate-on-migrate: true
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        default_schema: property_mgmt
+
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 50MB
+      max-request-size: 100MB
+
+jwt:
+  secret: ${JWT_SECRET:PropertyManagementSecretKey2024VeryLongAndSecureKeyForJWT}
+  expiration: 86400000       # 24 hours
+  refresh-expiration: 604800000  # 7 days
+
+file:
+  upload-dir: ${UPLOAD_DIR:./uploads}
+  base-url: ${FILE_BASE_URL:http://localhost:8080}
+
+server:
+  port: 8080
+  servlet:
+    context-path: /api/v1
+
+logging:
+  level:
+    com.propertymanagement: DEBUG
+    org.springframework.security: INFO
+    org.flywaydb: INFO
