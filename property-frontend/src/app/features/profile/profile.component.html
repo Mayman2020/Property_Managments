@@ -1,7 +1,7 @@
-<div class="app-page">
+﻿<div class="app-page">
   <app-page-header
-    title="My Profile"
-    subtitle="Update your personal information and picture">
+    [title]="'PROFILE.TITLE' | translate"
+    [subtitle]="'PROFILE.SUBTITLE' | translate">
   </app-page-header>
 
   <div class="profile-card surface-glow">
@@ -11,43 +11,73 @@
 
     <form *ngIf="!loading" [formGroup]="form" (ngSubmit)="save()">
       <div class="profile-header">
-        <img *ngIf="form.get('profileImageUrl')?.value" class="profile-avatar" [src]="form.get('profileImageUrl')?.value" alt="profile">
+        <img *ngIf="form.get('profileImageUrl')?.value" class="profile-avatar" [src]="form.get('profileImageUrl')?.value" [attr.alt]="'PROFILE.AVATAR_ALT' | translate">
         <div *ngIf="!form.get('profileImageUrl')?.value" class="profile-avatar profile-avatar-fallback">
           {{ (form.get('fullName')?.value || 'U').slice(0, 1) }}
         </div>
         <div class="profile-header-text">
-          <h3>{{ form.get('fullName')?.value || 'User' }}</h3>
-          <span>Profile picture updates instantly after save.</span>
+          <h3>{{ form.get('fullName')?.value || ('PROFILE.DEFAULT_USER' | translate) }}</h3>
+          <span>{{ 'PROFILE.HEADER_HINT' | translate }}</span>
         </div>
       </div>
 
       <div class="profile-grid">
         <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Full name</mat-label>
+          <mat-label>{{ 'PROFILE.FULL_NAME' | translate }}</mat-label>
           <input matInput formControlName="fullName">
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Phone</mat-label>
+          <mat-label>{{ 'PROFILE.PHONE' | translate }}</mat-label>
           <input matInput formControlName="phone">
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Profile image URL</mat-label>
+          <mat-label>{{ 'PROFILE.IMAGE_URL' | translate }}</mat-label>
           <input matInput formControlName="profileImageUrl" placeholder="https://...">
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Bio</mat-label>
+          <mat-label>{{ 'PROFILE.BIO' | translate }}</mat-label>
           <textarea matInput rows="4" formControlName="bio"></textarea>
         </mat-form-field>
       </div>
 
       <div class="profile-actions">
-        <button mat-stroked-button type="button" routerLink="/">Cancel</button>
+        <button mat-stroked-button type="button" routerLink="/">{{ 'ACTIONS.CANCEL' | translate }}</button>
         <button mat-flat-button type="submit" [disabled]="form.invalid || saving">
           <mat-spinner *ngIf="saving" diameter="18"></mat-spinner>
-          <span *ngIf="!saving">Save profile</span>
+          <span *ngIf="!saving">{{ 'PROFILE.SAVE_BUTTON' | translate }}</span>
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div class="profile-card surface-glow" style="margin-top: 16px" *ngIf="!loading">
+    <h3 style="margin-bottom: 12px">{{ 'PROFILE.CHANGE_PASSWORD' | translate }}</h3>
+    <form [formGroup]="passwordForm" (ngSubmit)="changePassword()">
+      <div class="profile-grid">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>{{ 'PROFILE.CURRENT_PASSWORD' | translate }}</mat-label>
+          <input matInput type="password" formControlName="currentPassword">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>{{ 'PROFILE.NEW_PASSWORD' | translate }}</mat-label>
+          <input matInput type="password" formControlName="newPassword">
+          <mat-error *ngIf="passwordForm.get('newPassword')?.hasError('minlength')">{{ 'PROFILE.PASSWORD_MIN' | translate }}</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>{{ 'PROFILE.CONFIRM_PASSWORD' | translate }}</mat-label>
+          <input matInput type="password" formControlName="confirmPassword">
+        </mat-form-field>
+      </div>
+
+      <div class="profile-actions">
+        <button mat-flat-button type="submit" [disabled]="passwordForm.invalid || changingPassword">
+          <mat-spinner *ngIf="changingPassword" diameter="18"></mat-spinner>
+          <span *ngIf="!changingPassword">{{ 'PROFILE.CHANGE_PASSWORD_BUTTON' | translate }}</span>
         </button>
       </div>
     </form>

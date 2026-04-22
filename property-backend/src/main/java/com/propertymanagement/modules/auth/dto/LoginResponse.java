@@ -23,5 +23,9 @@ public class LoginResponse {
         private String bio;
         private String role;
         private Long propertyId;
+        private String maintenanceOfficerType;
+        private String maintenanceCompanyName;
+        /** Populated for TENANT role when the user account is linked to a tenants row. */
+        private Long tenantId;
     }
 }

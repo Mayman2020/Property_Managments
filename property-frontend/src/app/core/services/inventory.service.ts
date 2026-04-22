@@ -36,7 +36,8 @@ export class InventoryService {
   constructor(private readonly api: ApiService) {}
 
   getItems(propertyId?: number, page = 0, size = 20): Observable<ApiResponse<PagedResponse<InventoryItem>>> {
-    return this.api.get('/inventory', { page, size, ...(propertyId ? { propertyId } : {}) });
+    const url = propertyId ? `/inventory/property/${propertyId}` : '/inventory';
+    return this.api.get(url, { page, size });
   }
 
   getLowStock(): Observable<ApiResponse<InventoryItem[]>> {

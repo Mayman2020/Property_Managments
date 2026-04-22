@@ -53,6 +53,13 @@ public class User implements UserDetails {
     @Column(name = "property_id")
     private Long propertyId;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "maintenance_officer_type", length = 30)
+    private MaintenanceOfficerType maintenanceOfficerType;
+
+    @Column(name = "maintenance_company_name", length = 180)
+    private String maintenanceCompanyName;
+
     @Column(name = "is_active")
     private boolean active = true;
 

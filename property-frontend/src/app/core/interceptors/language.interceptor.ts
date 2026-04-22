@@ -1,8 +1,9 @@
 import { HttpInterceptorFn } from '@angular/common/http';
-import { inject } from '@angular/core';
-import { I18nService } from '../i18n/i18n.service';
+
+const STORAGE_KEY = 'pm_lang';
 
 export const languageInterceptor: HttpInterceptorFn = (req, next) => {
-  const lang = inject(I18nService).currentLang;
+  const saved = localStorage.getItem(STORAGE_KEY);
+  const lang = (saved === 'ar' || saved === 'en') ? saved : 'ar';
   return next(req.clone({ setHeaders: { 'Accept-Language': lang } }));
 };

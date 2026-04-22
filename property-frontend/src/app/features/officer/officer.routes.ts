@@ -11,7 +11,8 @@ export const OFFICER_ROUTES: Routes = [
       { path: '', redirectTo: 'requests', pathMatch: 'full' },
       {
         path: 'requests',
-        loadComponent: () => import('../maintenance/request-list/request-list.component').then((m) => m.RequestListComponent)
+        loadComponent: () => import('../maintenance/request-list/request-list.component').then((m) => m.RequestListComponent),
+        data: { listContext: 'officer' }
       },
       {
         path: 'requests/:id',

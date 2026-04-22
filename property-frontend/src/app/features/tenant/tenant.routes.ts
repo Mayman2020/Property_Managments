@@ -19,7 +19,8 @@ export const TENANT_ROUTES: Routes = [
       },
       {
         path: 'requests',
-        loadComponent: () => import('../maintenance/request-list/request-list.component').then((m) => m.RequestListComponent)
+        loadComponent: () => import('../maintenance/request-list/request-list.component').then((m) => m.RequestListComponent),
+        data: { listContext: 'tenant' }
       },
       {
         path: 'requests/:id',

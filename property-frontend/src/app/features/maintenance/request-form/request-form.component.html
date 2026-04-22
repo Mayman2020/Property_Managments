@@ -1,60 +1,102 @@
-<div class="app-page">
+﻿<div class="app-page">
   <app-page-header
-    title="طلب صيانة جديد"
-    subtitle="أدخل تفاصيل طلب الصيانة وارفق الصور أو الفيديو"
-    [breadcrumbs]="[{label:'الرئيسية', route:auth.getDashboardRoute()}, {label:'طلب جديد'}]">
+    [title]="'REQUEST_FORM.TITLE' | translate"
+    [subtitle]="'REQUEST_FORM.SUBTITLE' | translate"
+    [breadcrumbs]="[{label:('NAV.DASHBOARD' | translate), route:auth.getDashboardRoute()}, {label:('NAV.NEW_REQUEST' | translate)}]">
   </app-page-header>
 
   <div class="form-layout">
     <div class="form-card surface-glow">
-      <form [formGroup]="form" (ngSubmit)="submit()">
+      <div class="loading-center" *ngIf="loading">
+        <mat-spinner diameter="40"></mat-spinner>
+      </div>
 
-        <!-- Category -->
+      <form *ngIf="!loading" [formGroup]="form" (ngSubmit)="submit()">
+        <div class="form-section">
+          <h3 class="form-section-title">
+            <span class="material-icons">apartment</span>
+            {{ 'REQUEST_FORM.PROPERTY_UNIT' | translate }}
+          </h3>
+
+          <div class="selection-grid">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>{{ 'REQUEST_FORM.PROPERTY' | translate }}</mat-label>
+              <mat-select formControlName="propertyId">
+                <mat-option [value]="null" disabled>{{ 'REQUEST_FORM.SELECT_PROPERTY' | translate }}</mat-option>
+                <mat-option *ngFor="let p of properties" [value]="p.id">
+                  {{ p.propertyName }} ({{ p.propertyCode }})
+                </mat-option>
+                <mat-option *ngIf="properties.length === 0" [value]="null" disabled>
+                  {{ 'REQUEST_FORM.NO_PROPERTIES' | translate }}
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="form.get('propertyId')?.hasError('required')">{{ 'REQUEST_FORM.PROPERTY_REQUIRED' | translate }}</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>{{ 'REQUEST_FORM.UNIT' | translate }}</mat-label>
+              <mat-select formControlName="unitId" [disabled]="!form.get('propertyId')?.value || loadingUnits">
+                <mat-option [value]="null" disabled>
+                  {{ form.get('propertyId')?.value ? (loadingUnits ? ('REQUEST_FORM.LOADING_UNITS' | translate) : ('REQUEST_FORM.SELECT_UNIT' | translate)) : ('REQUEST_FORM.SELECT_PROPERTY_FIRST' | translate) }}
+                </mat-option>
+                <mat-option *ngFor="let u of units" [value]="u.id">
+                  {{ u.unitNumber }}
+                  <span *ngIf="u.unitType"> - {{ u.unitType }}</span>
+                  <span *ngIf="u.rented"> ({{ 'REQUEST_FORM.RENTED' | translate }})</span>
+                </mat-option>
+                <mat-option *ngIf="form.get('propertyId')?.value && !loadingUnits && units.length === 0" [value]="null" disabled>
+                  {{ 'REQUEST_FORM.NO_UNITS' | translate }}
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="form.get('unitId')?.hasError('required')">{{ 'REQUEST_FORM.UNIT_REQUIRED' | translate }}</mat-error>
+            </mat-form-field>
+          </div>
+        </div>
+
         <div class="form-section">
           <h3 class="form-section-title">
             <span class="material-icons">category</span>
-            نوع الصيانة
+            {{ 'MAINTENANCE.CATEGORY' | translate }}
           </h3>
           <div class="category-grid" *ngIf="categories.length > 0">
-            <button type="button" class="category-btn"
+            <button
+              type="button"
+              class="category-btn"
               *ngFor="let cat of categories"
-              [class.selected]="form.get('categoryId')?.value === cat.id"
-              (click)="form.patchValue({categoryId: cat.id})">
+              [class.selected]="isCategorySelected(cat.id)"
+              (click)="toggleCategory(cat.id)">
               <span class="material-icons cat-icon">{{ cat.icon || 'build' }}</span>
-              <span>{{ cat.nameAr }}</span>
+              <span>{{ categoryName(cat) }}</span>
             </button>
           </div>
-          <mat-error *ngIf="form.get('categoryId')?.touched && form.get('categoryId')?.invalid">
-            اختر نوع الصيانة
+          <mat-error *ngIf="form.get('categoryIds')?.touched && form.get('categoryIds')?.invalid">
+            {{ 'REQUEST_FORM.CATEGORY_REQUIRED' | translate }}
           </mat-error>
         </div>
 
-        <!-- Title -->
         <div class="form-section">
           <mat-form-field appearance="outline" class="full-width">
-            <mat-label>عنوان الطلب</mat-label>
-            <input matInput formControlName="title" placeholder="مثال: تسرب مياه في الحمام">
+            <mat-label>{{ 'REQUEST_FORM.REQUEST_TITLE' | translate }}</mat-label>
+            <input matInput formControlName="title" [placeholder]="'REQUEST_FORM.REQUEST_TITLE_PLACEHOLDER' | translate">
             <mat-icon matSuffix>title</mat-icon>
-            <mat-error *ngIf="form.get('title')?.hasError('required')">العنوان مطلوب</mat-error>
-            <mat-error *ngIf="form.get('title')?.hasError('maxlength')">لا يتجاوز 255 حرف</mat-error>
+            <mat-error *ngIf="form.get('title')?.hasError('required')">{{ 'REQUEST_FORM.TITLE_REQUIRED' | translate }}</mat-error>
+            <mat-error *ngIf="form.get('title')?.hasError('maxlength')">{{ 'REQUEST_FORM.TITLE_MAX' | translate }}</mat-error>
           </mat-form-field>
         </div>
 
-        <!-- Description -->
         <div class="form-section">
           <mat-form-field appearance="outline" class="full-width">
-            <mat-label>وصف المشكلة</mat-label>
+            <mat-label>{{ 'MAINTENANCE.DESCRIPTION' | translate }}</mat-label>
             <textarea matInput formControlName="description" rows="5"
-              placeholder="اشرح المشكلة بالتفصيل، متى بدأت، وما الأضرار الظاهرة..."></textarea>
-            <mat-error *ngIf="form.get('description')?.hasError('required')">الوصف مطلوب</mat-error>
+              [placeholder]="'REQUEST_FORM.DESCRIPTION_PLACEHOLDER' | translate"></textarea>
+            <mat-error *ngIf="form.get('description')?.hasError('required')">{{ 'REQUEST_FORM.DESCRIPTION_REQUIRED' | translate }}</mat-error>
           </mat-form-field>
         </div>
 
-        <!-- Priority -->
         <div class="form-section">
           <h3 class="form-section-title">
             <span class="material-icons">flag</span>
-            درجة الأولوية
+            {{ 'MAINTENANCE.PRIORITY' | translate }}
           </h3>
           <div class="priority-selector">
             <button type="button" class="priority-btn"
@@ -62,56 +104,52 @@
               [class]="'priority-btn ' + p.value"
               [class.selected]="form.get('priority')?.value === p.value"
               (click)="form.patchValue({priority: p.value})">
-              {{ p.label }}
+              {{ ('PRIORITY.' + p.value) | translate }}
             </button>
           </div>
         </div>
 
-        <!-- File Upload -->
         <div class="form-section">
           <h3 class="form-section-title">
             <span class="material-icons">attach_file</span>
-            المرفقات (صور / فيديو / مستندات)
+            {{ 'REQUEST_FORM.ATTACHMENTS' | translate }}
           </h3>
           <app-upload-zone
             [multiple]="true"
-            label="اسحب الصور أو الفيديو هنا أو انقر للرفع"
+            [label]="'REQUEST_FORM.UPLOAD_LABEL' | translate"
             (filesChanged)="onFilesChanged($event)"
             (filesUploaded)="onFilesUploaded($event)">
           </app-upload-zone>
         </div>
 
-        <!-- Actions -->
         <div class="form-actions">
-          <button mat-stroked-button type="button" routerLink="/tenant/dashboard">إلغاء</button>
+          <button mat-stroked-button type="button" [routerLink]="cancelRoute()">{{ 'ACTIONS.CANCEL' | translate }}</button>
           <button mat-flat-button type="submit" [disabled]="form.invalid || submitting">
             <mat-spinner *ngIf="submitting" diameter="18"></mat-spinner>
             <span *ngIf="!submitting">
               <span class="material-icons">send</span>
-              إرسال الطلب
+              {{ 'REQUEST_FORM.SEND_BUTTON' | translate }}
             </span>
           </button>
         </div>
-
       </form>
     </div>
 
-    <!-- Side Hints -->
     <div class="form-hints">
       <div class="hint-card">
-        <h4><span class="material-icons">info</span> نصائح مفيدة</h4>
+        <h4><span class="material-icons">info</span> {{ 'REQUEST_FORM.TIPS_TITLE' | translate }}</h4>
         <ul>
-          <li>ارفع صوراً واضحة للمشكلة</li>
-          <li>حدد موقع المشكلة بدقة في الوصف</li>
-          <li>اختر الأولوية المناسبة للحالة</li>
-          <li>ستصلك إشعارات بتحديثات الطلب</li>
+          <li>{{ 'REQUEST_FORM.TIP_1' | translate }}</li>
+          <li>{{ 'REQUEST_FORM.TIP_2' | translate }}</li>
+          <li>{{ 'REQUEST_FORM.TIP_3' | translate }}</li>
+          <li>{{ 'REQUEST_FORM.TIP_4' | translate }}</li>
         </ul>
       </div>
       <div class="hint-card status-flow">
-        <h4><span class="material-icons">timeline</span> مراحل الطلب</h4>
-        <div class="flow-step" *ngFor="let step of ['إرسال الطلب','التحقق والتعيين','الجدولة','الزيارة والإنجاز']">
+        <h4><span class="material-icons">timeline</span> {{ 'REQUEST_FORM.STEPS_TITLE' | translate }}</h4>
+        <div class="flow-step" *ngFor="let step of ['REQUEST_FORM.STEP_1','REQUEST_FORM.STEP_2','REQUEST_FORM.STEP_3','REQUEST_FORM.STEP_4']">
           <div class="flow-dot"></div>
-          <span>{{ step }}</span>
+          <span>{{ step | translate }}</span>
         </div>
       </div>
     </div>

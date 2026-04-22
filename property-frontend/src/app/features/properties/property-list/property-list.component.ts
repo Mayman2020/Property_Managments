@@ -1,20 +1,23 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { TranslateModule } from '@ngx-translate/core';
+
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { PropertyService, Property } from '../../../core/services/property.service';
 import { SnackService } from '../../../core/services/snack.service';
+import { I18nService } from '../../../core/i18n/i18n.service';
 
 @Component({
   selector: 'app-property-list',
   standalone: true,
   imports: [
-    NgFor, NgIf, RouterLink,
+    NgFor, NgIf, RouterLink, TranslateModule,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule,
     PageHeaderComponent, EmptyStateComponent
   ],
@@ -29,22 +32,31 @@ export class PropertyListComponent implements OnInit {
 
   constructor(
     private readonly propertySvc: PropertyService,
-    private readonly snack: SnackService
+    private readonly snack: SnackService,
+    private readonly i18n: I18nService
   ) {}
 
-  ngOnInit(): void { this.load(); }
+  ngOnInit(): void {
+    this.load();
+  }
 
   load(): void {
     this.loading = true;
     this.propertySvc.getAll(this.page).subscribe({
-      next: (res) => { this.properties = res.data?.content ?? []; this.totalElements = res.data?.totalElements ?? 0; this.loading = false; },
-      error: () => { this.loading = false; this.snack.error('Failed to load properties'); }
+      next: (res) => {
+        this.properties = res.data?.content ?? [];
+        this.totalElements = res.data?.totalElements ?? 0;
+        this.loading = false;
+      },
+      error: () => {
+        this.loading = false;
+        this.snack.error(this.i18n.instant('PROPERTY_LIST.LOAD_ERROR'));
+      }
     });
   }
 
   typeLabel(type: string): string {
-    const m: Record<string, string> = { RESIDENTIAL: 'سكني', COMMERCIAL: 'تجاري', MIXED: 'مختلط' };
-    return m[type] ?? type;
+    return this.i18n.instant(`PROPERTY_TYPE.${type}`);
   }
 
   typeBadgeClass(type: string): string {

@@ -32,7 +32,7 @@
 }
 
 .welcome-title {
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-display);
   font-size: 1.4rem;
   font-weight: 700;
   color: #ffffff;
@@ -84,7 +84,7 @@
 }
 
 .ts-value {
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-display);
   font-size: 1.5rem;
   font-weight: 700;
   color: var(--text-main);
@@ -96,6 +96,34 @@
   text-transform: uppercase;
   letter-spacing: 0.4px;
 }
+
+/* Tabs */
+.requests-card { padding: 0 !important; overflow: hidden; }
+
+.requests-tabs {
+  ::ng-deep .mat-mdc-tab-header { padding: 0 20px; border-bottom: 1px solid var(--line); }
+  ::ng-deep .mat-mdc-tab-body-content { padding: 0; }
+}
+
+.tab-icon { font-size: 18px; margin-inline-end: 6px; vertical-align: middle; }
+
+.tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  margin-inline-start: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 10px;
+}
+
+.schedule-accepted { color: var(--success) !important; .material-icons { color: var(--success) !important; } }
+.schedule-rejected { color: var(--error, #ef4444) !important; .material-icons { color: var(--error, #ef4444) !important; } }
 
 /* Timeline */
 .timeline {
@@ -174,6 +202,26 @@
   color: var(--accent-dark);
   font-weight: 600;
   margin-inline-start: auto;
+}
+
+.tenant-link-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  border-color: var(--warning, #f59e0b);
+
+  .material-icons {
+    color: var(--warning, #f59e0b);
+    flex-shrink: 0;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--text-main);
+  }
 }
 
 .view-all {

@@ -1,0 +1,88 @@
+<div class="app-page">
+  <app-page-header
+    [title]="'CONTRACTORS.TITLE' | translate"
+    [subtitle]="'CONTRACTORS.SUBTITLE' | translate"
+    [breadcrumbs]="[
+      { label: ('NAV.DASHBOARD' | translate), route: '/admin/dashboard' },
+      { label: ('NAV.CONTRACTOR_COMPANIES' | translate) }
+    ]">
+    <button mat-flat-button type="button" (click)="startCreate()" *ngIf="!formVisible">
+      <span class="material-icons">add</span>
+      {{ 'CONTRACTORS.ADD' | translate }}
+    </button>
+  </app-page-header>
+
+  <div class="form-panel app-card" *ngIf="formVisible">
+    <h2 class="form-title">{{ editing ? ('CONTRACTORS.EDIT' | translate) : ('CONTRACTORS.NEW' | translate) }}</h2>
+    <form [formGroup]="form" (ngSubmit)="save()" class="contractor-form">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'CONTRACTORS.NAME' | translate }}</mat-label>
+        <input matInput formControlName="name" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'CONTRACTORS.PHONE' | translate }}</mat-label>
+        <input matInput formControlName="phone" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'CONTRACTORS.EMAIL' | translate }}</mat-label>
+        <input matInput type="email" formControlName="email" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>{{ 'CONTRACTORS.NOTES' | translate }}</mat-label>
+        <textarea matInput rows="2" formControlName="notes"></textarea>
+      </mat-form-field>
+      <mat-slide-toggle formControlName="active">{{ 'COMMON.ACTIVE' | translate }}</mat-slide-toggle>
+      <div class="form-actions">
+        <button mat-stroked-button type="button" (click)="cancelForm()">{{ 'COMMON.CANCEL' | translate }}</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid || saving">
+          <span *ngIf="!saving">{{ 'COMMON.SAVE' | translate }}</span>
+          <span *ngIf="saving">{{ 'COMMON.LOADING' | translate }}</span>
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div class="loading-center" *ngIf="loading"><mat-spinner diameter="40"></mat-spinner></div>
+
+  <app-empty-state
+    *ngIf="!loading && companies.length === 0 && !formVisible"
+    icon="engineering"
+    [title]="'CONTRACTORS.EMPTY_TITLE' | translate"
+    [message]="'CONTRACTORS.EMPTY_MSG' | translate">
+    <button mat-flat-button type="button" (click)="startCreate()" style="margin-top: 12px">
+      <span class="material-icons">add</span> {{ 'CONTRACTORS.ADD' | translate }}
+    </button>
+  </app-empty-state>
+
+  <div class="app-card table-card" *ngIf="!loading && companies.length > 0">
+    <div class="app-table-wrap">
+      <table class="app-data-table">
+        <thead>
+          <tr>
+            <th>{{ 'CONTRACTORS.NAME' | translate }}</th>
+            <th>{{ 'CONTRACTORS.PHONE' | translate }}</th>
+            <th>{{ 'CONTRACTORS.EMAIL' | translate }}</th>
+            <th>{{ 'COMMON.ACTIVE' | translate }}</th>
+            <th>{{ 'REQUEST_LIST.ACTIONS' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let c of companies">
+            <td><strong>{{ c.name }}</strong></td>
+            <td>{{ c.phone || '—' }}</td>
+            <td>{{ c.email || '—' }}</td>
+            <td>{{ (c.active ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') | translate }}</td>
+            <td>
+              <button type="button" class="app-icon-btn" (click)="startEdit(c)" [title]="'ACTIONS.EDIT' | translate">
+                <span class="material-icons">edit</span>
+              </button>
+              <button type="button" class="app-icon-btn danger" *ngIf="canHardDelete" (click)="remove(c)" [title]="'ACTIONS.DELETE' | translate">
+                <span class="material-icons">delete</span>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

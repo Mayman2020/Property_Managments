@@ -31,15 +31,35 @@ export interface MaintenanceRequest {
   scheduledTimeFrom?: string;
   scheduledTimeTo?: string;
   tenantNotes?: string;
+  closedAt?: string;
+  scheduleAccepted?: boolean;
+  scheduleRejectionNote?: string;
   createdAt: string;
   updatedAt: string;
 }
 
+export interface VisitRating {
+  id: number;
+  requestId: number;
+  rating: number;
+  comment?: string;
+  createdAt: string;
+}
+
+export interface RatingForm {
+  rating: number;
+  comment?: string;
+}
+
 export interface RequestForm {
-  categoryId: number;
+  propertyId: number;
+  unitId: number;
+  tenantId?: number;
+  categoryIds: number[];
   title: string;
   description: string;
   priority: RequestPriority;
+  tenantNotes?: string;
 }
 
 export interface ScheduleForm {
@@ -80,6 +100,14 @@ export class MaintenanceService {
     return this.api.get('/maintenance/requests', params);
   }
 
+  getByTenant(tenantId: number, params?: Record<string, string | number | boolean>): Observable<ApiResponse<PagedResponse<MaintenanceRequest>>> {
+    return this.api.get(`/maintenance/requests/tenant/${tenantId}`, params);
+  }
+
+  getByOfficer(officerId: number, params?: Record<string, string | number | boolean>): Observable<ApiResponse<PagedResponse<MaintenanceRequest>>> {
+    return this.api.get(`/maintenance/requests/officer/${officerId}`, params);
+  }
+
   getById(id: number): Observable<ApiResponse<MaintenanceRequest>> {
     return this.api.get(`/maintenance/requests/${id}`);
   }
@@ -106,6 +134,30 @@ export class MaintenanceService {
 
   getVisitReport(requestId: number): Observable<ApiResponse<VisitReport>> {
     return this.api.get(`/maintenance/requests/${requestId}/visit-report`);
+  }
+
+  startWork(id: number): Observable<ApiResponse<MaintenanceRequest>> {
+    return this.api.patch(`/maintenance/requests/${id}/start`);
+  }
+
+  acceptSchedule(id: number): Observable<ApiResponse<MaintenanceRequest>> {
+    return this.api.patch(`/maintenance/requests/${id}/accept-schedule`);
+  }
+
+  rejectSchedule(id: number, rejectionNote: string): Observable<ApiResponse<MaintenanceRequest>> {
+    return this.api.patch(`/maintenance/requests/${id}/reject-schedule`, { rejectionNote });
+  }
+
+  submitRating(requestId: number, form: RatingForm): Observable<ApiResponse<VisitRating>> {
+    return this.api.post(`/maintenance/requests/${requestId}/rating`, form);
+  }
+
+  getRating(requestId: number): Observable<ApiResponse<VisitRating>> {
+    return this.api.get(`/maintenance/requests/${requestId}/rating`);
+  }
+
+  getOfficers(): Observable<ApiResponse<PagedResponse<{ id: number; fullName: string; username: string }>>> {
+    return this.api.get('/users', { role: 'MAINTENANCE_OFFICER', size: 100 });
   }
 
   getCategories(): Observable<ApiResponse<{ id: number; nameAr: string; nameEn: string; icon: string }[]>> {

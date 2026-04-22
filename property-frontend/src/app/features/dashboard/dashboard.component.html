@@ -1,28 +1,25 @@
-<div class="app-page">
+﻿<div class="app-page">
 
   <app-page-header
-    title="لوحة التحكم"
-    subtitle="نظرة عامة على أداء العقارات والصيانة">
-    <button mat-flat-button routerLink="/admin/maintenance">
+    [title]="'DASHBOARD.TITLE' | translate"
+    [subtitle]="'DASHBOARD.SUBTITLE' | translate">
+    <button mat-flat-button routerLink="/admin/maintenance/new">
       <span class="material-icons">add</span>
-      طلب صيانة جديد
+      {{ 'MAINTENANCE.NEW_REQUEST' | translate }}
     </button>
   </app-page-header>
 
-  <!-- Loading -->
   <div class="loading-center" *ngIf="loading">
     <mat-spinner diameter="48"></mat-spinner>
   </div>
 
   <ng-container *ngIf="!loading && stats">
-
-    <!-- KPI Grid -->
     <div class="stat-grid">
       <div class="stat-card navy">
         <div class="stat-icon"><span class="material-icons">apartment</span></div>
         <div class="stat-content">
           <div class="stat-value">{{ stats.totalProperties }}</div>
-          <div class="stat-label">إجمالي العقارات</div>
+          <div class="stat-label">{{ 'DASHBOARD.TOTAL_PROPERTIES' | translate }}</div>
         </div>
       </div>
 
@@ -30,7 +27,7 @@
         <div class="stat-icon"><span class="material-icons">meeting_room</span></div>
         <div class="stat-content">
           <div class="stat-value">{{ stats.totalUnits }}</div>
-          <div class="stat-label">إجمالي الوحدات</div>
+          <div class="stat-label">{{ 'DASHBOARD.TOTAL_UNITS' | translate }}</div>
         </div>
       </div>
 
@@ -38,11 +35,11 @@
         <div class="stat-icon"><span class="material-icons">key</span></div>
         <div class="stat-content">
           <div class="stat-value">{{ stats.rentedUnits }}</div>
-          <div class="stat-label">وحدات مؤجَّرة</div>
+          <div class="stat-label">{{ 'DASHBOARD.RENTED_UNITS' | translate }}</div>
           <div class="stat-bar">
-            <div class="stat-bar-fill" [style.width]="rentedPercent + '%'"></div>
+            <div class="stat-bar-fill" [style.width]="rentedPercent + '%' "></div>
           </div>
-          <div class="stat-pct">{{ rentedPercent }}% نسبة الإشغال</div>
+          <div class="stat-pct">{{ rentedPercent }}% {{ 'DASHBOARD.OCCUPANCY_RATE' | translate }}</div>
         </div>
       </div>
 
@@ -50,7 +47,7 @@
         <div class="stat-icon"><span class="material-icons">pending_actions</span></div>
         <div class="stat-content">
           <div class="stat-value">{{ stats.pendingRequests }}</div>
-          <div class="stat-label">طلبات معلَّقة</div>
+          <div class="stat-label">{{ 'DASHBOARD.PENDING_REQUESTS' | translate }}</div>
         </div>
       </div>
 
@@ -58,7 +55,7 @@
         <div class="stat-icon"><span class="material-icons">task_alt</span></div>
         <div class="stat-content">
           <div class="stat-value">{{ stats.completedThisMonth }}</div>
-          <div class="stat-label">مكتملة هذا الشهر</div>
+          <div class="stat-label">{{ 'DASHBOARD.COMPLETED_THIS_MONTH' | translate }}</div>
         </div>
       </div>
 
@@ -66,24 +63,21 @@
         <div class="stat-icon"><span class="material-icons">inventory_2</span></div>
         <div class="stat-content">
           <div class="stat-value">{{ stats.lowStockItems }}</div>
-          <div class="stat-label">تنبيهات المخزن</div>
-          <div class="stat-alert">مخزون منخفض</div>
+          <div class="stat-label">{{ 'DASHBOARD.LOW_STOCK_ITEMS' | translate }}</div>
+          <div class="stat-alert">{{ 'INVENTORY.LOW_STOCK' | translate }}</div>
         </div>
       </div>
     </div>
 
-    <!-- Main Content Grid -->
     <div class="content-grid">
-
-      <!-- Recent Requests -->
       <div class="app-card surface-glow">
         <div class="app-card-header">
-          <span class="app-card-title">آخر طلبات الصيانة</span>
-          <a class="view-all-link" routerLink="/admin/maintenance">عرض الكل ←</a>
+          <span class="app-card-title">{{ 'DASHBOARD.RECENT_REQUESTS' | translate }}</span>
+          <a class="view-all-link" routerLink="/admin/maintenance">{{ 'ACTIONS.VIEW_ALL' | translate }}</a>
         </div>
         <div *ngIf="recentRequests.length === 0" class="card-empty">
           <span class="material-icons">build_circle</span>
-          <span>لا توجد طلبات حالياً</span>
+          <span>{{ 'REQUEST_LIST.EMPTY_TITLE' | translate }}</span>
         </div>
         <div class="request-list" *ngIf="recentRequests.length > 0">
           <div class="request-row" *ngFor="let req of recentRequests">
@@ -93,20 +87,19 @@
               <span class="req-meta">{{ req.propertyName }} · {{ req.unitNumber }}</span>
             </div>
             <span class="status-badge" [attr.data-status]="req.status">{{ statusLabel(req.status) }}</span>
-            <span class="priority-badge" [class]="req.priority">{{ req.priority }}</span>
+            <span class="priority-badge" [class]="req.priority">{{ ('PRIORITY.' + req.priority) | translate }}</span>
           </div>
         </div>
       </div>
 
-      <!-- Low Stock Alerts -->
       <div class="app-card surface-glow">
         <div class="app-card-header">
-          <span class="app-card-title">تنبيهات المخزن</span>
-          <a class="view-all-link" routerLink="/admin/inventory">إدارة المخزن ←</a>
+          <span class="app-card-title">{{ 'DASHBOARD.LOW_STOCK_ALERTS' | translate }}</span>
+          <a class="view-all-link" routerLink="/admin/inventory">{{ 'INVENTORY.MANAGE' | translate }}</a>
         </div>
         <div *ngIf="lowStockItems.length === 0" class="card-empty">
           <span class="material-icons">inventory</span>
-          <span>المخزن ممتاز، لا تنبيهات</span>
+          <span>{{ 'DASHBOARD.NO_STOCK_ALERTS' | translate }}</span>
         </div>
         <div class="stock-list" *ngIf="lowStockItems.length > 0">
           <div class="stock-row" *ngFor="let item of lowStockItems">
@@ -115,10 +108,10 @@
             </div>
             <div class="stock-info">
               <span class="stock-name">{{ item.itemNameAr }}</span>
-              <span class="stock-meta">الكمية: {{ item.quantity }} {{ item.unitOfMeasure }} / الحد: {{ item.minQuantity }}</span>
+              <span class="stock-meta">{{ 'INVENTORY.QTY' | translate }}: {{ item.quantity }} {{ item.unitOfMeasure }} / {{ 'INVENTORY.MIN' | translate }}: {{ item.minQuantity }}</span>
             </div>
             <div class="stock-qty-bar">
-              <div class="stock-qty-fill" [style.width]="(item.quantity / item.minQuantity) * 100 + '%'"></div>
+              <div class="stock-qty-fill" [style.width]="(item.quantity / item.minQuantity) * 100 + '%' "></div>
             </div>
           </div>
         </div>
@@ -126,27 +119,26 @@
 
     </div>
 
-    <!-- Status Overview -->
     <div class="app-card status-overview-card surface-glow">
       <div class="app-card-header">
-        <span class="app-card-title">توزيع حالات الصيانة</span>
+        <span class="app-card-title">{{ 'DASHBOARD.REQUESTS_BY_STATUS' | translate }}</span>
       </div>
       <div class="status-overview-grid">
         <div class="status-overview-item" data-status="PENDING">
           <span class="soi-value">{{ stats.pendingRequests }}</span>
-          <span class="soi-label">معلَّق</span>
+          <span class="soi-label">{{ 'STATUS.PENDING' | translate }}</span>
         </div>
         <div class="status-overview-item" data-status="IN_PROGRESS">
           <span class="soi-value">{{ stats.inProgressRequests }}</span>
-          <span class="soi-label">جاري</span>
+          <span class="soi-label">{{ 'STATUS.IN_PROGRESS' | translate }}</span>
         </div>
         <div class="status-overview-item" data-status="COMPLETED">
           <span class="soi-value">{{ stats.completedThisMonth }}</span>
-          <span class="soi-label">مكتمل هذا الشهر</span>
+          <span class="soi-label">{{ 'DASHBOARD.COMPLETED_THIS_MONTH' | translate }}</span>
         </div>
         <div class="status-overview-item" data-status="TENANT_ABSENT">
           <span class="soi-value">—</span>
-          <span class="soi-label">غياب مستأجر</span>
+          <span class="soi-label">{{ 'STATUS.TENANT_ABSENT' | translate }}</span>
         </div>
       </div>
     </div>

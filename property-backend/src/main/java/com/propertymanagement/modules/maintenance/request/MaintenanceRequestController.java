@@ -2,6 +2,9 @@ package com.propertymanagement.modules.maintenance.request;
 
 import com.propertymanagement.modules.maintenance.request.dto.*;
 import com.propertymanagement.modules.maintenance.visit.dto.VisitReportRequest;
+import com.propertymanagement.modules.maintenance.rating.VisitRatingService;
+import com.propertymanagement.modules.maintenance.rating.VisitRatingRequest;
+import com.propertymanagement.modules.maintenance.rating.VisitRatingResponse;
 import com.propertymanagement.modules.maintenance.visit.dto.VisitReportResponse;
 import com.propertymanagement.modules.user.User;
 import com.propertymanagement.shared.exception.AppException;
@@ -28,6 +31,7 @@ public class MaintenanceRequestController {
 
     private final MaintenanceRequestService requestService;
     private final RequestAttachmentRepository attachmentRepository;
+    private final VisitRatingService ratingService;
 
     @GetMapping
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN', 'MAINTENANCE_OFFICER')")
@@ -52,15 +56,14 @@ public class MaintenanceRequestController {
     public ResponseEntity<ApiResponse<Page<MaintenanceRequestResponse>>> getByTenant(
             @PathVariable Long tenantId,
             @PageableDefault(size = 10) Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.ok(requestService.getByTenant(tenantId, pageable)));
+        return ResponseEntity.ok(ApiResponse.ok(requestService.getByTenantSecured(tenantId, pageable)));
     }
 
     @GetMapping("/officer/{officerId}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN', 'MAINTENANCE_OFFICER')")
     public ResponseEntity<ApiResponse<Page<MaintenanceRequestResponse>>> getByOfficer(
             @PathVariable Long officerId,
             @PageableDefault(size = 10) Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.ok(requestService.getByOfficer(officerId, pageable)));
+        return ResponseEntity.ok(ApiResponse.ok(requestService.getByOfficerSecured(officerId, pageable)));
     }
 
     @GetMapping("/{id}")
@@ -102,6 +105,19 @@ public class MaintenanceRequestController {
                 requestService.cancel(id, dto != null ? dto : new CancelRequestDto())));
     }
 
+    @PatchMapping("/{id}/accept-schedule")
+    @PreAuthorize("hasRole('TENANT')")
+    public ResponseEntity<ApiResponse<MaintenanceRequestResponse>> acceptSchedule(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.ok(requestService.acceptSchedule(id)));
+    }
+
+    @PatchMapping("/{id}/reject-schedule")
+    @PreAuthorize("hasRole('TENANT')")
+    public ResponseEntity<ApiResponse<MaintenanceRequestResponse>> rejectSchedule(
+            @PathVariable Long id, @Valid @RequestBody RejectScheduleDto dto) {
+        return ResponseEntity.ok(ApiResponse.ok(requestService.rejectSchedule(id, dto)));
+    }
+
     @PostMapping("/{id}/visit-report")
     @PreAuthorize("hasAnyRole('MAINTENANCE_OFFICER')")
     public ResponseEntity<ApiResponse<VisitReportResponse>> submitVisitReport(
@@ -113,6 +129,19 @@ public class MaintenanceRequestController {
     @GetMapping("/{id}/visit-report")
     public ResponseEntity<ApiResponse<VisitReportResponse>> getVisitReport(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok(requestService.getVisitReport(id)));
+    }
+
+    @PostMapping("/{id}/rating")
+    @PreAuthorize("hasRole('TENANT')")
+    public ResponseEntity<ApiResponse<VisitRatingResponse>> submitRating(
+            @PathVariable Long id, @Valid @RequestBody VisitRatingRequest dto) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok(ratingService.submitRating(id, dto)));
+    }
+
+    @GetMapping("/{id}/rating")
+    public ResponseEntity<ApiResponse<VisitRatingResponse>> getRating(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.ok(ratingService.getRating(id)));
     }
 
     @GetMapping("/{id}/attachments")

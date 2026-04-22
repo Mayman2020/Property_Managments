@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+﻿import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { NgIf } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
@@ -8,15 +8,18 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { TranslateModule } from '@ngx-translate/core';
+
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { PropertyService } from '../../../core/services/property.service';
 import { SnackService } from '../../../core/services/snack.service';
+import { I18nService } from '../../../core/i18n/i18n.service';
 
 @Component({
   selector: 'app-property-form',
   standalone: true,
   imports: [
-    NgIf, ReactiveFormsModule, RouterLink,
+    NgIf, ReactiveFormsModule, RouterLink, TranslateModule,
     MatFormFieldModule, MatInputModule, MatSelectModule,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule,
     PageHeaderComponent
@@ -29,15 +32,16 @@ export class PropertyFormComponent {
   submitting = false;
 
   readonly types = [
-    { value: 'RESIDENTIAL', label: 'سكني' },
-    { value: 'COMMERCIAL', label: 'تجاري' },
-    { value: 'MIXED', label: 'مختلط' }
+    { value: 'RESIDENTIAL' },
+    { value: 'COMMERCIAL' },
+    { value: 'MIXED' }
   ];
 
   constructor(
     private readonly fb: FormBuilder,
     private readonly propertySvc: PropertyService,
     private readonly snack: SnackService,
+    private readonly i18n: I18nService,
     private readonly router: Router
   ) {
     this.form = this.fb.group({
@@ -46,7 +50,7 @@ export class PropertyFormComponent {
       propertyType: ['RESIDENTIAL', Validators.required],
       address: ['', Validators.required],
       city: [''],
-      country: ['السعودية'],
+      country: [this.i18n.currentLang === 'ar' ? 'سلطنة عمان' : 'Oman'],
       totalFloors: [1],
       description: [''],
       ownerId: [null, Validators.required]
@@ -57,8 +61,15 @@ export class PropertyFormComponent {
     if (this.form.invalid || this.submitting) return;
     this.submitting = true;
     this.propertySvc.create(this.form.value).subscribe({
-      next: () => { this.submitting = false; this.snack.success('تم إضافة العقار'); void this.router.navigateByUrl('/admin/properties'); },
-      error: (err: Error) => { this.submitting = false; this.snack.error(err.message || 'فشل إضافة العقار'); }
+      next: () => {
+        this.submitting = false;
+        this.snack.success(this.i18n.instant('PROPERTY_FORM.SAVE_SUCCESS'));
+        void this.router.navigateByUrl('/admin/properties');
+      },
+      error: (err: Error) => {
+        this.submitting = false;
+        this.snack.error(err.message || this.i18n.instant('PROPERTY_FORM.SAVE_ERROR'));
+      }
     });
   }
 }

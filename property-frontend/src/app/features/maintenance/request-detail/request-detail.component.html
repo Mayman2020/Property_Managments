@@ -5,90 +5,246 @@
     <app-page-header
       [title]="request.requestNumber"
       [subtitle]="request.title"
-      [breadcrumbs]="[{label:'الصيانة', route:auth.getDashboardRoute()}, {label:request.requestNumber}]">
+      [breadcrumbs]="[{label:('NAV.MAINTENANCE' | translate), route:auth.getDashboardRoute()}, {label:request.requestNumber}]">
       <span class="status-badge" [attr.data-status]="request.status">{{ statusLabel(request.status) }}</span>
-      <span class="priority-badge" [class]="request.priority">{{ request.priority }}</span>
-      <button mat-stroked-button *ngIf="auth.isAdmin()" [routerLink]="['.', 'assign']">
-        <span class="material-icons">person_add</span>
-        تعيين ضابط
-      </button>
-      <button mat-flat-button *ngIf="auth.isOfficer()" [routerLink]="['visit-report']">
-        <span class="material-icons">assignment_turned_in</span>
-        تقرير الزيارة
-      </button>
+      <span class="priority-badge" [class]="request.priority">{{ priorityLabel(request.priority) }}</span>
     </app-page-header>
 
+    <!-- Workflow action panels -->
+    <div class="action-panels">
+
+      <!-- ADMIN: Assign Officer -->
+      <div class="app-card action-card" *ngIf="canAssign">
+        <div class="app-card-header action-card-header">
+          <span class="material-icons">person_add</span>
+          <span class="app-card-title">{{ 'MAINTENANCE.ASSIGN_OFFICER' | translate }}</span>
+          <button mat-icon-button (click)="showAssignPanel = !showAssignPanel">
+            <mat-icon>{{ showAssignPanel ? 'expand_less' : 'expand_more' }}</mat-icon>
+          </button>
+        </div>
+        <div class="app-card-body" *ngIf="showAssignPanel" [formGroup]="assignForm">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ 'MAINTENANCE.SELECT_OFFICER' | translate }}</mat-label>
+            <mat-select formControlName="officerId">
+              <mat-option *ngFor="let o of officers" [value]="o.id">{{ o.fullName }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <div class="action-btns">
+            <button mat-flat-button color="primary" [disabled]="assignForm.invalid || actionLoading" (click)="assign()">
+              <mat-icon>check</mat-icon> {{ 'COMMON.SAVE' | translate }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ADMIN / OFFICER: Schedule Visit -->
+      <div class="app-card action-card" *ngIf="canSchedule">
+        <div class="app-card-header action-card-header">
+          <span class="material-icons">event</span>
+          <span class="app-card-title">{{ 'MAINTENANCE.SCHEDULE_VISIT' | translate }}</span>
+          <button mat-icon-button (click)="showSchedulePanel = !showSchedulePanel">
+            <mat-icon>{{ showSchedulePanel ? 'expand_less' : 'expand_more' }}</mat-icon>
+          </button>
+        </div>
+        <div class="app-card-body" *ngIf="showSchedulePanel" [formGroup]="scheduleForm">
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'MAINTENANCE.VISIT_DATE' | translate }}</mat-label>
+            <input matInput [matDatepicker]="dp" formControlName="scheduledDate">
+            <mat-datepicker-toggle matIconSuffix [for]="dp"></mat-datepicker-toggle>
+            <mat-datepicker #dp></mat-datepicker>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'MAINTENANCE.TIME_FROM' | translate }}</mat-label>
+            <input matInput type="time" formControlName="scheduledTimeFrom">
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'MAINTENANCE.TIME_TO' | translate }}</mat-label>
+            <input matInput type="time" formControlName="scheduledTimeTo">
+          </mat-form-field>
+          <div class="action-btns">
+            <button mat-flat-button color="primary" [disabled]="scheduleForm.invalid || actionLoading" (click)="scheduleVisit()">
+              <mat-icon>check</mat-icon> {{ 'COMMON.SAVE' | translate }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TENANT: Accept / Reject Schedule -->
+      <div class="app-card action-card accent-card" *ngIf="canAcceptReject">
+        <div class="app-card-header action-card-header">
+          <span class="material-icons">event_available</span>
+          <span class="app-card-title">{{ 'MAINTENANCE.CONFIRM_SCHEDULE' | translate }}</span>
+        </div>
+        <div class="app-card-body">
+          <div class="schedule-preview">
+            <span class="material-icons">calendar_today</span>
+            <div>
+              <strong>{{ request.scheduledDate | date:'fullDate' }}</strong>
+              <span *ngIf="request.scheduledTimeFrom">{{ request.scheduledTimeFrom }} — {{ request.scheduledTimeTo }}</span>
+            </div>
+          </div>
+          <div class="action-btns">
+            <button mat-flat-button color="primary" [disabled]="actionLoading" (click)="acceptSchedule()">
+              <mat-icon>check_circle</mat-icon> {{ 'MAINTENANCE.ACCEPT_SCHEDULE' | translate }}
+            </button>
+            <button mat-stroked-button color="warn" (click)="showRejectPanel = !showRejectPanel">
+              <mat-icon>cancel</mat-icon> {{ 'MAINTENANCE.REJECT_SCHEDULE' | translate }}
+            </button>
+          </div>
+          <div *ngIf="showRejectPanel" [formGroup]="rejectForm" class="reject-form">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>{{ 'MAINTENANCE.REJECTION_REASON' | translate }}</mat-label>
+              <textarea matInput formControlName="rejectionNote" rows="3"></textarea>
+            </mat-form-field>
+            <button mat-flat-button color="warn" [disabled]="rejectForm.invalid || actionLoading" (click)="rejectSchedule()">
+              {{ 'MAINTENANCE.CONFIRM_REJECT' | translate }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- OFFICER: Start Work -->
+      <div class="app-card action-card" *ngIf="canStart">
+        <div class="app-card-header action-card-header">
+          <span class="material-icons">construction</span>
+          <span class="app-card-title">{{ 'MAINTENANCE.START_WORK' | translate }}</span>
+        </div>
+        <div class="app-card-body">
+          <p class="action-hint">{{ 'MAINTENANCE.START_WORK_HINT' | translate }}</p>
+          <div class="action-btns">
+            <button mat-flat-button color="primary" [disabled]="actionLoading" (click)="startWork()">
+              <mat-icon>play_arrow</mat-icon> {{ 'MAINTENANCE.START_WORK' | translate }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- OFFICER: Submit Visit Report -->
+      <div class="app-card action-card" *ngIf="canSubmitReport">
+        <div class="app-card-header action-card-header">
+          <span class="material-icons">assignment_turned_in</span>
+          <span class="app-card-title">{{ 'MAINTENANCE.VISIT_REPORT' | translate }}</span>
+        </div>
+        <div class="app-card-body">
+          <div class="action-btns">
+            <a mat-flat-button color="primary" [routerLink]="['visit-report']">
+              <mat-icon>edit_note</mat-icon> {{ 'MAINTENANCE.SUBMIT_REPORT' | translate }}
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- TENANT: Rate Visit -->
+      <div class="app-card action-card accent-card" *ngIf="canRate">
+        <div class="app-card-header action-card-header">
+          <span class="material-icons">star</span>
+          <span class="app-card-title">{{ 'RATING.TITLE' | translate }}</span>
+          <button mat-icon-button (click)="showRatingPanel = !showRatingPanel">
+            <mat-icon>{{ showRatingPanel ? 'expand_less' : 'expand_more' }}</mat-icon>
+          </button>
+        </div>
+        <div class="app-card-body" *ngIf="showRatingPanel" [formGroup]="ratingForm">
+          <div class="stars-row">
+            <button *ngFor="let s of ratingStars" mat-icon-button type="button" (click)="setRating(s)">
+              <mat-icon [class.star-filled]="(ratingForm.value.rating ?? 0) >= s">star</mat-icon>
+            </button>
+          </div>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ 'RATING.COMMENT' | translate }}</mat-label>
+            <textarea matInput formControlName="comment" rows="3"></textarea>
+          </mat-form-field>
+          <div class="action-btns">
+            <button mat-flat-button color="primary" [disabled]="ratingForm.invalid || actionLoading" (click)="submitRating()">
+              <mat-icon>send</mat-icon> {{ 'RATING.SUBMIT' | translate }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Details grid -->
     <div class="detail-grid">
-      <!-- Main Info -->
       <div class="app-card">
-        <div class="app-card-header"><span class="app-card-title">تفاصيل الطلب</span></div>
+        <div class="app-card-header"><span class="app-card-title">{{ 'REQUEST_DETAIL.DETAILS' | translate }}</span></div>
         <div class="app-card-body">
           <div class="info-grid">
             <div class="info-item">
-              <label>رقم الطلب</label>
+              <label>{{ 'MAINTENANCE.REQUEST_NUMBER' | translate }}</label>
               <span class="mono">{{ request.requestNumber }}</span>
             </div>
             <div class="info-item">
-              <label>تاريخ الإنشاء</label>
+              <label>{{ 'REQUEST_DETAIL.CREATED_AT' | translate }}</label>
               <span>{{ request.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
             </div>
             <div class="info-item">
-              <label>المستأجر</label>
+              <label>{{ 'REQUEST_DETAIL.TENANT' | translate }}</label>
               <span>{{ request.tenantName || '—' }}</span>
             </div>
             <div class="info-item">
-              <label>العقار / الوحدة</label>
-              <span>{{ request.propertyName }} — وحدة {{ request.unitNumber }}</span>
+              <label>{{ 'REQUEST_DETAIL.PROPERTY_UNIT' | translate }}</label>
+              <span>{{ request.propertyName }} — {{ 'REQUEST_LIST.UNIT' | translate }} {{ request.unitNumber }}</span>
             </div>
             <div class="info-item">
-              <label>الفئة</label>
+              <label>{{ 'MAINTENANCE.CATEGORY' | translate }}</label>
               <span>{{ request.categoryNameAr || '—' }}</span>
             </div>
             <div class="info-item">
-              <label>الأولوية</label>
-              <span class="priority-badge" [class]="request.priority">{{ request.priority }}</span>
+              <label>{{ 'MAINTENANCE.PRIORITY' | translate }}</label>
+              <span class="priority-badge" [class]="request.priority">{{ priorityLabel(request.priority) }}</span>
             </div>
             <div class="info-item full">
-              <label>وصف المشكلة</label>
+              <label>{{ 'REQUEST_DETAIL.ISSUE_DESC' | translate }}</label>
               <p class="desc-text">{{ request.description }}</p>
             </div>
             <div class="info-item" *ngIf="request.tenantNotes">
-              <label>ملاحظات المستأجر</label>
+              <label>{{ 'REQUEST_DETAIL.TENANT_NOTES' | translate }}</label>
               <span>{{ request.tenantNotes }}</span>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Schedule -->
       <div class="app-card">
-        <div class="app-card-header"><span class="app-card-title">جدولة الزيارة</span></div>
+        <div class="app-card-header"><span class="app-card-title">{{ 'REQUEST_DETAIL.SCHEDULE' | translate }}</span></div>
         <div class="app-card-body">
           <div *ngIf="!request.scheduledDate" class="card-empty">
             <span class="material-icons">event_busy</span>
-            <span>لم تُجدَّل الزيارة بعد</span>
+            <span>{{ 'REQUEST_DETAIL.NOT_SCHEDULED' | translate }}</span>
           </div>
           <div class="schedule-info" *ngIf="request.scheduledDate">
             <div class="schedule-row">
               <span class="material-icons">calendar_today</span>
               <div>
-                <strong>التاريخ</strong>
+                <strong>{{ 'REQUEST_DETAIL.DATE' | translate }}</strong>
                 <span>{{ request.scheduledDate | date:'fullDate' }}</span>
               </div>
             </div>
             <div class="schedule-row" *ngIf="request.scheduledTimeFrom">
               <span class="material-icons">schedule</span>
               <div>
-                <strong>الوقت</strong>
+                <strong>{{ 'REQUEST_DETAIL.TIME' | translate }}</strong>
                 <span>{{ request.scheduledTimeFrom }} — {{ request.scheduledTimeTo }}</span>
               </div>
             </div>
             <div class="schedule-row" *ngIf="request.assignedOfficerName">
               <span class="material-icons">engineering</span>
               <div>
-                <strong>المسؤول</strong>
+                <strong>{{ 'REQUEST_DETAIL.OFFICER' | translate }}</strong>
                 <span>{{ request.assignedOfficerName }}</span>
               </div>
+            </div>
+            <div class="schedule-row" *ngIf="request.scheduleAccepted != null">
+              <span class="material-icons" [class.color-success]="request.scheduleAccepted" [class.color-error]="!request.scheduleAccepted">
+                {{ request.scheduleAccepted ? 'check_circle' : 'cancel' }}
+              </span>
+              <div>
+                <strong>{{ 'REQUEST_DETAIL.SCHEDULE_STATUS' | translate }}</strong>
+                <span>{{ (request.scheduleAccepted ? 'MAINTENANCE.ACCEPTED' : 'MAINTENANCE.REJECTED') | translate }}</span>
+              </div>
+            </div>
+            <div class="info-item" *ngIf="request.scheduleRejectionNote">
+              <label>{{ 'MAINTENANCE.REJECTION_REASON' | translate }}</label>
+              <span class="color-error">{{ request.scheduleRejectionNote }}</span>
             </div>
           </div>
         </div>

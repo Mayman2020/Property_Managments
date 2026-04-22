@@ -1,0 +1,54 @@
+<div class="app-page">
+  <app-page-header
+    [title]="'RATINGS_DASHBOARD.TITLE' | translate"
+    [subtitle]="'RATINGS_DASHBOARD.SUBTITLE' | translate"
+    [breadcrumbs]="[
+      { label: ('NAV.DASHBOARD' | translate), route: '/admin/dashboard' },
+      { label: ('NAV.RATINGS' | translate) }
+    ]">
+  </app-page-header>
+
+  <div class="loading-center" *ngIf="loading">
+    <mat-spinner diameter="48"></mat-spinner>
+  </div>
+
+  <ng-container *ngIf="!loading && summary">
+    <div class="ratings-summary-row">
+      <div class="app-card summary-card">
+        <div class="summary-label">{{ 'RATING.AVERAGE' | translate }}</div>
+        <div class="summary-value">
+          <span class="material-icons star-main">star</span>
+          {{ summary.averageRating | number:'1.1-2' }}
+        </div>
+        <div class="summary-hint">{{ 'RATINGS_DASHBOARD.OUT_OF_FIVE' | translate }}</div>
+      </div>
+      <div class="app-card summary-card">
+        <div class="summary-label">{{ 'RATING.TOTAL' | translate }}</div>
+        <div class="summary-value plain">{{ summary.totalRatings }}</div>
+        <div class="summary-hint">{{ 'RATINGS_DASHBOARD.VISITS_RATED' | translate }}</div>
+      </div>
+    </div>
+
+    <div class="app-card distribution-card">
+      <h2 class="section-title">{{ 'RATING.DISTRIBUTION' | translate }}</h2>
+      <ng-container *ngIf="summary.totalRatings > 0">
+        <div class="bar-row" *ngFor="let star of stars">
+          <div class="bar-label">
+            <span *ngFor="let _ of starRange(star)" class="material-icons tiny-star">star</span>
+            <span class="star-num">{{ star }}</span>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill" [style.width.%]="barWidth(star)"></div>
+          </div>
+          <div class="bar-count">{{ starCount(star) }}</div>
+        </div>
+      </ng-container>
+      <app-empty-state
+        *ngIf="summary.totalRatings === 0"
+        icon="star_border"
+        [title]="'RATINGS_DASHBOARD.NO_RATINGS_TITLE' | translate"
+        [message]="'RATINGS_DASHBOARD.NO_RATINGS_MSG' | translate">
+      </app-empty-state>
+    </div>
+  </ng-container>
+</div>

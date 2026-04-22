@@ -1,6 +1,6 @@
 <header class="topbar">
   <div class="topbar-start">
-    <button class="topbar-toggle" (click)="sidebarToggle.emit()" matTooltip="Toggle menu">
+    <button class="topbar-toggle" (click)="sidebarToggle.emit()" [matTooltip]="'TOPBAR.TOGGLE_MENU' | translate">
       <span class="material-icons">{{ sidebarCollapsed ? 'menu_open' : 'menu' }}</span>
     </button>
     <span class="topbar-title">{{ pageTitle }}</span>
@@ -8,33 +8,34 @@
 
   <div class="topbar-end">
     <!-- Lang -->
-    <button class="tb-action-btn" [matMenuTriggerFor]="langMenu" matTooltip="Language">
-      <span class="lang-flag">{{ activeLanguage.flag }}</span>
-      <span class="lang-code">{{ activeLanguage.code | uppercase }}</span>
+    <button class="tb-action-btn" [matMenuTriggerFor]="langMenu" [matTooltip]="'TOPBAR.LANGUAGE' | translate">
+      <img class="flag" [src]="activeLanguage.flagUrl" [attr.alt]="languageLabel(activeLanguage)">
+      <span class="lang-name">{{ languageNativeLabel(activeLanguage) }}</span>
     </button>
     <mat-menu #langMenu>
       <button mat-menu-item *ngFor="let lang of languages" (click)="switchLang(lang)">
-        <span>{{ lang.flag }}</span>&nbsp; {{ lang.nativeLabel }}
+        <img class="flag" [src]="lang.flagUrl" [attr.alt]="languageLabel(lang)">
+        <span>{{ languageNativeLabel(lang) }}</span>
       </button>
     </mat-menu>
 
     <!-- Theme -->
-    <button class="tb-action-btn" (click)="toggleTheme()" [matTooltip]="(theme.isDark$ | async) ? 'Light mode' : 'Dark mode'">
+    <button class="tb-action-btn" (click)="toggleTheme()" [matTooltip]="((theme.isDark$ | async) ? ('TOPBAR.LIGHT_MODE' | translate) : ('TOPBAR.DARK_MODE' | translate))">
       <span class="material-icons">{{ (theme.isDark$ | async) ? 'light_mode' : 'dark_mode' }}</span>
     </button>
 
     <!-- Notifications -->
-    <button class="tb-action-btn tb-notify-btn" [matMenuTriggerFor]="notifyMenu" matTooltip="Notifications">
+    <button class="tb-action-btn tb-notify-btn" [matMenuTriggerFor]="notifyMenu" [matTooltip]="'NOTIFICATIONS.TITLE' | translate">
       <span class="material-icons">notifications</span>
       <span *ngIf="unreadCount > 0" class="tb-notify-count">{{ unreadCount }}</span>
     </button>
     <mat-menu #notifyMenu="matMenu" class="tb-notify-menu">
       <div class="tb-notify-header">
-        <strong>Notifications</strong>
-        <button class="tb-link-btn" (click)="markAllRead()">Mark all as read</button>
+        <strong>{{ 'NOTIFICATIONS.TITLE' | translate }}</strong>
+        <button class="tb-link-btn" (click)="markAllRead()">{{ 'NOTIFICATIONS.MARK_ALL_READ' | translate }}</button>
       </div>
       <mat-divider></mat-divider>
-      <div class="tb-notify-empty" *ngIf="notifications.length === 0">No notifications yet</div>
+      <div class="tb-notify-empty" *ngIf="notifications.length === 0">{{ 'NOTIFICATIONS.EMPTY' | translate }}</div>
       <button mat-menu-item *ngFor="let n of notifications" (click)="markAsRead(n)" class="tb-notify-item">
         <div class="tb-notify-item-content">
           <div class="tb-notify-title">
@@ -49,7 +50,7 @@
     <!-- User menu -->
     <button class="tb-user-btn" [matMenuTriggerFor]="userMenu">
       <div class="tb-avatar" *ngIf="!currentUser?.profileImageUrl">{{ currentUser?.initials || 'U' }}</div>
-      <img class="tb-avatar tb-avatar-img" *ngIf="currentUser?.profileImageUrl" [src]="currentUser?.profileImageUrl" alt="profile">
+      <img class="tb-avatar tb-avatar-img" *ngIf="currentUser?.profileImageUrl" [src]="currentUser?.profileImageUrl" [attr.alt]="'PROFILE.AVATAR_ALT' | translate">
       <span class="tb-user-name">{{ currentUser?.fullName }}</span>
       <span class="material-icons" style="font-size:16px; opacity:0.6">expand_more</span>
     </button>
@@ -62,11 +63,11 @@
       <mat-divider></mat-divider>
       <button mat-menu-item [routerLink]="profileRoute()">
         <span class="material-icons">person</span>
-        My Profile
+        {{ 'NAV.PROFILE' | translate }}
       </button>
       <button mat-menu-item (click)="logout()">
         <span class="material-icons">logout</span>
-        Logout
+        {{ 'AUTH.LOGOUT' | translate }}
       </button>
     </mat-menu>
   </div>

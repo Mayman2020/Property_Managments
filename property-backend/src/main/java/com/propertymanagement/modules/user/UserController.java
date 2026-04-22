@@ -2,6 +2,7 @@ package com.propertymanagement.modules.user;
 
 import com.propertymanagement.modules.user.dto.UserRequest;
 import com.propertymanagement.modules.user.dto.UserProfileUpdateRequest;
+import com.propertymanagement.modules.user.dto.ChangePasswordRequest;
 import com.propertymanagement.modules.user.dto.UserResponse;
 import com.propertymanagement.shared.response.ApiResponse;
 import jakarta.validation.Valid;
@@ -65,5 +66,13 @@ public class UserController {
     public ResponseEntity<ApiResponse<UserResponse>> updateMyProfile(
             @Valid @RequestBody UserProfileUpdateRequest request) {
         return ResponseEntity.ok(ApiResponse.ok(userService.updateMyProfile(request)));
+    }
+
+    @PutMapping("/me/change-password")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Void>> changeMyPassword(
+            @Valid @RequestBody ChangePasswordRequest request) {
+        userService.changeMyPassword(request);
+        return ResponseEntity.ok(ApiResponse.ok(null));
     }
 }

@@ -23,7 +23,8 @@ export const ADMIN_ROUTES: Routes = [
       },
       {
         path: 'maintenance',
-        loadComponent: () => import('../maintenance/request-list/request-list.component').then((m) => m.RequestListComponent)
+        loadComponent: () => import('../maintenance/request-list/request-list.component').then((m) => m.RequestListComponent),
+        data: { listContext: 'admin' }
       },
       {
         path: 'maintenance/new',
@@ -36,6 +37,18 @@ export const ADMIN_ROUTES: Routes = [
       {
         path: 'inventory',
         loadComponent: () => import('../inventory/inventory-list/inventory-list.component').then((m) => m.InventoryListComponent)
+      },
+      {
+        path: 'users',
+        loadComponent: () => import('../users/user-management.component').then((m) => m.UserManagementComponent)
+      },
+      {
+        path: 'ratings',
+        loadComponent: () => import('../ratings/ratings-dashboard.component').then((m) => m.RatingsDashboardComponent)
+      },
+      {
+        path: 'contractors',
+        loadComponent: () => import('../contractors/contractor-companies.component').then((m) => m.ContractorCompaniesComponent)
       },
       {
         path: 'profile',

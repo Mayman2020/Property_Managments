@@ -1,4 +1,5 @@
-import { Injectable } from '@angular/core';
+﻿import { Injectable } from '@angular/core';
+import { OverlayContainer } from '@angular/cdk/overlay';
 import { TranslateService } from '@ngx-translate/core';
 import { Observable } from 'rxjs';
 
@@ -10,7 +11,7 @@ export interface LanguageOption {
   label: string;
   nativeLabel: string;
   dir: Direction;
-  flag: string;
+  flagUrl: string;
 }
 
 const STORAGE_KEY = 'pm_lang';
@@ -18,11 +19,14 @@ const STORAGE_KEY = 'pm_lang';
 @Injectable({ providedIn: 'root' })
 export class I18nService {
   readonly languages: LanguageOption[] = [
-    { code: 'ar', label: 'Arabic', nativeLabel: 'العربية', dir: 'rtl', flag: '🇸🇦' },
-    { code: 'en', label: 'English', nativeLabel: 'English', dir: 'ltr', flag: '🇬🇧' }
+    { code: 'ar', label: 'Arabic (Oman)', nativeLabel: 'العربية (سلطنة عُمان)', dir: 'rtl', flagUrl: 'assets/flags/om.svg' },
+    { code: 'en', label: 'English', nativeLabel: 'English', dir: 'ltr', flagUrl: 'assets/flags/gb.svg' }
   ];
 
-  constructor(private readonly translate: TranslateService) {
+  constructor(
+    private readonly translate: TranslateService,
+    private readonly overlayContainer: OverlayContainer
+  ) {
     const saved = (localStorage.getItem(STORAGE_KEY) as LangCode) || 'ar';
     this.translate.addLangs(['ar', 'en']);
     this.translate.setDefaultLang('ar');
@@ -53,8 +57,13 @@ export class I18nService {
 
   private applyLang(code: LangCode): void {
     const lang = this.languages.find((l) => l.code === code) ?? this.languages[0];
+    const htmlLang = code === 'ar' ? 'ar-OM' : 'en';
+
     document.documentElement.setAttribute('dir', lang.dir);
-    document.documentElement.setAttribute('lang', code);
+    document.documentElement.setAttribute('lang', htmlLang);
+    document.body.setAttribute('dir', lang.dir);
+    this.overlayContainer.getContainerElement().setAttribute('dir', lang.dir);
+
     this.translate.use(code);
   }
 }

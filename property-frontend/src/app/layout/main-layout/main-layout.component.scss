@@ -15,14 +15,12 @@
 .main-content {
   flex: 1;
   overflow-y: auto;
-  background: var(--bg-page);
+  background: transparent;
 }
 
 /* Sidebar overlay on mobile */
 @media (max-width: 768px) {
-  .app-shell {
-    position: relative;
-  }
+  .app-shell { position: relative; }
 
   app-sidebar {
     position: fixed;
@@ -31,18 +29,10 @@
     height: 100vh;
     z-index: 200;
     transform: translateX(-100%);
-    transition: transform 0.25s ease;
+    transition: transform .25s ease;
   }
+  .app-shell:not(.sidebar-collapsed) app-sidebar { transform: translateX(0); }
 
-  .app-shell:not(.sidebar-collapsed) app-sidebar {
-    transform: translateX(0);
-  }
-
-  [dir='rtl'] app-sidebar {
-    transform: translateX(100%);
-  }
-
-  [dir='rtl'] .app-shell:not(.sidebar-collapsed) app-sidebar {
-    transform: translateX(0);
-  }
+  [dir='rtl'] app-sidebar { transform: translateX(100%); }
+  [dir='rtl'] .app-shell:not(.sidebar-collapsed) app-sidebar { transform: translateX(0); }
 }

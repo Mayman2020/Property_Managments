@@ -12,11 +12,23 @@ export interface DashboardStats {
   inProgressRequests: number;
   completedThisMonth: number;
   lowStockItems: number;
+  requestsByStatus?: Record<string, number>;
+  requestsByCategory?: Record<string, number>;
 }
 
 export interface ChartDataPoint {
   label: string;
   value: number;
+}
+
+export interface RatingsSummary {
+  averageRating: number;
+  totalRatings: number;
+  oneStar: number;
+  twoStar: number;
+  threeStar: number;
+  fourStar: number;
+  fiveStar: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -37,5 +49,9 @@ export class DashboardService {
 
   getMonthlyTrend(): Observable<ApiResponse<ChartDataPoint[]>> {
     return this.api.get('/dashboard/monthly-trend');
+  }
+
+  getRatingsSummary(): Observable<ApiResponse<RatingsSummary>> {
+    return this.api.get('/dashboard/ratings-summary');
   }
 }

@@ -1,98 +1,157 @@
 <div class="app-page">
-
-  <!-- Welcome -->
   <div class="tenant-welcome">
     <div class="welcome-content">
       <div class="welcome-avatar">{{ currentUser?.initials || 'T' }}</div>
       <div>
-        <h1 class="welcome-title">مرحباً، {{ currentUser?.fullName || 'مستأجر' }}</h1>
-        <p class="welcome-sub">يمكنك تتبع طلبات الصيانة وإضافة طلبات جديدة من هنا.</p>
+        <h1 class="welcome-title">{{ 'TENANT_DASHBOARD.WELCOME' | translate }} {{ currentUser?.fullName || ('ROLE.TENANT' | translate) }}</h1>
+        <p class="welcome-sub">{{ 'TENANT_DASHBOARD.SUBTITLE' | translate }}</p>
       </div>
     </div>
     <button mat-flat-button routerLink="/tenant/new-request" class="welcome-btn">
       <span class="material-icons">add_circle</span>
-      طلب صيانة جديد
+      {{ 'MAINTENANCE.NEW_REQUEST' | translate }}
     </button>
   </div>
 
-  <!-- Quick Stats -->
+  <!-- Quick stats -->
   <div class="tenant-stats">
     <div class="ts-card">
       <span class="material-icons ts-icon pending">hourglass_empty</span>
       <div>
-        <div class="ts-value">{{ (requests | requestsByStatus:'PENDING').length }}</div>
-        <div class="ts-label">معلَّق</div>
+        <div class="ts-value">{{ currentRequests.length }}</div>
+        <div class="ts-label">{{ 'TENANT_DASHBOARD.ACTIVE' | translate }}</div>
       </div>
     </div>
     <div class="ts-card">
       <span class="material-icons ts-icon scheduled">event</span>
       <div>
-        <div class="ts-value">{{ (requests | requestsByStatus:'SCHEDULED').length }}</div>
-        <div class="ts-label">مُجدوَل</div>
+        <div class="ts-value">{{ scheduledCount }}</div>
+        <div class="ts-label">{{ 'STATUS.SCHEDULED' | translate }}</div>
       </div>
     </div>
     <div class="ts-card">
       <span class="material-icons ts-icon progress">construction</span>
       <div>
-        <div class="ts-value">{{ (requests | requestsByStatus:'IN_PROGRESS').length }}</div>
-        <div class="ts-label">جاري</div>
+        <div class="ts-value">{{ inProgressCount }}</div>
+        <div class="ts-label">{{ 'STATUS.IN_PROGRESS' | translate }}</div>
       </div>
     </div>
     <div class="ts-card">
       <span class="material-icons ts-icon done">task_alt</span>
       <div>
-        <div class="ts-value">{{ (requests | requestsByStatus:'COMPLETED').length }}</div>
-        <div class="ts-label">مكتمل</div>
+        <div class="ts-value">{{ previousRequests.length }}</div>
+        <div class="ts-label">{{ 'TENANT_DASHBOARD.CLOSED' | translate }}</div>
       </div>
     </div>
   </div>
 
-  <!-- Loading -->
   <div class="loading-center" *ngIf="loading"><mat-spinner diameter="40"></mat-spinner></div>
 
-  <!-- Requests Timeline -->
-  <div class="app-card" *ngIf="!loading">
-    <div class="app-card-header">
-      <span class="app-card-title">طلباتي</span>
-      <a class="view-all" routerLink="/tenant/requests">عرض الكل ←</a>
-    </div>
+  <div class="tenant-link-alert app-card" *ngIf="!loading && missingTenantLink">
+    <span class="material-icons">link_off</span>
+    <p>{{ 'REQUEST_LIST.NO_TENANT_LINK' | translate }}</p>
+  </div>
 
-    <app-empty-state
-      *ngIf="requests.length === 0"
-      icon="build_circle"
-      title="لا توجد طلبات سابقة"
-      message="لم ترسل أي طلب صيانة حتى الآن. ابدأ بإرسال طلبك الأول!">
-      <button mat-flat-button routerLink="/tenant/new-request" style="margin-top: 16px">
-        <span class="material-icons">add</span> طلب جديد
-      </button>
-    </app-empty-state>
+  <div class="app-card requests-card" *ngIf="!loading && !missingTenantLink">
+    <mat-tab-group animationDuration="200ms" class="requests-tabs">
 
-    <div class="timeline" *ngIf="requests.length > 0">
-      <div class="timeline-item" *ngFor="let req of requests">
-        <div class="tl-icon" [attr.data-status]="req.status">
-          <span class="material-icons">{{ statusIcon(req.status) }}</span>
-        </div>
-        <div class="tl-content">
-          <div class="tl-header">
-            <span class="tl-number">{{ req.requestNumber }}</span>
-            <span class="status-badge" [attr.data-status]="req.status">{{ statusLabel(req.status) }}</span>
-            <span class="priority-badge" [class]="req.priority">{{ req.priority }}</span>
+      <!-- Current requests tab -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <span class="material-icons tab-icon">pending_actions</span>
+          {{ 'TENANT_DASHBOARD.CURRENT_REQUESTS' | translate }}
+          <span class="tab-count" *ngIf="currentRequests.length > 0">{{ currentRequests.length }}</span>
+        </ng-template>
+
+        <app-empty-state
+          *ngIf="currentRequests.length === 0"
+          icon="check_circle_outline"
+          [title]="'TENANT_DASHBOARD.NO_CURRENT_TITLE' | translate"
+          [message]="'TENANT_DASHBOARD.NO_CURRENT_MSG' | translate">
+          <button mat-flat-button routerLink="/tenant/new-request" style="margin-top: 16px">
+            <span class="material-icons">add</span> {{ 'NAV.NEW_REQUEST' | translate }}
+          </button>
+        </app-empty-state>
+
+        <div class="timeline" *ngIf="currentRequests.length > 0">
+          <div class="timeline-item" *ngFor="let req of currentRequests">
+            <div class="tl-icon" [attr.data-status]="req.status">
+              <span class="material-icons">{{ statusIcon(req.status) }}</span>
+            </div>
+            <div class="tl-content">
+              <div class="tl-header">
+                <span class="tl-number">{{ req.requestNumber }}</span>
+                <span class="status-badge" [attr.data-status]="req.status">{{ statusLabel(req.status) }}</span>
+                <span class="priority-badge" [class]="req.priority">{{ priorityLabel(req.priority) }}</span>
+              </div>
+              <h4 class="tl-title">{{ req.title }}</h4>
+              <p class="tl-desc">{{ req.description }}</p>
+              <div class="tl-footer">
+                <span class="tl-date">
+                  <span class="material-icons">calendar_today</span>
+                  {{ req.createdAt | date:'dd MMM yyyy' }}
+                </span>
+                <span class="tl-schedule" *ngIf="req.scheduledDate">
+                  <span class="material-icons">event</span>
+                  {{ 'TENANT_DASHBOARD.VISIT' | translate }}: {{ req.scheduledDate | date:'dd/MM' }}
+                </span>
+                <span class="tl-schedule schedule-accepted" *ngIf="req.scheduleAccepted === true">
+                  <span class="material-icons">check_circle</span>
+                  {{ 'MAINTENANCE.ACCEPTED' | translate }}
+                </span>
+                <span class="tl-schedule schedule-rejected" *ngIf="req.scheduleAccepted === false">
+                  <span class="material-icons">cancel</span>
+                  {{ 'MAINTENANCE.REJECTED' | translate }}
+                </span>
+                <a class="tl-detail-link" [routerLink]="['/tenant/requests', req.id]">{{ 'ACTIONS.DETAILS' | translate }}</a>
+              </div>
+            </div>
           </div>
-          <h4 class="tl-title">{{ req.title }}</h4>
-          <p class="tl-desc">{{ req.description }}</p>
-          <div class="tl-footer">
-            <span class="tl-date">
-              <span class="material-icons">calendar_today</span>
-              {{ req.createdAt | date:'dd MMM yyyy' }}
-            </span>
-            <span class="tl-schedule" *ngIf="req.scheduledDate">
-              <span class="material-icons">event</span>
-              الزيارة: {{ req.scheduledDate | date:'dd/MM' }}
-            </span>
-            <a class="tl-detail-link" [routerLink]="['/tenant/requests', req.id]">التفاصيل →</a>
+        </div>
+      </mat-tab>
+
+      <!-- Previous requests tab -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <span class="material-icons tab-icon">history</span>
+          {{ 'TENANT_DASHBOARD.PREVIOUS_REQUESTS' | translate }}
+          <span class="tab-count" *ngIf="previousRequests.length > 0">{{ previousRequests.length }}</span>
+        </ng-template>
+
+        <app-empty-state
+          *ngIf="previousRequests.length === 0"
+          icon="build_circle"
+          [title]="'TENANT_DASHBOARD.EMPTY_TITLE' | translate"
+          [message]="'TENANT_DASHBOARD.EMPTY_MESSAGE' | translate">
+        </app-empty-state>
+
+        <div class="timeline" *ngIf="previousRequests.length > 0">
+          <div class="timeline-item" *ngFor="let req of previousRequests">
+            <div class="tl-icon" [attr.data-status]="req.status">
+              <span class="material-icons">{{ statusIcon(req.status) }}</span>
+            </div>
+            <div class="tl-content">
+              <div class="tl-header">
+                <span class="tl-number">{{ req.requestNumber }}</span>
+                <span class="status-badge" [attr.data-status]="req.status">{{ statusLabel(req.status) }}</span>
+              </div>
+              <h4 class="tl-title">{{ req.title }}</h4>
+              <div class="tl-footer">
+                <span class="tl-date">
+                  <span class="material-icons">calendar_today</span>
+                  {{ req.createdAt | date:'dd MMM yyyy' }}
+                </span>
+                <span class="tl-date" *ngIf="req.closedAt">
+                  <span class="material-icons">check</span>
+                  {{ req.closedAt | date:'dd MMM yyyy' }}
+                </span>
+                <a class="tl-detail-link" [routerLink]="['/tenant/requests', req.id]">{{ 'ACTIONS.DETAILS' | translate }}</a>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
+      </mat-tab>
+
+    </mat-tab-group>
   </div>
 </div>

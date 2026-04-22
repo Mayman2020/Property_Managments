@@ -46,6 +46,12 @@ public class PropertyController {
         return ResponseEntity.ok(ApiResponse.ok(propertyService.update(id, request)));
     }
 
+    @PatchMapping("/{id}/toggle-active")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<ApiResponse<PropertyResponse>> toggleActive(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.ok(propertyService.toggleActive(id)));
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {

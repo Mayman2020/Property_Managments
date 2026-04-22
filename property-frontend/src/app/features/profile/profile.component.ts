@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NgIf } from '@angular/common';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -6,10 +6,13 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { RouterLink } from '@angular/router';
+import { TranslateModule } from '@ngx-translate/core';
+
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { SnackService } from '../../core/services/snack.service';
 import { UserProfileService } from '../../core/services/user-profile.service';
 import { AuthService } from '../../core/services/auth.service';
+import { I18nService } from '../../core/i18n/i18n.service';
 
 @Component({
   selector: 'app-profile',
@@ -18,6 +21,7 @@ import { AuthService } from '../../core/services/auth.service';
     NgIf,
     ReactiveFormsModule,
     RouterLink,
+    TranslateModule,
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
@@ -29,20 +33,29 @@ import { AuthService } from '../../core/services/auth.service';
 })
 export class ProfileComponent implements OnInit {
   form: FormGroup;
+  passwordForm: FormGroup;
   loading = false;
   saving = false;
+  changingPassword = false;
 
   constructor(
     private readonly fb: FormBuilder,
     private readonly profileService: UserProfileService,
     private readonly auth: AuthService,
-    private readonly snack: SnackService
+    private readonly snack: SnackService,
+    private readonly i18n: I18nService
   ) {
     this.form = this.fb.group({
       fullName: ['', [Validators.required, Validators.maxLength(150)]],
       phone: ['', [Validators.maxLength(20)]],
       profileImageUrl: ['', [Validators.maxLength(600)]],
       bio: ['', [Validators.maxLength(2000)]]
+    });
+
+    this.passwordForm = this.fb.group({
+      currentPassword: ['', [Validators.required]],
+      newPassword: ['', [Validators.required, Validators.minLength(6)]],
+      confirmPassword: ['', [Validators.required]]
     });
   }
 
@@ -61,7 +74,7 @@ export class ProfileComponent implements OnInit {
       },
       error: () => {
         this.loading = false;
-        this.snack.error('Failed to load profile');
+        this.snack.error(this.i18n.instant('PROFILE.LOAD_ERROR'));
       }
     });
   }
@@ -83,11 +96,34 @@ export class ProfileComponent implements OnInit {
           };
           localStorage.setItem('pm_current_user', JSON.stringify(updated));
         }
-        this.snack.success('Profile updated successfully');
+        this.snack.success(this.i18n.instant('PROFILE.SAVE_SUCCESS'));
       },
       error: () => {
         this.saving = false;
-        this.snack.error('Failed to update profile');
+        this.snack.error(this.i18n.instant('PROFILE.SAVE_ERROR'));
+      }
+    });
+  }
+
+  changePassword(): void {
+    if (this.passwordForm.invalid || this.changingPassword) return;
+
+    const { newPassword, confirmPassword } = this.passwordForm.getRawValue();
+    if (newPassword !== confirmPassword) {
+      this.snack.error(this.i18n.instant('PROFILE.PASSWORD_MISMATCH'));
+      return;
+    }
+
+    this.changingPassword = true;
+    this.profileService.changeMyPassword(this.passwordForm.getRawValue()).subscribe({
+      next: () => {
+        this.changingPassword = false;
+        this.passwordForm.reset();
+        this.snack.success(this.i18n.instant('PROFILE.PASSWORD_CHANGED'));
+      },
+      error: (err: Error) => {
+        this.changingPassword = false;
+        this.snack.error(err.message || this.i18n.instant('PROFILE.PASSWORD_CHANGE_ERROR'));
       }
     });
   }

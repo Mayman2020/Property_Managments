@@ -34,4 +34,10 @@ public interface MaintenanceRequestRepository extends JpaRepository<MaintenanceR
 
     @Query("SELECT r.categoryId, COUNT(r) FROM MaintenanceRequest r WHERE r.propertyId = :pid GROUP BY r.categoryId")
     List<Object[]> countByCategoryForProperty(@Param("pid") Long propertyId);
+
+    @Query("SELECT r.categoryId, COUNT(r) FROM MaintenanceRequest r GROUP BY r.categoryId")
+    List<Object[]> countByCategoryGrouped();
+
+    @Query("SELECT YEAR(r.createdAt), MONTH(r.createdAt), COUNT(r) FROM MaintenanceRequest r WHERE r.createdAt >= :since GROUP BY YEAR(r.createdAt), MONTH(r.createdAt) ORDER BY YEAR(r.createdAt), MONTH(r.createdAt)")
+    List<Object[]> countByMonth(@Param("since") LocalDateTime since);
 }

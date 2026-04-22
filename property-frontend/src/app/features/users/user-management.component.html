@@ -1,0 +1,134 @@
+<div class="app-page">
+  <app-page-header
+    [title]="'USER_MGMT.TITLE' | translate"
+    [subtitle]="'USER_MGMT.SUBTITLE' | translate"
+    [breadcrumbs]="[{label:('NAV.DASHBOARD' | translate), route:'/admin/dashboard'}, {label:('NAV.USERS' | translate)}]">
+    <button mat-flat-button type="button" (click)="startCreate()">
+      <span class="material-icons">person_add</span>
+      {{ 'USER_MGMT.ADD_USER' | translate }}
+    </button>
+  </app-page-header>
+
+  <div class="loading-center" *ngIf="loading">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <div class="surface-glow user-form-card" *ngIf="showForm && !loading">
+    <h3>{{ (isEditing() ? 'USER_MGMT.EDIT_USER' : 'USER_MGMT.NEW_USER') | translate }}</h3>
+
+    <form [formGroup]="form" (ngSubmit)="save()">
+      <div class="form-grid">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>{{ 'USER_MGMT.USERNAME' | translate }}</mat-label>
+          <input matInput formControlName="username">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>{{ 'AUTH.EMAIL' | translate }}</mat-label>
+          <input matInput formControlName="email" type="email">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>{{ 'AUTH.PASSWORD' | translate }}</mat-label>
+          <input matInput formControlName="password" type="password">
+          <mat-hint *ngIf="isEditing()">{{ 'USER_MGMT.PASSWORD_HINT' | translate }}</mat-hint>
+          <mat-error *ngIf="form.get('password')?.hasError('required')">{{ 'LOGIN.PASSWORD_REQUIRED' | translate }}</mat-error>
+          <mat-error *ngIf="form.get('password')?.hasError('minlength')">{{ 'LOGIN.PASSWORD_MIN' | translate }}</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>{{ 'PROFILE.FULL_NAME' | translate }}</mat-label>
+          <input matInput formControlName="fullName">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>{{ 'PROFILE.PHONE' | translate }}</mat-label>
+          <input matInput formControlName="phone">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>{{ 'USER_MGMT.ROLE' | translate }}</mat-label>
+          <mat-select formControlName="role">
+            <mat-option *ngFor="let role of roleOptions" [value]="role">{{ roleLabel(role) }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width"
+          *ngIf="form.get('role')?.value === 'TENANT' || form.get('role')?.value === 'PROPERTY_ADMIN'">
+          <mat-label>{{ 'REQUEST_FORM.PROPERTY' | translate }}</mat-label>
+          <mat-select formControlName="propertyId">
+            <mat-option *ngFor="let p of properties" [value]="p.id">
+              {{ p.propertyName }} ({{ p.propertyCode }})
+            </mat-option>
+          </mat-select>
+          <mat-error *ngIf="form.get('propertyId')?.hasError('required')">{{ 'REQUEST_FORM.PROPERTY_REQUIRED' | translate }}</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width" *ngIf="form.get('role')?.value === 'MAINTENANCE_OFFICER'">
+          <mat-label>{{ 'USER_MGMT.OFFICER_TYPE' | translate }}</mat-label>
+          <mat-select formControlName="maintenanceOfficerType">
+            <mat-option *ngFor="let type of officerTypeOptions" [value]="type">{{ officerTypeLabel(type) }}</mat-option>
+          </mat-select>
+          <mat-error *ngIf="form.get('maintenanceOfficerType')?.hasError('required')">{{ 'USER_MGMT.OFFICER_TYPE_REQUIRED' | translate }}</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width"
+          *ngIf="form.get('role')?.value === 'MAINTENANCE_OFFICER' && form.get('maintenanceOfficerType')?.value === 'CONTRACTOR_COMPANY'">
+          <mat-label>{{ 'USER_MGMT.COMPANY_NAME' | translate }}</mat-label>
+          <input matInput formControlName="maintenanceCompanyName">
+          <mat-error *ngIf="form.get('maintenanceCompanyName')?.hasError('required')">{{ 'USER_MGMT.COMPANY_REQUIRED' | translate }}</mat-error>
+        </mat-form-field>
+      </div>
+
+      <div class="form-actions">
+        <button mat-stroked-button type="button" (click)="cancelForm()">{{ 'ACTIONS.CANCEL' | translate }}</button>
+        <button mat-flat-button type="submit" [disabled]="form.invalid || saving">
+          <mat-spinner *ngIf="saving" diameter="18"></mat-spinner>
+          <span *ngIf="!saving">{{ isEditing() ? ('ACTIONS.EDIT' | translate) : ('ACTIONS.ADD' | translate) }}</span>
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div class="users-grid" *ngIf="!loading">
+    <div class="user-card surface-glow" *ngFor="let user of users">
+      <div class="user-row">
+        <div class="user-main">
+          <h4>{{ user.fullName }}</h4>
+          <p>{{ user.email }}</p>
+          <p class="muted">{{ user.username }}</p>
+        </div>
+        <div class="status-chip" [class.inactive]="!user.isActive">
+          {{ (user.isActive ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') | translate }}
+        </div>
+      </div>
+
+      <div class="meta-row">
+        <span><strong>{{ 'USER_MGMT.ROLE' | translate }}:</strong> {{ roleLabel(user.role) }}</span>
+      </div>
+      <div class="meta-row" *ngIf="user.propertyId">
+        <span><strong>{{ 'REQUEST_FORM.PROPERTY' | translate }}:</strong> {{ propertyName(user.propertyId) }}</span>
+      </div>
+      <div class="meta-row" *ngIf="user.role === 'MAINTENANCE_OFFICER'">
+        <span><strong>{{ 'USER_MGMT.OFFICER_TYPE' | translate }}:</strong> {{ officerTypeLabel(user.maintenanceOfficerType) }}</span>
+      </div>
+      <div class="meta-row" *ngIf="user.maintenanceCompanyName">
+        <span><strong>{{ 'USER_MGMT.COMPANY_NAME' | translate }}:</strong> {{ user.maintenanceCompanyName }}</span>
+      </div>
+      <div class="meta-row">
+        <span><strong>{{ 'REQUEST_LIST.CREATED_AT' | translate }}:</strong> {{ user.createdAt | date:'yyyy-MM-dd HH:mm' }}</span>
+      </div>
+
+      <div class="user-actions">
+        <button mat-stroked-button type="button" (click)="startEdit(user)">
+          <span class="material-icons">edit</span>
+          {{ 'ACTIONS.EDIT' | translate }}
+        </button>
+        <button mat-flat-button type="button" (click)="toggleActive(user)" [disabled]="togglingIds.has(user.id)">
+          <span class="material-icons">{{ user.isActive ? 'person_off' : 'person' }}</span>
+          {{ (user.isActive ? 'USER_MGMT.DEACTIVATE' : 'USER_MGMT.ACTIVATE') | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

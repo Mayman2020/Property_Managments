@@ -1,69 +1,69 @@
-<div class="app-page">
+﻿<div class="app-page">
   <app-page-header
-    title="إضافة عقار جديد"
-    [breadcrumbs]="[{label:'الرئيسية', route:'/admin/dashboard'}, {label:'العقارات', route:'/admin/properties'}, {label:'إضافة'}]">
+    [title]="'PROPERTY_FORM.TITLE' | translate"
+    [breadcrumbs]="[{label:('NAV.DASHBOARD' | translate), route:'/admin/dashboard'}, {label:('NAV.PROPERTIES' | translate), route:'/admin/properties'}, {label:('ACTIONS.ADD' | translate)}]">
   </app-page-header>
 
   <div class="form-card">
     <form [formGroup]="form" (ngSubmit)="submit()">
       <div class="form-grid">
         <mat-form-field appearance="outline">
-          <mat-label>اسم العقار</mat-label>
+          <mat-label>{{ 'PROPERTY_FORM.PROPERTY_NAME' | translate }}</mat-label>
           <input matInput formControlName="propertyName">
-          <mat-error *ngIf="form.get('propertyName')?.invalid">مطلوب</mat-error>
+          <mat-error *ngIf="form.get('propertyName')?.invalid">{{ 'COMMON.REQUIRED' | translate }}</mat-error>
         </mat-form-field>
 
         <mat-form-field appearance="outline">
-          <mat-label>كود العقار</mat-label>
+          <mat-label>{{ 'PROPERTY_FORM.PROPERTY_CODE' | translate }}</mat-label>
           <input matInput formControlName="propertyCode" placeholder="PROP-001">
-          <mat-error *ngIf="form.get('propertyCode')?.invalid">مطلوب</mat-error>
+          <mat-error *ngIf="form.get('propertyCode')?.invalid">{{ 'COMMON.REQUIRED' | translate }}</mat-error>
         </mat-form-field>
 
         <mat-form-field appearance="outline">
-          <mat-label>نوع العقار</mat-label>
+          <mat-label>{{ 'PROPERTY_FORM.PROPERTY_TYPE' | translate }}</mat-label>
           <mat-select formControlName="propertyType">
-            <mat-option *ngFor="let t of types" [value]="t.value">{{ t.label }}</mat-option>
+            <mat-option *ngFor="let t of types" [value]="t.value">{{ ('PROPERTY_TYPE.' + t.value) | translate }}</mat-option>
           </mat-select>
         </mat-form-field>
 
         <mat-form-field appearance="outline">
-          <mat-label>عدد الأدوار</mat-label>
+          <mat-label>{{ 'PROPERTY_FORM.TOTAL_FLOORS' | translate }}</mat-label>
           <input matInput formControlName="totalFloors" type="number" min="1">
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="full-col">
-          <mat-label>العنوان</mat-label>
+          <mat-label>{{ 'PROPERTY_FORM.ADDRESS' | translate }}</mat-label>
           <input matInput formControlName="address">
-          <mat-error *ngIf="form.get('address')?.invalid">مطلوب</mat-error>
+          <mat-error *ngIf="form.get('address')?.invalid">{{ 'COMMON.REQUIRED' | translate }}</mat-error>
         </mat-form-field>
 
         <mat-form-field appearance="outline">
-          <mat-label>المدينة</mat-label>
+          <mat-label>{{ 'PROPERTY_FORM.CITY' | translate }}</mat-label>
           <input matInput formControlName="city">
         </mat-form-field>
 
         <mat-form-field appearance="outline">
-          <mat-label>الدولة</mat-label>
+          <mat-label>{{ 'PROPERTY_FORM.COUNTRY' | translate }}</mat-label>
           <input matInput formControlName="country">
         </mat-form-field>
 
         <mat-form-field appearance="outline">
-          <mat-label>رقم المالك</mat-label>
+          <mat-label>{{ 'PROPERTY_FORM.OWNER_ID' | translate }}</mat-label>
           <input matInput formControlName="ownerId" type="number">
-          <mat-error *ngIf="form.get('ownerId')?.invalid">مطلوب</mat-error>
+          <mat-error *ngIf="form.get('ownerId')?.invalid">{{ 'COMMON.REQUIRED' | translate }}</mat-error>
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="full-col">
-          <mat-label>الوصف</mat-label>
+          <mat-label>{{ 'PROPERTY_FORM.DESCRIPTION' | translate }}</mat-label>
           <textarea matInput formControlName="description" rows="3"></textarea>
         </mat-form-field>
       </div>
 
       <div class="form-actions">
-        <button mat-stroked-button type="button" routerLink="/admin/properties">إلغاء</button>
+        <button mat-stroked-button type="button" routerLink="/admin/properties">{{ 'ACTIONS.CANCEL' | translate }}</button>
         <button mat-flat-button type="submit" [disabled]="form.invalid || submitting">
           <mat-spinner *ngIf="submitting" diameter="18"></mat-spinner>
-          <span *ngIf="!submitting">حفظ العقار</span>
+          <span *ngIf="!submitting">{{ 'PROPERTY_FORM.SAVE_BUTTON' | translate }}</span>
         </button>
       </div>
     </form>

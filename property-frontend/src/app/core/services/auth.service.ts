@@ -33,6 +33,9 @@ export class AuthService {
             bio: userDto.bio,
             role: userDto.role,
             propertyId: userDto.propertyId,
+            tenantId: userDto.tenantId,
+            maintenanceOfficerType: userDto.maintenanceOfficerType,
+            maintenanceCompanyName: userDto.maintenanceCompanyName,
             initials: this.buildInitials(userDto.fullName)
           };
           this.tokenStorage.setUser(user);

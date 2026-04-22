@@ -1,24 +1,25 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { NgFor, NgIf, DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { TranslateModule } from '@ngx-translate/core';
+
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
-import { StatCardComponent } from '../../shared/components/stat-card/stat-card.component';
-import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { DashboardService, DashboardStats } from '../../core/services/dashboard.service';
 import { MaintenanceService, MaintenanceRequest } from '../../core/services/maintenance.service';
 import { InventoryService, InventoryItem } from '../../core/services/inventory.service';
 import { AuthService } from '../../core/services/auth.service';
+import { I18nService } from '../../core/i18n/i18n.service';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
   imports: [
-    NgFor, NgIf, DecimalPipe, RouterLink,
+    NgFor, NgIf, DecimalPipe, RouterLink, TranslateModule,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule,
-    PageHeaderComponent, StatCardComponent, EmptyStateComponent
+    PageHeaderComponent
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
@@ -33,6 +34,7 @@ export class DashboardComponent implements OnInit {
     private readonly dashSvc: DashboardService,
     private readonly maintSvc: MaintenanceService,
     private readonly invSvc: InventoryService,
+    private readonly i18n: I18nService,
     readonly auth: AuthService
   ) {}
 
@@ -44,18 +46,32 @@ export class DashboardComponent implements OnInit {
     this.loading = true;
 
     this.dashSvc.getStats().subscribe({
-      next: (res) => { this.stats = res.data; },
-      error: () => { this.stats = this.mockStats(); }
+      next: (res) => {
+        this.stats = res.data;
+      },
+      error: () => {
+        this.stats = null;
+      }
     });
 
     this.maintSvc.getRequests({ page: 0, size: 6 }).subscribe({
-      next: (res) => { this.recentRequests = res.data?.content ?? []; },
-      error: () => { this.recentRequests = []; }
+      next: (res) => {
+        this.recentRequests = res.data?.content ?? [];
+      },
+      error: () => {
+        this.recentRequests = [];
+      }
     });
 
     this.invSvc.getLowStock().subscribe({
-      next: (res) => { this.lowStockItems = res.data ?? []; this.loading = false; },
-      error: () => { this.lowStockItems = []; this.loading = false; }
+      next: (res) => {
+        this.lowStockItems = res.data ?? [];
+        this.loading = false;
+      },
+      error: () => {
+        this.lowStockItems = [];
+        this.loading = false;
+      }
     });
   }
 
@@ -65,15 +81,7 @@ export class DashboardComponent implements OnInit {
   }
 
   statusLabel(status: string): string {
-    const map: Record<string, string> = {
-      PENDING: 'قيد الانتظار', ASSIGNED: 'مُسنَّد', SCHEDULED: 'مُجدوَل',
-      IN_PROGRESS: 'جاري', COMPLETED: 'مكتمل', CANCELLED: 'ملغي',
-      TENANT_ABSENT: 'غائب', NEEDS_REVISIT: 'تحتاج مراجعة'
-    };
-    return map[status] ?? status;
+    return this.i18n.instant(`STATUS.${status}`);
   }
 
-  private mockStats(): DashboardStats {
-    return { totalProperties: 12, totalUnits: 148, rentedUnits: 121, vacantUnits: 27, pendingRequests: 8, inProgressRequests: 3, completedThisMonth: 24, lowStockItems: 2 };
-  }
 }

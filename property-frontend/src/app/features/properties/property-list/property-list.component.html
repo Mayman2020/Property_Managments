@@ -1,11 +1,11 @@
-<div class="app-page">
+﻿<div class="app-page">
   <app-page-header
-    title="إدارة العقارات"
-    subtitle="قائمة جميع العقارات المسجَّلة في النظام"
-    [breadcrumbs]="[{label:'الرئيسية', route:'/admin/dashboard'}, {label:'العقارات'}]">
+    [title]="'PROPERTY_LIST.TITLE' | translate"
+    [subtitle]="'PROPERTY_LIST.SUBTITLE' | translate"
+    [breadcrumbs]="[{label:('NAV.DASHBOARD' | translate), route:'/admin/dashboard'}, {label:('NAV.PROPERTIES' | translate)}]">
     <button mat-flat-button routerLink="/admin/properties/new">
       <span class="material-icons">add</span>
-      إضافة عقار
+      {{ 'PROPERTY_LIST.ADD_PROPERTY' | translate }}
     </button>
   </app-page-header>
 
@@ -16,10 +16,10 @@
   <app-empty-state
     *ngIf="!loading && properties.length === 0"
     icon="apartment"
-    title="لا توجد عقارات"
-    message="لم تُضَف أي عقارات بعد. ابدأ بإضافة عقارك الأول.">
+    [title]="'PROPERTY_LIST.EMPTY_TITLE' | translate"
+    [message]="'PROPERTY_LIST.EMPTY_MESSAGE' | translate">
     <button mat-flat-button routerLink="/admin/properties/new" style="margin-top: 16px">
-      <span class="material-icons">add</span> إضافة عقار
+      <span class="material-icons">add</span> {{ 'PROPERTY_LIST.ADD_PROPERTY' | translate }}
     </button>
   </app-empty-state>
 
@@ -33,7 +33,7 @@
           {{ typeLabel(prop.propertyType) }}
         </div>
         <div class="property-status-dot" [class.active]="prop.isActive" [class.inactive]="!prop.isActive"
-             [matTooltip]="prop.isActive ? 'نشط' : 'غير نشط'"></div>
+             [matTooltip]="(prop.isActive ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') | translate"></div>
       </div>
 
       <div class="property-body">
@@ -48,24 +48,24 @@
         <div class="property-stats">
           <div class="pstat">
             <span class="pstat-value">{{ prop.totalFloors }}</span>
-            <span class="pstat-label">أدوار</span>
+            <span class="pstat-label">{{ 'PROPERTY_LIST.FLOORS' | translate }}</span>
           </div>
           <div class="pstat">
             <span class="pstat-value">{{ prop.totalUnits }}</span>
-            <span class="pstat-label">وحدة</span>
+            <span class="pstat-label">{{ 'PROPERTY_LIST.UNITS' | translate }}</span>
           </div>
           <div class="pstat">
             <span class="pstat-value">{{ prop.ownerName || '—' }}</span>
-            <span class="pstat-label">المالك</span>
+            <span class="pstat-label">{{ 'PROPERTY_LIST.OWNER' | translate }}</span>
           </div>
         </div>
 
         <div class="property-actions">
           <a mat-stroked-button [routerLink]="['/admin/properties', prop.id]">
             <span class="material-icons">visibility</span>
-            التفاصيل
+            {{ 'ACTIONS.VIEW' | translate }}
           </a>
-          <a mat-icon-button class="app-icon-btn" [routerLink]="['/admin/properties', prop.id, 'edit']" matTooltip="تعديل">
+          <a mat-icon-button class="app-icon-btn" [routerLink]="['/admin/properties', prop.id, 'edit']" [matTooltip]="'ACTIONS.EDIT' | translate">
             <span class="material-icons">edit</span>
           </a>
         </div>

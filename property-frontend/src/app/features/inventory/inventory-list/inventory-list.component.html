@@ -1,15 +1,15 @@
-<div class="app-page">
+﻿<div class="app-page">
   <app-page-header
-    title="إدارة المخزن"
-    subtitle="تتبع كميات المواد ومستلزمات الصيانة"
-    [breadcrumbs]="[{label:'الرئيسية', route:'/admin/dashboard'}, {label:'المخزن'}]">
+    [title]="'INVENTORY.TITLE' | translate"
+    [subtitle]="'INVENTORY.SUBTITLE' | translate"
+    [breadcrumbs]="[{label:('NAV.DASHBOARD' | translate), route:'/admin/dashboard'}, {label:('NAV.INVENTORY' | translate)}]">
     <button mat-flat-button>
       <span class="material-icons">add</span>
-      إضافة صنف
+      {{ 'INVENTORY.ADD_ITEM' | translate }}
     </button>
     <button mat-stroked-button>
       <span class="material-icons">swap_vert</span>
-      حركة مخزون
+      {{ 'INVENTORY.STOCK_MOVEMENT' | translate }}
     </button>
   </app-page-header>
 
@@ -18,8 +18,8 @@
   <app-empty-state
     *ngIf="!loading && items.length === 0"
     icon="inventory_2"
-    title="المخزن فارغ"
-    message="لا توجد أصناف مسجَّلة بعد.">
+    [title]="'INVENTORY.EMPTY_TITLE' | translate"
+    [message]="'INVENTORY.EMPTY_MESSAGE' | translate">
   </app-empty-state>
 
   <div class="app-card" *ngIf="!loading && items.length > 0">
@@ -27,15 +27,15 @@
       <table class="app-data-table">
         <thead>
           <tr>
-            <th>الكود</th>
-            <th>اسم الصنف</th>
-            <th>الوحدة</th>
-            <th>الكمية الحالية</th>
-            <th>حد التنبيه</th>
-            <th>المستوى</th>
-            <th>الموقع</th>
-            <th>الحالة</th>
-            <th>الإجراءات</th>
+            <th>{{ 'INVENTORY.ITEM_CODE' | translate }}</th>
+            <th>{{ 'INVENTORY.ITEM_NAME' | translate }}</th>
+            <th>{{ 'INVENTORY.UNIT' | translate }}</th>
+            <th>{{ 'INVENTORY.CURRENT_QTY' | translate }}</th>
+            <th>{{ 'INVENTORY.MIN_QUANTITY' | translate }}</th>
+            <th>{{ 'INVENTORY.LEVEL' | translate }}</th>
+            <th>{{ 'INVENTORY.LOCATION' | translate }}</th>
+            <th>{{ 'MAINTENANCE.STATUS' | translate }}</th>
+            <th>{{ 'REQUEST_LIST.ACTIONS' | translate }}</th>
           </tr>
         </thead>
         <tbody>
@@ -64,18 +64,18 @@
             <td>{{ item.location || '—' }}</td>
             <td>
               <span class="status-badge" [attr.data-status]="item.isLowStock ? 'URGENT' : 'COMPLETED'">
-                {{ item.isLowStock ? '⚠ منخفض' : '✓ كافٍ' }}
+                {{ item.isLowStock ? ('INVENTORY.LOW' | translate) : ('INVENTORY.OK' | translate) }}
               </span>
             </td>
             <td>
               <div class="action-btns">
-                <button class="app-icon-btn success" matTooltip="إضافة كمية">
+                <button class="app-icon-btn success" [matTooltip]="'INVENTORY.ADD_QTY' | translate">
                   <span class="material-icons">add</span>
                 </button>
-                <button class="app-icon-btn" matTooltip="تعديل">
+                <button class="app-icon-btn" [matTooltip]="'ACTIONS.EDIT' | translate">
                   <span class="material-icons">edit</span>
                 </button>
-                <button class="app-icon-btn" matTooltip="حركات المخزن">
+                <button class="app-icon-btn" [matTooltip]="'INVENTORY.TRANSACTIONS' | translate">
                   <span class="material-icons">history</span>
                 </button>
               </div>

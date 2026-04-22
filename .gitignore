@@ -1,12 +1,15 @@
 property-backend/target/
 property-backend/.idea/
 property-backend/.vscode/
+property-backend/run-backend.secrets.ps1
 
 property-frontend/node_modules/
 property-frontend/dist/
 property-frontend/.angular/
 property-frontend/.idea/
 property-frontend/.vscode/
+
+.runtime/
 
 **/.DS_Store
 **/Thumbs.db

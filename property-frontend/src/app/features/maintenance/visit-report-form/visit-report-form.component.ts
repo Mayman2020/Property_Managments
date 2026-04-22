@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { NgFor, NgIf } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -9,16 +9,19 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { TranslateModule } from '@ngx-translate/core';
+
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { UploadZoneComponent } from '../../../shared/components/upload-zone/upload-zone.component';
 import { MaintenanceService } from '../../../core/services/maintenance.service';
 import { SnackService } from '../../../core/services/snack.service';
+import { I18nService } from '../../../core/i18n/i18n.service';
 
 @Component({
   selector: 'app-visit-report-form',
   standalone: true,
   imports: [
-    NgFor, NgIf, ReactiveFormsModule, RouterLink,
+    NgFor, NgIf, ReactiveFormsModule, RouterLink, TranslateModule,
     MatFormFieldModule, MatInputModule, MatSelectModule,
     MatButtonModule, MatIconModule, MatCheckboxModule, MatProgressSpinnerModule,
     PageHeaderComponent, UploadZoneComponent
@@ -33,12 +36,12 @@ export class VisitReportFormComponent implements OnInit {
   receiptUrl = '';
 
   readonly outcomes = [
-    { value: 'COMPLETED', label: '✅ تمت الصيانة', icon: 'task_alt' },
-    { value: 'TENANT_ABSENT', label: '🚪 المستأجر غائب', icon: 'person_off' },
-    { value: 'NEEDS_PARTS', label: '🔧 يحتاج قطع غيار', icon: 'hardware' },
-    { value: 'NEEDS_REVISIT', label: '🔄 تحتاج زيارة أخرى', icon: 'replay' },
-    { value: 'CANCELLED_BY_TENANT', label: '❌ ألغى المستأجر', icon: 'cancel' },
-    { value: 'OTHER', label: 'أخرى', icon: 'more_horiz' }
+    { value: 'COMPLETED', labelKey: 'VISIT.OUTCOME_COMPLETED', icon: 'task_alt' },
+    { value: 'TENANT_ABSENT', labelKey: 'VISIT.OUTCOME_ABSENT', icon: 'person_off' },
+    { value: 'NEEDS_PARTS', labelKey: 'VISIT.OUTCOME_NEEDS_PARTS', icon: 'hardware' },
+    { value: 'NEEDS_REVISIT', labelKey: 'VISIT.OUTCOME_REVISIT', icon: 'replay' },
+    { value: 'CANCELLED_BY_TENANT', labelKey: 'VISIT.OUTCOME_CANCELLED_BY_TENANT', icon: 'cancel' },
+    { value: 'OTHER', labelKey: 'VISIT.OUTCOME_OTHER', icon: 'more_horiz' }
   ];
 
   constructor(
@@ -46,6 +49,7 @@ export class VisitReportFormComponent implements OnInit {
     private readonly route: ActivatedRoute,
     private readonly maintSvc: MaintenanceService,
     private readonly snack: SnackService,
+    private readonly i18n: I18nService,
     private readonly router: Router
   ) {
     this.form = this.fb.group({
@@ -63,8 +67,13 @@ export class VisitReportFormComponent implements OnInit {
     this.requestId = Number(this.route.snapshot.paramMap.get('id'));
   }
 
-  get hasPurchase(): boolean { return !!this.form.get('hasPurchase')?.value; }
-  onReceiptUploaded(urls: string[]): void { this.receiptUrl = urls[0] ?? ''; }
+  get hasPurchase(): boolean {
+    return !!this.form.get('hasPurchase')?.value;
+  }
+
+  onReceiptUploaded(urls: string[]): void {
+    this.receiptUrl = urls[0] ?? '';
+  }
 
   submit(): void {
     if (this.form.invalid || this.submitting) return;
@@ -76,10 +85,13 @@ export class VisitReportFormComponent implements OnInit {
     this.maintSvc.submitVisitReport(this.requestId, payload).subscribe({
       next: () => {
         this.submitting = false;
-        this.snack.success('تم حفظ تقرير الزيارة بنجاح');
+        this.snack.success(this.i18n.instant('VISIT.SAVE_SUCCESS'));
         void this.router.navigateByUrl('/officer/requests');
       },
-      error: (err: Error) => { this.submitting = false; this.snack.error(err.message || 'فشل حفظ التقرير'); }
+      error: (err: Error) => {
+        this.submitting = false;
+        this.snack.error(err.message || this.i18n.instant('VISIT.SAVE_ERROR'));
+      }
     });
   }
 }

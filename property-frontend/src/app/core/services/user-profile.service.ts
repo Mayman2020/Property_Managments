@@ -11,6 +11,12 @@ export interface UserProfileUpdateRequest {
   bio?: string;
 }
 
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class UserProfileService {
   constructor(private readonly api: ApiService) {}
@@ -21,5 +27,9 @@ export class UserProfileService {
 
   updateMyProfile(payload: UserProfileUpdateRequest): Observable<ApiResponse<User>> {
     return this.api.put('/users/me', payload);
+  }
+
+  changeMyPassword(payload: ChangePasswordRequest): Observable<ApiResponse<null>> {
+    return this.api.put('/users/me/change-password', payload);
   }
 }

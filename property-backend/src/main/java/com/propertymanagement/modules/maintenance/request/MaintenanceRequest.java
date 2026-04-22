@@ -69,6 +69,12 @@ public class MaintenanceRequest {
     @Column(name = "closed_at")
     private LocalDateTime closedAt;
 
+    @Column(name = "schedule_accepted")
+    private Boolean scheduleAccepted;
+
+    @Column(name = "schedule_rejection_note", columnDefinition = "TEXT")
+    private String scheduleRejectionNote;
+
     @CreatedBy
     @Column(name = "created_by", updatable = false)
     private Long createdBy;

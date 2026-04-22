@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -44,6 +45,30 @@ public class DashboardService {
                 .requestsByStatus(requestsByStatus)
                 .requestsByCategory(requestsByCategory)
                 .build();
+    }
+
+    public List<ChartDataPoint> getRequestsByStatus() {
+        return requestRepository.countByStatusGrouped().stream()
+                .map(row -> new ChartDataPoint(row[0].toString(), (Long) row[1]))
+                .collect(Collectors.toList());
+    }
+
+    public List<ChartDataPoint> getRequestsByCategory() {
+        return requestRepository.countByCategoryGrouped().stream()
+                .map(row -> new ChartDataPoint(String.valueOf(row[0]), (Long) row[1]))
+                .collect(Collectors.toList());
+    }
+
+    public List<ChartDataPoint> getMonthlyTrend() {
+        LocalDateTime since = LocalDateTime.now().minusMonths(6)
+                .withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
+        return requestRepository.countByMonth(since).stream()
+                .map(row -> {
+                    String label = row[0] + "-" + String.format("%02d", ((Number) row[1]).intValue());
+                    long count = ((Number) row[2]).longValue();
+                    return new ChartDataPoint(label, count);
+                })
+                .collect(Collectors.toList());
     }
 
     public DashboardStatsResponse getStatsByProperty(Long propertyId) {

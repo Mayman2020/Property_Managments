@@ -5,9 +5,14 @@ import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
-  private base = environment.apiUrl;
+  private base = this.resolveApiBase();
 
   constructor(private readonly http: HttpClient) {}
+
+  private resolveApiBase(): string {
+    const runtimeApi = (window as Window & { __PM_API_URL__?: string }).__PM_API_URL__;
+    return (runtimeApi && runtimeApi.trim()) ? runtimeApi : environment.apiUrl;
+  }
 
   get<T>(path: string, params?: Record<string, string | number | boolean>): Observable<T> {
     let httpParams = new HttpParams();

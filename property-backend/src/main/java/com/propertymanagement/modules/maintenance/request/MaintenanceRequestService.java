@@ -1,5 +1,6 @@
 package com.propertymanagement.modules.maintenance.request;
 
+import com.propertymanagement.modules.maintenance.category.MaintenanceCategoryRepository;
 import com.propertymanagement.modules.maintenance.request.dto.*;
 import com.propertymanagement.modules.maintenance.visit.VisitReport;
 import com.propertymanagement.modules.maintenance.visit.VisitReportItem;
@@ -9,7 +10,10 @@ import com.propertymanagement.modules.maintenance.visit.dto.VisitReportRequest;
 import com.propertymanagement.modules.maintenance.visit.dto.VisitReportResponse;
 import com.propertymanagement.modules.notification.NotificationService;
 import com.propertymanagement.modules.notification.NotificationType;
+import com.propertymanagement.modules.property.PropertyRepository;
 import com.propertymanagement.modules.tenant.TenantRepository;
+import com.propertymanagement.modules.unit.UnitRepository;
+import com.propertymanagement.modules.tenant.Tenant;
 import com.propertymanagement.modules.user.User;
 import com.propertymanagement.modules.user.UserRepository;
 import com.propertymanagement.modules.user.UserRole;
@@ -41,6 +45,9 @@ public class MaintenanceRequestService {
     private final NotificationService notificationService;
     private final UserRepository userRepository;
     private final TenantRepository tenantRepository;
+    private final PropertyRepository propertyRepository;
+    private final UnitRepository unitRepository;
+    private final MaintenanceCategoryRepository categoryRepository;
 
     public Page<MaintenanceRequestResponse> getAll(Pageable pageable) {
         return requestRepository.findAll(pageable).map(this::toResponse);
@@ -54,8 +61,35 @@ public class MaintenanceRequestService {
         return requestRepository.findByTenantId(tenantId, pageable).map(this::toResponse);
     }
 
+    public Page<MaintenanceRequestResponse> getByTenantSecured(Long tenantId, Pageable pageable) {
+        User user = requireUser();
+        if (user.getRole() == UserRole.TENANT) {
+            Long ownTenantId = tenantRepository.findByUserId(user.getId())
+                    .map(Tenant::getId)
+                    .orElseThrow(() -> AppException.forbidden("Tenant profile is not linked to this account"));
+            if (!ownTenantId.equals(tenantId)) {
+                throw AppException.forbidden("Access denied");
+            }
+        } else if (user.getRole() != UserRole.SUPER_ADMIN && user.getRole() != UserRole.PROPERTY_ADMIN) {
+            throw AppException.forbidden("Access denied");
+        }
+        return getByTenant(tenantId, pageable);
+    }
+
     public Page<MaintenanceRequestResponse> getByOfficer(Long officerId, Pageable pageable) {
         return requestRepository.findByAssignedTo(officerId, pageable).map(this::toResponse);
+    }
+
+    public Page<MaintenanceRequestResponse> getByOfficerSecured(Long officerId, Pageable pageable) {
+        User user = requireUser();
+        if (user.getRole() == UserRole.MAINTENANCE_OFFICER) {
+            if (!user.getId().equals(officerId)) {
+                throw AppException.forbidden("Access denied");
+            }
+        } else if (user.getRole() != UserRole.SUPER_ADMIN && user.getRole() != UserRole.PROPERTY_ADMIN) {
+            throw AppException.forbidden("Access denied");
+        }
+        return getByOfficer(officerId, pageable);
     }
 
     public Page<MaintenanceRequestResponse> getByStatus(RequestStatus status, Pageable pageable) {
@@ -63,7 +97,40 @@ public class MaintenanceRequestService {
     }
 
     public MaintenanceRequestResponse getById(Long id) {
-        return toResponse(find(id));
+        MaintenanceRequest request = find(id);
+        assertCanView(request);
+        return toResponse(request);
+    }
+
+    private void assertCanView(MaintenanceRequest request) {
+        User user = requireUser();
+        switch (user.getRole()) {
+            case SUPER_ADMIN -> { /* ok */ }
+            case PROPERTY_ADMIN -> {
+                if (user.getPropertyId() != null && !user.getPropertyId().equals(request.getPropertyId())) {
+                    throw AppException.forbidden("Access denied");
+                }
+            }
+            case TENANT -> {
+                tenantRepository.findByUserId(user.getId())
+                        .filter(t -> t.getId().equals(request.getTenantId()))
+                        .orElseThrow(() -> AppException.forbidden("Access denied"));
+            }
+            case MAINTENANCE_OFFICER -> {
+                if (request.getAssignedTo() == null || !request.getAssignedTo().equals(user.getId())) {
+                    throw AppException.forbidden("Access denied");
+                }
+            }
+            default -> throw AppException.forbidden("Access denied");
+        }
+    }
+
+    private User requireUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof User user && user.getId() != null) {
+            return user;
+        }
+        throw AppException.forbidden("Authenticated user is required");
     }
 
     @Transactional
@@ -74,7 +141,7 @@ public class MaintenanceRequestService {
                 .propertyId(dto.getPropertyId())
                 .unitId(dto.getUnitId())
                 .tenantId(dto.getTenantId())
-                .categoryId(dto.getCategoryId())
+                .categoryId(dto.getResolvedCategoryId())
                 .title(dto.getTitle())
                 .description(dto.getDescription())
                 .priority(dto.getPriority() != null ? dto.getPriority() : RequestPriority.NORMAL)
@@ -105,8 +172,37 @@ public class MaintenanceRequestService {
         request.setScheduledTimeFrom(dto.getScheduledTimeFrom());
         request.setScheduledTimeTo(dto.getScheduledTimeTo());
         request.setStatus(RequestStatus.SCHEDULED);
+        request.setScheduleAccepted(null);
+        request.setScheduleRejectionNote(null);
         MaintenanceRequest saved = requestRepository.save(request);
         notifyRequestScheduled(saved);
+        return toResponse(saved);
+    }
+
+    @Transactional
+    public MaintenanceRequestResponse acceptSchedule(Long id) {
+        MaintenanceRequest request = find(id);
+        if (request.getStatus() != RequestStatus.SCHEDULED) {
+            throw AppException.badRequest("Request must be in SCHEDULED status to accept schedule");
+        }
+        request.setScheduleAccepted(true);
+        request.setScheduleRejectionNote(null);
+        MaintenanceRequest saved = requestRepository.save(request);
+        notifyScheduleAccepted(saved);
+        return toResponse(saved);
+    }
+
+    @Transactional
+    public MaintenanceRequestResponse rejectSchedule(Long id, RejectScheduleDto dto) {
+        MaintenanceRequest request = find(id);
+        if (request.getStatus() != RequestStatus.SCHEDULED) {
+            throw AppException.badRequest("Request must be in SCHEDULED status to reject schedule");
+        }
+        request.setScheduleAccepted(false);
+        request.setScheduleRejectionNote(dto.getRejectionNote());
+        request.setStatus(RequestStatus.ASSIGNED);
+        MaintenanceRequest saved = requestRepository.save(request);
+        notifyScheduleRejected(saved);
         return toResponse(saved);
     }
 
@@ -116,7 +212,7 @@ public class MaintenanceRequestService {
         validateTransition(request.getStatus(), RequestStatus.IN_PROGRESS);
         request.setStatus(RequestStatus.IN_PROGRESS);
         MaintenanceRequest saved = requestRepository.save(request);
-        notifyRequestCancelled(saved);
+        notifyWorkStarted(saved);
         return toResponse(saved);
     }
 
@@ -131,6 +227,7 @@ public class MaintenanceRequestService {
         if (dto.getReason() != null) {
             request.setTenantNotes(dto.getReason());
         }
+        notifyRequestCancelled(request);
         return toResponse(requestRepository.save(request));
     }
 
@@ -219,21 +316,14 @@ public class MaintenanceRequestService {
     }
 
     private Long currentUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getPrincipal() instanceof User user && user.getId() != null) {
-            return user.getId();
-        }
-        throw AppException.forbidden("Authenticated user is required");
+        return requireUser().getId();
     }
 
     private void notifyRequestCreated(MaintenanceRequest request) {
         List<Long> recipientIds = propertyAdminIds(request.getPropertyId());
         if (recipientIds.isEmpty()) return;
         notificationService.createForRecipients(
-                recipientIds,
-                currentUserId(),
-                request.getPropertyId(),
-                request.getId(),
+                recipientIds, currentUserId(), request.getPropertyId(), request.getId(),
                 NotificationType.REQUEST_CREATED,
                 "New maintenance request",
                 "Request " + request.getRequestNumber() + " has been created."
@@ -242,16 +332,11 @@ public class MaintenanceRequestService {
 
     private void notifyRequestAssigned(MaintenanceRequest request) {
         List<Long> recipientIds = new ArrayList<>();
-        if (request.getAssignedTo() != null) {
-            recipientIds.add(request.getAssignedTo());
-        }
+        if (request.getAssignedTo() != null) recipientIds.add(request.getAssignedTo());
         tenantUserId(request.getTenantId()).ifPresent(recipientIds::add);
         if (recipientIds.isEmpty()) return;
         notificationService.createForRecipients(
-                recipientIds,
-                currentUserId(),
-                request.getPropertyId(),
-                request.getId(),
+                recipientIds, currentUserId(), request.getPropertyId(), request.getId(),
                 NotificationType.REQUEST_ASSIGNED,
                 "Maintenance request assigned",
                 "Request " + request.getRequestNumber() + " has been assigned."
@@ -260,19 +345,54 @@ public class MaintenanceRequestService {
 
     private void notifyRequestScheduled(MaintenanceRequest request) {
         List<Long> recipientIds = new ArrayList<>();
-        if (request.getAssignedTo() != null) {
-            recipientIds.add(request.getAssignedTo());
-        }
         tenantUserId(request.getTenantId()).ifPresent(recipientIds::add);
         if (recipientIds.isEmpty()) return;
         notificationService.createForRecipients(
-                recipientIds,
-                currentUserId(),
-                request.getPropertyId(),
-                request.getId(),
+                recipientIds, currentUserId(), request.getPropertyId(), request.getId(),
                 NotificationType.REQUEST_SCHEDULED,
-                "Maintenance request scheduled",
-                "Request " + request.getRequestNumber() + " has been scheduled."
+                "Visit scheduled",
+                "A visit has been scheduled for request " + request.getRequestNumber()
+                        + " on " + request.getScheduledDate()
+        );
+    }
+
+    private void notifyScheduleAccepted(MaintenanceRequest request) {
+        List<Long> recipientIds = new ArrayList<>();
+        if (request.getAssignedTo() != null) recipientIds.add(request.getAssignedTo());
+        recipientIds.addAll(propertyAdminIds(request.getPropertyId()));
+        if (recipientIds.isEmpty()) return;
+        notificationService.createForRecipients(
+                recipientIds, currentUserId(), request.getPropertyId(), request.getId(),
+                NotificationType.REQUEST_SCHEDULE_ACCEPTED,
+                "Schedule accepted",
+                "Tenant accepted the visit schedule for request " + request.getRequestNumber()
+        );
+    }
+
+    private void notifyScheduleRejected(MaintenanceRequest request) {
+        List<Long> recipientIds = new ArrayList<>();
+        if (request.getAssignedTo() != null) recipientIds.add(request.getAssignedTo());
+        recipientIds.addAll(propertyAdminIds(request.getPropertyId()));
+        if (recipientIds.isEmpty()) return;
+        notificationService.createForRecipients(
+                recipientIds, currentUserId(), request.getPropertyId(), request.getId(),
+                NotificationType.REQUEST_SCHEDULE_REJECTED,
+                "Schedule rejected",
+                "Tenant rejected the visit schedule for request " + request.getRequestNumber()
+                        + ". Note: " + request.getScheduleRejectionNote()
+        );
+    }
+
+    private void notifyWorkStarted(MaintenanceRequest request) {
+        List<Long> recipientIds = new ArrayList<>();
+        tenantUserId(request.getTenantId()).ifPresent(recipientIds::add);
+        recipientIds.addAll(propertyAdminIds(request.getPropertyId()));
+        if (recipientIds.isEmpty()) return;
+        notificationService.createForRecipients(
+                recipientIds, currentUserId(), request.getPropertyId(), request.getId(),
+                NotificationType.REQUEST_ASSIGNED,
+                "Work started",
+                "Maintenance officer started work on request " + request.getRequestNumber()
         );
     }
 
@@ -281,29 +401,21 @@ public class MaintenanceRequestService {
         tenantUserId(request.getTenantId()).ifPresent(recipientIds::add);
         if (recipientIds.isEmpty()) return;
         notificationService.createForRecipients(
-                recipientIds,
-                currentUserId(),
-                request.getPropertyId(),
-                request.getId(),
+                recipientIds, currentUserId(), request.getPropertyId(), request.getId(),
                 NotificationType.REQUEST_VISIT_REPORTED,
                 "Visit report submitted",
                 "Visit report submitted for request " + request.getRequestNumber()
-                        + ". Current status: " + request.getStatus()
+                        + ". Status: " + request.getStatus()
         );
     }
 
     private void notifyRequestCancelled(MaintenanceRequest request) {
         List<Long> recipientIds = new ArrayList<>(propertyAdminIds(request.getPropertyId()));
-        if (request.getAssignedTo() != null) {
-            recipientIds.add(request.getAssignedTo());
-        }
+        if (request.getAssignedTo() != null) recipientIds.add(request.getAssignedTo());
         tenantUserId(request.getTenantId()).ifPresent(recipientIds::add);
         if (recipientIds.isEmpty()) return;
         notificationService.createForRecipients(
-                recipientIds,
-                currentUserId(),
-                request.getPropertyId(),
-                request.getId(),
+                recipientIds, currentUserId(), request.getPropertyId(), request.getId(),
                 NotificationType.REQUEST_CANCELLED,
                 "Maintenance request cancelled",
                 "Request " + request.getRequestNumber() + " has been cancelled."
@@ -321,9 +433,7 @@ public class MaintenanceRequestService {
     }
 
     private java.util.Optional<Long> tenantUserId(Long tenantId) {
-        if (tenantId == null) {
-            return java.util.Optional.empty();
-        }
+        if (tenantId == null) return java.util.Optional.empty();
         return tenantRepository.findById(tenantId).map(t -> t.getUserId()).filter(id -> id != null);
     }
 
@@ -333,6 +443,40 @@ public class MaintenanceRequestService {
     }
 
     private MaintenanceRequestResponse toResponse(MaintenanceRequest r) {
+        String tenantName = null;
+        if (r.getTenantId() != null) {
+            tenantName = tenantRepository.findById(r.getTenantId())
+                    .map(t -> t.getFullName()).orElse(null);
+        }
+
+        String assignedOfficerName = null;
+        if (r.getAssignedTo() != null) {
+            assignedOfficerName = userRepository.findById(r.getAssignedTo())
+                    .map(u -> u.getFullName()).orElse(null);
+        }
+
+        String propertyName = null;
+        if (r.getPropertyId() != null) {
+            propertyName = propertyRepository.findById(r.getPropertyId())
+                    .map(p -> p.getPropertyName()).orElse(null);
+        }
+
+        String unitNumber = null;
+        if (r.getUnitId() != null) {
+            unitNumber = unitRepository.findById(r.getUnitId())
+                    .map(u -> u.getUnitNumber()).orElse(null);
+        }
+
+        String categoryNameAr = null;
+        String categoryNameEn = null;
+        if (r.getCategoryId() != null) {
+            var cat = categoryRepository.findById(r.getCategoryId()).orElse(null);
+            if (cat != null) {
+                categoryNameAr = cat.getNameAr();
+                categoryNameEn = cat.getNameEn();
+            }
+        }
+
         return MaintenanceRequestResponse.builder()
                 .id(r.getId())
                 .requestNumber(r.getRequestNumber())
@@ -350,6 +494,14 @@ public class MaintenanceRequestService {
                 .scheduledTimeTo(r.getScheduledTimeTo())
                 .tenantNotes(r.getTenantNotes())
                 .closedAt(r.getClosedAt())
+                .scheduleAccepted(r.getScheduleAccepted())
+                .scheduleRejectionNote(r.getScheduleRejectionNote())
+                .tenantName(tenantName)
+                .assignedOfficerName(assignedOfficerName)
+                .propertyName(propertyName)
+                .unitNumber(unitNumber)
+                .categoryNameAr(categoryNameAr)
+                .categoryNameEn(categoryNameEn)
                 .createdAt(r.getCreatedAt())
                 .updatedAt(r.getUpdatedAt())
                 .build();

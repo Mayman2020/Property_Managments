@@ -1,6 +1,7 @@
 package com.propertymanagement.modules.user.dto;
 
 import com.propertymanagement.modules.user.UserRole;
+import com.propertymanagement.modules.user.MaintenanceOfficerType;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -21,4 +22,6 @@ public class UserRequest {
     @NotNull
     private UserRole role;
     private Long propertyId;
+    private MaintenanceOfficerType maintenanceOfficerType;
+    private String maintenanceCompanyName;
 }

@@ -55,3 +55,59 @@
 .app-card {
   animation: fadeUp 280ms ease both;
 }
+
+.requests-tabs-card {
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.requests-tabs {
+  ::ng-deep .mat-mdc-tab-header {
+    padding: 0 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  ::ng-deep .mat-mdc-tab-body-content {
+    padding: 0;
+  }
+}
+
+.tab-icon {
+  font-size: 18px;
+  margin-inline-end: 6px;
+  vertical-align: middle;
+}
+
+.tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  margin-inline-start: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 10px;
+}
+
+.tenant-link-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  border-color: var(--warning, #f59e0b);
+
+  .material-icons {
+    color: var(--warning, #f59e0b);
+    flex-shrink: 0;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--text-main);
+  }
+}

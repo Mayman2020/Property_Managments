@@ -1,0 +1,102 @@
+.user-form-card {
+  margin-bottom: 18px;
+  padding: 20px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--card-border);
+  background: var(--surface);
+}
+
+.user-form-card h3 {
+  margin: 0 0 12px;
+  color: var(--text-main);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.full-width {
+  width: 100%;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.loading-center {
+  display: flex;
+  justify-content: center;
+  padding: 30px 0;
+}
+
+.users-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 14px;
+}
+
+.user-card {
+  background: var(--surface);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.user-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.user-main h4 {
+  margin: 0 0 4px;
+  color: var(--text-main);
+}
+
+.user-main p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.user-main .muted {
+  font-size: 0.85rem;
+}
+
+.status-chip {
+  height: fit-content;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #0f5132;
+  background: #d1e7dd;
+}
+
+.status-chip.inactive {
+  color: #842029;
+  background: #f8d7da;
+}
+
+.meta-row {
+  margin-top: 8px;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+.user-actions {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

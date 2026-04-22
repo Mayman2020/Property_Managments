@@ -1,7 +1,9 @@
 package com.propertymanagement.modules.inventory;
 
+import com.propertymanagement.modules.inventory.dto.BulkTransactionRequest;
 import com.propertymanagement.modules.inventory.dto.InventoryItemRequest;
 import com.propertymanagement.modules.inventory.dto.InventoryItemResponse;
+import com.propertymanagement.modules.inventory.dto.InventoryTransactionResponse;
 import com.propertymanagement.modules.inventory.dto.StockTransactionRequest;
 import com.propertymanagement.modules.user.User;
 import com.propertymanagement.shared.exception.AppException;
@@ -101,6 +103,23 @@ public class InventoryService {
         return toResponse(saved);
     }
 
+    public Page<InventoryTransactionResponse> getTransactions(Long itemId, Pageable pageable) {
+        Page<InventoryTransaction> page = (itemId != null)
+                ? transactionRepository.findByItemId(itemId, pageable)
+                : transactionRepository.findAll(pageable);
+        return page.map(this::toTransactionResponse);
+    }
+
+    @Transactional
+    public InventoryItemResponse createTransaction(BulkTransactionRequest request) {
+        StockTransactionRequest stock = new StockTransactionRequest();
+        stock.setType(request.getTransactionType());
+        stock.setQuantity(request.getQuantity());
+        stock.setNotes(request.getNotes());
+        stock.setRequestId(request.getRequestId());
+        return adjustStock(request.getItemId(), stock);
+    }
+
     @Transactional
     public void delete(Long id) {
         InventoryItem item = findActive(id);
@@ -120,6 +139,19 @@ public class InventoryService {
             return user.getId();
         }
         throw AppException.forbidden("Authenticated user is required");
+    }
+
+    private InventoryTransactionResponse toTransactionResponse(InventoryTransaction t) {
+        return InventoryTransactionResponse.builder()
+                .id(t.getId())
+                .itemId(t.getItemId())
+                .transactionType(t.getTransactionType())
+                .quantity(t.getQuantity())
+                .notes(t.getNotes())
+                .requestId(t.getRequestId())
+                .performedBy(t.getPerformedBy())
+                .createdAt(t.getCreatedAt())
+                .build();
     }
 
     private InventoryItemResponse toResponse(InventoryItem i) {

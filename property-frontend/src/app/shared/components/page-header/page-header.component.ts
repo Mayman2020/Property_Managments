@@ -13,12 +13,12 @@ export interface BreadcrumbItem {
   imports: [NgIf, NgFor, RouterLink],
   template: `
     <div class="app-page-header">
-      <div>
+      <div class="page-heading">
         <nav class="app-breadcrumb" *ngIf="breadcrumbs.length">
           <ng-container *ngFor="let crumb of breadcrumbs; let last = last; let i = index">
             <a *ngIf="!last && crumb.route" [routerLink]="crumb.route">{{ crumb.label }}</a>
             <span *ngIf="!last && !crumb.route">{{ crumb.label }}</span>
-            <span class="sep" *ngIf="!last">›</span>
+            <span class="sep" *ngIf="!last">/</span>
             <span class="current" *ngIf="last">{{ crumb.label }}</span>
           </ng-container>
         </nav>
@@ -31,6 +31,7 @@ export interface BreadcrumbItem {
     </div>
   `,
   styles: [`
+    .page-heading { min-width: 0; }
     .page-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   `]
 })

@@ -67,6 +67,14 @@ public class PropertyService {
     }
 
     @Transactional
+    public PropertyResponse toggleActive(Long id) {
+        Property property = propertyRepository.findById(id)
+                .orElseThrow(() -> AppException.notFound("Property not found: " + id));
+        property.setActive(!property.isActive());
+        return toResponse(propertyRepository.save(property));
+    }
+
+    @Transactional
     public void delete(Long id) {
         Property property = findActive(id);
         property.setActive(false);

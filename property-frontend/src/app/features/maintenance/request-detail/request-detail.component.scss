@@ -52,3 +52,65 @@
   strong { font-size: 0.75rem; font-weight: 600; color: var(--text-subtle); text-transform: uppercase; }
   span { font-size: 0.875rem; color: var(--text-main); }
 }
+
+.action-panels {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.action-card {
+  border-left: 3px solid var(--primary);
+
+  &.accent-card { border-left-color: var(--accent); }
+}
+
+.action-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  .material-icons { color: var(--primary); font-size: 22px; }
+  .app-card-title { flex: 1; }
+}
+
+.action-btns {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.action-hint { font-size: 0.875rem; color: var(--text-muted); margin: 0 0 8px; }
+
+.schedule-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--surface-alt, rgba(0,0,0,0.03));
+  border-radius: 8px;
+  margin-bottom: 12px;
+
+  .material-icons { color: var(--accent); }
+  div { display: flex; flex-direction: column; gap: 2px; }
+  strong { font-size: 0.9rem; }
+  span { font-size: 0.8rem; color: var(--text-muted); }
+}
+
+.reject-form { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 16px; }
+
+.stars-row {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+
+  .mat-icon-button .material-icons { font-size: 30px; color: var(--text-subtle); }
+  .star-filled { color: #f59e0b !important; }
+}
+
+.full-width { width: 100%; }
+
+.color-success { color: #22c55e; }
+.color-error { color: #ef4444; }

@@ -34,7 +34,7 @@ import { LoadingService } from '../../../core/services/loading.service';
       animation: spin 0.8s linear infinite;
     }
     .spinner-brand {
-      font-family: 'Playfair Display', serif;
+      font-family: var(--font-display);
       font-size: 0.75rem; font-weight: 700;
       color: #1A3C5E; letter-spacing: 1px;
     }

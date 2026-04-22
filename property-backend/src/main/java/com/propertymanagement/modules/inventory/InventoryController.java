@@ -1,7 +1,9 @@
 package com.propertymanagement.modules.inventory;
 
+import com.propertymanagement.modules.inventory.dto.BulkTransactionRequest;
 import com.propertymanagement.modules.inventory.dto.InventoryItemRequest;
 import com.propertymanagement.modules.inventory.dto.InventoryItemResponse;
+import com.propertymanagement.modules.inventory.dto.InventoryTransactionResponse;
 import com.propertymanagement.modules.inventory.dto.StockTransactionRequest;
 import com.propertymanagement.shared.response.ApiResponse;
 import jakarta.validation.Valid;
@@ -72,6 +74,21 @@ public class InventoryController {
     public ResponseEntity<ApiResponse<InventoryItemResponse>> adjustStock(
             @PathVariable Long id, @Valid @RequestBody StockTransactionRequest request) {
         return ResponseEntity.ok(ApiResponse.ok(inventoryService.adjustStock(id, request)));
+    }
+
+    @GetMapping("/transactions")
+    public ResponseEntity<ApiResponse<Page<InventoryTransactionResponse>>> getTransactions(
+            @RequestParam(required = false) Long itemId,
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.ok(inventoryService.getTransactions(itemId, pageable)));
+    }
+
+    @PostMapping("/transactions")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN', 'MAINTENANCE_OFFICER')")
+    public ResponseEntity<ApiResponse<InventoryItemResponse>> createTransaction(
+            @Valid @RequestBody BulkTransactionRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok(inventoryService.createTransaction(request)));
     }
 
     @DeleteMapping("/{id}")

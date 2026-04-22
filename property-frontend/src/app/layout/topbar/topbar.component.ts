@@ -6,6 +6,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDividerModule } from '@angular/material/divider';
 import { AsyncPipe } from '@angular/common';
+import { TranslateModule } from '@ngx-translate/core';
 import { Router, RouterLink } from '@angular/router';
 import { Subscription, timer } from 'rxjs';
 import { AppNotification } from '../../core/models/notification.model';
@@ -18,7 +19,7 @@ import { SnackService } from '../../core/services/snack.service';
 @Component({
   selector: 'app-topbar',
   standalone: true,
-  imports: [NgClass, NgFor, NgIf, AsyncPipe, UpperCasePipe, RouterLink, MatIconModule, MatButtonModule, MatMenuModule, MatTooltipModule, MatDividerModule],
+  imports: [NgClass, NgFor, NgIf, AsyncPipe, UpperCasePipe, RouterLink, TranslateModule, MatIconModule, MatButtonModule, MatMenuModule, MatTooltipModule, MatDividerModule],
   templateUrl: './topbar.component.html',
   styleUrl: './topbar.component.scss'
 })
@@ -44,6 +45,8 @@ export class TopbarComponent implements OnInit, OnDestroy {
   get activeLanguage(): LanguageOption {
     return this.languages.find((l) => l.code === this.i18n.currentLang) ?? this.languages[0];
   }
+  languageLabel(lang: LanguageOption): string { return lang.label; }
+  languageNativeLabel(lang: LanguageOption): string { return lang.nativeLabel; }
 
   ngOnInit(): void {
     this.pollSub = timer(0, 30000).subscribe(() => {
@@ -82,7 +85,7 @@ export class TopbarComponent implements OnInit, OnDestroy {
     this.notificationService.markAllRead().subscribe(() => {
       this.notifications = this.notifications.map((n) => ({ ...n, read: true }));
       this.unreadCount = 0;
-      this.snack.success('All notifications marked as read');
+      this.snack.success(this.i18n.instant('NOTIFICATIONS.MARK_ALL_READ_SUCCESS'));
     });
   }
 

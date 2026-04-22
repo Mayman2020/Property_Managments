@@ -28,6 +28,14 @@ public class MaintenanceRequestResponse {
     private LocalTime scheduledTimeTo;
     private String tenantNotes;
     private LocalDateTime closedAt;
+    private Boolean scheduleAccepted;
+    private String scheduleRejectionNote;
+    private String tenantName;
+    private String assignedOfficerName;
+    private String propertyName;
+    private String unitNumber;
+    private String categoryNameAr;
+    private String categoryNameEn;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
