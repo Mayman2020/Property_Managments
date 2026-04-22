@@ -38,6 +38,7 @@ public class Owner {
     @Column(columnDefinition = "TEXT")
     private String notes;
 
+    @Builder.Default
     @Column(name = "is_active")
     private boolean active = true;
 

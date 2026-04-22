@@ -33,6 +33,8 @@ public class MaintenanceRequestResponse {
     private String tenantName;
     private String assignedOfficerName;
     private String propertyName;
+    private String propertyNameAr;
+    private String propertyNameEn;
     private String unitNumber;
     private String categoryNameAr;
     private String categoryNameEn;

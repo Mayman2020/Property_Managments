@@ -43,10 +43,12 @@ public class MaintenanceRequest {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String description;
 
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     private RequestPriority priority = RequestPriority.NORMAL;
 
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(length = 30)
     private RequestStatus status = RequestStatus.PENDING;

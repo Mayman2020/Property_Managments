@@ -27,6 +27,9 @@ public class Tenant {
     @Column(name = "unit_id")
     private Long unitId;
 
+    @Column(name = "property_id")
+    private Long propertyId;
+
     @Column(name = "full_name", nullable = false, length = 150)
     private String fullName;
 
@@ -45,6 +48,7 @@ public class Tenant {
     @Column(name = "lease_end")
     private LocalDate leaseEnd;
 
+    @Builder.Default
     @Column(name = "is_active")
     private boolean active = true;
 

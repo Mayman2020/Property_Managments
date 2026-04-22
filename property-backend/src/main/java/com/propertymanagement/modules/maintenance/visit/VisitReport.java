@@ -40,6 +40,7 @@ public class VisitReport {
     @Column(name = "officer_notes", columnDefinition = "TEXT")
     private String officerNotes;
 
+    @Builder.Default
     @Column(name = "has_purchase")
     private boolean hasPurchase = false;
 

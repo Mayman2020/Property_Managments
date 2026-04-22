@@ -29,6 +29,7 @@ public class MaintenanceCategory {
     @Column(length = 50)
     private String icon;
 
+    @Builder.Default
     @Column(name = "is_active")
     private boolean active = true;
 

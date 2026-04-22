@@ -21,8 +21,8 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public Page<UserResponse> getAll(Pageable pageable) {
-        return userRepository.findAll(pageable).map(this::toResponse);
+    public Page<UserResponse> getAll(Pageable pageable, String q, UserRole role) {
+        return userRepository.search(trimToNull(q), role, pageable).map(this::toResponse);
     }
 
     public UserResponse getById(Long id) {
@@ -172,5 +172,11 @@ public class UserService {
             return user.getId();
         }
         throw AppException.forbidden("Authenticated user is required");
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) return null;
+        String t = value.trim();
+        return t.isEmpty() ? null : t;
     }
 }

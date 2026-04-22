@@ -15,8 +15,8 @@ public class UnitService {
 
     private final UnitRepository unitRepository;
 
-    public Page<UnitResponse> getByProperty(Long propertyId, Pageable pageable) {
-        return unitRepository.findByPropertyIdAndActiveTrue(propertyId, pageable).map(this::toResponse);
+    public Page<UnitResponse> getByProperty(Long propertyId, Pageable pageable, String q) {
+        return unitRepository.searchByProperty(propertyId, trimToNull(q), pageable).map(this::toResponse);
     }
 
     public UnitResponse getById(Long id) {
@@ -101,5 +101,11 @@ public class UnitService {
                 .createdAt(u.getCreatedAt())
                 .updatedAt(u.getUpdatedAt())
                 .build();
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) return null;
+        String t = value.trim();
+        return t.isEmpty() ? null : t;
     }
 }

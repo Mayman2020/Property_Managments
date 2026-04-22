@@ -36,15 +36,18 @@ public class InventoryItem {
     @Column(name = "unit_of_measure", length = 30)
     private String unitOfMeasure;
 
+    @Builder.Default
     @Column(precision = 10, scale = 2)
     private BigDecimal quantity = BigDecimal.ZERO;
 
+    @Builder.Default
     @Column(name = "min_quantity", precision = 10, scale = 2)
     private BigDecimal minQuantity = BigDecimal.ZERO;
 
     @Column(length = 100)
     private String location;
 
+    @Builder.Default
     @Column(name = "is_active")
     private boolean active = true;
 

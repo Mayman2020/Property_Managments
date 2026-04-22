@@ -23,8 +23,9 @@ public class TenantController {
     @GetMapping
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN')")
     public ResponseEntity<ApiResponse<Page<TenantResponse>>> getAll(
+            @RequestParam(required = false) String q,
             @PageableDefault(size = 10) Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.ok(tenantService.getAll(pageable)));
+        return ResponseEntity.ok(ApiResponse.ok(tenantService.getAll(pageable, q)));
     }
 
     @GetMapping("/{id}")
@@ -35,6 +36,11 @@ public class TenantController {
     @GetMapping("/by-user/{userId}")
     public ResponseEntity<ApiResponse<TenantResponse>> getByUserId(@PathVariable Long userId) {
         return ResponseEntity.ok(ApiResponse.ok(tenantService.getByUserId(userId)));
+    }
+
+    @GetMapping("/by-unit/{unitId}")
+    public ResponseEntity<ApiResponse<TenantResponse>> getByUnitId(@PathVariable Long unitId) {
+        return ResponseEntity.ok(ApiResponse.ok(tenantService.getByUnitId(unitId)));
     }
 
     @PostMapping

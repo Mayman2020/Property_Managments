@@ -27,15 +27,17 @@ public class InventoryController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<Page<InventoryItemResponse>>> getAll(
+            @RequestParam(required = false) String q,
             @PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.ok(inventoryService.getAll(pageable)));
+        return ResponseEntity.ok(ApiResponse.ok(inventoryService.getAll(pageable, q)));
     }
 
     @GetMapping("/property/{propertyId}")
     public ResponseEntity<ApiResponse<Page<InventoryItemResponse>>> getByProperty(
             @PathVariable Long propertyId,
+            @RequestParam(required = false) String q,
             @PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.ok(inventoryService.getByProperty(propertyId, pageable)));
+        return ResponseEntity.ok(ApiResponse.ok(inventoryService.getByProperty(propertyId, pageable, q)));
     }
 
     @GetMapping("/low-stock")

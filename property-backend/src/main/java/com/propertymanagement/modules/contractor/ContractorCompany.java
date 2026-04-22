@@ -21,6 +21,12 @@ public class ContractorCompany {
     @Column(nullable = false, length = 200)
     private String name;
 
+    @Column(name = "name_ar", length = 200)
+    private String nameAr;
+
+    @Column(name = "name_en", length = 200)
+    private String nameEn;
+
     @Column(length = 40)
     private String phone;
 
@@ -30,6 +36,7 @@ public class ContractorCompany {
     @Column(columnDefinition = "TEXT")
     private String notes;
 
+    @Builder.Default
     @Column(nullable = false)
     private boolean active = true;
 

@@ -40,18 +40,21 @@ public class Unit {
     private Integer bedrooms;
     private Integer bathrooms;
 
+    @Builder.Default
     @Column(name = "is_rented")
     private boolean rented = false;
 
     @Column(name = "rent_amount", precision = 12, scale = 2)
     private BigDecimal rentAmount;
 
+    @Builder.Default
     @Column(length = 10)
     private String currency = "SAR";
 
     @Column(columnDefinition = "TEXT")
     private String notes;
 
+    @Builder.Default
     @Column(name = "is_active")
     private boolean active = true;
 

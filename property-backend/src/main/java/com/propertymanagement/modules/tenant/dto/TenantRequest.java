@@ -1,7 +1,6 @@
 package com.propertymanagement.modules.tenant.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.time.LocalDate;
@@ -10,8 +9,8 @@ import java.time.LocalDate;
 public class TenantRequest {
     @NotBlank
     private String fullName;
-    @NotNull
     private Long unitId;
+    private Long propertyId;
     private Long userId;
     private String nationalId;
     @NotBlank

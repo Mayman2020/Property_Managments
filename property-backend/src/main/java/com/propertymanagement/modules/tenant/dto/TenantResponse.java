@@ -12,6 +12,7 @@ public class TenantResponse {
     private Long id;
     private Long userId;
     private Long unitId;
+    private Long propertyId;
     private String fullName;
     private String nationalId;
     private String phone;

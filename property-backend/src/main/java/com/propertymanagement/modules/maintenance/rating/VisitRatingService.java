@@ -10,6 +10,7 @@ import com.propertymanagement.modules.user.User;
 import com.propertymanagement.modules.user.UserRepository;
 import com.propertymanagement.modules.user.UserRole;
 import com.propertymanagement.shared.exception.AppException;
+import com.propertymanagement.shared.i18n.LocalizedNameResolver;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -79,6 +80,14 @@ public class VisitRatingService {
                 .fourStar(breakdown[3])
                 .fiveStar(breakdown[4])
                 .build();
+    }
+
+    public List<RatingDashboardItemResponse> getDashboardDetails() {
+        return ratingRepository.findDashboardDetails().stream()
+                .peek(item -> item.setPropertyName(
+                        LocalizedNameResolver.resolve(item.getPropertyNameAr(), item.getPropertyNameEn(), item.getPropertyName())
+                ))
+                .toList();
     }
 
     private void notifyRatingSubmitted(MaintenanceRequest request) {

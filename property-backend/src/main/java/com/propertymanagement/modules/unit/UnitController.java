@@ -23,8 +23,9 @@ public class UnitController {
     @GetMapping("/property/{propertyId}")
     public ResponseEntity<ApiResponse<Page<UnitResponse>>> getByProperty(
             @PathVariable Long propertyId,
+            @RequestParam(required = false) String q,
             @PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.ok(unitService.getByProperty(propertyId, pageable)));
+        return ResponseEntity.ok(ApiResponse.ok(unitService.getByProperty(propertyId, pageable, q)));
     }
 
     @GetMapping("/{id}")

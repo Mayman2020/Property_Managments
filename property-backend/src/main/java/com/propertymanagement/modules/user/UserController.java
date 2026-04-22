@@ -25,8 +25,10 @@ public class UserController {
     @GetMapping
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN')")
     public ResponseEntity<ApiResponse<Page<UserResponse>>> getAll(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) UserRole role,
             @PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.ok(userService.getAll(pageable)));
+        return ResponseEntity.ok(ApiResponse.ok(userService.getAll(pageable, q, role)));
     }
 
     @GetMapping("/{id}")

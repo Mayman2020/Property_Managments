@@ -26,12 +26,12 @@ public class InventoryService {
     private final InventoryRepository inventoryRepository;
     private final InventoryTransactionRepository transactionRepository;
 
-    public Page<InventoryItemResponse> getAll(Pageable pageable) {
-        return inventoryRepository.findByActiveTrue(pageable).map(this::toResponse);
+    public Page<InventoryItemResponse> getAll(Pageable pageable, String q) {
+        return inventoryRepository.searchActive(trimToNull(q), pageable).map(this::toResponse);
     }
 
-    public Page<InventoryItemResponse> getByProperty(Long propertyId, Pageable pageable) {
-        return inventoryRepository.findByPropertyIdAndActiveTrue(propertyId, pageable).map(this::toResponse);
+    public Page<InventoryItemResponse> getByProperty(Long propertyId, Pageable pageable, String q) {
+        return inventoryRepository.searchByPropertyActive(propertyId, trimToNull(q), pageable).map(this::toResponse);
     }
 
     public List<InventoryItemResponse> getLowStock() {
@@ -170,5 +170,11 @@ public class InventoryService {
                 .createdAt(i.getCreatedAt())
                 .updatedAt(i.getUpdatedAt())
                 .build();
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) return null;
+        String t = value.trim();
+        return t.isEmpty() ? null : t;
     }
 }

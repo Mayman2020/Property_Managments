@@ -18,6 +18,7 @@ import com.propertymanagement.modules.user.User;
 import com.propertymanagement.modules.user.UserRepository;
 import com.propertymanagement.modules.user.UserRole;
 import com.propertymanagement.shared.exception.AppException;
+import com.propertymanagement.shared.i18n.LocalizedNameResolver;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -456,9 +457,15 @@ public class MaintenanceRequestService {
         }
 
         String propertyName = null;
+        String propertyNameAr = null;
+        String propertyNameEn = null;
         if (r.getPropertyId() != null) {
-            propertyName = propertyRepository.findById(r.getPropertyId())
-                    .map(p -> p.getPropertyName()).orElse(null);
+            var property = propertyRepository.findById(r.getPropertyId()).orElse(null);
+            if (property != null) {
+                propertyNameAr = LocalizedNameResolver.safe(property.getPropertyNameAr());
+                propertyNameEn = LocalizedNameResolver.safe(property.getPropertyNameEn());
+                propertyName = LocalizedNameResolver.resolve(propertyNameAr, propertyNameEn, property.getPropertyName());
+            }
         }
 
         String unitNumber = null;
@@ -499,6 +506,8 @@ public class MaintenanceRequestService {
                 .tenantName(tenantName)
                 .assignedOfficerName(assignedOfficerName)
                 .propertyName(propertyName)
+                .propertyNameAr(propertyNameAr)
+                .propertyNameEn(propertyNameEn)
                 .unitNumber(unitNumber)
                 .categoryNameAr(categoryNameAr)
                 .categoryNameEn(categoryNameEn)

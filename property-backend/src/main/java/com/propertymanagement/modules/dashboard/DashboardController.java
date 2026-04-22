@@ -1,6 +1,7 @@
 package com.propertymanagement.modules.dashboard;
 
 import com.propertymanagement.modules.maintenance.rating.RatingsSummaryResponse;
+import com.propertymanagement.modules.maintenance.rating.RatingDashboardItemResponse;
 import com.propertymanagement.modules.maintenance.rating.VisitRatingService;
 import com.propertymanagement.shared.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -48,5 +49,11 @@ public class DashboardController {
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN')")
     public ResponseEntity<ApiResponse<RatingsSummaryResponse>> getRatingsSummary() {
         return ResponseEntity.ok(ApiResponse.ok(visitRatingService.getSummary()));
+    }
+
+    @GetMapping("/ratings-details")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN')")
+    public ResponseEntity<ApiResponse<List<RatingDashboardItemResponse>>> getRatingsDetails() {
+        return ResponseEntity.ok(ApiResponse.ok(visitRatingService.getDashboardDetails()));
     }
 }

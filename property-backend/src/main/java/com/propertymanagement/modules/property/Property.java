@@ -26,6 +26,12 @@ public class Property {
     @Column(name = "property_name", nullable = false, length = 200)
     private String propertyName;
 
+    @Column(name = "property_name_ar", length = 200)
+    private String propertyNameAr;
+
+    @Column(name = "property_name_en", length = 200)
+    private String propertyNameEn;
+
     @Column(name = "property_code", unique = true, nullable = false, length = 50)
     private String propertyCode;
 
@@ -42,9 +48,14 @@ public class Property {
     @Column(length = 100)
     private String country;
 
+    @Column(name = "google_map_url", length = 1000)
+    private String googleMapUrl;
+
+    @Builder.Default
     @Column(name = "total_floors")
     private Integer totalFloors = 1;
 
+    @Builder.Default
     @Column(name = "total_units")
     private Integer totalUnits = 0;
 
@@ -54,6 +65,7 @@ public class Property {
     @Column(name = "cover_image_url", length = 500)
     private String coverImageUrl;
 
+    @Builder.Default
     @Column(name = "is_active")
     private boolean active = true;
 

@@ -22,8 +22,9 @@ public class ContractorCompanyController {
     @GetMapping
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN')")
     public ResponseEntity<ApiResponse<List<ContractorCompanyResponse>>> list(
+            @RequestParam(required = false) String q,
             @RequestParam(required = false, defaultValue = "false") boolean all) {
-        List<ContractorCompanyResponse> data = all ? service.listAll() : service.listActive();
+        List<ContractorCompanyResponse> data = all ? service.listAll(q) : service.listActive(q);
         return ResponseEntity.ok(ApiResponse.ok(data));
     }
 
