@@ -35,9 +35,11 @@ export interface InventoryTransaction {
 export class InventoryService {
   constructor(private readonly api: ApiService) {}
 
-  getItems(propertyId?: number, page = 0, size = 20): Observable<ApiResponse<PagedResponse<InventoryItem>>> {
+  getItems(propertyId?: number, page = 0, size = 20, q?: string): Observable<ApiResponse<PagedResponse<InventoryItem>>> {
     const url = propertyId ? `/inventory/property/${propertyId}` : '/inventory';
-    return this.api.get(url, { page, size });
+    const params: Record<string, string | number | boolean> = { page, size };
+    if (q && q.trim()) params['q'] = q.trim();
+    return this.api.get(url, params);
   }
 
   getLowStock(): Observable<ApiResponse<InventoryItem[]>> {

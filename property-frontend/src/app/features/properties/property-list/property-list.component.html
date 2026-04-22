@@ -13,6 +13,13 @@
     <mat-spinner diameter="40"></mat-spinner>
   </div>
 
+  <div class="search-bar surface-glow" *ngIf="!loading">
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'ACTIONS.SEARCH' | translate }}</mat-label>
+      <input matInput [value]="searchTerm" (input)="onSearch($any($event.target).value)">
+    </mat-form-field>
+  </div>
+
   <app-empty-state
     *ngIf="!loading && properties.length === 0"
     icon="apartment"
@@ -41,9 +48,13 @@
         <h3 class="property-name">{{ prop.propertyName }}</h3>
         <p class="property-address">
           <span class="material-icons">location_on</span>
-          {{ prop.city }}, {{ prop.country }}
+          {{ prop.city || '—' }}, {{ prop.country || '—' }}
         </p>
         <p class="property-address" style="margin-top:4px">{{ prop.address }}</p>
+        <a class="property-map-link" *ngIf="prop.googleMapUrl" [href]="prop.googleMapUrl" target="_blank" rel="noopener">
+          <span class="material-icons">map</span>
+          {{ 'PROPERTY_LIST.OPEN_MAP' | translate }}
+        </a>
 
         <div class="property-stats">
           <div class="pstat">

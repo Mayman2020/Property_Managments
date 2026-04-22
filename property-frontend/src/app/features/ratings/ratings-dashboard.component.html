@@ -1,4 +1,4 @@
-<div class="app-page">
+﻿<div class="app-page">
   <app-page-header
     [title]="'RATINGS_DASHBOARD.TITLE' | translate"
     [subtitle]="'RATINGS_DASHBOARD.SUBTITLE' | translate"
@@ -12,43 +12,130 @@
     <mat-spinner diameter="48"></mat-spinner>
   </div>
 
-  <ng-container *ngIf="!loading && summary">
-    <div class="ratings-summary-row">
-      <div class="app-card summary-card">
-        <div class="summary-label">{{ 'RATING.AVERAGE' | translate }}</div>
-        <div class="summary-value">
-          <span class="material-icons star-main">star</span>
-          {{ summary.averageRating | number:'1.1-2' }}
-        </div>
-        <div class="summary-hint">{{ 'RATINGS_DASHBOARD.OUT_OF_FIVE' | translate }}</div>
-      </div>
-      <div class="app-card summary-card">
-        <div class="summary-label">{{ 'RATING.TOTAL' | translate }}</div>
-        <div class="summary-value plain">{{ summary.totalRatings }}</div>
-        <div class="summary-hint">{{ 'RATINGS_DASHBOARD.VISITS_RATED' | translate }}</div>
-      </div>
-    </div>
+  <ng-container *ngIf="!loading">
+    <section class="filter-bar surface-glow">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'REQUEST_FORM.PROPERTY' | translate }}</mat-label>
+        <mat-select [(value)]="selectedPropertyId" (selectionChange)="applyFilters()">
+          <mat-option [value]="null">{{ 'ACTIONS.VIEW_ALL' | translate }}</mat-option>
+          <mat-option *ngFor="let p of propertyOptions" [value]="p.id">{{ p.name }}</mat-option>
+        </mat-select>
+      </mat-form-field>
 
-    <div class="app-card distribution-card">
-      <h2 class="section-title">{{ 'RATING.DISTRIBUTION' | translate }}</h2>
-      <ng-container *ngIf="summary.totalRatings > 0">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'RATING.STARS' | translate }}</mat-label>
+        <mat-select [(value)]="selectedStars" (selectionChange)="applyFilters()">
+          <mat-option [value]="null">{{ 'ACTIONS.VIEW_ALL' | translate }}</mat-option>
+          <mat-option *ngFor="let star of stars" [value]="star">{{ star }} ?</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'ACTIONS.SEARCH' | translate }}</mat-label>
+        <input matInput [value]="searchTerm" (input)="searchTerm = $any($event.target).value; applyFilters()">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'RATINGS_DASHBOARD.DATE_FROM' | translate }}</mat-label>
+        <input matInput [matDatepicker]="pickerFrom" [value]="dateFrom" (dateChange)="dateFrom = $event.value; applyFilters()">
+        <mat-datepicker-toggle matIconSuffix [for]="pickerFrom"></mat-datepicker-toggle>
+        <mat-datepicker #pickerFrom></mat-datepicker>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'RATINGS_DASHBOARD.DATE_TO' | translate }}</mat-label>
+        <input matInput [matDatepicker]="pickerTo" [value]="dateTo" (dateChange)="dateTo = $event.value; applyFilters()">
+        <mat-datepicker-toggle matIconSuffix [for]="pickerTo"></mat-datepicker-toggle>
+        <mat-datepicker #pickerTo></mat-datepicker>
+      </mat-form-field>
+
+      <button mat-stroked-button type="button" (click)="resetFilters()">
+        <span class="material-icons">refresh</span>
+        {{ 'ACTIONS.CANCEL' | translate }}
+      </button>
+    </section>
+
+    <section class="kpi-grid">
+      <article class="kpi-card app-card">
+        <div class="kpi-label">{{ 'RATING.AVERAGE' | translate }}</div>
+        <div class="kpi-value">
+          <span class="material-icons">star</span>
+          {{ averageRating | number:'1.1-2' }}
+        </div>
+        <div class="kpi-sub">{{ 'RATINGS_DASHBOARD.OUT_OF_FIVE' | translate }}</div>
+      </article>
+
+      <article class="kpi-card app-card">
+        <div class="kpi-label">{{ 'RATING.TOTAL' | translate }}</div>
+        <div class="kpi-value plain">{{ totalRatings }}</div>
+        <div class="kpi-sub">{{ 'RATINGS_DASHBOARD.VISITS_RATED' | translate }}</div>
+      </article>
+
+      <article class="kpi-card app-card">
+        <div class="kpi-label">{{ 'RATINGS_DASHBOARD.SATISFACTION_LABEL' | translate }}</div>
+        <div class="kpi-value plain">{{ satisfactionRate }}%</div>
+        <div class="kpi-sub">{{ 'RATINGS_DASHBOARD.SATISFACTION_SUB' | translate }}</div>
+      </article>
+
+      <article class="kpi-card app-card">
+        <div class="kpi-label">{{ 'RATINGS_DASHBOARD.LOW_RATINGS_LABEL' | translate }}</div>
+        <div class="kpi-value plain warn">{{ lowRatingsCount }}</div>
+        <div class="kpi-sub">{{ 'RATINGS_DASHBOARD.LOW_RATINGS_SUB' | translate }}</div>
+      </article>
+    </section>
+
+    <div class="ratings-grid" *ngIf="totalRatings > 0">
+      <section class="app-card distribution-card">
+        <h2 class="section-title">{{ 'RATING.DISTRIBUTION' | translate }}</h2>
         <div class="bar-row" *ngFor="let star of stars">
           <div class="bar-label">
             <span *ngFor="let _ of starRange(star)" class="material-icons tiny-star">star</span>
             <span class="star-num">{{ star }}</span>
           </div>
+
           <div class="bar-track">
             <div class="bar-fill" [style.width.%]="barWidth(star)"></div>
           </div>
+
           <div class="bar-count">{{ starCount(star) }}</div>
         </div>
-      </ng-container>
-      <app-empty-state
-        *ngIf="summary.totalRatings === 0"
-        icon="star_border"
-        [title]="'RATINGS_DASHBOARD.NO_RATINGS_TITLE' | translate"
-        [message]="'RATINGS_DASHBOARD.NO_RATINGS_MSG' | translate">
-      </app-empty-state>
+      </section>
+
+      <section class="app-card list-card">
+        <div class="list-head">
+          <h2 class="section-title">{{ 'RATINGS_DASHBOARD.RECENT_RATINGS' | translate }}</h2>
+          <span class="count-chip">{{ totalRatings }} {{ 'REQUEST_LIST.REQUESTS_COUNT' | translate }}</span>
+        </div>
+
+        <div class="rating-row" *ngFor="let item of recentRatings; trackBy: trackByRatingId">
+          <div class="row-main">
+            <div class="row-top">
+              <strong>{{ item.requestTitle || ('REQUEST_LIST.REQUEST_TITLE' | translate) }}</strong>
+              <span class="row-stars">{{ item.rating }} ?</span>
+            </div>
+
+            <div class="row-meta">
+              <span>{{ item.propertyName || '�' }}</span>
+              <span>�</span>
+              <span>???? {{ item.unitNumber || '�' }}</span>
+              <span>�</span>
+              <span>{{ item.tenantName || ('COMMON.NO_DATA' | translate) }}</span>
+            </div>
+
+            <p class="row-comment" *ngIf="item.comment">{{ item.comment }}</p>
+            <p class="row-comment muted" *ngIf="!item.comment">{{ 'RATING.COMMENT' | translate }}: �</p>
+          </div>
+
+          <div class="row-date">{{ item.createdAt | date:'dd-MM-yyyy HH:mm' }}</div>
+        </div>
+      </section>
     </div>
+
+    <app-empty-state
+      *ngIf="totalRatings === 0"
+      icon="star_border"
+      [title]="'RATINGS_DASHBOARD.NO_RATINGS_TITLE' | translate"
+      [message]="'RATINGS_DASHBOARD.NO_RATINGS_MSG' | translate">
+    </app-empty-state>
   </ng-container>
 </div>

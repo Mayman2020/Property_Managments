@@ -1,0 +1,109 @@
+﻿<div class="app-page">
+  <app-page-header
+    [title]="'LOOKUPS.TITLE' | translate"
+    [subtitle]="'LOOKUPS.SUBTITLE' | translate"
+    [breadcrumbs]="[{label:('NAV.DASHBOARD' | translate), route:'/admin/dashboard'}, {label:('NAV.LOOKUPS' | translate)}]">
+  </app-page-header>
+
+  <div class="loading-center" *ngIf="loading">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <div class="lookup-grid" *ngIf="!loading">
+    <div class="surface-glow lookup-card">
+      <h3>{{ 'LOOKUPS.COUNTRIES' | translate }}</h3>
+
+      <mat-form-field appearance="outline" class="full-search">
+        <mat-label>{{ 'ACTIONS.SEARCH' | translate }}</mat-label>
+        <input matInput [value]="countrySearch" (input)="onCountrySearch($any($event.target).value)" />
+      </mat-form-field>
+
+      <form [formGroup]="countryForm" (ngSubmit)="createCountry()" class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'LOOKUPS.CODE' | translate }}</mat-label>
+          <input matInput formControlName="code" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'LOOKUPS.NAME_AR' | translate }}</mat-label>
+          <input matInput formControlName="nameAr" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'LOOKUPS.NAME_EN' | translate }}</mat-label>
+          <input matInput formControlName="nameEn" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'LOOKUPS.SORT_ORDER' | translate }}</mat-label>
+          <input matInput type="number" formControlName="sortOrder" />
+        </mat-form-field>
+
+        <div class="form-actions full-col">
+          <button mat-flat-button type="submit" [disabled]="countryForm.invalid || savingCountry">
+            <mat-spinner *ngIf="savingCountry" diameter="18"></mat-spinner>
+            <span *ngIf="!savingCountry">{{ 'LOOKUPS.ADD_COUNTRY' | translate }}</span>
+          </button>
+        </div>
+      </form>
+
+      <div class="item-list">
+        <div class="item-row" *ngFor="let c of filteredCountries">
+          <div>
+            <strong>{{ nameOf(c) }}</strong>
+            <span class="muted">({{ c.code }})</span>
+          </div>
+          <span class="muted" *ngIf="c.locked">{{ 'LOOKUPS.LOCKED' | translate }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="surface-glow lookup-card">
+      <h3>{{ 'LOOKUPS.CITIES' | translate }}</h3>
+
+      <mat-form-field appearance="outline" class="full-search">
+        <mat-label>{{ 'ACTIONS.SEARCH' | translate }}</mat-label>
+        <input matInput [value]="citySearch" (input)="onCitySearch($any($event.target).value)" />
+      </mat-form-field>
+
+      <form [formGroup]="cityForm" (ngSubmit)="createCity()" class="form-grid">
+        <mat-form-field appearance="outline" class="full-col">
+          <mat-label>{{ 'LOOKUPS.COUNTRY' | translate }}</mat-label>
+          <mat-select formControlName="countryId">
+            <mat-option *ngFor="let c of countries" [value]="c.id">{{ nameOf(c) }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'LOOKUPS.CODE' | translate }}</mat-label>
+          <input matInput formControlName="code" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'LOOKUPS.NAME_AR' | translate }}</mat-label>
+          <input matInput formControlName="nameAr" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'LOOKUPS.NAME_EN' | translate }}</mat-label>
+          <input matInput formControlName="nameEn" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'LOOKUPS.SORT_ORDER' | translate }}</mat-label>
+          <input matInput type="number" formControlName="sortOrder" />
+        </mat-form-field>
+
+        <div class="form-actions full-col">
+          <button mat-flat-button type="submit" [disabled]="cityForm.invalid || savingCity">
+            <mat-spinner *ngIf="savingCity" diameter="18"></mat-spinner>
+            <span *ngIf="!savingCity">{{ 'LOOKUPS.ADD_CITY' | translate }}</span>
+          </button>
+        </div>
+      </form>
+
+      <div class="item-list">
+        <div class="item-row" *ngFor="let city of filteredCities">
+          <div>
+            <strong>{{ nameOf(city) }}</strong>
+            <span class="muted">({{ city.code }})</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

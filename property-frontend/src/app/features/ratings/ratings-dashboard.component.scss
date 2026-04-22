@@ -4,56 +4,79 @@
   padding: 48px;
 }
 
-.ratings-summary-row {
+.filter-bar {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 16px;
-  margin-bottom: 20px;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 14px;
+  margin-bottom: 18px;
 }
 
-.summary-card {
-  padding: 20px 22px;
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
 }
 
-.summary-label {
+.kpi-card {
+  padding: 16px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.kpi-label {
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.4px;
   color: var(--text-subtle);
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
-.summary-value {
+.kpi-value {
   font-family: var(--font-display);
-  font-size: 2rem;
+  font-size: 1.9rem;
   font-weight: 700;
   color: var(--text-main);
   display: flex;
   align-items: center;
   gap: 8px;
 
+  .material-icons {
+    color: var(--accent);
+    font-size: 1.8rem;
+  }
+
   &.plain {
     font-family: inherit;
   }
+
+  &.warn {
+    color: #b91c1c;
+  }
 }
 
-.star-main {
-  font-size: 2rem;
-  color: var(--accent);
-}
-
-.summary-hint {
-  margin-top: 6px;
+.kpi-sub {
+  margin-top: 8px;
   font-size: 0.8rem;
   color: var(--text-muted);
 }
 
-.distribution-card {
-  padding: 20px 22px 24px;
+.ratings-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) minmax(360px, 1.4fr);
+  gap: 16px;
+}
+
+.distribution-card,
+.list-card {
+  padding: 18px;
 }
 
 .section-title {
-  margin: 0 0 16px;
+  margin: 0;
   font-size: 1rem;
   font-weight: 700;
   color: var(--text-main);
@@ -63,8 +86,8 @@
   display: grid;
   grid-template-columns: 120px 1fr 48px;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 10px;
+  gap: 10px;
+  margin-top: 14px;
 }
 
 .bar-label {
@@ -86,15 +109,15 @@
 
 .bar-track {
   height: 10px;
-  border-radius: 6px;
-  background: var(--table-row-hover, #f1f5f9);
+  border-radius: 8px;
+  background: var(--table-row-hover, #edf2f7);
   overflow: hidden;
 }
 
 .bar-fill {
   height: 100%;
-  border-radius: 6px;
-  background: linear-gradient(90deg, var(--accent-dark, #b45309), var(--accent, #d4a853));
+  border-radius: 8px;
+  background: linear-gradient(90deg, #0f3a74, #2b79d1);
   min-width: 2px;
   transition: width 0.35s ease;
 }
@@ -103,5 +126,111 @@
   text-align: end;
   font-size: 0.85rem;
   font-weight: 600;
+}
+
+.list-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.count-chip {
+  background: var(--surface-2);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.rating-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  border-top: 1px solid var(--line);
+  padding: 12px 0;
+}
+
+.row-main {
+  min-width: 0;
+}
+
+.row-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+
+  strong {
+    font-size: 0.93rem;
+    color: var(--text-main);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.row-stars {
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.row-meta {
+  margin-top: 4px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.row-comment {
+  margin: 6px 0 0;
   color: var(--text-main);
+  font-size: 0.83rem;
+  line-height: 1.45;
+}
+
+.row-comment.muted {
+  color: var(--text-subtle);
+}
+
+.row-date {
+  color: var(--text-subtle);
+  font-size: 0.78rem;
+  white-space: nowrap;
+  align-self: start;
+}
+
+@media (max-width: 1280px) {
+  .filter-bar {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ratings-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .filter-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rating-row {
+    grid-template-columns: 1fr;
+  }
+
+  .row-date {
+    justify-self: start;
+  }
 }

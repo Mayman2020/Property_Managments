@@ -15,6 +15,13 @@
 
   <div class="loading-center" *ngIf="loading"><mat-spinner diameter="40"></mat-spinner></div>
 
+  <div class="search-wrap app-card" *ngIf="!loading">
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'ACTIONS.SEARCH' | translate }}</mat-label>
+      <input matInput [value]="searchTerm" (input)="onSearch($any($event.target).value)">
+    </mat-form-field>
+  </div>
+
   <app-empty-state
     *ngIf="!loading && items.length === 0"
     icon="inventory_2"

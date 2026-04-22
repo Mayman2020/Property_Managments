@@ -65,6 +65,7 @@
               *ngFor="let cat of categories"
               [class.selected]="isCategorySelected(cat.id)"
               (click)="toggleCategory(cat.id)">
+              <span class="material-icons selected-check" *ngIf="isCategorySelected(cat.id)">check_circle</span>
               <span class="material-icons cat-icon">{{ cat.icon || 'build' }}</span>
               <span>{{ categoryName(cat) }}</span>
             </button>

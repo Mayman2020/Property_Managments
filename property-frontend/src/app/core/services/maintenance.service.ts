@@ -18,6 +18,8 @@ export interface MaintenanceRequest {
   unitNumber?: string;
   propertyId: number;
   propertyName?: string;
+  propertyNameAr?: string;
+  propertyNameEn?: string;
   categoryId: number;
   categoryNameAr?: string;
   categoryNameEn?: string;

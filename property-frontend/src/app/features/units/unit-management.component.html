@@ -1,0 +1,138 @@
+<div class="app-page">
+  <app-page-header
+    [title]="'UNITS.TITLE' | translate"
+    [subtitle]="'UNITS.SUBTITLE' | translate"
+    [breadcrumbs]="[{label:('NAV.DASHBOARD' | translate), route:'/admin/dashboard'}, {label:('NAV.UNITS' | translate)}]">
+    <button mat-flat-button type="button" (click)="startCreate()">
+      <span class="material-icons">add</span>
+      {{ 'UNITS.ADD' | translate }}
+    </button>
+  </app-page-header>
+
+  <div class="filters surface-glow">
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'REQUEST_FORM.PROPERTY' | translate }}</mat-label>
+      <mat-select [(value)]="selectedPropertyId" (selectionChange)="onPropertyFilterChange()">
+        <mat-option [value]="null">{{ 'ACTIONS.VIEW_ALL' | translate }}</mat-option>
+        <mat-option *ngFor="let p of properties" [value]="p.id">{{ p.propertyName }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'UNITS.SEARCH' | translate }}</mat-label>
+      <input matInput [value]="searchTerm" (input)="onSearch($any($event.target).value)">
+    </mat-form-field>
+
+    <button mat-stroked-button type="button" (click)="clearFilters()">
+      {{ 'ACTIONS.CANCEL' | translate }}
+    </button>
+  </div>
+
+  <div class="form-panel surface-glow" *ngIf="showForm">
+    <h3>{{ editingId ? ('UNITS.EDIT' | translate) : ('UNITS.ADD' | translate) }}</h3>
+
+    <form [formGroup]="form" (ngSubmit)="save()" class="grid">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'REQUEST_FORM.PROPERTY' | translate }}</mat-label>
+        <mat-select formControlName="propertyId" required>
+          <mat-option *ngFor="let p of properties" [value]="p.id">{{ p.propertyName }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'UNITS.UNIT_NUMBER' | translate }}</mat-label>
+        <input matInput formControlName="unitNumber">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'UNITS.FLOOR' | translate }}</mat-label>
+        <input matInput type="number" formControlName="floorId">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'UNITS.UNIT_TYPE' | translate }}</mat-label>
+        <mat-select formControlName="unitType">
+          <mat-option *ngFor="let t of unitTypes" [value]="t">{{ t }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'UNITS.AREA' | translate }}</mat-label>
+        <input matInput type="number" formControlName="areaSqm">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'UNITS.RENT' | translate }}</mat-label>
+        <input matInput type="number" formControlName="rentAmount">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>{{ 'MAINTENANCE.DESCRIPTION' | translate }}</mat-label>
+        <textarea matInput rows="2" formControlName="notes"></textarea>
+      </mat-form-field>
+
+      <div class="actions full">
+        <button mat-stroked-button type="button" (click)="cancelForm()">{{ 'ACTIONS.CANCEL' | translate }}</button>
+        <button mat-flat-button type="submit" [disabled]="form.invalid || saving">{{ 'ACTIONS.SAVE' | translate }}</button>
+      </div>
+    </form>
+  </div>
+
+  <app-empty-state
+    *ngIf="!loading && filteredUnits.length === 0"
+    icon="meeting_room"
+    [title]="'COMMON.NO_DATA' | translate"
+    [message]="'UNITS.SUBTITLE' | translate">
+  </app-empty-state>
+
+  <div class="unit-grid" *ngIf="!loading && filteredUnits.length > 0">
+    <article class="unit-card" *ngFor="let u of filteredUnits">
+      <div class="unit-cover" [class.rented]="u.rented">
+        <div class="unit-status-badge" [class.badge-rented]="u.rented" [class.badge-vacant]="!u.rented">
+          {{ (u.rented ? 'UNITS.RENTED' : 'DASHBOARD.VACANT_UNITS') | translate }}
+        </div>
+        <div class="unit-status-dot" [class.active]="u.active" [class.inactive]="!u.active"></div>
+        <span class="material-icons">meeting_room</span>
+      </div>
+
+      <div class="unit-body">
+        <div class="unit-code">#{{ u.unitNumber }}</div>
+        <h3 class="unit-name">{{ propertyName(u) }}</h3>
+        <p class="unit-meta">
+          <span class="material-icons">layers</span>
+          {{ 'UNITS.FLOOR' | translate }}: {{ u.floorId || '—' }}
+        </p>
+        <p class="unit-meta">
+          <span class="material-icons">person</span>
+          {{ 'UNITS.RENTED_BY' | translate }}: {{ tenantName(u) }}
+        </p>
+
+        <div class="unit-stats">
+          <div class="ustat">
+            <span class="ustat-value">{{ u.unitType || '—' }}</span>
+            <span class="ustat-label">{{ 'UNITS.UNIT_TYPE' | translate }}</span>
+          </div>
+          <div class="ustat">
+            <span class="ustat-value">{{ u.areaSqm || '—' }}</span>
+            <span class="ustat-label">{{ 'UNITS.AREA' | translate }}</span>
+          </div>
+          <div class="ustat">
+            <span class="ustat-value">{{ u.rentAmount || '—' }}</span>
+            <span class="ustat-label">{{ 'UNITS.RENT' | translate }}</span>
+          </div>
+        </div>
+
+        <div class="unit-actions">
+          <button mat-stroked-button type="button" (click)="startEdit(u)">
+            <span class="material-icons">edit</span>
+            {{ 'ACTIONS.EDIT' | translate }}
+          </button>
+
+          <mat-slide-toggle [checked]="u.rented" (change)="toggleRented(u)">
+            {{ 'UNITS.RENTED' | translate }}
+          </mat-slide-toggle>
+        </div>
+      </div>
+    </article>
+  </div>
+</div>

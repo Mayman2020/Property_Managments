@@ -1,5 +1,12 @@
 .loading-center { display: flex; justify-content: center; padding: 48px; }
 
+.search-wrap {
+  margin-bottom: 14px;
+  padding: 10px 12px;
+
+  mat-form-field { width: 100%; }
+}
+
 .low-row { background: rgba(245,124,0,0.04) !important; }
 
 .item-code {

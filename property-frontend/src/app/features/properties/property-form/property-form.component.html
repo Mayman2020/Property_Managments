@@ -1,16 +1,26 @@
 ﻿<div class="app-page">
   <app-page-header
-    [title]="'PROPERTY_FORM.TITLE' | translate"
-    [breadcrumbs]="[{label:('NAV.DASHBOARD' | translate), route:'/admin/dashboard'}, {label:('NAV.PROPERTIES' | translate), route:'/admin/properties'}, {label:('ACTIONS.ADD' | translate)}]">
+    [title]="pageTitleKey | translate"
+    [breadcrumbs]="[{label:('NAV.DASHBOARD' | translate), route:'/admin/dashboard'}, {label:('NAV.PROPERTIES' | translate), route:'/admin/properties'}, {label:((mode === 'create' ? 'ACTIONS.ADD' : (mode === 'edit' ? 'ACTIONS.EDIT' : 'ACTIONS.VIEW')) | translate)}]">
+    <button mat-stroked-button type="button" *ngIf="isViewMode" (click)="editCurrent()">
+      <span class="material-icons">edit</span>
+      {{ 'ACTIONS.EDIT' | translate }}
+    </button>
   </app-page-header>
 
-  <div class="form-card">
+  <div class="form-card" *ngIf="!loading">
     <form [formGroup]="form" (ngSubmit)="submit()">
       <div class="form-grid">
         <mat-form-field appearance="outline">
-          <mat-label>{{ 'PROPERTY_FORM.PROPERTY_NAME' | translate }}</mat-label>
-          <input matInput formControlName="propertyName">
-          <mat-error *ngIf="form.get('propertyName')?.invalid">{{ 'COMMON.REQUIRED' | translate }}</mat-error>
+          <mat-label>{{ 'LOOKUPS.NAME_AR' | translate }}</mat-label>
+          <input matInput formControlName="propertyNameAr">
+          <mat-error *ngIf="form.get('propertyNameAr')?.invalid">{{ 'COMMON.REQUIRED' | translate }}</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'LOOKUPS.NAME_EN' | translate }}</mat-label>
+          <input matInput formControlName="propertyNameEn">
+          <mat-error *ngIf="form.get('propertyNameEn')?.invalid">{{ 'COMMON.REQUIRED' | translate }}</mat-error>
         </mat-form-field>
 
         <mat-form-field appearance="outline">
@@ -38,13 +48,24 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline">
-          <mat-label>{{ 'PROPERTY_FORM.CITY' | translate }}</mat-label>
-          <input matInput formControlName="city">
+          <mat-label>{{ 'PROPERTY_FORM.COUNTRY' | translate }}</mat-label>
+          <mat-select formControlName="country" [disabled]="true">
+            <mat-option [value]="form.get('country')?.value">{{ form.get('country')?.value }}</mat-option>
+          </mat-select>
         </mat-form-field>
 
         <mat-form-field appearance="outline">
-          <mat-label>{{ 'PROPERTY_FORM.COUNTRY' | translate }}</mat-label>
-          <input matInput formControlName="country">
+          <mat-label>{{ 'PROPERTY_FORM.CITY' | translate }}</mat-label>
+          <mat-select formControlName="cityId" [disabled]="loadingLookups || isViewMode">
+            <mat-option [value]="null" disabled>{{ 'PROPERTY_FORM.SELECT_CITY' | translate }}</mat-option>
+            <mat-option *ngFor="let city of cities" [value]="city.id">{{ cityLabel(city) }}</mat-option>
+          </mat-select>
+          <mat-error *ngIf="form.get('cityId')?.invalid">{{ 'COMMON.REQUIRED' | translate }}</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-col">
+          <mat-label>{{ 'PROPERTY_FORM.GOOGLE_MAP_URL' | translate }}</mat-label>
+          <input matInput formControlName="googleMapUrl" placeholder="https://maps.google.com/...">
         </mat-form-field>
 
         <mat-form-field appearance="outline">
@@ -57,15 +78,30 @@
           <mat-label>{{ 'PROPERTY_FORM.DESCRIPTION' | translate }}</mat-label>
           <textarea matInput formControlName="description" rows="3"></textarea>
         </mat-form-field>
+
+        <div class="full-col">
+          <h3 class="upload-title">{{ 'PROPERTY_FORM.COVER_IMAGE' | translate }}</h3>
+          <app-upload-zone
+            [multiple]="false"
+            [accept]="'image/*'"
+            [label]="'PROPERTY_FORM.COVER_UPLOAD_LABEL' | translate"
+            (filesUploaded)="onCoverUploaded($event)">
+          </app-upload-zone>
+          <img *ngIf="form.get('coverImageUrl')?.value" [src]="form.get('coverImageUrl')?.value" class="cover-preview" alt="cover">
+        </div>
       </div>
 
       <div class="form-actions">
         <button mat-stroked-button type="button" routerLink="/admin/properties">{{ 'ACTIONS.CANCEL' | translate }}</button>
-        <button mat-flat-button type="submit" [disabled]="form.invalid || submitting">
+        <button mat-flat-button type="submit" [disabled]="form.invalid || submitting || loadingLookups || isViewMode">
           <mat-spinner *ngIf="submitting" diameter="18"></mat-spinner>
           <span *ngIf="!submitting">{{ 'PROPERTY_FORM.SAVE_BUTTON' | translate }}</span>
         </button>
       </div>
     </form>
+  </div>
+
+  <div class="loading-center" *ngIf="loading">
+    <mat-spinner diameter="40"></mat-spinner>
   </div>
 </div>

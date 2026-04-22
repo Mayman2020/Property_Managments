@@ -31,6 +31,23 @@ export interface RatingsSummary {
   fiveStar: number;
 }
 
+export interface RatingDashboardItem {
+  id: number;
+  requestId: number;
+  rating: number;
+  comment?: string;
+  createdAt: string;
+  requestNumber?: string;
+  requestTitle?: string;
+  propertyId?: number;
+  propertyName?: string;
+  propertyNameAr?: string;
+  propertyNameEn?: string;
+  unitId?: number;
+  unitNumber?: string;
+  tenantName?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class DashboardService {
   constructor(private readonly api: ApiService) {}
@@ -53,5 +70,9 @@ export class DashboardService {
 
   getRatingsSummary(): Observable<ApiResponse<RatingsSummary>> {
     return this.api.get('/dashboard/ratings-summary');
+  }
+
+  getRatingsDetails(): Observable<ApiResponse<RatingDashboardItem[]>> {
+    return this.api.get('/dashboard/ratings-details');
   }
 }

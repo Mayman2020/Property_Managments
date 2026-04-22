@@ -1,7 +1,8 @@
-﻿import { Injectable } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { OverlayContainer } from '@angular/cdk/overlay';
 import { TranslateService } from '@ngx-translate/core';
 import { Observable } from 'rxjs';
+import { tap } from 'rxjs/operators';
 
 export type LangCode = 'ar' | 'en';
 export type Direction = 'rtl' | 'ltr';
@@ -30,7 +31,7 @@ export class I18nService {
     const saved = (localStorage.getItem(STORAGE_KEY) as LangCode) || 'ar';
     this.translate.addLangs(['ar', 'en']);
     this.translate.setDefaultLang('ar');
-    this.applyLang(saved);
+    this.setLang(saved).subscribe();
   }
 
   get currentLang(): LangCode {
@@ -46,9 +47,12 @@ export class I18nService {
   }
 
   setLang(code: LangCode): Observable<unknown> {
-    localStorage.setItem(STORAGE_KEY, code);
-    this.applyLang(code);
-    return this.translate.use(code);
+    const lang = this.languages.find((l) => l.code === code) ? code : 'ar';
+    localStorage.setItem(STORAGE_KEY, lang);
+    this.applyLang(lang);
+    return this.translate.use(lang).pipe(
+      tap(() => this.updateDocumentTitle())
+    );
   }
 
   instant(key: string, params?: Record<string, unknown>): string {
@@ -63,7 +67,12 @@ export class I18nService {
     document.documentElement.setAttribute('lang', htmlLang);
     document.body.setAttribute('dir', lang.dir);
     this.overlayContainer.getContainerElement().setAttribute('dir', lang.dir);
+  }
 
-    this.translate.use(code);
+  private updateDocumentTitle(): void {
+    const title = this.translate.instant('APP.TAGLINE');
+    if (title && title !== 'APP.TAGLINE') {
+      document.title = title;
+    }
   }
 }

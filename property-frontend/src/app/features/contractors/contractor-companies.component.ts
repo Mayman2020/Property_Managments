@@ -28,13 +28,17 @@ import { AuthService } from '../../core/services/auth.service';
 })
 export class ContractorCompaniesComponent implements OnInit {
   companies: ContractorCompany[] = [];
+  filteredCompanies: ContractorCompany[] = [];
   loading = true;
   saving = false;
   formVisible = false;
   editing: ContractorCompany | null = null;
+  searchTerm = '';
 
   readonly form = this.fb.nonNullable.group({
-    name: ['', [Validators.required, Validators.maxLength(200)]],
+    name: [''],
+    nameAr: ['', [Validators.required, Validators.maxLength(200)]],
+    nameEn: ['', [Validators.required, Validators.maxLength(200)]],
     phone: ['', [Validators.maxLength(40)]],
     email: ['', [Validators.maxLength(150)]],
     notes: [''],
@@ -57,9 +61,10 @@ export class ContractorCompaniesComponent implements OnInit {
 
   load(): void {
     this.loading = true;
-    this.svc.list(true).subscribe({
+    this.svc.list(true, this.searchTerm).subscribe({
       next: (res) => {
         this.companies = res.data ?? [];
+        this.filteredCompanies = [...this.companies];
         this.loading = false;
       },
       error: () => {
@@ -71,7 +76,7 @@ export class ContractorCompaniesComponent implements OnInit {
   startCreate(): void {
     this.editing = null;
     this.formVisible = true;
-    this.form.reset({ name: '', phone: '', email: '', notes: '', active: true });
+    this.form.reset({ name: '', nameAr: '', nameEn: '', phone: '', email: '', notes: '', active: true });
   }
 
   startEdit(c: ContractorCompany): void {
@@ -79,6 +84,8 @@ export class ContractorCompaniesComponent implements OnInit {
     this.formVisible = true;
     this.form.patchValue({
       name: c.name,
+      nameAr: c.nameAr ?? c.name,
+      nameEn: c.nameEn ?? c.name,
       phone: c.phone ?? '',
       email: c.email ?? '',
       notes: c.notes ?? '',
@@ -89,7 +96,7 @@ export class ContractorCompaniesComponent implements OnInit {
   cancelForm(): void {
     this.editing = null;
     this.formVisible = false;
-    this.form.reset({ name: '', phone: '', email: '', notes: '', active: true });
+    this.form.reset({ name: '', nameAr: '', nameEn: '', phone: '', email: '', notes: '', active: true });
   }
 
   save(): void {
@@ -97,7 +104,9 @@ export class ContractorCompaniesComponent implements OnInit {
     this.saving = true;
     const v = this.form.getRawValue();
     const body = {
-      name: v.name.trim(),
+      name: (v.nameAr || v.nameEn || v.name).trim(),
+      nameAr: (v.nameAr || v.name || v.nameEn).trim(),
+      nameEn: (v.nameEn || v.name || v.nameAr).trim(),
       phone: v.phone?.trim() || undefined,
       email: v.email?.trim() || undefined,
       notes: v.notes?.trim() || undefined,
@@ -124,5 +133,10 @@ export class ContractorCompaniesComponent implements OnInit {
       next: () => this.load(),
       error: () => {}
     });
+  }
+
+  onSearch(value: string): void {
+    this.searchTerm = value;
+    this.load();
   }
 }

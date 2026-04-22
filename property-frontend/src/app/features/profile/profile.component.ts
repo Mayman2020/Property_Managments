@@ -9,6 +9,7 @@ import { RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { UploadZoneComponent } from '../../shared/components/upload-zone/upload-zone.component';
 import { SnackService } from '../../core/services/snack.service';
 import { UserProfileService } from '../../core/services/user-profile.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -26,7 +27,8 @@ import { I18nService } from '../../core/i18n/i18n.service';
     MatInputModule,
     MatButtonModule,
     MatProgressSpinnerModule,
-    PageHeaderComponent
+    PageHeaderComponent,
+    UploadZoneComponent
   ],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss'
@@ -126,6 +128,12 @@ export class ProfileComponent implements OnInit {
         this.snack.error(err.message || this.i18n.instant('PROFILE.PASSWORD_CHANGE_ERROR'));
       }
     });
+  }
+
+  onImageUploaded(urls: string[]): void {
+    if (urls.length > 0) {
+      this.form.patchValue({ profileImageUrl: urls[0] });
+    }
   }
 
   private initialsFrom(name: string): string {

@@ -16,8 +16,12 @@
     <h2 class="form-title">{{ editing ? ('CONTRACTORS.EDIT' | translate) : ('CONTRACTORS.NEW' | translate) }}</h2>
     <form [formGroup]="form" (ngSubmit)="save()" class="contractor-form">
       <mat-form-field appearance="outline">
-        <mat-label>{{ 'CONTRACTORS.NAME' | translate }}</mat-label>
-        <input matInput formControlName="name" />
+        <mat-label>{{ 'CONTRACTORS.NAME_AR' | translate }}</mat-label>
+        <input matInput formControlName="nameAr" [placeholder]="'CONTRACTORS.NAME_AR' | translate" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'CONTRACTORS.NAME_EN' | translate }}</mat-label>
+        <input matInput formControlName="nameEn" [placeholder]="'CONTRACTORS.NAME_EN' | translate" />
       </mat-form-field>
       <mat-form-field appearance="outline">
         <mat-label>{{ 'CONTRACTORS.PHONE' | translate }}</mat-label>
@@ -44,8 +48,15 @@
 
   <div class="loading-center" *ngIf="loading"><mat-spinner diameter="40"></mat-spinner></div>
 
+  <div class="search-wrap app-card" *ngIf="!loading">
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'ACTIONS.SEARCH' | translate }}</mat-label>
+      <input matInput [value]="searchTerm" (input)="onSearch($any($event.target).value)">
+    </mat-form-field>
+  </div>
+
   <app-empty-state
-    *ngIf="!loading && companies.length === 0 && !formVisible"
+    *ngIf="!loading && filteredCompanies.length === 0 && !formVisible"
     icon="engineering"
     [title]="'CONTRACTORS.EMPTY_TITLE' | translate"
     [message]="'CONTRACTORS.EMPTY_MSG' | translate">
@@ -54,7 +65,7 @@
     </button>
   </app-empty-state>
 
-  <div class="app-card table-card" *ngIf="!loading && companies.length > 0">
+  <div class="app-card table-card" *ngIf="!loading && filteredCompanies.length > 0">
     <div class="app-table-wrap">
       <table class="app-data-table">
         <thead>
@@ -67,7 +78,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let c of companies">
+          <tr *ngFor="let c of filteredCompanies">
             <td><strong>{{ c.name }}</strong></td>
             <td>{{ c.phone || '—' }}</td>
             <td>{{ c.email || '—' }}</td>

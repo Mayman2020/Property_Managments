@@ -6,6 +6,8 @@ import { ApiResponse } from '../models/api-response.model';
 export interface ContractorCompany {
   id: number;
   name: string;
+  nameAr?: string;
+  nameEn?: string;
   phone?: string;
   email?: string;
   notes?: string;
@@ -16,6 +18,8 @@ export interface ContractorCompany {
 
 export interface ContractorCompanyForm {
   name: string;
+  nameAr?: string;
+  nameEn?: string;
   phone?: string;
   email?: string;
   notes?: string;
@@ -26,8 +30,10 @@ export interface ContractorCompanyForm {
 export class ContractorCompanyService {
   constructor(private readonly api: ApiService) {}
 
-  list(all = false): Observable<ApiResponse<ContractorCompany[]>> {
-    return this.api.get('/contractor-companies', { all });
+  list(all = false, q?: string): Observable<ApiResponse<ContractorCompany[]>> {
+    const params: Record<string, string | number | boolean> = { all };
+    if (q && q.trim()) params['q'] = q.trim();
+    return this.api.get('/contractor-companies', params);
   }
 
   create(body: ContractorCompanyForm): Observable<ApiResponse<ContractorCompany>> {

@@ -1,10 +1,10 @@
-.form-card {
+﻿.form-card {
   background: var(--surface);
   border: 1px solid var(--card-border);
   border-radius: var(--radius-lg);
   padding: 28px;
   box-shadow: var(--shadow-card);
-  max-width: 800px;
+  max-width: 900px;
 }
 
 .form-grid {
@@ -14,10 +14,24 @@
 
   .full-col { grid-column: 1 / -1; }
 
-  @media (max-width: 600px) { grid-template-columns: 1fr; }
+  @media (max-width: 700px) { grid-template-columns: 1fr; }
 }
 
 mat-form-field { width: 100%; }
+
+.upload-title {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+  color: var(--text-main);
+}
+
+.cover-preview {
+  margin-top: 10px;
+  width: 220px;
+  max-width: 100%;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+}
 
 .form-actions {
   display: flex;
@@ -26,4 +40,10 @@ mat-form-field { width: 100%; }
   margin-top: 20px;
   padding-top: 16px;
   border-top: 1px solid var(--line);
+}
+
+.loading-center {
+  display: flex;
+  justify-content: center;
+  padding: 24px 0;
 }

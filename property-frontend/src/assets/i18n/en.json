@@ -1,8 +1,8 @@
 {
   "APP": {
-    "NAME": "Maintenance Monitor",
-    "TAGLINE": "Property Maintenance Monitoring Platform",
-    "TAGLINE_SHORT": "Maintenance Platform"
+    "NAME": "Real Estate Maintenance Monitoring System",
+    "TAGLINE": "Real Estate Maintenance Monitoring System",
+    "TAGLINE_SHORT": "Maintenance Monitoring"
   },
   "NAV": {
     "DASHBOARD": "Dashboard",
@@ -19,7 +19,8 @@
     "NEW_REQUEST": "New Request",
     "PROFILE": "Profile",
     "RATINGS": "Visit ratings",
-    "CONTRACTOR_COMPANIES": "Contractor companies"
+    "CONTRACTOR_COMPANIES": "Contractor companies",
+    "LOOKUPS": "Lookups"
   },
   "AUTH": {
     "LOGIN": "Sign In",
@@ -163,7 +164,14 @@
     "OUT_OF_FIVE": "out of 5",
     "VISITS_RATED": "rated visits",
     "NO_RATINGS_TITLE": "No ratings yet",
-    "NO_RATINGS_MSG": "Ratings appear after tenants submit feedback on completed visits."
+    "NO_RATINGS_MSG": "Ratings appear after tenants submit feedback on completed visits.",
+    "DATE_FROM": "From date",
+    "DATE_TO": "To date",
+    "SATISFACTION_LABEL": "Satisfaction Rate (4-5 stars)",
+    "SATISFACTION_SUB": "Percentage of rated visits",
+    "LOW_RATINGS_LABEL": "Low Ratings (1-2 stars)",
+    "LOW_RATINGS_SUB": "Visits needing attention",
+    "RECENT_RATINGS": "Recent Ratings"
   },
   "CONTRACTORS": {
     "TITLE": "Contractor companies",
@@ -172,6 +180,8 @@
     "NEW": "New contractor company",
     "EDIT": "Edit company",
     "NAME": "Company name",
+    "NAME_AR": "Company name (Arabic)",
+    "NAME_EN": "Company name (English)",
     "PHONE": "Phone",
     "EMAIL": "Email",
     "NOTES": "Notes",
@@ -304,7 +314,8 @@
     "FLOORS": "Floors",
     "UNITS": "Units",
     "OWNER": "Owner",
-    "LOAD_ERROR": "Failed to load properties"
+    "LOAD_ERROR": "Failed to load properties",
+    "OPEN_MAP": "Open map"
   },
   "PROPERTY_FORM": {
     "TITLE": "Add New Property",
@@ -319,7 +330,15 @@
     "DESCRIPTION": "Description",
     "SAVE_BUTTON": "Save Property",
     "SAVE_SUCCESS": "Property added successfully",
-    "SAVE_ERROR": "Failed to add property"
+    "SAVE_ERROR": "Failed to add property",
+    "SELECT_CITY": "Select city",
+    "LOAD_LOCATION_ERROR": "Failed to load country/city lookups",
+    "LOCATION_REQUIRED": "Country and city are required",
+    "EDIT_TITLE": "Edit property",
+    "VIEW_TITLE": "Property details",
+    "GOOGLE_MAP_URL": "Google Maps URL",
+    "COVER_IMAGE": "Property image",
+    "COVER_UPLOAD_LABEL": "Upload property image"
   },
   "TENANT_DASHBOARD": {
     "WELCOME": "Welcome,",
@@ -342,7 +361,9 @@
     "HEADER_HINT": "Profile picture updates instantly after save.",
     "FULL_NAME": "Full name",
     "PHONE": "Phone",
-    "IMAGE_URL": "Profile image URL",
+    "IMAGE_URL": "Profile picture",
+    "IMAGE_UPLOAD": "Profile picture",
+    "UPLOAD_LABEL": "Drag your photo here or click to upload",
     "BIO": "Bio",
     "SAVE_BUTTON": "Save profile",
     "LOAD_ERROR": "Failed to load profile",
@@ -408,5 +429,59 @@
     "REQUEST_COMPLETED": "Maintenance request completed",
     "REQUEST_RATED": "Tenant submitted a visit rating",
     "REQUEST_CANCELLED": "Maintenance request was cancelled"
+  },
+  "LOOKUPS": {
+    "TITLE": "Countries and Cities",
+    "SUBTITLE": "Manage location lookups used by the property form",
+    "COUNTRIES": "Countries",
+    "CITIES": "Cities",
+    "COUNTRY": "Country",
+    "CODE": "Code",
+    "NAME_AR": "Arabic name",
+    "NAME_EN": "English name",
+    "SORT_ORDER": "Sort order",
+    "ADD_COUNTRY": "Add country",
+    "ADD_CITY": "Add city",
+    "COUNTRY_ADD_SUCCESS": "Country added successfully",
+    "CITY_ADD_SUCCESS": "City added successfully",
+    "LOAD_ERROR": "Failed to load lookups",
+    "SAVE_ERROR": "Failed to save lookup",
+    "LOCKED": "Locked"
+  },
+  "UNITS": {
+    "TITLE": "Units Management",
+    "SUBTITLE": "Manage units under each property",
+    "SEARCH": "Search by unit number",
+    "ADD": "Add unit",
+    "EDIT": "Edit unit",
+    "LIST": "Units list",
+    "UNIT_NUMBER": "Unit number",
+    "UNIT_TYPE": "Unit type",
+    "FLOOR": "Floor",
+    "AREA": "Area sqm",
+    "RENT": "Rent amount",
+    "RENTED": "Rented",
+    "RENTED_BY": "Rented by",
+    "LOAD_ERROR": "Failed to load units/properties",
+    "SAVE_SUCCESS": "Unit saved successfully",
+    "SAVE_ERROR": "Failed to save unit"
+  },
+  "TENANTS": {
+    "TITLE": "Tenants Management",
+    "SUBTITLE": "Assign tenant to a unit or full property",
+    "ADD": "Add tenant",
+    "LIST": "Tenants list",
+    "SCOPE": "Assignment type",
+    "SCOPE_UNIT": "Specific unit",
+    "SCOPE_PROPERTY": "Full property",
+    "USER_ID": "System user ID",
+    "LEASE_START": "Lease start",
+    "LEASE_END": "Lease end",
+    "LOAD_ERROR": "Failed to load tenants",
+    "SAVE_SUCCESS": "Tenant saved successfully",
+    "SAVE_ERROR": "Failed to save tenant",
+    "DELETE_SUCCESS": "Tenant removed successfully",
+    "SELECT_USER": "System tenant user",
+    "NO_USER_LINK": "No user link"
   }
 }

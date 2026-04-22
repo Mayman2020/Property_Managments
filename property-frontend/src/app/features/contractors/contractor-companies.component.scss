@@ -4,6 +4,13 @@
   padding: 40px;
 }
 
+.search-wrap {
+  margin-bottom: 14px;
+  padding: 10px 12px;
+
+  mat-form-field { width: 100%; }
+}
+
 .form-panel {
   margin-bottom: 20px;
   padding: 20px 22px;

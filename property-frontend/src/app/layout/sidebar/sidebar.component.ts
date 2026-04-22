@@ -37,6 +37,7 @@ export class SidebarComponent {
     { icon: 'inventory_2', labelKey: 'NAV.INVENTORY', route: '/admin/inventory', roles: ['SUPER_ADMIN', 'PROPERTY_ADMIN'] },
     { icon: 'bar_chart', labelKey: 'NAV.REPORTS', route: '/admin/reports', roles: ['SUPER_ADMIN', 'PROPERTY_ADMIN'] },
     { icon: 'people_alt', labelKey: 'NAV.USERS', route: '/admin/users', roles: ['SUPER_ADMIN'] },
+    { icon: 'public', labelKey: 'NAV.LOOKUPS', route: '/admin/lookups', roles: ['SUPER_ADMIN'] },
     { icon: 'assignment', labelKey: 'NAV.MY_REQUESTS', route: '/officer/requests', roles: ['MAINTENANCE_OFFICER'] },
     { icon: 'calendar_month', labelKey: 'NAV.SCHEDULE', route: '/officer/schedule', roles: ['MAINTENANCE_OFFICER'] },
     { icon: 'person', labelKey: 'NAV.PROFILE', route: '/officer/profile', roles: ['MAINTENANCE_OFFICER'] },
@@ -68,3 +69,4 @@ export class SidebarComponent {
     this.auth.logout();
   }
 }
+

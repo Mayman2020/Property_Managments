@@ -39,6 +39,7 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
 export class UserManagementComponent implements OnInit {
   users: User[] = [];
   properties: Property[] = [];
+  searchTerm = '';
 
   loading = true;
   saving = false;
@@ -79,8 +80,20 @@ export class UserManagementComponent implements OnInit {
   }
 
   loadData(): void {
+    this.loadUsers();
+    this.propertyService.getAll(0, 200).subscribe({
+      next: (res) => {
+        this.properties = res.data?.content ?? [];
+      },
+      error: () => {
+        this.properties = [];
+      }
+    });
+  }
+
+  private loadUsers(): void {
     this.loading = true;
-    this.userService.getAll(0, 200).subscribe({
+    this.userService.getAll(0, 200, this.searchTerm).subscribe({
       next: (res) => {
         this.users = res.data?.content ?? [];
         this.loading = false;
@@ -88,15 +101,6 @@ export class UserManagementComponent implements OnInit {
       error: () => {
         this.loading = false;
         this.snack.error(this.i18n.instant('USER_MGMT.LOAD_ERROR'));
-      }
-    });
-
-    this.propertyService.getAll(0, 200).subscribe({
-      next: (res) => {
-        this.properties = res.data?.content ?? [];
-      },
-      error: () => {
-        this.properties = [];
       }
     });
   }
@@ -209,6 +213,11 @@ export class UserManagementComponent implements OnInit {
     return this.editingId !== null;
   }
 
+  onSearch(value: string): void {
+    this.searchTerm = value;
+    this.loadUsers();
+  }
+
   private applyRoleRules(role: UserRole): void {
     const propertyCtrl = this.form.get('propertyId');
     const officerTypeCtrl = this.form.get('maintenanceOfficerType');
@@ -289,4 +298,5 @@ export class UserManagementComponent implements OnInit {
 
     return payload;
   }
+
 }

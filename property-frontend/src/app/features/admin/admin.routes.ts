@@ -1,4 +1,4 @@
-import { Routes } from '@angular/router';
+﻿import { Routes } from '@angular/router';
 import { MainLayoutComponent } from '../../layout/main-layout/main-layout.component';
 import { adminGuard } from '../../core/guards/auth.guard';
 
@@ -22,6 +22,22 @@ export const ADMIN_ROUTES: Routes = [
         loadComponent: () => import('../properties/property-form/property-form.component').then((m) => m.PropertyFormComponent)
       },
       {
+        path: 'properties/:id',
+        loadComponent: () => import('../properties/property-form/property-form.component').then((m) => m.PropertyFormComponent)
+      },
+      {
+        path: 'properties/:id/edit',
+        loadComponent: () => import('../properties/property-form/property-form.component').then((m) => m.PropertyFormComponent)
+      },
+      {
+        path: 'units',
+        loadComponent: () => import('../units/unit-management.component').then((m) => m.UnitManagementComponent)
+      },
+      {
+        path: 'tenants',
+        loadComponent: () => import('../tenants/tenant-management.component').then((m) => m.TenantManagementComponent)
+      },
+      {
         path: 'maintenance',
         loadComponent: () => import('../maintenance/request-list/request-list.component').then((m) => m.RequestListComponent),
         data: { listContext: 'admin' }
@@ -41,6 +57,10 @@ export const ADMIN_ROUTES: Routes = [
       {
         path: 'users',
         loadComponent: () => import('../users/user-management.component').then((m) => m.UserManagementComponent)
+      },
+      {
+        path: 'lookups',
+        loadComponent: () => import('../lookups/lookup-management.component').then((m) => m.LookupManagementComponent)
       },
       {
         path: 'ratings',

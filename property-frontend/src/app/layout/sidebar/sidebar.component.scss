@@ -26,7 +26,6 @@
 
     .sidebar-brand { justify-content: center; padding: 20px 0 14px; gap: 0; }
     .brand-icon { margin: 0 auto; }
-    .collapse-btn { margin: 0 auto; }
     .sidebar-user { display: none; }
     .nav-label, .nav-badge { display: none; }
     .sidebar-logout span:last-child { display: none; }
@@ -74,19 +73,6 @@
   margin-top: 4px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-}
-
-.collapse-btn {
-  background: rgba(255,255,255,0.06);
-  border: none; border-radius: 8px;
-  width: 28px; height: 28px;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; color: rgba(255,255,255,0.7);
-  transition: background .18s, color .18s;
-  flex-shrink: 0;
-
-  .material-icons { font-size: 18px; }
-  &:hover { background: rgba(255,255,255,0.12); color: #fff; }
 }
 
 /* Nav */
@@ -237,5 +223,12 @@
   .nav-item.active::before {
     inset-inline-start: auto;
     inset-inline-end: 0;
+  }
+
+  .brand-name,
+  .brand-tagline {
+    font-family: var(--font-body);
+    text-transform: none;
+    letter-spacing: normal;
   }
 }

@@ -2,6 +2,7 @@
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { NgFor, NgIf } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
@@ -22,7 +23,7 @@ import { I18nService } from '../../../core/i18n/i18n.service';
   standalone: true,
   imports: [
     NgFor, NgIf, ReactiveFormsModule, RouterLink, TranslateModule,
-    MatFormFieldModule, MatInputModule, MatSelectModule,
+    MatDatepickerModule, MatFormFieldModule, MatInputModule, MatSelectModule,
     MatButtonModule, MatIconModule, MatCheckboxModule, MatProgressSpinnerModule,
     PageHeaderComponent, UploadZoneComponent
   ],
@@ -53,7 +54,7 @@ export class VisitReportFormComponent implements OnInit {
     private readonly router: Router
   ) {
     this.form = this.fb.group({
-      visitDate: ['', Validators.required],
+      visitDate: [null, Validators.required],
       visitOutcome: ['', Validators.required],
       workDone: [''],
       officerNotes: [''],
@@ -71,6 +72,15 @@ export class VisitReportFormComponent implements OnInit {
     return !!this.form.get('hasPurchase')?.value;
   }
 
+  private toDateString(d: Date | string | null): string | undefined {
+    if (!d) return undefined;
+    if (typeof d === 'string') return d;
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
   onReceiptUploaded(urls: string[]): void {
     this.receiptUrl = urls[0] ?? '';
   }
@@ -78,8 +88,10 @@ export class VisitReportFormComponent implements OnInit {
   submit(): void {
     if (this.form.invalid || this.submitting) return;
     this.submitting = true;
+    const raw = this.form.value;
     const payload = {
-      ...this.form.value,
+      ...raw,
+      visitDate: this.toDateString(raw.visitDate),
       receiptUrl: this.receiptUrl || undefined
     };
     this.maintSvc.submitVisitReport(this.requestId, payload).subscribe({

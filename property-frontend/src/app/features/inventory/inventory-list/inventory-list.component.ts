@@ -1,7 +1,9 @@
 ﻿import { Component, OnInit } from '@angular/core';
 import { NgFor, NgIf, DecimalPipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
@@ -17,7 +19,7 @@ import { I18nService } from '../../../core/i18n/i18n.service';
   standalone: true,
   imports: [
     NgFor, NgIf, DecimalPipe, TranslateModule,
-    MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule,
+    MatButtonModule, MatFormFieldModule, MatIconModule, MatInputModule, MatProgressSpinnerModule, MatTooltipModule,
     PageHeaderComponent, EmptyStateComponent
   ],
   templateUrl: './inventory-list.component.html',
@@ -26,6 +28,7 @@ import { I18nService } from '../../../core/i18n/i18n.service';
 export class InventoryListComponent implements OnInit {
   items: InventoryItem[] = [];
   loading = true;
+  searchTerm = '';
 
   constructor(
     private readonly invSvc: InventoryService,
@@ -39,7 +42,7 @@ export class InventoryListComponent implements OnInit {
 
   load(): void {
     this.loading = true;
-    this.invSvc.getItems().subscribe({
+    this.invSvc.getItems(undefined, 0, 20, this.searchTerm).subscribe({
       next: (res) => {
         this.items = res.data?.content ?? [];
         this.loading = false;
@@ -54,5 +57,10 @@ export class InventoryListComponent implements OnInit {
   stockPercent(item: InventoryItem): number {
     if (item.minQuantity <= 0) return 100;
     return Math.min(100, Math.round((item.quantity / item.minQuantity) * 100));
+  }
+
+  onSearch(value: string): void {
+    this.searchTerm = value;
+    this.load();
   }
 }

@@ -32,10 +32,15 @@
           <input matInput formControlName="phone">
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>{{ 'PROFILE.IMAGE_URL' | translate }}</mat-label>
-          <input matInput formControlName="profileImageUrl" placeholder="https://...">
-        </mat-form-field>
+        <div class="full-width upload-field">
+          <div class="upload-label">{{ 'PROFILE.IMAGE_UPLOAD' | translate }}</div>
+          <app-upload-zone
+            [multiple]="false"
+            [accept]="'image/*'"
+            [label]="'PROFILE.UPLOAD_LABEL' | translate"
+            (filesUploaded)="onImageUploaded($event)">
+          </app-upload-zone>
+        </div>
 
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>{{ 'PROFILE.BIO' | translate }}</mat-label>

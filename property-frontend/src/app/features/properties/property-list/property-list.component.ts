@@ -2,7 +2,9 @@
 import { NgFor, NgIf } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
@@ -18,7 +20,7 @@ import { I18nService } from '../../../core/i18n/i18n.service';
   standalone: true,
   imports: [
     NgFor, NgIf, RouterLink, TranslateModule,
-    MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule,
+    MatButtonModule, MatFormFieldModule, MatIconModule, MatInputModule, MatProgressSpinnerModule, MatTooltipModule,
     PageHeaderComponent, EmptyStateComponent
   ],
   templateUrl: './property-list.component.html',
@@ -29,6 +31,7 @@ export class PropertyListComponent implements OnInit {
   loading = true;
   totalElements = 0;
   page = 0;
+  searchTerm = '';
 
   constructor(
     private readonly propertySvc: PropertyService,
@@ -42,7 +45,7 @@ export class PropertyListComponent implements OnInit {
 
   load(): void {
     this.loading = true;
-    this.propertySvc.getAll(this.page).subscribe({
+    this.propertySvc.getAll(this.page, 20, this.searchTerm).subscribe({
       next: (res) => {
         this.properties = res.data?.content ?? [];
         this.totalElements = res.data?.totalElements ?? 0;
@@ -62,5 +65,11 @@ export class PropertyListComponent implements OnInit {
   typeBadgeClass(type: string): string {
     const m: Record<string, string> = { RESIDENTIAL: 'type-res', COMMERCIAL: 'type-com', MIXED: 'type-mix' };
     return m[type] ?? '';
+  }
+
+  onSearch(value: string): void {
+    this.searchTerm = value;
+    this.page = 0;
+    this.load();
   }
 }

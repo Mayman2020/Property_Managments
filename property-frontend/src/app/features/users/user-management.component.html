@@ -13,6 +13,13 @@
     <mat-spinner diameter="40"></mat-spinner>
   </div>
 
+  <div class="surface-glow search-wrap" *ngIf="!loading">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>{{ 'ACTIONS.SEARCH' | translate }}</mat-label>
+      <input matInput [value]="searchTerm" (input)="onSearch($any($event.target).value)">
+    </mat-form-field>
+  </div>
+
   <div class="surface-glow user-form-card" *ngIf="showForm && !loading">
     <h3>{{ (isEditing() ? 'USER_MGMT.EDIT_USER' : 'USER_MGMT.NEW_USER') | translate }}</h3>
 

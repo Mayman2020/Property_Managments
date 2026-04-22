@@ -1,0 +1,99 @@
+<div class="app-page">
+  <app-page-header [title]="'TENANTS.TITLE' | translate" [subtitle]="'TENANTS.SUBTITLE' | translate"
+    [breadcrumbs]="[{label:('NAV.DASHBOARD' | translate), route:'/admin/dashboard'}, {label:('NAV.TENANTS' | translate)}]">
+  </app-page-header>
+
+  <div class="surface-glow search-wrap" *ngIf="!loading">
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>{{ 'ACTIONS.SEARCH' | translate }}</mat-label>
+      <input matInput [value]="searchTerm" (input)="onSearch($any($event.target).value)">
+    </mat-form-field>
+  </div>
+
+  <div class="split">
+    <div class="surface-glow panel">
+      <h3>{{ 'TENANTS.ADD' | translate }}</h3>
+      <form [formGroup]="form" (ngSubmit)="save()" class="grid">
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>{{ 'PROFILE.FULL_NAME' | translate }}</mat-label>
+          <input matInput formControlName="fullName">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'TENANTS.SCOPE' | translate }}</mat-label>
+          <mat-select formControlName="scope">
+            <mat-option value="UNIT">{{ 'TENANTS.SCOPE_UNIT' | translate }}</mat-option>
+            <mat-option value="PROPERTY">{{ 'TENANTS.SCOPE_PROPERTY' | translate }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'REQUEST_FORM.PROPERTY' | translate }}</mat-label>
+          <mat-select formControlName="propertyId">
+            <mat-option *ngFor="let p of properties" [value]="p.id">{{ p.propertyName }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" *ngIf="scope === 'UNIT'">
+          <mat-label>{{ 'REQUEST_FORM.UNIT' | translate }}</mat-label>
+          <mat-select formControlName="unitId">
+            <mat-option *ngFor="let u of units" [value]="u.id">{{ u.unitNumber }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'TENANTS.SELECT_USER' | translate }}</mat-label>
+          <mat-select formControlName="userId">
+            <mat-option [value]="null">{{ 'TENANTS.NO_USER_LINK' | translate }}</mat-option>
+            <mat-option *ngFor="let u of tenantUsers" [value]="u.id">{{ userLabel(u) }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'PROFILE.PHONE' | translate }}</mat-label>
+          <input matInput formControlName="phone">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'AUTH.EMAIL' | translate }}</mat-label>
+          <input matInput formControlName="email">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'TENANTS.LEASE_START' | translate }}</mat-label>
+          <input matInput [matDatepicker]="pickerStart" formControlName="leaseStart">
+          <mat-datepicker-toggle matIconSuffix [for]="pickerStart"></mat-datepicker-toggle>
+          <mat-datepicker #pickerStart></mat-datepicker>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'TENANTS.LEASE_END' | translate }}</mat-label>
+          <input matInput [matDatepicker]="pickerEnd" formControlName="leaseEnd">
+          <mat-datepicker-toggle matIconSuffix [for]="pickerEnd"></mat-datepicker-toggle>
+          <mat-datepicker #pickerEnd></mat-datepicker>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>{{ 'MAINTENANCE.DESCRIPTION' | translate }}</mat-label>
+          <textarea matInput rows="2" formControlName="notes"></textarea>
+        </mat-form-field>
+
+        <div class="actions full">
+          <button mat-flat-button type="submit" [disabled]="form.invalid || saving">{{ 'ACTIONS.SAVE' | translate }}</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="surface-glow panel">
+      <h3>{{ 'TENANTS.LIST' | translate }}</h3>
+      <div class="item" *ngFor="let t of filteredTenants">
+        <div>
+          <strong>{{ t.fullName }}</strong>
+          <div class="muted">{{ 'REQUEST_FORM.PROPERTY' | translate }}: {{ propertyLabel(t.propertyId) }} | {{ 'REQUEST_FORM.UNIT' | translate }}: {{ unitLabel(t.unitId) }}</div>
+          <div class="muted">{{ t.phone }} � {{ t.email || '�' }}</div>
+        </div>
+        <button mat-stroked-button color="warn" type="button" (click)="remove(t)">{{ 'ACTIONS.DELETE' | translate }}</button>
+      </div>
+    </div>
+  </div>
+</div>

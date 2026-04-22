@@ -10,7 +10,9 @@
       <form [formGroup]="form" (ngSubmit)="submit()">
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>{{ 'VISIT.VISIT_DATE' | translate }}</mat-label>
-          <input matInput type="date" formControlName="visitDate">
+          <input matInput [matDatepicker]="visitDatePicker" formControlName="visitDate">
+          <mat-datepicker-toggle matIconSuffix [for]="visitDatePicker"></mat-datepicker-toggle>
+          <mat-datepicker #visitDatePicker></mat-datepicker>
           <mat-error *ngIf="form.get('visitDate')?.invalid">{{ 'COMMON.REQUIRED' | translate }}</mat-error>
         </mat-form-field>
 
