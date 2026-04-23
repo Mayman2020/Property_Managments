@@ -10,6 +10,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class TenantService {
@@ -40,6 +42,7 @@ public class TenantService {
     @Transactional
     public TenantResponse create(TenantRequest request) {
         validateScope(request);
+        validateLease(request);
         if (request.getEmail() != null && tenantRepository.existsByEmail(request.getEmail())) {
             throw AppException.conflict("Email already registered: " + request.getEmail());
         }
@@ -55,6 +58,7 @@ public class TenantService {
                 .leaseStart(request.getLeaseStart())
                 .leaseEnd(request.getLeaseEnd())
                 .profileImage(request.getProfileImage())
+                .leaseContractFiles(normalizeFiles(request.getLeaseContractFiles()))
                 .notes(request.getNotes())
                 .active(true)
                 .build();
@@ -67,6 +71,7 @@ public class TenantService {
     @Transactional
     public TenantResponse update(Long id, TenantRequest request) {
         validateScope(request);
+        validateLease(request);
         Tenant tenant = findActive(id);
 
         if (request.getEmail() != null
@@ -86,6 +91,7 @@ public class TenantService {
         tenant.setLeaseStart(request.getLeaseStart());
         tenant.setLeaseEnd(request.getLeaseEnd());
         tenant.setProfileImage(request.getProfileImage());
+        tenant.setLeaseContractFiles(normalizeFiles(request.getLeaseContractFiles()));
         tenant.setNotes(request.getNotes());
 
         Tenant saved = tenantRepository.save(tenant);
@@ -110,6 +116,28 @@ public class TenantService {
         if (request.getUnitId() == null && request.getPropertyId() == null) {
             throw AppException.badRequest("Tenant must be assigned to a unit or a property");
         }
+    }
+
+    private void validateLease(TenantRequest request) {
+        if (request.getLeaseStart() == null || request.getLeaseEnd() == null) {
+            throw AppException.badRequest("Lease period (start/end) is required");
+        }
+        if (request.getLeaseEnd().isBefore(request.getLeaseStart())) {
+            throw AppException.badRequest("Lease end date must be on or after lease start date");
+        }
+        List<String> files = normalizeFiles(request.getLeaseContractFiles());
+        if (files.isEmpty()) {
+            throw AppException.badRequest("At least one lease contract attachment is required");
+        }
+    }
+
+    private List<String> normalizeFiles(List<String> files) {
+        if (files == null) return List.of();
+        return files.stream()
+                .map((f) -> f == null ? "" : f.trim())
+                .filter((f) -> !f.isEmpty())
+                .distinct()
+                .toList();
     }
 
     private void markUnitRented(Long unitId, boolean rented) {
@@ -139,6 +167,7 @@ public class TenantService {
                 .leaseStart(t.getLeaseStart())
                 .leaseEnd(t.getLeaseEnd())
                 .profileImage(t.getProfileImage())
+                .leaseContractFiles(t.getLeaseContractFiles())
                 .notes(t.getNotes())
                 .active(t.isActive())
                 .createdAt(t.getCreatedAt())

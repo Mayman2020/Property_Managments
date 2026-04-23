@@ -16,6 +16,7 @@ import { UploadZoneComponent, UploadedFile } from '../../../shared/components/up
 import { MaintenanceService, RequestForm } from '../../../core/services/maintenance.service';
 import { SnackService } from '../../../core/services/snack.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { PermissionService } from '../../../core/services/permission.service';
 import { Property, PropertyService } from '../../../core/services/property.service';
 import { Unit, UnitService } from '../../../core/services/unit.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
@@ -61,8 +62,9 @@ export class RequestFormComponent implements OnInit, OnDestroy {
     private readonly propertySvc: PropertyService,
     private readonly unitSvc: UnitService,
     private readonly snack: SnackService,
-    private readonly i18n: I18nService,
+    readonly i18n: I18nService,
     private readonly router: Router,
+    readonly permissions: PermissionService,
     readonly auth: AuthService
   ) {
     this.form = this.fb.group({
@@ -104,7 +106,7 @@ export class RequestFormComponent implements OnInit, OnDestroy {
   }
 
   submit(): void {
-    if (this.form.invalid || this.submitting) return;
+    if (this.form.invalid || this.submitting || !this.canSubmitRequest()) return;
     this.submitting = true;
 
     const payload: RequestForm = this.form.getRawValue();
@@ -149,6 +151,12 @@ export class RequestFormComponent implements OnInit, OnDestroy {
 
   categoryName(category: { nameAr: string; nameEn: string }): string {
     return this.i18n.currentLang === 'ar' ? category.nameAr : (category.nameEn || category.nameAr);
+  }
+
+  canSubmitRequest(): boolean {
+    return this.auth.isTenant()
+      ? this.permissions.can('new_request', 'create')
+      : this.permissions.can('maintenance', 'create');
   }
 
   toggleCategory(id: number): void {

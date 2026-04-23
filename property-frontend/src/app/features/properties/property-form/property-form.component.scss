@@ -33,6 +33,34 @@ mat-form-field { width: 100%; }
   border: 1px solid var(--line);
 }
 
+.doc-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.doc-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+
+  a {
+    color: var(--primary);
+    text-decoration: none;
+    overflow-wrap: anywhere;
+  }
+}
+
+.muted {
+  display: inline-block;
+  margin-top: 8px;
+  color: var(--text-muted);
+}
+
 .form-actions {
   display: flex;
   gap: 12px;

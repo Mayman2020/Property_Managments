@@ -1,254 +1,266 @@
-<div class="app-page">
-  <div class="loading-center" *ngIf="loading"><mat-spinner diameter="40"></mat-spinner></div>
+<div class="app-page request-detail-page">
+  <div class="loading-center" *ngIf="loading">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
 
   <ng-container *ngIf="!loading && request">
-    <app-page-header
-      [title]="request.requestNumber"
-      [subtitle]="request.title"
-      [breadcrumbs]="[{label:('NAV.MAINTENANCE' | translate), route:auth.getDashboardRoute()}, {label:request.requestNumber}]">
-      <span class="status-badge" [attr.data-status]="request.status">{{ statusLabel(request.status) }}</span>
-      <span class="priority-badge" [class]="request.priority">{{ priorityLabel(request.priority) }}</span>
-    </app-page-header>
+    <div class="detail-breadcrumb">
+      <a [routerLink]="auth.getDashboardRoute()">{{ 'NAV.MAINTENANCE' | translate }}</a>
+      <span>/</span>
+      <span>{{ request.requestNumber }}</span>
+    </div>
 
-    <!-- Workflow action panels -->
-    <div class="action-panels">
-
-      <!-- ADMIN: Assign Officer -->
-      <div class="app-card action-card" *ngIf="canAssign">
-        <div class="app-card-header action-card-header">
-          <span class="material-icons">person_add</span>
-          <span class="app-card-title">{{ 'MAINTENANCE.ASSIGN_OFFICER' | translate }}</span>
-          <button mat-icon-button (click)="showAssignPanel = !showAssignPanel">
-            <mat-icon>{{ showAssignPanel ? 'expand_less' : 'expand_more' }}</mat-icon>
-          </button>
+    <div class="detail-head">
+      <div class="detail-copy">
+        <div class="detail-eyebrow">{{ detailEyebrow }}</div>
+        <div class="hero-chips">
+          <span class="status-badge" [attr.data-status]="request.status">{{ statusLabel(request.status) }}</span>
+          <span class="priority-badge" [class]="request.priority">{{ priorityLabel(request.priority) }}</span>
+          <span class="hero-code">{{ request.requestNumber }}</span>
         </div>
-        <div class="app-card-body" *ngIf="showAssignPanel" [formGroup]="assignForm">
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>{{ 'MAINTENANCE.SELECT_OFFICER' | translate }}</mat-label>
-            <mat-select formControlName="officerId">
-              <mat-option *ngFor="let o of officers" [value]="o.id">{{ o.fullName }}</mat-option>
-            </mat-select>
-          </mat-form-field>
-          <div class="action-btns">
-            <button mat-flat-button color="primary" [disabled]="assignForm.invalid || actionLoading" (click)="assign()">
-              <mat-icon>check</mat-icon> {{ 'COMMON.SAVE' | translate }}
-            </button>
-          </div>
-        </div>
+        <h1>{{ request.title }}</h1>
+        <p class="detail-location">
+          <span class="material-icons">pin_drop</span>
+          {{ request.propertyName || '-' }} · {{ 'REQUEST_LIST.UNIT' | translate }} {{ request.unitNumber || '-' }} · {{ request.tenantName || '-' }}
+        </p>
       </div>
 
-      <!-- ADMIN / OFFICER: Schedule Visit -->
-      <div class="app-card action-card" *ngIf="canSchedule">
-        <div class="app-card-header action-card-header">
-          <span class="material-icons">event</span>
-          <span class="app-card-title">{{ 'MAINTENANCE.SCHEDULE_VISIT' | translate }}</span>
-          <button mat-icon-button (click)="showSchedulePanel = !showSchedulePanel">
-            <mat-icon>{{ showSchedulePanel ? 'expand_less' : 'expand_more' }}</mat-icon>
-          </button>
-        </div>
-        <div class="app-card-body" *ngIf="showSchedulePanel" [formGroup]="scheduleForm">
-          <mat-form-field appearance="outline">
-            <mat-label>{{ 'MAINTENANCE.VISIT_DATE' | translate }}</mat-label>
-            <input matInput [matDatepicker]="dp" formControlName="scheduledDate">
-            <mat-datepicker-toggle matIconSuffix [for]="dp"></mat-datepicker-toggle>
-            <mat-datepicker #dp></mat-datepicker>
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>{{ 'MAINTENANCE.TIME_FROM' | translate }}</mat-label>
-            <input matInput type="time" formControlName="scheduledTimeFrom">
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>{{ 'MAINTENANCE.TIME_TO' | translate }}</mat-label>
-            <input matInput type="time" formControlName="scheduledTimeTo">
-          </mat-form-field>
-          <div class="action-btns">
-            <button mat-flat-button color="primary" [disabled]="scheduleForm.invalid || actionLoading" (click)="scheduleVisit()">
-              <mat-icon>check</mat-icon> {{ 'COMMON.SAVE' | translate }}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- TENANT: Accept / Reject Schedule -->
-      <div class="app-card action-card accent-card" *ngIf="canAcceptReject">
-        <div class="app-card-header action-card-header">
-          <span class="material-icons">event_available</span>
-          <span class="app-card-title">{{ 'MAINTENANCE.CONFIRM_SCHEDULE' | translate }}</span>
-        </div>
-        <div class="app-card-body">
-          <div class="schedule-preview">
-            <span class="material-icons">calendar_today</span>
-            <div>
-              <strong>{{ request.scheduledDate | date:'fullDate' }}</strong>
-              <span *ngIf="request.scheduledTimeFrom">{{ request.scheduledTimeFrom }} — {{ request.scheduledTimeTo }}</span>
-            </div>
-          </div>
-          <div class="action-btns">
-            <button mat-flat-button color="primary" [disabled]="actionLoading" (click)="acceptSchedule()">
-              <mat-icon>check_circle</mat-icon> {{ 'MAINTENANCE.ACCEPT_SCHEDULE' | translate }}
-            </button>
-            <button mat-stroked-button color="warn" (click)="showRejectPanel = !showRejectPanel">
-              <mat-icon>cancel</mat-icon> {{ 'MAINTENANCE.REJECT_SCHEDULE' | translate }}
-            </button>
-          </div>
-          <div *ngIf="showRejectPanel" [formGroup]="rejectForm" class="reject-form">
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>{{ 'MAINTENANCE.REJECTION_REASON' | translate }}</mat-label>
-              <textarea matInput formControlName="rejectionNote" rows="3"></textarea>
-            </mat-form-field>
-            <button mat-flat-button color="warn" [disabled]="rejectForm.invalid || actionLoading" (click)="rejectSchedule()">
-              {{ 'MAINTENANCE.CONFIRM_REJECT' | translate }}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- OFFICER: Start Work -->
-      <div class="app-card action-card" *ngIf="canStart">
-        <div class="app-card-header action-card-header">
-          <span class="material-icons">construction</span>
-          <span class="app-card-title">{{ 'MAINTENANCE.START_WORK' | translate }}</span>
-        </div>
-        <div class="app-card-body">
-          <p class="action-hint">{{ 'MAINTENANCE.START_WORK_HINT' | translate }}</p>
-          <div class="action-btns">
-            <button mat-flat-button color="primary" [disabled]="actionLoading" (click)="startWork()">
-              <mat-icon>play_arrow</mat-icon> {{ 'MAINTENANCE.START_WORK' | translate }}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- OFFICER: Submit Visit Report -->
-      <div class="app-card action-card" *ngIf="canSubmitReport">
-        <div class="app-card-header action-card-header">
-          <span class="material-icons">assignment_turned_in</span>
-          <span class="app-card-title">{{ 'MAINTENANCE.VISIT_REPORT' | translate }}</span>
-        </div>
-        <div class="app-card-body">
-          <div class="action-btns">
-            <a mat-flat-button color="primary" [routerLink]="['visit-report']">
-              <mat-icon>edit_note</mat-icon> {{ 'MAINTENANCE.SUBMIT_REPORT' | translate }}
-            </a>
-          </div>
-        </div>
-      </div>
-
-      <!-- TENANT: Rate Visit -->
-      <div class="app-card action-card accent-card" *ngIf="canRate">
-        <div class="app-card-header action-card-header">
-          <span class="material-icons">star</span>
-          <span class="app-card-title">{{ 'RATING.TITLE' | translate }}</span>
-          <button mat-icon-button (click)="showRatingPanel = !showRatingPanel">
-            <mat-icon>{{ showRatingPanel ? 'expand_less' : 'expand_more' }}</mat-icon>
-          </button>
-        </div>
-        <div class="app-card-body" *ngIf="showRatingPanel" [formGroup]="ratingForm">
-          <div class="stars-row">
-            <button *ngFor="let s of ratingStars" mat-icon-button type="button" (click)="setRating(s)">
-              <mat-icon [class.star-filled]="(ratingForm.value.rating ?? 0) >= s">star</mat-icon>
-            </button>
-          </div>
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>{{ 'RATING.COMMENT' | translate }}</mat-label>
-            <textarea matInput formControlName="comment" rows="3"></textarea>
-          </mat-form-field>
-          <div class="action-btns">
-            <button mat-flat-button color="primary" [disabled]="ratingForm.invalid || actionLoading" (click)="submitRating()">
-              <mat-icon>send</mat-icon> {{ 'RATING.SUBMIT' | translate }}
-            </button>
-          </div>
-        </div>
+      <div class="hero-actions">
+        <a mat-stroked-button *ngIf="canSubmitReport" [routerLink]="['visit-report']">
+          <span class="material-icons">edit_note</span>
+          {{ 'MAINTENANCE.SUBMIT_REPORT' | translate }}
+        </a>
+        <button mat-flat-button *ngIf="canStart" [disabled]="actionLoading" (click)="startWork()">
+          <span class="material-icons">play_arrow</span>
+          {{ 'MAINTENANCE.START_WORK' | translate }}
+        </button>
       </div>
     </div>
 
-    <!-- Details grid -->
     <div class="detail-grid">
-      <div class="app-card">
-        <div class="app-card-header"><span class="app-card-title">{{ 'REQUEST_DETAIL.DETAILS' | translate }}</span></div>
-        <div class="app-card-body">
-          <div class="info-grid">
-            <div class="info-item">
-              <label>{{ 'MAINTENANCE.REQUEST_NUMBER' | translate }}</label>
-              <span class="mono">{{ request.requestNumber }}</span>
+      <div class="detail-main">
+        <section class="app-card detail-panel">
+          <div class="app-card-header">
+            <span class="app-card-title">{{ 'MAINTENANCE.DESCRIPTION' | translate }}</span>
+          </div>
+          <div class="app-card-body">
+            <p class="detail-body-copy">{{ request.description }}</p>
+
+            <div class="detail-meta-grid">
+              <div class="detail-meta-item">
+                <label>{{ 'REQUEST_DETAIL.TENANT' | translate }}</label>
+                <span>{{ request.tenantName || '-' }}</span>
+              </div>
+              <div class="detail-meta-item">
+                <label>{{ 'REQUEST_DETAIL.CREATED_AT' | translate }}</label>
+                <span>{{ formatDateTime(request.createdAt) }}</span>
+              </div>
+              <div class="detail-meta-item">
+                <label>{{ 'MAINTENANCE.CATEGORY' | translate }}</label>
+                <span>{{ request.categoryNameAr || request.categoryNameEn || '-' }}</span>
+              </div>
+              <div class="detail-meta-item">
+                <label>{{ 'REQUEST_DETAIL.PROPERTY_UNIT' | translate }}</label>
+                <span>{{ request.propertyName || '-' }} · {{ request.unitNumber || '-' }}</span>
+              </div>
+              <div class="detail-meta-item full" *ngIf="request.tenantNotes">
+                <label>{{ 'REQUEST_DETAIL.TENANT_NOTES' | translate }}</label>
+                <span>{{ request.tenantNotes }}</span>
+              </div>
             </div>
-            <div class="info-item">
-              <label>{{ 'REQUEST_DETAIL.CREATED_AT' | translate }}</label>
-              <span>{{ request.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
-            </div>
-            <div class="info-item">
-              <label>{{ 'REQUEST_DETAIL.TENANT' | translate }}</label>
-              <span>{{ request.tenantName || '—' }}</span>
-            </div>
-            <div class="info-item">
-              <label>{{ 'REQUEST_DETAIL.PROPERTY_UNIT' | translate }}</label>
-              <span>{{ request.propertyName }} — {{ 'REQUEST_LIST.UNIT' | translate }} {{ request.unitNumber }}</span>
-            </div>
-            <div class="info-item">
-              <label>{{ 'MAINTENANCE.CATEGORY' | translate }}</label>
-              <span>{{ request.categoryNameAr || '—' }}</span>
-            </div>
-            <div class="info-item">
-              <label>{{ 'MAINTENANCE.PRIORITY' | translate }}</label>
-              <span class="priority-badge" [class]="request.priority">{{ priorityLabel(request.priority) }}</span>
-            </div>
-            <div class="info-item full">
-              <label>{{ 'REQUEST_DETAIL.ISSUE_DESC' | translate }}</label>
-              <p class="desc-text">{{ request.description }}</p>
-            </div>
-            <div class="info-item" *ngIf="request.tenantNotes">
-              <label>{{ 'REQUEST_DETAIL.TENANT_NOTES' | translate }}</label>
-              <span>{{ request.tenantNotes }}</span>
+
+            <div class="detail-photos">
+              <div class="detail-photo-placeholder" *ngFor="let slot of [1, 2, 3]">
+                {{ i18n.currentLang === 'ar' ? 'صورة' : 'Photo' }} {{ slot }}
+              </div>
             </div>
           </div>
-        </div>
+        </section>
+
+        <section class="app-card detail-panel">
+          <div class="app-card-header">
+            <span class="app-card-title">{{ i18n.currentLang === 'ar' ? 'المراحل' : 'Timeline' }}</span>
+          </div>
+          <div class="app-card-body">
+            <div class="timeline-list">
+              <div class="timeline-item" *ngFor="let step of timelineSteps; let i = index; let last = last">
+                <div class="timeline-dot" [class.done]="step.done" [class.active]="step.active">
+                  <span class="material-icons" *ngIf="step.done">check</span>
+                  <span *ngIf="!step.done" class="timeline-index">{{ i + 1 }}</span>
+                </div>
+                <div class="timeline-content">
+                  <strong>{{ step.label }}</strong>
+                  <span>{{ step.date }}</span>
+                </div>
+                <div class="timeline-line" *ngIf="!last" [class.is-done]="step.done"></div>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
 
-      <div class="app-card">
-        <div class="app-card-header"><span class="app-card-title">{{ 'REQUEST_DETAIL.SCHEDULE' | translate }}</span></div>
-        <div class="app-card-body">
-          <div *ngIf="!request.scheduledDate" class="card-empty">
-            <span class="material-icons">event_busy</span>
-            <span>{{ 'REQUEST_DETAIL.NOT_SCHEDULED' | translate }}</span>
+      <aside class="detail-side">
+        <section class="app-card action-stack-card" *ngIf="canAssign || canSchedule || canAcceptReject || canRate || canStart || canSubmitReport">
+          <div class="app-card-header">
+            <span class="app-card-title">{{ i18n.currentLang === 'ar' ? 'إجراءات الطلب' : 'Request actions' }}</span>
           </div>
-          <div class="schedule-info" *ngIf="request.scheduledDate">
-            <div class="schedule-row">
-              <span class="material-icons">calendar_today</span>
-              <div>
-                <strong>{{ 'REQUEST_DETAIL.DATE' | translate }}</strong>
-                <span>{{ request.scheduledDate | date:'fullDate' }}</span>
+          <div class="app-card-body action-stack">
+            <div class="action-panel" *ngIf="canAssign">
+              <div class="action-title-row">
+                <strong>{{ 'MAINTENANCE.ASSIGN_OFFICER' | translate }}</strong>
+                <button mat-icon-button type="button" (click)="showAssignPanel = !showAssignPanel">
+                  <mat-icon>{{ showAssignPanel ? 'expand_less' : 'expand_more' }}</mat-icon>
+                </button>
+              </div>
+              <div *ngIf="showAssignPanel" [formGroup]="assignForm" class="action-form-shell">
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>{{ 'MAINTENANCE.SELECT_OFFICER' | translate }}</mat-label>
+                  <mat-select formControlName="officerId">
+                    <mat-option *ngFor="let o of officers" [value]="o.id">{{ o.fullName }}</mat-option>
+                  </mat-select>
+                </mat-form-field>
+                <button mat-flat-button [disabled]="assignForm.invalid || actionLoading" (click)="assign()">
+                  <mat-icon>check</mat-icon>{{ 'COMMON.SAVE' | translate }}
+                </button>
               </div>
             </div>
-            <div class="schedule-row" *ngIf="request.scheduledTimeFrom">
-              <span class="material-icons">schedule</span>
-              <div>
-                <strong>{{ 'REQUEST_DETAIL.TIME' | translate }}</strong>
-                <span>{{ request.scheduledTimeFrom }} — {{ request.scheduledTimeTo }}</span>
+
+            <div class="action-panel" *ngIf="canSchedule">
+              <div class="action-title-row">
+                <strong>{{ 'MAINTENANCE.SCHEDULE_VISIT' | translate }}</strong>
+                <button mat-icon-button type="button" (click)="showSchedulePanel = !showSchedulePanel">
+                  <mat-icon>{{ showSchedulePanel ? 'expand_less' : 'expand_more' }}</mat-icon>
+                </button>
+              </div>
+              <div *ngIf="showSchedulePanel" [formGroup]="scheduleForm" class="action-form-shell">
+                <div class="schedule-form-grid">
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'MAINTENANCE.VISIT_DATE' | translate }}</mat-label>
+                    <input matInput [matDatepicker]="dp" formControlName="scheduledDate">
+                    <mat-datepicker-toggle matIconSuffix [for]="dp"></mat-datepicker-toggle>
+                    <mat-datepicker #dp></mat-datepicker>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'MAINTENANCE.TIME_FROM' | translate }}</mat-label>
+                    <input matInput type="time" formControlName="scheduledTimeFrom">
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'MAINTENANCE.TIME_TO' | translate }}</mat-label>
+                    <input matInput type="time" formControlName="scheduledTimeTo">
+                  </mat-form-field>
+                </div>
+                <button mat-flat-button [disabled]="scheduleForm.invalid || actionLoading" (click)="scheduleVisit()">
+                  <mat-icon>check</mat-icon>{{ 'COMMON.SAVE' | translate }}
+                </button>
               </div>
             </div>
-            <div class="schedule-row" *ngIf="request.assignedOfficerName">
-              <span class="material-icons">engineering</span>
-              <div>
-                <strong>{{ 'REQUEST_DETAIL.OFFICER' | translate }}</strong>
-                <span>{{ request.assignedOfficerName }}</span>
+
+            <div class="action-panel accent" *ngIf="canAcceptReject">
+              <strong>{{ 'MAINTENANCE.CONFIRM_SCHEDULE' | translate }}</strong>
+              <div class="schedule-preview">
+                <span class="material-icons">calendar_today</span>
+                <div>
+                  <strong>{{ request.scheduledDate | date:'fullDate' }}</strong>
+                  <span *ngIf="request.scheduledTimeFrom">{{ request.scheduledTimeFrom }} - {{ request.scheduledTimeTo }}</span>
+                </div>
+              </div>
+              <div class="action-btn-row">
+                <button mat-flat-button *ngIf="permissions.can('my_requests', 'approve')" [disabled]="actionLoading" (click)="acceptSchedule()">
+                  <mat-icon>check_circle</mat-icon>{{ 'MAINTENANCE.ACCEPT_SCHEDULE' | translate }}
+                </button>
+                <button mat-stroked-button *ngIf="permissions.can('my_requests', 'reject')" (click)="showRejectPanel = !showRejectPanel">
+                  <mat-icon>cancel</mat-icon>{{ 'MAINTENANCE.REJECT_SCHEDULE' | translate }}
+                </button>
+              </div>
+              <div *ngIf="showRejectPanel" [formGroup]="rejectForm" class="action-form-shell">
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>{{ 'MAINTENANCE.REJECTION_REASON' | translate }}</mat-label>
+                  <textarea matInput formControlName="rejectionNote" rows="3"></textarea>
+                </mat-form-field>
+                <button mat-flat-button [disabled]="rejectForm.invalid || actionLoading" (click)="rejectSchedule()">
+                  {{ 'MAINTENANCE.CONFIRM_REJECT' | translate }}
+                </button>
               </div>
             </div>
-            <div class="schedule-row" *ngIf="request.scheduleAccepted != null">
-              <span class="material-icons" [class.color-success]="request.scheduleAccepted" [class.color-error]="!request.scheduleAccepted">
-                {{ request.scheduleAccepted ? 'check_circle' : 'cancel' }}
-              </span>
-              <div>
-                <strong>{{ 'REQUEST_DETAIL.SCHEDULE_STATUS' | translate }}</strong>
-                <span>{{ (request.scheduleAccepted ? 'MAINTENANCE.ACCEPTED' : 'MAINTENANCE.REJECTED') | translate }}</span>
+
+            <div class="action-panel accent" *ngIf="canRate">
+              <div class="action-title-row">
+                <strong>{{ 'RATING.TITLE' | translate }}</strong>
+                <button mat-icon-button type="button" (click)="showRatingPanel = !showRatingPanel">
+                  <mat-icon>{{ showRatingPanel ? 'expand_less' : 'expand_more' }}</mat-icon>
+                </button>
               </div>
-            </div>
-            <div class="info-item" *ngIf="request.scheduleRejectionNote">
-              <label>{{ 'MAINTENANCE.REJECTION_REASON' | translate }}</label>
-              <span class="color-error">{{ request.scheduleRejectionNote }}</span>
+              <div *ngIf="showRatingPanel" [formGroup]="ratingForm" class="action-form-shell">
+                <div class="stars-row">
+                  <button *ngFor="let s of ratingStars" mat-icon-button type="button" (click)="setRating(s)">
+                    <mat-icon [class.star-filled]="(ratingForm.value.rating ?? 0) >= s">star</mat-icon>
+                  </button>
+                </div>
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>{{ 'RATING.COMMENT' | translate }}</mat-label>
+                  <textarea matInput formControlName="comment" rows="3"></textarea>
+                </mat-form-field>
+                <button mat-flat-button [disabled]="ratingForm.invalid || actionLoading" (click)="submitRating()">
+                  <mat-icon>send</mat-icon>{{ 'RATING.SUBMIT' | translate }}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        </section>
+
+        <section class="app-card detail-panel">
+          <div class="app-card-header">
+            <span class="app-card-title">{{ i18n.currentLang === 'ar' ? 'موعد الزيارة' : 'Scheduled for' }}</span>
+          </div>
+          <div class="app-card-body">
+            <div *ngIf="!request.scheduledDate" class="card-empty">
+              <span class="material-icons">event_busy</span>
+              <span>{{ 'REQUEST_DETAIL.NOT_SCHEDULED' | translate }}</span>
+            </div>
+
+            <div *ngIf="request.scheduledDate" class="schedule-shell">
+              <div class="schedule-date">{{ formatDate(request.scheduledDate) }}</div>
+              <div class="schedule-window">
+                {{ request.scheduledTimeFrom || '09:00' }}<ng-container *ngIf="request.scheduledTimeTo"> - {{ request.scheduledTimeTo }}</ng-container>
+              </div>
+              <div class="divider-line"></div>
+              <div class="officer-card">
+                <div class="officer-avatar">{{ (request.assignedOfficerName || 'ST').slice(0, 2).toUpperCase() }}</div>
+                <div>
+                  <div class="officer-name">{{ request.assignedOfficerName || (i18n.currentLang === 'ar' ? 'سيتم التعيين' : 'To be assigned') }}</div>
+                  <div class="officer-role">{{ i18n.currentLang === 'ar' ? 'الصيانة' : 'Maintenance' }}</div>
+                </div>
+              </div>
+              <button mat-stroked-button type="button" class="full-width">
+                <span class="material-icons">phone</span>
+                {{ i18n.currentLang === 'ar' ? 'التواصل مع الفني' : 'Contact officer' }}
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section class="app-card detail-panel">
+          <div class="app-card-header">
+            <span class="app-card-title">{{ 'MAINTENANCE.VISIT_REPORT' | translate }}</span>
+          </div>
+          <div class="app-card-body">
+            <ng-container *ngIf="visitReport; else noReport">
+              <div class="visit-report-state">{{ statusLabel(request.status) }}</div>
+              <p class="visit-report-copy">{{ visitReport.workDone || visitReport.visitOutcome }}</p>
+              <div class="visit-report-meta" *ngIf="visitReport.officerNotes">{{ visitReport.officerNotes }}</div>
+              <div class="visit-report-purchase" *ngIf="visitReport.hasPurchase">
+                <span>{{ i18n.currentLang === 'ar' ? 'شراء:' : 'Purchase:' }}</span>
+                <strong>{{ visitReport.purchaseAmount || 0 }}</strong>
+              </div>
+            </ng-container>
+            <ng-template #noReport>
+              <div class="visit-report-empty">
+                {{ i18n.currentLang === 'ar' ? 'سيظهر التقرير بعد تنفيذ الزيارة.' : 'The report will appear after the officer completes the visit.' }}
+              </div>
+            </ng-template>
+          </div>
+        </section>
+      </aside>
     </div>
   </ng-container>
 </div>

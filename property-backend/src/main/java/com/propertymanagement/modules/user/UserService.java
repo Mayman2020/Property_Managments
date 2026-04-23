@@ -3,6 +3,7 @@ package com.propertymanagement.modules.user;
 import com.propertymanagement.modules.user.dto.UserRequest;
 import com.propertymanagement.modules.user.dto.UserProfileUpdateRequest;
 import com.propertymanagement.modules.user.dto.ChangePasswordRequest;
+import com.propertymanagement.modules.user.dto.UserRoleUpdateRequest;
 import com.propertymanagement.modules.user.dto.UserResponse;
 import com.propertymanagement.shared.exception.AppException;
 import lombok.RequiredArgsConstructor;
@@ -84,6 +85,14 @@ public class UserService {
     public UserResponse toggleActive(Long id) {
         User user = find(id);
         user.setActive(!user.isActive());
+        return toResponse(userRepository.save(user));
+    }
+
+    @Transactional
+    public UserResponse updateRole(Long id, UserRoleUpdateRequest request) {
+        User user = find(id);
+        user.setRole(request.getRole());
+        normalizeRoleSpecificFields(user);
         return toResponse(userRepository.save(user));
     }
 

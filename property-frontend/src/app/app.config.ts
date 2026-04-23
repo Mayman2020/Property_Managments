@@ -15,6 +15,7 @@ import { languageInterceptor } from './core/interceptors/language.interceptor';
 import { errorInterceptor } from './core/interceptors/error.interceptor';
 import { ThemeService } from './core/services/theme.service';
 import { AuthService } from './core/services/auth.service';
+import { PermissionService } from './core/services/permission.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -28,6 +29,12 @@ export const appConfig: ApplicationConfig = {
       provide: APP_INITIALIZER,
       useFactory: (auth: AuthService) => () => auth.clearExpiredTokens(),
       deps: [AuthService],
+      multi: true
+    },
+    {
+      provide: APP_INITIALIZER,
+      useFactory: (permissions: PermissionService) => () => permissions.loadMine(),
+      deps: [PermissionService],
       multi: true
     },
     provideRouter(routes),

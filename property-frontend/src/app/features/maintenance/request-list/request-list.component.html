@@ -1,8 +1,7 @@
-﻿<div class="app-page">
-
-  <!-- Admin header -->
+<div class="app-page request-list-page">
   <ng-container *ngIf="listContext === 'admin'">
     <app-page-header
+      [eyebrow]="i18n.currentLang === 'ar' ? 'العمليات' : 'Operations'"
       [title]="'REQUEST_LIST.TITLE' | translate"
       [subtitle]="'REQUEST_LIST.SUBTITLE' | translate"
       [breadcrumbs]="[
@@ -16,9 +15,9 @@
     </app-page-header>
   </ng-container>
 
-  <!-- Tenant header -->
   <ng-container *ngIf="listContext === 'tenant'">
     <app-page-header
+      [eyebrow]="i18n.currentLang === 'ar' ? 'نظرة عامة' : 'Overview'"
       [title]="'REQUEST_LIST.TENANT_TITLE' | translate"
       [subtitle]="'REQUEST_LIST.TENANT_SUBTITLE' | translate"
       [breadcrumbs]="[
@@ -32,9 +31,9 @@
     </app-page-header>
   </ng-container>
 
-  <!-- Officer header -->
   <ng-container *ngIf="listContext === 'officer'">
     <app-page-header
+      [eyebrow]="i18n.currentLang === 'ar' ? 'العمليات' : 'Operations'"
       [title]="'REQUEST_LIST.OFFICER_TITLE' | translate"
       [subtitle]="'REQUEST_LIST.OFFICER_SUBTITLE' | translate"
       [breadcrumbs]="[{ label: ('NAV.MY_REQUESTS' | translate) }]">
@@ -46,185 +45,216 @@
     <p>{{ 'REQUEST_LIST.NO_TENANT_LINK' | translate }}</p>
   </div>
 
-  <div class="filters-bar" *ngIf="listContext === 'admin' || listContext === 'officer'">
-    <mat-form-field appearance="outline" class="filter-field">
-      <mat-label>{{ 'MAINTENANCE.STATUS' | translate }}</mat-label>
-      <mat-select [(ngModel)]="filterStatus" (ngModelChange)="applyFilter()">
-        <mat-option *ngFor="let s of statuses" [value]="s.value">{{ s.labelKey | translate }}</mat-option>
-      </mat-select>
-    </mat-form-field>
-
-    <mat-form-field appearance="outline" class="filter-field">
-      <mat-label>{{ 'MAINTENANCE.PRIORITY' | translate }}</mat-label>
-      <mat-select [(ngModel)]="filterPriority" (ngModelChange)="applyFilter()">
-        <mat-option *ngFor="let p of priorities" [value]="p.value">{{ p.labelKey | translate }}</mat-option>
-      </mat-select>
-    </mat-form-field>
-
-    <div class="filter-count" *ngIf="totalElements > 0">
-      {{ totalElements }} {{ 'REQUEST_LIST.REQUESTS_COUNT' | translate }}
-    </div>
-  </div>
-
   <div class="loading-center" *ngIf="loading">
     <mat-spinner diameter="40"></mat-spinner>
   </div>
 
-  <!-- Tenant: current / previous tabs -->
-  <div class="app-card requests-tabs-card" *ngIf="listContext === 'tenant' && !loading && !missingTenantLink">
-    <mat-tab-group animationDuration="200ms" class="requests-tabs">
-      <mat-tab>
-        <ng-template mat-tab-label>
-          <span class="material-icons tab-icon">pending_actions</span>
-          {{ 'TENANT_DASHBOARD.CURRENT_REQUESTS' | translate }}
-          <span class="tab-count" *ngIf="currentRequests.length > 0">{{ currentRequests.length }}</span>
-        </ng-template>
-        <app-empty-state
-          *ngIf="currentRequests.length === 0"
-          icon="check_circle_outline"
-          [title]="'TENANT_DASHBOARD.NO_CURRENT_TITLE' | translate"
-          [message]="'TENANT_DASHBOARD.NO_CURRENT_MSG' | translate">
-          <button mat-flat-button routerLink="/tenant/new-request" style="margin-top: 16px">
-            <span class="material-icons">add</span> {{ 'NAV.NEW_REQUEST' | translate }}
-          </button>
-        </app-empty-state>
-        <div class="app-table-wrap" *ngIf="currentRequests.length > 0">
-          <table class="app-data-table">
-            <thead>
-              <tr>
-                <th>{{ 'MAINTENANCE.REQUEST_NUMBER' | translate }}</th>
-                <th>{{ 'REQUEST_LIST.REQUEST_TITLE' | translate }}</th>
-                <th>{{ 'REQUEST_LIST.PROPERTY_UNIT' | translate }}</th>
-                <th>{{ 'MAINTENANCE.PRIORITY' | translate }}</th>
-                <th>{{ 'MAINTENANCE.STATUS' | translate }}</th>
-                <th>{{ 'REQUEST_LIST.OFFICER' | translate }}</th>
-                <th>{{ 'REQUEST_LIST.CREATED_AT' | translate }}</th>
-                <th>{{ 'REQUEST_LIST.ACTIONS' | translate }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let req of currentRequests">
-                <td><span class="req-number">{{ req.requestNumber }}</span></td>
-                <td><span class="req-title">{{ req.title }}</span></td>
-                <td>
-                  <span class="property-info">{{ req.propertyName }}</span>
-                  <span class="unit-info">{{ 'REQUEST_LIST.UNIT' | translate }} {{ req.unitNumber }}</span>
-                </td>
-                <td><span class="priority-badge" [class]="req.priority">{{ priorityLabel(req.priority) }}</span></td>
-                <td><span class="status-badge" [attr.data-status]="req.status">{{ statusLabel(req.status) }}</span></td>
-                <td>{{ req.assignedOfficerName || '—' }}</td>
-                <td>{{ req.createdAt | date:'dd/MM/yyyy' }}</td>
-                <td>
-                  <a class="app-icon-btn" [routerLink]="detailLink(req.id)" [matTooltip]="'ACTIONS.VIEW' | translate">
-                    <span class="material-icons">visibility</span>
-                  </a>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+  <ng-container *ngIf="listContext === 'tenant' && !loading && !missingTenantLink">
+    <section class="tenant-active-card app-card" *ngIf="activeTenantRequest as active">
+      <div class="tenant-active-meta">
+        <span class="status-badge" [attr.data-status]="active.status">{{ statusLabel(active.status) }}</span>
+        <span class="priority-badge" [class]="active.priority">{{ priorityLabel(active.priority) }}</span>
+        <span class="req-number">{{ active.requestNumber }}</span>
+      </div>
+      <div class="tenant-active-title">{{ active.title }}</div>
+      <div class="tenant-active-copy">
+        {{ active.propertyName || '-' }} · {{ 'REQUEST_LIST.UNIT' | translate }} {{ active.unitNumber || '-' }}
+      </div>
+      <div class="tenant-active-footer">
+        <div class="tenant-active-visit">
+          <div class="section-mini-label">{{ i18n.currentLang === 'ar' ? 'الزيارة القادمة' : 'Next visit' }}</div>
+          <div class="section-mini-value">
+            <ng-container *ngIf="active.scheduledDate; else noVisit">
+              {{ active.scheduledDate | date:'dd MMM yyyy' }}<ng-container *ngIf="active.scheduledTimeFrom"> · {{ active.scheduledTimeFrom }}</ng-container>
+            </ng-container>
+            <ng-template #noVisit>{{ i18n.currentLang === 'ar' ? 'سيتم التحديد قريبًا' : 'To be scheduled' }}</ng-template>
+          </div>
         </div>
-      </mat-tab>
-      <mat-tab>
-        <ng-template mat-tab-label>
-          <span class="material-icons tab-icon">history</span>
-          {{ 'TENANT_DASHBOARD.PREVIOUS_REQUESTS' | translate }}
-          <span class="tab-count" *ngIf="previousRequests.length > 0">{{ previousRequests.length }}</span>
-        </ng-template>
-        <app-empty-state
-          *ngIf="previousRequests.length === 0"
-          icon="build_circle"
-          [title]="'TENANT_DASHBOARD.EMPTY_TITLE' | translate"
-          [message]="'TENANT_DASHBOARD.EMPTY_MESSAGE' | translate">
-        </app-empty-state>
-        <div class="app-table-wrap" *ngIf="previousRequests.length > 0">
-          <table class="app-data-table">
-            <thead>
-              <tr>
-                <th>{{ 'MAINTENANCE.REQUEST_NUMBER' | translate }}</th>
-                <th>{{ 'REQUEST_LIST.REQUEST_TITLE' | translate }}</th>
-                <th>{{ 'REQUEST_LIST.PROPERTY_UNIT' | translate }}</th>
-                <th>{{ 'MAINTENANCE.PRIORITY' | translate }}</th>
-                <th>{{ 'MAINTENANCE.STATUS' | translate }}</th>
-                <th>{{ 'REQUEST_LIST.OFFICER' | translate }}</th>
-                <th>{{ 'REQUEST_LIST.CREATED_AT' | translate }}</th>
-                <th>{{ 'REQUEST_LIST.ACTIONS' | translate }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let req of previousRequests">
-                <td><span class="req-number">{{ req.requestNumber }}</span></td>
-                <td><span class="req-title">{{ req.title }}</span></td>
-                <td>
-                  <span class="property-info">{{ req.propertyName }}</span>
-                  <span class="unit-info">{{ 'REQUEST_LIST.UNIT' | translate }} {{ req.unitNumber }}</span>
-                </td>
-                <td><span class="priority-badge" [class]="req.priority">{{ priorityLabel(req.priority) }}</span></td>
-                <td><span class="status-badge" [attr.data-status]="req.status">{{ statusLabel(req.status) }}</span></td>
-                <td>{{ req.assignedOfficerName || '—' }}</td>
-                <td>{{ req.createdAt | date:'dd/MM/yyyy' }}</td>
-                <td>
-                  <a class="app-icon-btn" [routerLink]="detailLink(req.id)" [matTooltip]="'ACTIONS.VIEW' | translate">
-                    <span class="material-icons">visibility</span>
-                  </a>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </mat-tab>
-    </mat-tab-group>
-  </div>
+        <a mat-stroked-button [routerLink]="detailLink(active.id)">
+          {{ 'ACTIONS.VIEW' | translate }}
+        </a>
+      </div>
+    </section>
 
-  <!-- Admin / officer single table -->
+    <app-empty-state
+      *ngIf="currentRequests.length === 0 && previousRequests.length === 0"
+      icon="build_circle"
+      [title]="'TENANT_DASHBOARD.EMPTY_TITLE' | translate"
+      [message]="'TENANT_DASHBOARD.EMPTY_MESSAGE' | translate">
+    </app-empty-state>
+
+    <section class="app-card table-card" *ngIf="currentRequests.length > 0">
+      <div class="section-card-header">
+        <div>
+          <div class="section-mini-label">{{ i18n.currentLang === 'ar' ? 'الحالي' : 'Current' }}</div>
+          <h3>{{ 'TENANT_DASHBOARD.CURRENT_REQUESTS' | translate }}</h3>
+        </div>
+      </div>
+
+      <div class="app-table-wrap">
+        <table class="app-data-table source-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>{{ 'REQUEST_LIST.REQUEST_TITLE' | translate }}</th>
+              <th>{{ 'REQUEST_LIST.OFFICER' | translate }}</th>
+              <th>{{ 'MAINTENANCE.STATUS' | translate }}</th>
+              <th>{{ 'REQUEST_LIST.CREATED_AT' | translate }}</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let req of pagedCurrentRequests">
+              <td><span class="req-number">{{ req.requestNumber }}</span></td>
+              <td class="request-cell">
+                <span class="req-title">{{ req.title }}</span>
+                <span class="unit-info">{{ req.propertyName || '-' }} · {{ req.unitNumber || '-' }}</span>
+              </td>
+              <td>{{ req.assignedOfficerName || '—' }}</td>
+              <td><span class="status-badge" [attr.data-status]="req.status">{{ statusLabel(req.status) }}</span></td>
+              <td>{{ req.createdAt | date:'dd/MM/yyyy' }}</td>
+              <td>
+                <a class="table-arrow" [routerLink]="detailLink(req.id)">
+                  <span class="material-icons">{{ i18n.currentLang === 'ar' ? 'arrow_back' : 'arrow_forward' }}</span>
+                </a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-pager" *ngIf="filterBySearch(currentRequests).length > pageSize">
+        <button mat-stroked-button type="button" (click)="changeTenantCurrentPage(-1)" [disabled]="tenantCurrentPageIndex === 0">&lt;</button>
+        <span>{{ tenantCurrentPageIndex + 1 }} / {{ totalPages(filterBySearch(currentRequests).length) }}</span>
+        <button mat-stroked-button type="button" (click)="changeTenantCurrentPage(1)" [disabled]="tenantCurrentPageIndex >= totalPages(filterBySearch(currentRequests).length) - 1">&gt;</button>
+      </div>
+    </section>
+
+    <section class="app-card table-card" *ngIf="previousRequests.length > 0">
+      <div class="section-card-header">
+        <div>
+          <div class="section-mini-label">{{ i18n.currentLang === 'ar' ? 'السجل' : 'History' }}</div>
+          <h3>{{ 'TENANT_DASHBOARD.PREVIOUS_REQUESTS' | translate }}</h3>
+        </div>
+      </div>
+
+      <div class="app-table-wrap">
+        <table class="app-data-table source-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>{{ 'REQUEST_LIST.REQUEST_TITLE' | translate }}</th>
+              <th>{{ 'REQUEST_LIST.OFFICER' | translate }}</th>
+              <th>{{ 'MAINTENANCE.STATUS' | translate }}</th>
+              <th>{{ 'REQUEST_LIST.CREATED_AT' | translate }}</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let req of pagedPreviousRequests">
+              <td><span class="req-number">{{ req.requestNumber }}</span></td>
+              <td class="request-cell">
+                <span class="req-title">{{ req.title }}</span>
+                <span class="unit-info">{{ req.propertyName || '-' }} · {{ req.unitNumber || '-' }}</span>
+              </td>
+              <td>{{ req.assignedOfficerName || '—' }}</td>
+              <td><span class="status-badge" [attr.data-status]="req.status">{{ statusLabel(req.status) }}</span></td>
+              <td>{{ req.createdAt | date:'dd/MM/yyyy' }}</td>
+              <td>
+                <a class="table-arrow" [routerLink]="detailLink(req.id)">
+                  <span class="material-icons">{{ i18n.currentLang === 'ar' ? 'arrow_back' : 'arrow_forward' }}</span>
+                </a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-pager" *ngIf="filterBySearch(previousRequests).length > pageSize">
+        <button mat-stroked-button type="button" (click)="changeTenantPreviousPage(-1)" [disabled]="tenantPreviousPageIndex === 0">&lt;</button>
+        <span>{{ tenantPreviousPageIndex + 1 }} / {{ totalPages(filterBySearch(previousRequests).length) }}</span>
+        <button mat-stroked-button type="button" (click)="changeTenantPreviousPage(1)" [disabled]="tenantPreviousPageIndex >= totalPages(filterBySearch(previousRequests).length) - 1">&gt;</button>
+      </div>
+    </section>
+  </ng-container>
+
   <app-empty-state
-    *ngIf="(listContext === 'admin' || listContext === 'officer') && !loading && requests.length === 0"
+    *ngIf="(listContext === 'admin' || listContext === 'officer') && !loading && filteredAdminRequests.length === 0"
     icon="build_circle"
     [title]="'REQUEST_LIST.EMPTY_TITLE' | translate"
     [message]="'REQUEST_LIST.EMPTY_MESSAGE' | translate">
   </app-empty-state>
 
-  <div class="app-card surface-glow" *ngIf="(listContext === 'admin' || listContext === 'officer') && !loading && requests.length > 0">
+  <section class="app-card table-card" *ngIf="(listContext === 'admin' || listContext === 'officer') && !loading && filteredAdminRequests.length > 0">
+    <div class="estate-table-toolbar" *ngIf="listContext === 'admin' || listContext === 'officer'">
+      <div class="estate-search-inline">
+        <span class="material-icons" style="font-size: 18px; color: var(--ink-400)">search</span>
+        <input [value]="searchTerm" (input)="onSearch($any($event.target).value)" [placeholder]="'ACTIONS.SEARCH' | translate">
+      </div>
+      <div class="estate-filter-row">
+        <button
+          type="button"
+          class="estate-filter-btn"
+          *ngFor="let s of statuses"
+          [class.active]="filterStatus === s.value"
+          (click)="filterStatus = s.value; applyFilter()">
+          {{ s.labelKey | translate }}
+        </button>
+        <span class="filter-divider"></span>
+        <button
+          type="button"
+          class="estate-filter-btn"
+          *ngFor="let p of priorities"
+          [class.active]="filterPriority === p.value"
+          (click)="filterPriority = p.value; applyFilter()">
+          {{ p.labelKey | translate }}
+        </button>
+      </div>
+    </div>
     <div class="app-table-wrap">
-      <table class="app-data-table">
+      <table class="app-data-table source-table">
         <thead>
           <tr>
-            <th>{{ 'MAINTENANCE.REQUEST_NUMBER' | translate }}</th>
+            <th>#</th>
             <th>{{ 'REQUEST_LIST.REQUEST_TITLE' | translate }}</th>
             <th>{{ 'REQUEST_LIST.PROPERTY_UNIT' | translate }}</th>
-            <th *ngIf="listContext === 'admin' || listContext === 'officer'">{{ 'REQUEST_LIST.TENANT' | translate }}</th>
-            <th>{{ 'MAINTENANCE.PRIORITY' | translate }}</th>
-            <th>{{ 'MAINTENANCE.STATUS' | translate }}</th>
+            <th>{{ 'REQUEST_LIST.TENANT' | translate }}</th>
             <th>{{ 'REQUEST_LIST.OFFICER' | translate }}</th>
+            <th>{{ 'MAINTENANCE.STATUS' | translate }}</th>
+            <th>{{ 'MAINTENANCE.PRIORITY' | translate }}</th>
             <th>{{ 'REQUEST_LIST.CREATED_AT' | translate }}</th>
-            <th>{{ 'REQUEST_LIST.ACTIONS' | translate }}</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let req of requests">
+          <tr *ngFor="let req of pagedAdminRequests">
             <td><span class="req-number">{{ req.requestNumber }}</span></td>
-            <td><span class="req-title">{{ req.title }}</span></td>
-            <td>
-              <span class="property-info">{{ req.propertyName }}</span>
-              <span class="unit-info">{{ 'REQUEST_LIST.UNIT' | translate }} {{ req.unitNumber }}</span>
+            <td class="request-cell">
+              <span class="req-title">{{ req.title }}</span>
             </td>
-            <td *ngIf="listContext === 'admin' || listContext === 'officer'">{{ req.tenantName || '—' }}</td>
-            <td><span class="priority-badge" [class]="req.priority">{{ priorityLabel(req.priority) }}</span></td>
-            <td><span class="status-badge" [attr.data-status]="req.status">{{ statusLabel(req.status) }}</span></td>
+            <td>
+              <span class="property-info">{{ req.propertyName || '-' }}</span>
+              <span class="unit-info">{{ req.unitNumber || '-' }}</span>
+            </td>
+            <td>{{ req.tenantName || '—' }}</td>
             <td>{{ req.assignedOfficerName || '—' }}</td>
+            <td><span class="status-badge" [attr.data-status]="req.status">{{ statusLabel(req.status) }}</span></td>
+            <td><span class="priority-badge" [class]="req.priority">{{ priorityLabel(req.priority) }}</span></td>
             <td>{{ req.createdAt | date:'dd/MM/yyyy' }}</td>
             <td>
-              <div class="action-btns">
-                <a class="app-icon-btn" [routerLink]="detailLink(req.id)" [matTooltip]="'ACTIONS.VIEW' | translate">
-                  <span class="material-icons">visibility</span>
-                </a>
-                <button type="button" class="app-icon-btn accent" *ngIf="listContext === 'admin'" [matTooltip]="'MAINTENANCE.ASSIGN' | translate">
-                  <span class="material-icons">person_add</span>
-                </button>
-              </div>
+              <a class="table-arrow" [routerLink]="detailLink(req.id)">
+                <span class="material-icons">{{ i18n.currentLang === 'ar' ? 'arrow_back' : 'arrow_forward' }}</span>
+              </a>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
-  </div>
+
+    <div class="table-pager" *ngIf="filteredAdminRequests.length > pageSize">
+      <button mat-stroked-button type="button" (click)="changeAdminPage(-1)" [disabled]="adminPageIndex === 0">&lt;</button>
+      <span>{{ adminPageIndex + 1 }} / {{ totalPages(filteredAdminRequests.length) }}</span>
+      <button mat-stroked-button type="button" (click)="changeAdminPage(1)" [disabled]="adminPageIndex >= totalPages(filteredAdminRequests.length) - 1">&gt;</button>
+    </div>
+  </section>
 </div>

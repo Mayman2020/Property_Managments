@@ -10,7 +10,6 @@ import { LoadingService } from '../../../core/services/loading.service';
     <div class="loading-overlay" *ngIf="loading.isLoading$ | async">
       <div class="spinner-wrap">
         <div class="spinner"></div>
-        <span class="spinner-brand">PM</span>
       </div>
     </div>
   `,
@@ -32,11 +31,6 @@ import { LoadingService } from '../../../core/services/loading.service';
       border: 3px solid rgba(201,168,76,0.2);
       border-top-color: #C9A84C;
       animation: spin 0.8s linear infinite;
-    }
-    .spinner-brand {
-      font-family: var(--font-display);
-      font-size: 0.75rem; font-weight: 700;
-      color: #1A3C5E; letter-spacing: 1px;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
   `]

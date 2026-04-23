@@ -38,10 +38,15 @@ export class RequestListComponent implements OnInit {
   loading = true;
   filterStatus = '';
   filterPriority = '';
+  searchTerm = '';
   totalElements = 0;
   page = 0;
   listContext: RequestListContext = 'admin';
   missingTenantLink = false;
+  readonly pageSize = 5;
+  adminPageIndex = 0;
+  tenantCurrentPageIndex = 0;
+  tenantPreviousPageIndex = 0;
 
   readonly statuses: { value: string; labelKey: string }[] = [
     { value: '', labelKey: 'REQUEST_LIST.ALL_STATUS' },
@@ -65,7 +70,7 @@ export class RequestListComponent implements OnInit {
 
   constructor(
     private readonly maintSvc: MaintenanceService,
-    private readonly i18n: I18nService,
+    readonly i18n: I18nService,
     private readonly route: ActivatedRoute,
     readonly auth: AuthService
   ) {}
@@ -86,12 +91,33 @@ export class RequestListComponent implements OnInit {
     return this.requests.filter((r) => !ACTIVE_STATUSES.has(r.status));
   }
 
+  get activeTenantRequest(): MaintenanceRequest | null {
+    return this.currentRequests[0] ?? null;
+  }
+
+  get filteredAdminRequests(): MaintenanceRequest[] {
+    return this.filterBySearch(this.requests);
+  }
+
+  get pagedAdminRequests(): MaintenanceRequest[] {
+    return this.pageSlice(this.filteredAdminRequests, this.adminPageIndex);
+  }
+
+  get pagedCurrentRequests(): MaintenanceRequest[] {
+    return this.pageSlice(this.filterBySearch(this.currentRequests), this.tenantCurrentPageIndex);
+  }
+
+  get pagedPreviousRequests(): MaintenanceRequest[] {
+    return this.pageSlice(this.filterBySearch(this.previousRequests), this.tenantPreviousPageIndex);
+  }
+
   load(): void {
     this.loading = true;
     this.missingTenantLink = false;
     const params: Record<string, string | number | boolean> = { page: this.page, size: this.listContext === 'tenant' ? 200 : 20 };
     if (this.filterStatus) params['status'] = this.filterStatus;
     if (this.filterPriority) params['priority'] = this.filterPriority;
+    if (this.searchTerm.trim()) params['q'] = this.searchTerm.trim();
 
     if (this.listContext === 'tenant') {
       const tenantId = this.auth.getCurrentUser()?.tenantId;
@@ -106,6 +132,7 @@ export class RequestListComponent implements OnInit {
         next: (res) => {
           this.requests = res.data?.content ?? [];
           this.totalElements = res.data?.totalElements ?? 0;
+          this.resetPagerIndexes();
           this.loading = false;
         },
         error: () => {
@@ -125,6 +152,7 @@ export class RequestListComponent implements OnInit {
         next: (res) => {
           this.requests = res.data?.content ?? [];
           this.totalElements = res.data?.totalElements ?? 0;
+          this.resetPagerIndexes();
           this.loading = false;
         },
         error: () => {
@@ -138,6 +166,7 @@ export class RequestListComponent implements OnInit {
       next: (res) => {
         this.requests = res.data?.content ?? [];
         this.totalElements = res.data?.totalElements ?? 0;
+        this.resetPagerIndexes();
         this.loading = false;
       },
       error: () => {
@@ -148,7 +177,30 @@ export class RequestListComponent implements OnInit {
 
   applyFilter(): void {
     this.page = 0;
+    this.resetPagerIndexes();
     this.load();
+  }
+
+  onSearch(value: string): void {
+    this.searchTerm = value;
+    this.resetPagerIndexes();
+    this.load();
+  }
+
+  totalPages(length: number): number {
+    return Math.max(1, Math.ceil(length / this.pageSize));
+  }
+
+  changeAdminPage(step: number): void {
+    this.adminPageIndex = this.clampPage(this.adminPageIndex + step, this.filteredAdminRequests.length);
+  }
+
+  changeTenantCurrentPage(step: number): void {
+    this.tenantCurrentPageIndex = this.clampPage(this.tenantCurrentPageIndex + step, this.filterBySearch(this.currentRequests).length);
+  }
+
+  changeTenantPreviousPage(step: number): void {
+    this.tenantPreviousPageIndex = this.clampPage(this.tenantPreviousPageIndex + step, this.filterBySearch(this.previousRequests).length);
   }
 
   statusLabel(status: string): string {
@@ -168,5 +220,37 @@ export class RequestListComponent implements OnInit {
       default:
         return ['/admin/maintenance', String(id)];
     }
+  }
+
+  private pageSlice(list: MaintenanceRequest[], pageIndex: number): MaintenanceRequest[] {
+    const start = pageIndex * this.pageSize;
+    return list.slice(start, start + this.pageSize);
+  }
+
+  private clampPage(nextIndex: number, listLength: number): number {
+    const max = this.totalPages(listLength) - 1;
+    return Math.max(0, Math.min(nextIndex, max));
+  }
+
+  filterBySearch(list: MaintenanceRequest[]): MaintenanceRequest[] {
+    const q = this.searchTerm.trim().toLowerCase();
+    if (!q) return list;
+    return list.filter((req) =>
+      [
+        req.requestNumber,
+        req.title,
+        req.description,
+        req.propertyName,
+        req.unitNumber,
+        req.tenantName,
+        req.assignedOfficerName
+      ].join(' ').toLowerCase().includes(q)
+    );
+  }
+
+  private resetPagerIndexes(): void {
+    this.adminPageIndex = 0;
+    this.tenantCurrentPageIndex = 0;
+    this.tenantPreviousPageIndex = 0;
   }
 }

@@ -20,6 +20,7 @@ export interface Property {
   totalUnits: number;
   description?: string;
   coverImageUrl?: string;
+  ownerDocumentFiles?: string[];
   isActive: boolean;
   createdAt: string;
 }
@@ -38,6 +39,7 @@ export interface PropertyForm {
   totalFloors?: number;
   description?: string;
   coverImageUrl?: string;
+  ownerDocumentFiles: string[];
 }
 
 @Injectable({ providedIn: 'root' })

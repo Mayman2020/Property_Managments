@@ -18,17 +18,20 @@ import { Unit, UnitService } from '../../core/services/unit.service';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { User } from '../../core/models/user.model';
 import { UserService } from '../../core/services/user.service';
+import { UploadZoneComponent } from '../../shared/components/upload-zone/upload-zone.component';
+import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 
 @Component({
   selector: 'app-tenant-management',
   standalone: true,
-  imports: [NgFor, NgIf, DatePipe, ReactiveFormsModule, TranslateModule, MatButtonModule, MatDatepickerModule, MatFormFieldModule, MatInputModule, MatSelectModule, PageHeaderComponent],
+  imports: [NgFor, NgIf, DatePipe, ReactiveFormsModule, TranslateModule, MatButtonModule, MatDatepickerModule, MatFormFieldModule, MatInputModule, MatSelectModule, PageHeaderComponent, UploadZoneComponent, EmptyStateComponent],
   templateUrl: './tenant-management.component.html',
   styleUrl: './tenant-management.component.scss'
 })
 export class TenantManagementComponent implements OnInit {
   loading = true;
   saving = false;
+  showCreateForm = false;
 
   tenants: Tenant[] = [];
   filteredTenants: Tenant[] = [];
@@ -39,6 +42,7 @@ export class TenantManagementComponent implements OnInit {
   unitById: Record<number, Unit> = {};
   tenantUsers: User[] = [];
   searchTerm = '';
+  leaseContractUrls: string[] = [];
 
   scope: 'UNIT' | 'PROPERTY' = 'UNIT';
   form: FormGroup;
@@ -61,8 +65,8 @@ export class TenantManagementComponent implements OnInit {
       phone: ['', Validators.required],
       email: [''],
       nationalId: [''],
-      leaseStart: [null],
-      leaseEnd: [null],
+      leaseStart: [null, Validators.required],
+      leaseEnd: [null, Validators.required],
       notes: ['']
     });
   }
@@ -97,9 +101,27 @@ export class TenantManagementComponent implements OnInit {
     this.loadData();
   }
 
+  onLeaseContractsUploaded(urls: string[]): void {
+    this.leaseContractUrls = urls;
+  }
+
   save(): void {
     if (this.form.invalid || this.saving) {
       this.form.markAllAsTouched();
+      return;
+    }
+    const leaseStart = this.toDateString(this.form.get('leaseStart')?.value);
+    const leaseEnd = this.toDateString(this.form.get('leaseEnd')?.value);
+    if (!leaseStart || !leaseEnd) {
+      this.snack.error(this.i18n.instant('TENANTS.LEASE_PERIOD_REQUIRED'));
+      return;
+    }
+    if (leaseEnd < leaseStart) {
+      this.snack.error(this.i18n.instant('TENANTS.LEASE_PERIOD_INVALID'));
+      return;
+    }
+    if (this.leaseContractUrls.length === 0) {
+      this.snack.error(this.i18n.instant('TENANTS.CONTRACT_REQUIRED'));
       return;
     }
 
@@ -113,8 +135,9 @@ export class TenantManagementComponent implements OnInit {
       phone: raw.phone,
       email: raw.email || undefined,
       nationalId: raw.nationalId || undefined,
-      leaseStart: this.toDateString(raw.leaseStart),
-      leaseEnd: this.toDateString(raw.leaseEnd),
+      leaseStart,
+      leaseEnd,
+      leaseContractFiles: [...this.leaseContractUrls],
       notes: raw.notes || undefined
     };
 
@@ -123,6 +146,7 @@ export class TenantManagementComponent implements OnInit {
         this.saving = false;
         this.snack.success(this.i18n.instant('TENANTS.SAVE_SUCCESS'));
         this.form.reset({ scope: this.scope, propertyId: this.form.get('propertyId')?.value ?? null });
+        this.leaseContractUrls = [];
         this.applyScopeRules();
         this.loadTenants();
       },

@@ -29,6 +29,8 @@ import { AuthService } from '../../core/services/auth.service';
 export class ContractorCompaniesComponent implements OnInit {
   companies: ContractorCompany[] = [];
   filteredCompanies: ContractorCompany[] = [];
+  readonly pageSize = 5;
+  pageIndex = 0;
   loading = true;
   saving = false;
   formVisible = false;
@@ -65,6 +67,7 @@ export class ContractorCompaniesComponent implements OnInit {
       next: (res) => {
         this.companies = res.data ?? [];
         this.filteredCompanies = [...this.companies];
+        this.pageIndex = 0;
         this.loading = false;
       },
       error: () => {
@@ -137,6 +140,20 @@ export class ContractorCompaniesComponent implements OnInit {
 
   onSearch(value: string): void {
     this.searchTerm = value;
+    this.pageIndex = 0;
     this.load();
+  }
+
+  get pagedCompanies(): ContractorCompany[] {
+    const start = this.pageIndex * this.pageSize;
+    return this.filteredCompanies.slice(start, start + this.pageSize);
+  }
+
+  get totalPages(): number {
+    return Math.max(1, Math.ceil(this.filteredCompanies.length / this.pageSize));
+  }
+
+  changePage(step: number): void {
+    this.pageIndex = Math.max(0, Math.min(this.pageIndex + step, this.totalPages - 1));
   }
 }

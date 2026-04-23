@@ -1,131 +1,104 @@
-﻿<div class="app-page">
+<div class="app-page request-form-page">
   <app-page-header
-    [title]="'REQUEST_FORM.TITLE' | translate"
-    [subtitle]="'REQUEST_FORM.SUBTITLE' | translate"
+    [eyebrow]="'NAV.NEW_REQUEST' | translate"
+    [title]="i18n.currentLang === 'ar' ? 'ما الذي نحتاج إصلاحه؟' : 'What needs fixing?'"
+    [subtitle]="i18n.currentLang === 'ar' ? 'صف المشكلة بدقة وأضف الصور لنصل بسرعة.' : 'Describe the issue, add photos, and we will move quickly.'"
     [breadcrumbs]="[{label:('NAV.DASHBOARD' | translate), route:auth.getDashboardRoute()}, {label:('NAV.NEW_REQUEST' | translate)}]">
   </app-page-header>
 
-  <div class="form-layout">
-    <div class="form-card surface-glow">
+  <div class="request-form-shell">
+    <div class="request-form-card">
       <div class="loading-center" *ngIf="loading">
         <mat-spinner diameter="40"></mat-spinner>
       </div>
 
-      <form *ngIf="!loading" [formGroup]="form" (ngSubmit)="submit()">
-        <div class="form-section">
-          <h3 class="form-section-title">
-            <span class="material-icons">apartment</span>
-            {{ 'REQUEST_FORM.PROPERTY_UNIT' | translate }}
-          </h3>
-
-          <div class="selection-grid">
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>{{ 'REQUEST_FORM.PROPERTY' | translate }}</mat-label>
-              <mat-select formControlName="propertyId">
-                <mat-option [value]="null" disabled>{{ 'REQUEST_FORM.SELECT_PROPERTY' | translate }}</mat-option>
-                <mat-option *ngFor="let p of properties" [value]="p.id">
-                  {{ p.propertyName }} ({{ p.propertyCode }})
-                </mat-option>
-                <mat-option *ngIf="properties.length === 0" [value]="null" disabled>
-                  {{ 'REQUEST_FORM.NO_PROPERTIES' | translate }}
-                </mat-option>
-              </mat-select>
-              <mat-error *ngIf="form.get('propertyId')?.hasError('required')">{{ 'REQUEST_FORM.PROPERTY_REQUIRED' | translate }}</mat-error>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>{{ 'REQUEST_FORM.UNIT' | translate }}</mat-label>
-              <mat-select formControlName="unitId" [disabled]="!form.get('propertyId')?.value || loadingUnits">
-                <mat-option [value]="null" disabled>
-                  {{ form.get('propertyId')?.value ? (loadingUnits ? ('REQUEST_FORM.LOADING_UNITS' | translate) : ('REQUEST_FORM.SELECT_UNIT' | translate)) : ('REQUEST_FORM.SELECT_PROPERTY_FIRST' | translate) }}
-                </mat-option>
-                <mat-option *ngFor="let u of units" [value]="u.id">
-                  {{ u.unitNumber }}
-                  <span *ngIf="u.unitType"> - {{ u.unitType }}</span>
-                  <span *ngIf="u.rented"> ({{ 'REQUEST_FORM.RENTED' | translate }})</span>
-                </mat-option>
-                <mat-option *ngIf="form.get('propertyId')?.value && !loadingUnits && units.length === 0" [value]="null" disabled>
-                  {{ 'REQUEST_FORM.NO_UNITS' | translate }}
-                </mat-option>
-              </mat-select>
-              <mat-error *ngIf="form.get('unitId')?.hasError('required')">{{ 'REQUEST_FORM.UNIT_REQUIRED' | translate }}</mat-error>
-            </mat-form-field>
-          </div>
-        </div>
-
-        <div class="form-section">
-          <h3 class="form-section-title">
-            <span class="material-icons">category</span>
-            {{ 'MAINTENANCE.CATEGORY' | translate }}
-          </h3>
+      <form *ngIf="!loading" [formGroup]="form" (ngSubmit)="submit()" class="request-form-body">
+        <section class="request-form-section">
+          <div class="section-label">{{ 'MAINTENANCE.CATEGORY' | translate }}</div>
           <div class="category-grid" *ngIf="categories.length > 0">
             <button
               type="button"
-              class="category-btn"
+              class="category-tile"
               *ngFor="let cat of categories"
               [class.selected]="isCategorySelected(cat.id)"
               (click)="toggleCategory(cat.id)">
-              <span class="material-icons selected-check" *ngIf="isCategorySelected(cat.id)">check_circle</span>
-              <span class="material-icons cat-icon">{{ cat.icon || 'build' }}</span>
-              <span>{{ categoryName(cat) }}</span>
+              <span class="material-icons category-icon">{{ cat.icon || 'build' }}</span>
+              <span class="category-name">{{ categoryName(cat) }}</span>
             </button>
           </div>
-          <mat-error *ngIf="form.get('categoryIds')?.touched && form.get('categoryIds')?.invalid">
-            {{ 'REQUEST_FORM.CATEGORY_REQUIRED' | translate }}
-          </mat-error>
-        </div>
+        </section>
 
-        <div class="form-section">
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>{{ 'REQUEST_FORM.REQUEST_TITLE' | translate }}</mat-label>
-            <input matInput formControlName="title" [placeholder]="'REQUEST_FORM.REQUEST_TITLE_PLACEHOLDER' | translate">
-            <mat-icon matSuffix>title</mat-icon>
-            <mat-error *ngIf="form.get('title')?.hasError('required')">{{ 'REQUEST_FORM.TITLE_REQUIRED' | translate }}</mat-error>
-            <mat-error *ngIf="form.get('title')?.hasError('maxlength')">{{ 'REQUEST_FORM.TITLE_MAX' | translate }}</mat-error>
-          </mat-form-field>
-        </div>
+        <section class="request-form-section">
+          <div class="section-label">{{ 'REQUEST_FORM.PROPERTY_UNIT' | translate }}</div>
+          <div class="field-grid">
+            <label class="field-shell">
+              <span>{{ 'REQUEST_FORM.PROPERTY' | translate }}</span>
+              <select formControlName="propertyId">
+                <option [ngValue]="null" disabled>{{ 'REQUEST_FORM.SELECT_PROPERTY' | translate }}</option>
+                <option *ngFor="let p of properties" [ngValue]="p.id">
+                  {{ p.propertyName }} ({{ p.propertyCode }})
+                </option>
+              </select>
+            </label>
 
-        <div class="form-section">
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>{{ 'MAINTENANCE.DESCRIPTION' | translate }}</mat-label>
-            <textarea matInput formControlName="description" rows="5"
-              [placeholder]="'REQUEST_FORM.DESCRIPTION_PLACEHOLDER' | translate"></textarea>
-            <mat-error *ngIf="form.get('description')?.hasError('required')">{{ 'REQUEST_FORM.DESCRIPTION_REQUIRED' | translate }}</mat-error>
-          </mat-form-field>
-        </div>
+            <label class="field-shell">
+              <span>{{ 'REQUEST_FORM.UNIT' | translate }}</span>
+              <select formControlName="unitId" [disabled]="!form.get('propertyId')?.value || loadingUnits">
+                <option [ngValue]="null" disabled>
+                  {{ form.get('propertyId')?.value ? (loadingUnits ? ('REQUEST_FORM.LOADING_UNITS' | translate) : ('REQUEST_FORM.SELECT_UNIT' | translate)) : ('REQUEST_FORM.SELECT_PROPERTY_FIRST' | translate) }}
+                </option>
+                <option *ngFor="let u of units" [ngValue]="u.id">
+                  {{ u.unitNumber }}<ng-container *ngIf="u.unitType"> - {{ u.unitType }}</ng-container>
+                </option>
+              </select>
+            </label>
+          </div>
+        </section>
 
-        <div class="form-section">
-          <h3 class="form-section-title">
-            <span class="material-icons">flag</span>
-            {{ 'MAINTENANCE.PRIORITY' | translate }}
-          </h3>
-          <div class="priority-selector">
-            <button type="button" class="priority-btn"
+        <section class="request-form-section">
+          <label class="field-shell full-width">
+            <span>{{ 'REQUEST_FORM.REQUEST_TITLE' | translate }}</span>
+            <input type="text" formControlName="title" [placeholder]="'REQUEST_FORM.REQUEST_TITLE_PLACEHOLDER' | translate">
+          </label>
+        </section>
+
+        <section class="request-form-section">
+          <label class="field-shell full-width">
+            <span>{{ 'MAINTENANCE.DESCRIPTION' | translate }}</span>
+            <textarea rows="5" formControlName="description" [placeholder]="'REQUEST_FORM.DESCRIPTION_PLACEHOLDER' | translate"></textarea>
+          </label>
+        </section>
+
+        <section class="request-form-section">
+          <div class="section-label">{{ 'MAINTENANCE.PRIORITY' | translate }}</div>
+          <div class="priority-row">
+            <button
+              type="button"
+              class="priority-pill"
               *ngFor="let p of priorities"
-              [class]="'priority-btn ' + p.value"
               [class.selected]="form.get('priority')?.value === p.value"
-              (click)="form.patchValue({priority: p.value})">
+              [attr.data-priority]="p.value"
+              (click)="form.patchValue({ priority: p.value })">
               {{ ('PRIORITY.' + p.value) | translate }}
             </button>
           </div>
-        </div>
+        </section>
 
-        <div class="form-section">
-          <h3 class="form-section-title">
-            <span class="material-icons">attach_file</span>
-            {{ 'REQUEST_FORM.ATTACHMENTS' | translate }}
-          </h3>
-          <app-upload-zone
-            [multiple]="true"
-            [label]="'REQUEST_FORM.UPLOAD_LABEL' | translate"
-            (filesChanged)="onFilesChanged($event)"
-            (filesUploaded)="onFilesUploaded($event)">
-          </app-upload-zone>
-        </div>
+        <section class="request-form-section">
+          <div class="section-label">{{ 'REQUEST_FORM.ATTACHMENTS' | translate }}</div>
+          <div class="upload-frame">
+            <app-upload-zone
+              [multiple]="true"
+              [label]="'REQUEST_FORM.UPLOAD_LABEL' | translate"
+              (filesChanged)="onFilesChanged($event)"
+              (filesUploaded)="onFilesUploaded($event)">
+            </app-upload-zone>
+          </div>
+        </section>
 
-        <div class="form-actions">
+        <div class="request-form-actions">
           <button mat-stroked-button type="button" [routerLink]="cancelRoute()">{{ 'ACTIONS.CANCEL' | translate }}</button>
-          <button mat-flat-button type="submit" [disabled]="form.invalid || submitting">
+          <button mat-flat-button type="submit" *ngIf="canSubmitRequest()" [disabled]="form.invalid || submitting">
             <mat-spinner *ngIf="submitting" diameter="18"></mat-spinner>
             <span *ngIf="!submitting">
               <span class="material-icons">send</span>
@@ -134,25 +107,6 @@
           </button>
         </div>
       </form>
-    </div>
-
-    <div class="form-hints">
-      <div class="hint-card">
-        <h4><span class="material-icons">info</span> {{ 'REQUEST_FORM.TIPS_TITLE' | translate }}</h4>
-        <ul>
-          <li>{{ 'REQUEST_FORM.TIP_1' | translate }}</li>
-          <li>{{ 'REQUEST_FORM.TIP_2' | translate }}</li>
-          <li>{{ 'REQUEST_FORM.TIP_3' | translate }}</li>
-          <li>{{ 'REQUEST_FORM.TIP_4' | translate }}</li>
-        </ul>
-      </div>
-      <div class="hint-card status-flow">
-        <h4><span class="material-icons">timeline</span> {{ 'REQUEST_FORM.STEPS_TITLE' | translate }}</h4>
-        <div class="flow-step" *ngFor="let step of ['REQUEST_FORM.STEP_1','REQUEST_FORM.STEP_2','REQUEST_FORM.STEP_3','REQUEST_FORM.STEP_4']">
-          <div class="flow-dot"></div>
-          <span>{{ step | translate }}</span>
-        </div>
-      </div>
     </div>
   </div>
 </div>

@@ -8,6 +8,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
+import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { MaintenanceService, MaintenanceRequest } from '../../../core/services/maintenance.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
@@ -20,7 +21,7 @@ const ACTIVE_STATUSES = new Set(['PENDING', 'ASSIGNED', 'SCHEDULED', 'IN_PROGRES
   imports: [
     NgFor, NgIf, DatePipe, RouterLink, TranslateModule,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatTabsModule,
-    EmptyStateComponent
+    EmptyStateComponent, PageHeaderComponent
   ],
   templateUrl: './tenant-dashboard.component.html',
   styleUrl: './tenant-dashboard.component.scss'
@@ -32,7 +33,7 @@ export class TenantDashboardComponent implements OnInit {
 
   constructor(
     private readonly maintSvc: MaintenanceService,
-    private readonly i18n: I18nService,
+    readonly i18n: I18nService,
     readonly auth: AuthService
   ) {}
 

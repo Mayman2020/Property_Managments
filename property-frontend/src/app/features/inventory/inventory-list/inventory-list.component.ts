@@ -27,13 +27,15 @@ import { I18nService } from '../../../core/i18n/i18n.service';
 })
 export class InventoryListComponent implements OnInit {
   items: InventoryItem[] = [];
+  readonly pageSize = 5;
+  pageIndex = 0;
   loading = true;
   searchTerm = '';
 
   constructor(
     private readonly invSvc: InventoryService,
     private readonly snack: SnackService,
-    private readonly i18n: I18nService
+    readonly i18n: I18nService
   ) {}
 
   ngOnInit(): void {
@@ -45,6 +47,7 @@ export class InventoryListComponent implements OnInit {
     this.invSvc.getItems(undefined, 0, 20, this.searchTerm).subscribe({
       next: (res) => {
         this.items = res.data?.content ?? [];
+        this.pageIndex = 0;
         this.loading = false;
       },
       error: () => {
@@ -61,6 +64,20 @@ export class InventoryListComponent implements OnInit {
 
   onSearch(value: string): void {
     this.searchTerm = value;
+    this.pageIndex = 0;
     this.load();
+  }
+
+  get pagedItems(): InventoryItem[] {
+    const start = this.pageIndex * this.pageSize;
+    return this.items.slice(start, start + this.pageSize);
+  }
+
+  get totalPages(): number {
+    return Math.max(1, Math.ceil(this.items.length / this.pageSize));
+  }
+
+  changePage(step: number): void {
+    this.pageIndex = Math.max(0, Math.min(this.pageIndex + step, this.totalPages - 1));
   }
 }

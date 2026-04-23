@@ -1,5 +1,25 @@
 export type UserRole = 'SUPER_ADMIN' | 'PROPERTY_ADMIN' | 'MAINTENANCE_OFFICER' | 'TENANT';
 export type MaintenanceOfficerType = 'INTERNAL_PROPERTY' | 'CONTRACTOR_COMPANY';
+export type PermissionAction =
+  | 'enabled'
+  | 'menu'
+  | 'view'
+  | 'create'
+  | 'edit'
+  | 'delete'
+  | 'assign'
+  | 'schedule'
+  | 'start'
+  | 'submit'
+  | 'approve'
+  | 'reject'
+  | 'export'
+  | 'rate'
+  | 'manage'
+  | 'toggle';
+
+export type ModulePermissions = Record<PermissionAction, boolean>;
+export type PermissionMap = Record<string, ModulePermissions>;
 
 export interface User {
   id: number;
@@ -18,6 +38,7 @@ export interface User {
   isActive: boolean;
   lastLogin?: string;
   createdAt: string;
+  permissions?: PermissionMap;
 }
 
 export interface CurrentUser {
@@ -33,6 +54,7 @@ export interface CurrentUser {
   maintenanceOfficerType?: MaintenanceOfficerType;
   maintenanceCompanyName?: string;
   initials: string;
+  permissions?: PermissionMap;
 }
 
 export interface LoginRequest {
@@ -57,5 +79,6 @@ export interface LoginResponse {
     tenantId?: number;
     maintenanceOfficerType?: MaintenanceOfficerType;
     maintenanceCompanyName?: string;
+    permissions?: PermissionMap;
   };
 }

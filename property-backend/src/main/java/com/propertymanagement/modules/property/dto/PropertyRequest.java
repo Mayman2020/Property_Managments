@@ -2,9 +2,12 @@ package com.propertymanagement.modules.property.dto;
 
 import com.propertymanagement.modules.property.PropertyType;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+
+import java.util.List;
 
 @Data
 public class PropertyRequest {
@@ -31,5 +34,8 @@ public class PropertyRequest {
     private Integer totalUnits = 0;
     private String description;
     private String coverImageUrl;
+    @NotNull
     private Long ownerId;
+    @NotEmpty
+    private List<String> ownerDocumentFiles;
 }

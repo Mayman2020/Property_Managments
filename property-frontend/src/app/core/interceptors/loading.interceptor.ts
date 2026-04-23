@@ -4,13 +4,15 @@ import { finalize } from 'rxjs/operators';
 import { LoadingService } from '../services/loading.service';
 
 export const loadingInterceptor: HttpInterceptorFn = (req, next) => {
-  // Skip static runtime/i18n assets to avoid unnecessary full-screen blocking spinner.
+  // Keep full-screen loader for user-triggered/mutating requests only.
+  // Background GETs (dashboard cards, notification polling, etc.) should not block the whole app shell.
   const url = req.url ?? '';
   const isStaticAsset =
     url.includes('/assets/i18n/') ||
     url.includes('/assets/runtime-config.js');
+  const isBackgroundGet = req.method.toUpperCase() === 'GET';
 
-  if (isStaticAsset) {
+  if (isStaticAsset || isBackgroundGet) {
     return next(req);
   }
 

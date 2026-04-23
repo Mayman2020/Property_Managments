@@ -71,6 +71,28 @@ function Ensure-FixedPortAvailable {
     throw "Port $Port is occupied by $procName (PID $pidVal). Please stop it manually to run frontend on fixed port $Port."
 }
 
+function Test-BackendBaseUrlReachable {
+    param([string]$BaseUrl)
+    try {
+        $uri = [System.Uri]$BaseUrl
+    } catch {
+        return $false
+    }
+
+    # Verify actual API+CORS behavior, not just open port (port can be occupied by another service).
+    try {
+        $probeUrl = "$BaseUrl/auth/login"
+        $resp = Invoke-WebRequest -Uri $probeUrl -Method Options -Headers @{
+            Origin = "http://localhost:4500"
+            "Access-Control-Request-Method" = "POST"
+        } -UseBasicParsing -TimeoutSec 3
+        $allowOrigin = $resp.Headers["Access-Control-Allow-Origin"]
+        return ($resp.StatusCode -ge 200 -and $resp.StatusCode -lt 300 -and -not [string]::IsNullOrWhiteSpace($allowOrigin))
+    } catch {
+        return $false
+    }
+}
+
 Set-Location $ProjectRoot
 
 if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
@@ -152,8 +174,8 @@ Apply-AngularViteOverlayHotfix
 $servePort = $DefaultPort
 Ensure-FixedPortAvailable -Port $servePort
 
-$backendApiUrl = "http://localhost:8080/api/v1"
-$backendFileUrl = "http://localhost:8080/api/v1/files"
+$backendApiUrl = "http://localhost:8081/api/v1"
+$backendFileUrl = "http://localhost:8081/api/v1/files"
 if (Test-Path $RuntimeStateFile) {
     try {
         $runtimeState = Get-Content -Path $RuntimeStateFile -Raw | ConvertFrom-Json
@@ -163,7 +185,32 @@ if (Test-Path $RuntimeStateFile) {
         Write-Warn "Runtime state file found but unreadable: $RuntimeStateFile"
     }
 } else {
-    Write-Warn "Runtime state file not found. Falling back to default backend http://localhost:8080."
+    Write-Warn "Runtime state file not found. Falling back to default backend http://localhost:8081."
+}
+
+if (-not (Test-BackendBaseUrlReachable -BaseUrl $backendApiUrl)) {
+    Write-Warn "Runtime backend URL is not reachable: $backendApiUrl"
+    $candidates = @(
+        "http://localhost:8081/api/v1",
+        "http://localhost:8080/api/v1",
+        "http://localhost:8082/api/v1"
+    )
+    $found = $null
+    foreach ($candidate in $candidates) {
+        if (Test-BackendBaseUrlReachable -BaseUrl $candidate) {
+            $found = $candidate
+            break
+        }
+    }
+    if ($found) {
+        $backendApiUrl = $found
+        $backendFileUrl = "$found/files"
+        Write-Info "Fallback backend API target: $backendApiUrl"
+    } else {
+        $backendApiUrl = "http://localhost:8081/api/v1"
+        $backendFileUrl = "http://localhost:8081/api/v1/files"
+        Write-Warn "No reachable backend candidate found. Keeping default: $backendApiUrl"
+    }
 }
 
 $runtimeJsContent = @"

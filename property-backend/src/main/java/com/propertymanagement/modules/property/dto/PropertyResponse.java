@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -24,6 +25,7 @@ public class PropertyResponse {
     private Integer totalUnits;
     private String description;
     private String coverImageUrl;
+    private List<String> ownerDocumentFiles;
     private boolean active;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

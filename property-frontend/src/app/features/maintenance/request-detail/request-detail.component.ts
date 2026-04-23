@@ -16,6 +16,7 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
 import { MaintenanceService, MaintenanceRequest } from '../../../core/services/maintenance.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
+import { PermissionService } from '../../../core/services/permission.service';
 
 @Component({
   selector: 'app-request-detail',
@@ -31,6 +32,15 @@ import { I18nService } from '../../../core/i18n/i18n.service';
 })
 export class RequestDetailComponent implements OnInit {
   request: MaintenanceRequest | null = null;
+  visitReport: {
+    visitDate: string;
+    visitOutcome: string;
+    workDone?: string;
+    officerNotes?: string;
+    hasPurchase: boolean;
+    purchaseAmount?: number;
+    purchaseNotes?: string;
+  } | null = null;
   loading = true;
   actionLoading = false;
 
@@ -49,10 +59,11 @@ export class RequestDetailComponent implements OnInit {
   constructor(
     private readonly route: ActivatedRoute,
     private readonly maintSvc: MaintenanceService,
-    private readonly i18n: I18nService,
+    readonly i18n: I18nService,
     private readonly fb: FormBuilder,
     private readonly snack: MatSnackBar,
-    readonly auth: AuthService
+    readonly auth: AuthService,
+    readonly permissions: PermissionService
   ) {}
 
   ngOnInit(): void {
@@ -78,8 +89,23 @@ export class RequestDetailComponent implements OnInit {
   private load(id: number): void {
     this.loading = true;
     this.maintSvc.getById(id).subscribe({
-      next: (res) => { this.request = res.data; this.loading = false; },
+      next: (res) => {
+        this.request = res.data;
+        this.loading = false;
+        this.loadVisitReport(id);
+      },
       error: () => { this.loading = false; }
+    });
+  }
+
+  private loadVisitReport(id: number): void {
+    this.maintSvc.getVisitReport(id).subscribe({
+      next: (res) => {
+        this.visitReport = res.data ?? null;
+      },
+      error: () => {
+        this.visitReport = null;
+      }
     });
   }
 
@@ -153,12 +179,113 @@ export class RequestDetailComponent implements OnInit {
     });
   }
 
-  get canAssign(): boolean { return !!this.request && this.auth.isAdmin() && this.request.status === 'PENDING'; }
-  get canSchedule(): boolean { return !!this.request && (this.auth.isAdmin() || this.auth.isOfficer()) && (this.request.status === 'ASSIGNED' || this.request.status === 'NEEDS_REVISIT'); }
-  get canAcceptReject(): boolean { return !!this.request && this.auth.isTenant() && this.request.status === 'SCHEDULED' && this.request.scheduleAccepted == null; }
-  get canStart(): boolean { return !!this.request && this.auth.isOfficer() && this.request.status === 'SCHEDULED'; }
-  get canSubmitReport(): boolean { return !!this.request && this.auth.isOfficer() && this.request.status === 'IN_PROGRESS'; }
-  get canRate(): boolean { return !!this.request && this.auth.isTenant() && (this.request.status === 'COMPLETED' || this.request.status === 'NEEDS_REVISIT'); }
+  get canAssign(): boolean {
+    return !!this.request
+      && this.auth.isAdmin()
+      && this.permissions.can('maintenance', 'assign')
+      && this.request.status === 'PENDING';
+  }
+
+  get canSchedule(): boolean {
+    const hasPermission = this.auth.isAdmin()
+      ? this.permissions.can('maintenance', 'schedule')
+      : this.permissions.can('my_requests', 'schedule');
+
+    return !!this.request
+      && (this.auth.isAdmin() || this.auth.isOfficer())
+      && hasPermission
+      && (this.request.status === 'ASSIGNED' || this.request.status === 'NEEDS_REVISIT');
+  }
+
+  get canAcceptReject(): boolean {
+    return !!this.request
+      && this.auth.isTenant()
+      && (this.permissions.can('my_requests', 'approve') || this.permissions.can('my_requests', 'reject'))
+      && this.request.status === 'SCHEDULED'
+      && this.request.scheduleAccepted == null;
+  }
+
+  get canStart(): boolean {
+    return !!this.request
+      && this.auth.isOfficer()
+      && this.permissions.can('my_requests', 'start')
+      && this.request.status === 'SCHEDULED';
+  }
+
+  get canSubmitReport(): boolean {
+    return !!this.request
+      && this.auth.isOfficer()
+      && this.permissions.can('my_requests', 'submit')
+      && this.request.status === 'IN_PROGRESS';
+  }
+
+  get canRate(): boolean {
+    return !!this.request
+      && this.auth.isTenant()
+      && this.permissions.can('my_requests', 'rate')
+      && (this.request.status === 'COMPLETED' || this.request.status === 'NEEDS_REVISIT');
+  }
+
+  get detailEyebrow(): string {
+    return this.i18n.currentLang === 'ar' ? 'العمليات' : 'Operations';
+  }
+
+  get timelineSteps(): Array<{ label: string; date: string; done: boolean; active?: boolean }> {
+    if (!this.request) return [];
+    const request = this.request;
+    const createdAt = request.createdAt ? this.formatDateTime(request.createdAt) : '—';
+    const scheduledAt = request.scheduledDate
+      ? `${this.formatDate(request.scheduledDate)}${request.scheduledTimeFrom ? ` · ${request.scheduledTimeFrom}` : ''}`
+      : '—';
+    const startedAt = request.status === 'IN_PROGRESS' || request.status === 'COMPLETED'
+      ? (request.updatedAt ? this.formatDateTime(request.updatedAt) : (this.i18n.currentLang === 'ar' ? 'قيد التنفيذ' : 'In progress'))
+      : '—';
+    const completedAt = request.closedAt ? this.formatDateTime(request.closedAt) : '—';
+
+    return [
+      { label: this.i18n.currentLang === 'ar' ? 'تم الإرسال' : 'Submitted', date: createdAt, done: true },
+      {
+        label: this.i18n.currentLang === 'ar' ? 'المراجعة والتعيين' : 'Reviewed & assigned',
+        date: request.assignedOfficerName || '—',
+        done: request.status !== 'PENDING'
+      },
+      { label: this.i18n.currentLang === 'ar' ? 'الجدولة' : 'Scheduled', date: scheduledAt, done: !!request.scheduledDate },
+      {
+        label: this.i18n.currentLang === 'ar' ? 'الزيارة' : 'Visit',
+        date: startedAt,
+        done: request.status === 'IN_PROGRESS' || request.status === 'COMPLETED',
+        active: request.status === 'IN_PROGRESS'
+      },
+      {
+        label: this.i18n.currentLang === 'ar' ? 'الإنجاز' : 'Completed',
+        date: completedAt,
+        done: request.status === 'COMPLETED'
+      }
+    ];
+  }
+
+  formatDate(date: string | null | undefined): string {
+    if (!date) return '—';
+    const parsed = new Date(date);
+    if (Number.isNaN(parsed.getTime())) return date;
+    return new Intl.DateTimeFormat(this.i18n.currentLang === 'ar' ? 'ar' : 'en', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    }).format(parsed);
+  }
+
+  formatDateTime(date: string | null | undefined): string {
+    if (!date) return '—';
+    const parsed = new Date(date);
+    if (Number.isNaN(parsed.getTime())) return date;
+    return new Intl.DateTimeFormat(this.i18n.currentLang === 'ar' ? 'ar' : 'en', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(parsed);
+  }
 
   statusLabel(status: string): string { return this.i18n.instant(`STATUS.${status}`); }
   priorityLabel(priority: string): string { return this.i18n.instant(`PRIORITY.${priority}`); }

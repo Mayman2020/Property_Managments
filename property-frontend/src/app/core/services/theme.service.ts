@@ -24,26 +24,41 @@ export class ThemeService {
 
   setTheme(mode: ThemeMode): void {
     this.subject.next(mode);
-    localStorage.setItem(STORAGE_KEY, mode);
+    try {
+      localStorage.setItem(STORAGE_KEY, mode);
+    } catch {
+      // Ignore storage issues (private mode / blocked storage).
+    }
     this.applyTheme(mode);
   }
 
   private readInitialTheme(): ThemeMode {
-    const stored = localStorage.getItem(STORAGE_KEY) as ThemeMode | null;
-    if (stored === 'light' || stored === 'dark') return stored;
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY) as ThemeMode | null;
+      if (stored === 'light' || stored === 'dark') return stored;
+    } catch {
+      // Fallback to system preference when storage is unavailable.
+    }
     return window?.matchMedia?.('(prefers-color-scheme: dark)')?.matches ? 'dark' : 'light';
   }
 
   private applyTheme(mode: ThemeMode): void {
     if (typeof document === 'undefined') return;
     const el = document.documentElement;
-    const overlay = this.overlayContainer.getContainerElement();
+    let overlay: HTMLElement | null = null;
+    try {
+      overlay = this.overlayContainer.getContainerElement();
+    } catch {
+      // Overlay container can fail during very early bootstrap in some browser states.
+      overlay = null;
+    }
+
     if (mode === 'dark') {
       el.classList.add('dark-theme');
-      overlay.classList.add('dark-theme');
+      overlay?.classList.add('dark-theme');
     } else {
       el.classList.remove('dark-theme');
-      overlay.classList.remove('dark-theme');
+      overlay?.classList.remove('dark-theme');
     }
   }
 }

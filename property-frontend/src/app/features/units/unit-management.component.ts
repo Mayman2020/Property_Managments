@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+ï»¿import { Component, OnInit } from '@angular/core';
 import { DatePipe, NgFor, NgIf } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -155,7 +155,7 @@ export class UnitManagementComponent implements OnInit {
   }
 
   tenantName(unit: Unit): string {
-    return this.tenantByUnitId[unit.id] || '—';
+    return this.tenantByUnitId[unit.id] || 'â€”';
   }
 
   propertyName(unit: Unit): string {
@@ -256,12 +256,13 @@ export class UnitManagementComponent implements OnInit {
           next: (tenantRes) => {
             const tenant = tenantRes.data;
             const fromUser = tenant?.userId ? this.userById[tenant.userId] : '';
-            this.tenantByUnitId[u.id] = fromUser || tenant?.fullName || '—';
+            this.tenantByUnitId[u.id] = fromUser || tenant?.fullName || 'â€”';
           },
           error: () => {
-            this.tenantByUnitId[u.id] = '—';
+            this.tenantByUnitId[u.id] = 'â€”';
           }
         });
       });
   }
 }
+

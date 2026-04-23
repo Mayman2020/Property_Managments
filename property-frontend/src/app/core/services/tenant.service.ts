@@ -15,6 +15,7 @@ export interface Tenant {
   leaseStart?: string;
   leaseEnd?: string;
   profileImage?: string;
+  leaseContractFiles?: string[];
   notes?: string;
   active: boolean;
   createdAt?: string;
@@ -29,9 +30,10 @@ export interface TenantRequest {
   nationalId?: string;
   phone: string;
   email?: string;
-  leaseStart?: string;
-  leaseEnd?: string;
+  leaseStart: string;
+  leaseEnd: string;
   profileImage?: string;
+  leaseContractFiles: string[];
   notes?: string;
 }
 

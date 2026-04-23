@@ -78,10 +78,10 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let c of filteredCompanies">
+          <tr *ngFor="let c of pagedCompanies">
             <td><strong>{{ c.name }}</strong></td>
-            <td>{{ c.phone || '—' }}</td>
-            <td>{{ c.email || '—' }}</td>
+            <td>{{ c.phone || '--' }}</td>
+            <td>{{ c.email || '--' }}</td>
             <td>{{ (c.active ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') | translate }}</td>
             <td>
               <button type="button" class="app-icon-btn" (click)="startEdit(c)" [title]="'ACTIONS.EDIT' | translate">
@@ -94,6 +94,11 @@
           </tr>
         </tbody>
       </table>
+    </div>
+    <div class="table-pager" *ngIf="filteredCompanies.length > pageSize">
+      <button mat-stroked-button type="button" (click)="changePage(-1)" [disabled]="pageIndex === 0">&lt;</button>
+      <span>{{ pageIndex + 1 }} / {{ totalPages }}</span>
+      <button mat-stroked-button type="button" (click)="changePage(1)" [disabled]="pageIndex >= totalPages - 1">&gt;</button>
     </div>
   </div>
 </div>

@@ -1,35 +1,40 @@
 ﻿<aside class="sidebar" [class.collapsed]="collapsed">
-
   <div class="sidebar-brand">
     <div class="brand-icon">
-      <span class="material-icons">domain</span>
+      <span class="brand-letter">E</span>
     </div>
     <div class="brand-text" *ngIf="!collapsed">
-      <span class="brand-name">{{ 'APP.NAME' | translate }}</span>
-      <span class="brand-tagline">{{ 'APP.TAGLINE_SHORT' | translate }}</span>
+      <span class="brand-name">Estate</span>
+      <span class="brand-tagline">OPERATIONS SUITE</span>
     </div>
+    <button class="collapse-btn" type="button" (click)="collapseToggle.emit()">
+      <span class="material-icons">{{ collapsed ? 'chevron_right' : 'chevron_left' }}</span>
+    </button>
   </div>
 
   <nav class="sidebar-nav">
-    <a
-      class="nav-item"
-      *ngFor="let item of visibleItems"
-      [routerLink]="item.route"
-      routerLinkActive="active"
-      [matTooltip]="collapsed ? (item.labelKey | translate) : ''"
-      matTooltipPosition="after"
-    >
-      <span class="nav-icon material-icons">{{ item.icon }}</span>
-      <span class="nav-label" *ngIf="!collapsed">{{ item.labelKey | translate }}</span>
-      <span class="nav-badge" *ngIf="item.badge && item.badge > 0 && !collapsed">{{ item.badge }}</span>
-    </a>
+    <ng-container *ngFor="let section of visibleSections; trackBy: trackBySection">
+      <div class="nav-section-label" *ngIf="!collapsed">{{ section.key | translate }}</div>
+      <a
+        class="nav-item"
+        *ngFor="let item of section.items; trackBy: trackByRoute"
+        [routerLink]="item.route"
+        routerLinkActive="active"
+        [matTooltip]="collapsed ? (item.labelKey | translate) : ''"
+        matTooltipPosition="after"
+      >
+        <span class="nav-icon material-icons">{{ item.icon }}</span>
+        <span class="nav-label" *ngIf="!collapsed">{{ item.labelKey | translate }}</span>
+        <span class="nav-badge" *ngIf="item.badge && item.badge > 0 && !collapsed">{{ item.badge }}</span>
+      </a>
+    </ng-container>
   </nav>
 
   <div class="sidebar-user">
     <img class="user-avatar user-avatar-img" *ngIf="currentUser?.profileImageUrl" [src]="currentUser?.profileImageUrl" [attr.alt]="'PROFILE.AVATAR_ALT' | translate">
     <div class="user-avatar" *ngIf="!currentUser?.profileImageUrl">{{ currentUser?.initials || 'U' }}</div>
     <div class="user-info" *ngIf="!collapsed">
-      <span class="user-name">{{ currentUser?.fullName || '—' }}</span>
+      <span class="user-name">{{ currentUser?.fullName || '-' }}</span>
       <span class="user-role" *ngIf="roleKey">{{ roleKey | translate }}</span>
     </div>
   </div>
@@ -38,5 +43,4 @@
     <span class="material-icons">logout</span>
     <span *ngIf="!collapsed">{{ 'AUTH.LOGOUT' | translate }}</span>
   </button>
-
 </aside>

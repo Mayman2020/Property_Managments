@@ -46,6 +46,27 @@
   overflow: hidden;
 }
 
+.table-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 14px 14px;
+  border-top: 1px solid var(--line);
+
+  span {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    min-width: 72px;
+    text-align: center;
+  }
+
+  button {
+    min-width: 38px;
+    padding: 0;
+  }
+}
+
 .app-icon-btn.danger .material-icons {
   color: var(--error, #dc2626);
 }

@@ -12,6 +12,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { MaintenanceOfficerType, User, UserRole } from '../../core/models/user.model';
 import { Property, PropertyService } from '../../core/services/property.service';
+import { PermissionService } from '../../core/services/permission.service';
 import { SnackService } from '../../core/services/snack.service';
 import { UserManageRequest, UserService } from '../../core/services/user.service';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
@@ -47,7 +48,7 @@ export class UserManagementComponent implements OnInit {
   editingId: number | null = null;
   togglingIds = new Set<number>();
 
-  readonly roleOptions: UserRole[] = ['TENANT', 'MAINTENANCE_OFFICER', 'SUPER_ADMIN', 'PROPERTY_ADMIN'];
+  readonly roleOptions: UserRole[] = ['SUPER_ADMIN', 'PROPERTY_ADMIN', 'MAINTENANCE_OFFICER', 'TENANT'];
   readonly officerTypeOptions: MaintenanceOfficerType[] = ['INTERNAL_PROPERTY', 'CONTRACTOR_COMPANY'];
 
   form: FormGroup;
@@ -56,8 +57,9 @@ export class UserManagementComponent implements OnInit {
     private readonly fb: FormBuilder,
     private readonly userService: UserService,
     private readonly propertyService: PropertyService,
+    readonly permissions: PermissionService,
     private readonly snack: SnackService,
-    private readonly i18n: I18nService
+    readonly i18n: I18nService
   ) {
     this.form = this.fb.group({
       username: ['', [Validators.required, Validators.maxLength(100)]],
@@ -216,6 +218,12 @@ export class UserManagementComponent implements OnInit {
   onSearch(value: string): void {
     this.searchTerm = value;
     this.loadUsers();
+  }
+
+  userInitials(user: User): string {
+    const words = (user.fullName ?? user.username ?? '').trim().split(/\s+/).filter(Boolean);
+    if (!words.length) return 'U';
+    return words.slice(0, 2).map((part) => part[0]?.toUpperCase() ?? '').join('');
   }
 
   private applyRoleRules(role: UserRole): void {

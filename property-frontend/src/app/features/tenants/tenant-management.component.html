@@ -1,19 +1,26 @@
-<div class="app-page">
-  <app-page-header [title]="'TENANTS.TITLE' | translate" [subtitle]="'TENANTS.SUBTITLE' | translate"
-    [breadcrumbs]="[{label:('NAV.DASHBOARD' | translate), route:'/admin/dashboard'}, {label:('NAV.TENANTS' | translate)}]">
+<div class="app-page tenant-page">
+  <app-page-header
+    [eyebrow]="'Directory'"
+    [title]="'TENANTS.TITLE' | translate"
+    [subtitle]="'TENANTS.SUBTITLE' | translate"
+    [breadcrumbs]="[{ label: ('NAV.DASHBOARD' | translate), route: '/admin/dashboard' }, { label: ('NAV.TENANTS' | translate) }]">
+    <button mat-flat-button type="button" (click)="showCreateForm = !showCreateForm">
+      <span class="material-icons">add</span>
+      {{ 'TENANTS.ADD' | translate }}
+    </button>
   </app-page-header>
 
-  <div class="surface-glow search-wrap" *ngIf="!loading">
-    <mat-form-field appearance="outline" class="full">
-      <mat-label>{{ 'ACTIONS.SEARCH' | translate }}</mat-label>
-      <input matInput [value]="searchTerm" (input)="onSearch($any($event.target).value)">
-    </mat-form-field>
+  <div class="tenant-search" *ngIf="!loading">
+    <span class="material-icons">search</span>
+    <input [value]="searchTerm" (input)="onSearch($any($event.target).value)" [placeholder]="'ACTIONS.SEARCH' | translate">
   </div>
 
-  <div class="split">
-    <div class="surface-glow panel">
-      <h3>{{ 'TENANTS.ADD' | translate }}</h3>
-      <form [formGroup]="form" (ngSubmit)="save()" class="grid">
+  <div class="app-card tenant-form-card" *ngIf="showCreateForm">
+    <div class="app-card-header">
+      <span class="app-card-title">{{ 'TENANTS.ADD' | translate }}</span>
+    </div>
+    <div class="app-card-body">
+      <form [formGroup]="form" (ngSubmit)="save()" class="tenant-form-grid">
         <mat-form-field appearance="outline" class="full">
           <mat-label>{{ 'PROFILE.FULL_NAME' | translate }}</mat-label>
           <input matInput formControlName="fullName">
@@ -73,27 +80,57 @@
           <mat-datepicker #pickerEnd></mat-datepicker>
         </mat-form-field>
 
+        <div class="full">
+          <app-upload-zone
+            [multiple]="true"
+            [accept]="'image/*,.pdf,.doc,.docx'"
+            [label]="'TENANTS.LEASE_CONTRACT_UPLOAD_LABEL' | translate"
+            (filesUploaded)="onLeaseContractsUploaded($event)">
+          </app-upload-zone>
+        </div>
+
         <mat-form-field appearance="outline" class="full">
           <mat-label>{{ 'MAINTENANCE.DESCRIPTION' | translate }}</mat-label>
           <textarea matInput rows="2" formControlName="notes"></textarea>
         </mat-form-field>
 
-        <div class="actions full">
+        <div class="tenant-form-actions full">
+          <button mat-stroked-button type="button" (click)="showCreateForm = false">{{ 'ACTIONS.CANCEL' | translate }}</button>
           <button mat-flat-button type="submit" [disabled]="form.invalid || saving">{{ 'ACTIONS.SAVE' | translate }}</button>
         </div>
       </form>
     </div>
+  </div>
 
-    <div class="surface-glow panel">
-      <h3>{{ 'TENANTS.LIST' | translate }}</h3>
-      <div class="item" *ngFor="let t of filteredTenants">
+  <div class="tenant-grid" *ngIf="!loading && filteredTenants.length > 0">
+    <article class="tenant-card" *ngFor="let t of filteredTenants">
+      <div class="tenant-card-top">
+        <div class="tenant-avatar">{{ t.fullName.slice(0, 2).toUpperCase() }}</div>
         <div>
-          <strong>{{ t.fullName }}</strong>
-          <div class="muted">{{ 'REQUEST_FORM.PROPERTY' | translate }}: {{ propertyLabel(t.propertyId) }} | {{ 'REQUEST_FORM.UNIT' | translate }}: {{ unitLabel(t.unitId) }}</div>
-          <div class="muted">{{ t.phone }} � {{ t.email || '�' }}</div>
+          <h3>{{ t.fullName }}</h3>
+          <p>{{ propertyLabel(t.propertyId) }} · {{ unitLabel(t.unitId) }}</p>
         </div>
+      </div>
+
+      <div class="tenant-divider"></div>
+
+      <div class="tenant-lines">
+        <div class="tenant-line"><span class="material-icons">mail</span>{{ t.email || '—' }}</div>
+        <div class="tenant-line"><span class="material-icons">phone</span>{{ t.phone || '—' }}</div>
+        <div class="tenant-line"><span class="material-icons">calendar_month</span>{{ t.leaseStart || '—' }} → {{ t.leaseEnd || '—' }}</div>
+      </div>
+
+      <div class="tenant-card-actions">
+        <span class="tenant-contracts">{{ 'TENANTS.LEASE_CONTRACT_FILES' | translate }}: {{ t.leaseContractFiles?.length || 0 }}</span>
         <button mat-stroked-button color="warn" type="button" (click)="remove(t)">{{ 'ACTIONS.DELETE' | translate }}</button>
       </div>
-    </div>
+    </article>
   </div>
+
+  <app-empty-state
+    *ngIf="!loading && filteredTenants.length === 0"
+    icon="groups"
+    [title]="'COMMON.NO_DATA' | translate"
+    [message]="'TENANTS.SUBTITLE' | translate">
+  </app-empty-state>
 </div>

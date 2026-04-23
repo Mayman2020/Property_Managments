@@ -1,35 +1,129 @@
-.split {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-}
+.tenant-page {
+  .tenant-search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 46px;
+    padding: 0 14px;
+    background: var(--surface);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow-card);
+    color: var(--text-muted);
+  }
 
-.search-wrap {
-  padding: 10px 12px;
-  margin-bottom: 12px;
-}
+  .tenant-search input {
+    flex: 1;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--text-main);
+    font: inherit;
+  }
 
-.panel { padding: 14px; }
+  .tenant-form-card {
+    margin-bottom: 18px;
+  }
 
-.grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
+  .tenant-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
 
-.full { grid-column: 1 / -1; }
-.actions { display: flex; justify-content: flex-end; }
+  .tenant-form-grid .full {
+    grid-column: 1 / -1;
+  }
 
-.item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-top: 1px solid var(--line);
-  padding: 10px 0;
-}
+  .tenant-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
 
-.muted { color: var(--text-muted); font-size: 0.82rem; }
+  .tenant-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 14px;
+  }
 
-@media (max-width: 980px) {
-  .split, .grid { grid-template-columns: 1fr; }
+  .tenant-card {
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    box-shadow: var(--shadow-card);
+    padding: 18px;
+  }
+
+  .tenant-card-top {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .tenant-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, var(--amber-600), var(--amber-400));
+    color: #1a1408;
+    font-weight: 700;
+  }
+
+  .tenant-card-top h3 {
+    font-size: 1.05rem;
+    margin: 0;
+  }
+
+  .tenant-card-top p {
+    margin: 4px 0 0;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+  }
+
+  .tenant-divider {
+    height: 1px;
+    background: var(--line);
+    margin: 14px 0;
+  }
+
+  .tenant-lines {
+    display: grid;
+    gap: 8px;
+  }
+
+  .tenant-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-muted);
+    font-size: 0.84rem;
+  }
+
+  .tenant-line .material-icons {
+    font-size: 16px;
+    color: var(--amber-600);
+  }
+
+  .tenant-card-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  .tenant-contracts {
+    font-size: 0.76rem;
+    color: var(--text-subtle);
+  }
+
+  @media (max-width: 900px) {
+    .tenant-form-grid {
+      grid-template-columns: 1fr;
+    }
+  }
 }

@@ -43,9 +43,9 @@ export class ProfileComponent implements OnInit {
   constructor(
     private readonly fb: FormBuilder,
     private readonly profileService: UserProfileService,
-    private readonly auth: AuthService,
+    readonly auth: AuthService,
     private readonly snack: SnackService,
-    private readonly i18n: I18nService
+    readonly i18n: I18nService
   ) {
     this.form = this.fb.group({
       fullName: ['', [Validators.required, Validators.maxLength(150)]],
@@ -134,6 +134,16 @@ export class ProfileComponent implements OnInit {
     if (urls.length > 0) {
       this.form.patchValue({ profileImageUrl: urls[0] });
     }
+  }
+
+  get avatarText(): string {
+    return this.form.get('fullName')?.value
+      ? this.initialsFrom(this.form.get('fullName')?.value)
+      : (this.auth.getCurrentUser()?.initials ?? 'U');
+  }
+
+  get roleKey(): string {
+    return this.auth.getCurrentUser()?.role ?? 'TENANT';
   }
 
   private initialsFrom(name: string): string {

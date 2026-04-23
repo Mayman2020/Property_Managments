@@ -1,9 +1,10 @@
-<div class="app-page">
+<div class="app-page users-page">
   <app-page-header
+    [eyebrow]="i18n.currentLang === 'ar' ? 'أنت' : 'You'"
     [title]="'USER_MGMT.TITLE' | translate"
     [subtitle]="'USER_MGMT.SUBTITLE' | translate"
     [breadcrumbs]="[{label:('NAV.DASHBOARD' | translate), route:'/admin/dashboard'}, {label:('NAV.USERS' | translate)}]">
-    <button mat-flat-button type="button" (click)="startCreate()">
+    <button mat-flat-button type="button" *ngIf="permissions.can('users', 'create')" (click)="startCreate()">
       <span class="material-icons">person_add</span>
       {{ 'USER_MGMT.ADD_USER' | translate }}
     </button>
@@ -13,15 +14,18 @@
     <mat-spinner diameter="40"></mat-spinner>
   </div>
 
-  <div class="surface-glow search-wrap" *ngIf="!loading">
-    <mat-form-field appearance="outline" class="full-width">
-      <mat-label>{{ 'ACTIONS.SEARCH' | translate }}</mat-label>
-      <input matInput [value]="searchTerm" (input)="onSearch($any($event.target).value)">
-    </mat-form-field>
+  <div class="users-search-shell" *ngIf="!loading">
+    <span class="material-icons">search</span>
+    <input [value]="searchTerm" (input)="onSearch($any($event.target).value)" [placeholder]="'ACTIONS.SEARCH' | translate">
   </div>
 
-  <div class="surface-glow user-form-card" *ngIf="showForm && !loading">
-    <h3>{{ (isEditing() ? 'USER_MGMT.EDIT_USER' : 'USER_MGMT.NEW_USER') | translate }}</h3>
+  <section class="app-card user-form-card" *ngIf="showForm && !loading">
+    <div class="section-head">
+      <div>
+        <div class="section-eyebrow">{{ i18n.currentLang === 'ar' ? 'المستخدمون' : 'Users' }}</div>
+        <h3>{{ (isEditing() ? 'USER_MGMT.EDIT_USER' : 'USER_MGMT.NEW_USER') | translate }}</h3>
+      </div>
+    </div>
 
     <form [formGroup]="form" (ngSubmit)="save()">
       <div class="form-grid">
@@ -95,47 +99,49 @@
         </button>
       </div>
     </form>
-  </div>
+  </section>
 
-  <div class="users-grid" *ngIf="!loading">
-    <div class="user-card surface-glow" *ngFor="let user of users">
-      <div class="user-row">
-        <div class="user-main">
-          <h4>{{ user.fullName }}</h4>
-          <p>{{ user.email }}</p>
-          <p class="muted">{{ user.username }}</p>
-        </div>
-        <div class="status-chip" [class.inactive]="!user.isActive">
-          {{ (user.isActive ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') | translate }}
-        </div>
-      </div>
-
-      <div class="meta-row">
-        <span><strong>{{ 'USER_MGMT.ROLE' | translate }}:</strong> {{ roleLabel(user.role) }}</span>
-      </div>
-      <div class="meta-row" *ngIf="user.propertyId">
-        <span><strong>{{ 'REQUEST_FORM.PROPERTY' | translate }}:</strong> {{ propertyName(user.propertyId) }}</span>
-      </div>
-      <div class="meta-row" *ngIf="user.role === 'MAINTENANCE_OFFICER'">
-        <span><strong>{{ 'USER_MGMT.OFFICER_TYPE' | translate }}:</strong> {{ officerTypeLabel(user.maintenanceOfficerType) }}</span>
-      </div>
-      <div class="meta-row" *ngIf="user.maintenanceCompanyName">
-        <span><strong>{{ 'USER_MGMT.COMPANY_NAME' | translate }}:</strong> {{ user.maintenanceCompanyName }}</span>
-      </div>
-      <div class="meta-row">
-        <span><strong>{{ 'REQUEST_LIST.CREATED_AT' | translate }}:</strong> {{ user.createdAt | date:'yyyy-MM-dd HH:mm' }}</span>
-      </div>
-
-      <div class="user-actions">
-        <button mat-stroked-button type="button" (click)="startEdit(user)">
-          <span class="material-icons">edit</span>
-          {{ 'ACTIONS.EDIT' | translate }}
-        </button>
-        <button mat-flat-button type="button" (click)="toggleActive(user)" [disabled]="togglingIds.has(user.id)">
-          <span class="material-icons">{{ user.isActive ? 'person_off' : 'person' }}</span>
-          {{ (user.isActive ? 'USER_MGMT.DEACTIVATE' : 'USER_MGMT.ACTIVATE') | translate }}
-        </button>
-      </div>
+  <section class="app-card users-table-card" *ngIf="!loading">
+    <div class="app-table-wrap">
+      <table class="app-data-table source-table">
+        <thead>
+          <tr>
+            <th>{{ 'USER_MGMT.USERNAME' | translate }}</th>
+            <th>{{ 'USER_MGMT.ROLE' | translate }}</th>
+            <th>{{ 'REQUEST_FORM.PROPERTY' | translate }}</th>
+            <th>{{ 'MAINTENANCE.STATUS' | translate }}</th>
+            <th>{{ 'REQUEST_LIST.CREATED_AT' | translate }}</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let user of users">
+            <td>
+              <div class="user-cell">
+                <div class="user-avatar">{{ userInitials(user) }}</div>
+                <div>
+                  <div class="user-name">{{ user.fullName }}</div>
+                  <div class="user-email">{{ user.email }}</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="status-badge" data-status="INFO">{{ roleLabel(user.role) }}</span></td>
+            <td>{{ propertyName(user.propertyId) }}</td>
+            <td><span class="status-badge" [attr.data-status]="user.isActive ? 'OK' : 'BAD'">{{ (user.isActive ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') | translate }}</span></td>
+            <td>{{ user.createdAt | date:'yyyy-MM-dd HH:mm' }}</td>
+            <td>
+              <div class="table-actions">
+                <button class="table-action-btn" type="button" *ngIf="permissions.can('users', 'edit')" (click)="startEdit(user)">
+                  <span class="material-icons">edit</span>
+                </button>
+                <button class="table-action-btn" type="button" *ngIf="permissions.can('users', 'toggle')" (click)="toggleActive(user)" [disabled]="togglingIds.has(user.id)">
+                  <span class="material-icons">{{ user.isActive ? 'person_off' : 'person' }}</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
-  </div>
+  </section>
 </div>

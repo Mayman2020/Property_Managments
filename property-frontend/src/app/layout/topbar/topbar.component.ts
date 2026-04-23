@@ -41,6 +41,10 @@ export class TopbarComponent implements OnInit, OnDestroy {
   ) {}
 
   get currentUser() { return this.auth.getCurrentUser(); }
+  get roleKey(): string {
+    const role = this.currentUser?.role;
+    return role ? `ROLE.${role}` : '';
+  }
   get languages(): LanguageOption[] { return this.i18n.languages; }
   get activeLanguage(): LanguageOption {
     return this.languages.find((l) => l.code === this.i18n.currentLang) ?? this.languages[0];

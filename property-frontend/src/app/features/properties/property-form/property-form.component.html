@@ -89,6 +89,26 @@
           </app-upload-zone>
           <img *ngIf="form.get('coverImageUrl')?.value" [src]="form.get('coverImageUrl')?.value" class="cover-preview" alt="cover">
         </div>
+
+        <div class="full-col">
+          <h3 class="upload-title">{{ 'PROPERTY_FORM.OWNER_DOCS' | translate }}</h3>
+          <app-upload-zone
+            *ngIf="!isViewMode"
+            [multiple]="true"
+            [accept]="'image/*,.pdf,.doc,.docx'"
+            [label]="'PROPERTY_FORM.OWNER_DOCS_UPLOAD_LABEL' | translate"
+            (filesUploaded)="onOwnerDocumentsUploaded($event)">
+          </app-upload-zone>
+          <div class="doc-list" *ngIf="ownerDocumentUrls.length > 0">
+            <div class="doc-item" *ngFor="let url of ownerDocumentUrls">
+              <a [href]="url" target="_blank" rel="noopener">{{ url }}</a>
+              <button mat-stroked-button type="button" *ngIf="!isViewMode" (click)="removeOwnerDocument(url)">
+                {{ 'ACTIONS.DELETE' | translate }}
+              </button>
+            </div>
+          </div>
+          <small class="muted" *ngIf="ownerDocumentUrls.length === 0">{{ 'PROPERTY_FORM.OWNER_DOCS_REQUIRED' | translate }}</small>
+        </div>
       </div>
 
       <div class="form-actions">

@@ -14,13 +14,16 @@
     "REPORTS": "Reports",
     "USERS": "Users",
     "MY_REQUESTS": "My Requests",
-    "SCHEDULE": "Schedule",
+    "SCHEDULE": "My Schedule",
     "MY_UNIT": "My Unit",
     "NEW_REQUEST": "New Request",
     "PROFILE": "Profile",
     "RATINGS": "Visit ratings",
     "CONTRACTOR_COMPANIES": "Contractor companies",
-    "LOOKUPS": "Lookups"
+    "LOOKUPS": "Lookups",
+    "PERMISSIONS": "Permissions",
+    "USER_ACCESS": "User Access",
+    "SCREENS": "Screens"
   },
   "AUTH": {
     "LOGIN": "Sign In",
@@ -34,7 +37,8 @@
     "TOGGLE_MENU": "Toggle menu",
     "LANGUAGE": "Language",
     "LIGHT_MODE": "Light mode",
-    "DARK_MODE": "Dark mode"
+    "DARK_MODE": "Dark mode",
+    "SEARCH_PLACEHOLDER": "Search for property, unit, or request..."
   },
   "STATUS": {
     "PENDING": "Pending",
@@ -171,7 +175,8 @@
     "SATISFACTION_SUB": "Percentage of rated visits",
     "LOW_RATINGS_LABEL": "Low Ratings (1-2 stars)",
     "LOW_RATINGS_SUB": "Visits needing attention",
-    "RECENT_RATINGS": "Recent Ratings"
+    "RECENT_RATINGS": "Recent Ratings",
+    "FOR_UNIT": "Unit"
   },
   "CONTRACTORS": {
     "TITLE": "Contractor companies",
@@ -338,7 +343,10 @@
     "VIEW_TITLE": "Property details",
     "GOOGLE_MAP_URL": "Google Maps URL",
     "COVER_IMAGE": "Property image",
-    "COVER_UPLOAD_LABEL": "Upload property image"
+    "COVER_UPLOAD_LABEL": "Upload property image",
+    "OWNER_DOCS": "Owner ownership/license documents",
+    "OWNER_DOCS_UPLOAD_LABEL": "Upload ownership and license files",
+    "OWNER_DOCS_REQUIRED": "Owner documents are required"
   },
   "TENANT_DASHBOARD": {
     "WELCOME": "Welcome,",
@@ -399,6 +407,40 @@
     "CREATE_SUCCESS": "User created successfully",
     "UPDATE_SUCCESS": "User updated successfully",
     "STATUS_UPDATED": "User status updated"
+  },
+  "PERMISSIONS": {
+    "TITLE": "Role Permissions",
+    "SUBTITLE": "Control which screens, menu items, and actions each role can access",
+    "RESET_ROLE": "Reset Role",
+    "SAVE_ROLE": "Save Permissions",
+    "BOARD_HINT": "Changes here affect page visibility, menu items, and action buttons across the system.",
+    "ENABLED": "Enabled",
+    "MODULES_ENABLED": "modules enabled",
+    "ENABLED_COUNT": "modules enabled",
+    "LOAD_ERROR": "Failed to load permissions",
+    "SAVE_SUCCESS": "Permissions updated successfully",
+    "SAVE_ERROR": "Failed to save permissions"
+  },
+  "USER_ACCESS": {
+    "TITLE": "User Access Mapping",
+    "SUBTITLE": "Assign each user to the role that controls their system permissions",
+    "SEARCH_HINT": "Search by user name, email, or username",
+    "CURRENT_ROLE": "Current role",
+    "ASSIGN_ROLE": "Assign role",
+    "SAVE_ROLE": "Save role",
+    "LOAD_ERROR": "Failed to load users",
+    "SAVE_SUCCESS": "User role updated successfully",
+    "SAVE_ERROR": "Failed to update user role"
+  },
+  "SCREENS": {
+    "TITLE": "Screens Control",
+    "SUBTITLE": "Hide a screen for a specific role or disable it for the whole system",
+    "GLOBAL": "Global visibility",
+    "ROLE_HINT": "Use the global switch to hide the screen from the whole system, or toggle roles below.",
+    "ROLE_VISIBILITY": "Role can access this screen",
+    "LOAD_ERROR": "Failed to load screen settings",
+    "SAVE_SUCCESS": "Screen access updated successfully",
+    "SAVE_ERROR": "Failed to update screen access"
   },
   "LOGIN": {
     "HERO_TITLE_1": "Property Maintenance",
@@ -477,11 +519,34 @@
     "USER_ID": "System user ID",
     "LEASE_START": "Lease start",
     "LEASE_END": "Lease end",
+    "LEASE_CONTRACT_FILES": "Lease contract files",
+    "LEASE_CONTRACT_UPLOAD_LABEL": "Upload lease contract files",
+    "CONTRACT_REQUIRED": "Lease contract attachment is required",
+    "LEASE_PERIOD_REQUIRED": "Lease start and end dates are required",
+    "LEASE_PERIOD_INVALID": "Lease end date must be after or equal to lease start date",
     "LOAD_ERROR": "Failed to load tenants",
     "SAVE_SUCCESS": "Tenant saved successfully",
     "SAVE_ERROR": "Failed to save tenant",
     "DELETE_SUCCESS": "Tenant removed successfully",
     "SELECT_USER": "System tenant user",
     "NO_USER_LINK": "No user link"
+  },
+  "OFFICER_SCHEDULE": {
+    "TITLE": "Today Visits",
+    "SUBTITLE": "Track your assigned route and start each visit on time",
+    "EMPTY_TITLE": "No scheduled visits",
+    "EMPTY_SUBTITLE": "You currently have no open visits assigned",
+    "MAP": "Map",
+    "TOTAL_TODAY": "Total today",
+    "NAVIGATE": "Navigate",
+    "TRAVEL": "Travel",
+    "START_VISIT": "Start visit",
+    "MIN": "min"
+  },
+  "NAV_SECTION": {
+    "OVERVIEW": "Overview",
+    "DIRECTORY": "Directory",
+    "OPERATIONS": "Operations",
+    "YOU": "You"
   }
 }

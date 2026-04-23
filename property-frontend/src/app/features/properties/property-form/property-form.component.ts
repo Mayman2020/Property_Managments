@@ -40,6 +40,7 @@ export class PropertyFormComponent implements OnInit {
 
   omanCountry: LookupItem | null = null;
   cities: LookupItem[] = [];
+  ownerDocumentUrls: string[] = [];
 
   readonly types = [
     { value: 'RESIDENTIAL' },
@@ -98,6 +99,17 @@ export class PropertyFormComponent implements OnInit {
     }
   }
 
+  onOwnerDocumentsUploaded(urls: string[]): void {
+    if (urls.length === 0) return;
+    const merged = [...this.ownerDocumentUrls, ...urls];
+    this.ownerDocumentUrls = Array.from(new Set(merged));
+  }
+
+  removeOwnerDocument(url: string): void {
+    if (this.isViewMode) return;
+    this.ownerDocumentUrls = this.ownerDocumentUrls.filter((u) => u !== url);
+  }
+
   editCurrent(): void {
     if (!this.propertyId) return;
     void this.router.navigate(['/admin/properties', this.propertyId, 'edit']);
@@ -110,6 +122,10 @@ export class PropertyFormComponent implements OnInit {
     const selectedCity = this.cities.find((c) => c.id === raw.cityId);
     if (!selectedCity || !this.omanCountry) {
       this.snack.error(this.i18n.instant('PROPERTY_FORM.LOCATION_REQUIRED'));
+      return;
+    }
+    if (this.ownerDocumentUrls.length === 0) {
+      this.snack.error(this.i18n.instant('PROPERTY_FORM.OWNER_DOCS_REQUIRED'));
       return;
     }
 
@@ -126,7 +142,8 @@ export class PropertyFormComponent implements OnInit {
       googleMapUrl: raw.googleMapUrl || undefined,
       coverImageUrl: raw.coverImageUrl || undefined,
       totalFloors: raw.totalFloors,
-      description: raw.description
+      description: raw.description,
+      ownerDocumentFiles: [...this.ownerDocumentUrls]
     };
 
     this.submitting = true;
@@ -221,6 +238,7 @@ export class PropertyFormComponent implements OnInit {
           description: p.description || '',
           ownerId: p.ownerId
         });
+        this.ownerDocumentUrls = p.ownerDocumentFiles ?? [];
 
         this.loading = false;
       },

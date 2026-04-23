@@ -1,9 +1,13 @@
-﻿<div class="app-page">
-
+<div class="app-page dashboard-page">
   <app-page-header
+    [eyebrow]="pageEyebrow"
     [title]="'DASHBOARD.TITLE' | translate"
     [subtitle]="'DASHBOARD.SUBTITLE' | translate">
-    <button mat-flat-button routerLink="/admin/maintenance/new">
+    <button mat-stroked-button type="button">
+      <span class="material-icons">filter_list</span>
+      {{ i18n.currentLang === 'ar' ? 'اليوم' : 'Today' }}
+    </button>
+    <button mat-flat-button routerLink="/admin/maintenance/new" *ngIf="permissions.can('maintenance', 'create')">
       <span class="material-icons">add</span>
       {{ 'MAINTENANCE.NEW_REQUEST' | translate }}
     </button>
@@ -13,136 +17,219 @@
     <mat-spinner diameter="48"></mat-spinner>
   </div>
 
-  <ng-container *ngIf="!loading && stats">
-    <div class="stat-grid">
-      <div class="stat-card navy">
-        <div class="stat-icon"><span class="material-icons">apartment</span></div>
-        <div class="stat-content">
-          <div class="stat-value">{{ stats.totalProperties }}</div>
-          <div class="stat-label">{{ 'DASHBOARD.TOTAL_PROPERTIES' | translate }}</div>
+  <ng-container *ngIf="!loading && stats as summary">
+    <section class="estate-stat-grid">
+      <article class="estate-stat-card navy">
+        <div class="estate-stat-top">
+          <span class="estate-stat-label">{{ 'DASHBOARD.TOTAL_PROPERTIES' | translate }}</span>
+          <div class="estate-stat-icon"><span class="material-icons">apartment</span></div>
         </div>
-      </div>
-
-      <div class="stat-card teal">
-        <div class="stat-icon"><span class="material-icons">meeting_room</span></div>
-        <div class="stat-content">
-          <div class="stat-value">{{ stats.totalUnits }}</div>
-          <div class="stat-label">{{ 'DASHBOARD.TOTAL_UNITS' | translate }}</div>
+        <div class="estate-stat-value">{{ summary.totalProperties }}</div>
+        <div class="estate-stat-foot">
+          <span class="estate-stat-delta up"><span class="material-icons">north</span>+2</span>
+          <span>{{ i18n.currentLang === 'ar' ? 'مقارنة بالشهر الماضي' : 'vs last month' }}</span>
         </div>
-      </div>
+      </article>
 
-      <div class="stat-card gold">
-        <div class="stat-icon"><span class="material-icons">key</span></div>
-        <div class="stat-content">
-          <div class="stat-value">{{ stats.rentedUnits }}</div>
-          <div class="stat-label">{{ 'DASHBOARD.RENTED_UNITS' | translate }}</div>
-          <div class="stat-bar">
-            <div class="stat-bar-fill" [style.width]="rentedPercent + '%' "></div>
+      <article class="estate-stat-card teal">
+        <div class="estate-stat-top">
+          <span class="estate-stat-label">{{ 'DASHBOARD.TOTAL_UNITS' | translate }}</span>
+          <div class="estate-stat-icon"><span class="material-icons">meeting_room</span></div>
+        </div>
+        <div class="estate-stat-value">{{ summary.totalUnits }}</div>
+        <div class="estate-stat-foot">
+          <span class="estate-stat-delta up"><span class="material-icons">north</span>+12</span>
+          <span>{{ i18n.currentLang === 'ar' ? 'وحدات جديدة' : 'new units online' }}</span>
+        </div>
+      </article>
+
+      <article class="estate-stat-card gold">
+        <div class="estate-stat-top">
+          <span class="estate-stat-label">{{ 'DASHBOARD.OCCUPANCY_RATE' | translate }}</span>
+          <div class="estate-stat-icon"><span class="material-icons">key</span></div>
+        </div>
+        <div class="estate-stat-value">{{ occupancyPercent }}%</div>
+        <div class="estate-stat-progress">
+          <div class="estate-stat-progress-fill" [style.width.%]="occupancyPercent"></div>
+        </div>
+        <div class="estate-stat-foot">
+          <span>{{ summary.rentedUnits }} / {{ summary.totalUnits }}</span>
+        </div>
+      </article>
+
+      <article class="estate-stat-card danger">
+        <div class="estate-stat-top">
+          <span class="estate-stat-label">{{ 'DASHBOARD.PENDING_REQUESTS' | translate }}</span>
+          <div class="estate-stat-icon"><span class="material-icons">schedule</span></div>
+        </div>
+        <div class="estate-stat-value">{{ summary.pendingRequests }}</div>
+        <div class="estate-stat-foot">
+          <span class="estate-stat-delta down"><span class="material-icons">south</span>-3</span>
+          <span>{{ i18n.currentLang === 'ar' ? 'بانتظار الإجراء' : 'awaiting assignment' }}</span>
+        </div>
+      </article>
+    </section>
+
+    <section class="dashboard-grid dashboard-grid-top">
+      <article class="app-card estate-panel">
+        <div class="app-card-header">
+          <div>
+            <span class="app-card-title">{{ operationsPulseLabel }}</span>
+            <p class="panel-subtitle">{{ lastThirtyLabel }}</p>
           </div>
-          <div class="stat-pct">{{ rentedPercent }}% {{ 'DASHBOARD.OCCUPANCY_RATE' | translate }}</div>
+          <div class="chart-legend">
+            <span class="legend-item"><span class="dot brass"></span>{{ 'STATUS.COMPLETED' | translate }}</span>
+            <span class="legend-item"><span class="dot navy"></span>{{ 'STATUS.PENDING' | translate }}</span>
+          </div>
         </div>
-      </div>
-
-      <div class="stat-card danger">
-        <div class="stat-icon"><span class="material-icons">pending_actions</span></div>
-        <div class="stat-content">
-          <div class="stat-value">{{ stats.pendingRequests }}</div>
-          <div class="stat-label">{{ 'DASHBOARD.PENDING_REQUESTS' | translate }}</div>
+        <div class="app-card-body chart-body">
+          <svg viewBox="0 0 720 180" class="trend-chart" preserveAspectRatio="none" *ngIf="trendValues.length > 0">
+            <defs>
+              <linearGradient id="trendFillAngular" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="rgba(200,154,61,0.34)"></stop>
+                <stop offset="100%" stop-color="rgba(200,154,61,0.02)"></stop>
+              </linearGradient>
+            </defs>
+            <line x1="0" x2="720" y1="45" y2="45"></line>
+            <line x1="0" x2="720" y1="90" y2="90"></line>
+            <line x1="0" x2="720" y1="135" y2="135"></line>
+            <path [attr.d]="trendAreaPath" class="trend-area"></path>
+            <path [attr.d]="trendPath" class="trend-line"></path>
+          </svg>
+          <div class="trend-axis">
+            <span>Mar 23</span>
+            <span>Mar 30</span>
+            <span>Apr 06</span>
+            <span>Apr 13</span>
+            <span>Apr 20</span>
+          </div>
         </div>
-      </div>
+      </article>
 
-      <div class="stat-card green">
-        <div class="stat-icon"><span class="material-icons">task_alt</span></div>
-        <div class="stat-content">
-          <div class="stat-value">{{ stats.completedThisMonth }}</div>
-          <div class="stat-label">{{ 'DASHBOARD.COMPLETED_THIS_MONTH' | translate }}</div>
+      <article class="app-card estate-panel occupancy-panel">
+        <div class="app-card-header">
+          <span class="app-card-title">{{ occupancyCardLabel }}</span>
+          <span class="status-badge" data-status="COMPLETED">{{ 'COMMON.ACTIVE' | translate }}</span>
         </div>
-      </div>
+        <div class="app-card-body occupancy-body">
+          <div class="donut-wrap">
+            <svg viewBox="0 0 220 220" class="occupancy-donut">
+              <circle class="donut-track" cx="110" cy="110" r="78"></circle>
+              <circle
+                class="donut-progress"
+                cx="110"
+                cy="110"
+                r="78"
+                [attr.stroke-dasharray]="donutCircumference"
+                [attr.stroke-dashoffset]="donutOffset">
+              </circle>
+            </svg>
+            <div class="donut-center">
+              <div class="donut-value">{{ occupancyPercent }}%</div>
+              <div class="donut-label">{{ 'DASHBOARD.OCCUPANCY_RATE' | translate }}</div>
+            </div>
+          </div>
 
-      <div class="stat-card orange" *ngIf="stats.lowStockItems > 0">
-        <div class="stat-icon"><span class="material-icons">inventory_2</span></div>
-        <div class="stat-content">
-          <div class="stat-value">{{ stats.lowStockItems }}</div>
-          <div class="stat-label">{{ 'DASHBOARD.LOW_STOCK_ITEMS' | translate }}</div>
-          <div class="stat-alert">{{ 'INVENTORY.LOW_STOCK' | translate }}</div>
+          <div class="mini-stats">
+            <div class="mini-stat">
+              <div class="mini-stat-label">{{ 'DASHBOARD.RENTED_UNITS' | translate }}</div>
+              <div class="mini-stat-value">{{ summary.rentedUnits }}</div>
+            </div>
+            <div class="mini-stat">
+              <div class="mini-stat-label">{{ vacantLabel }}</div>
+              <div class="mini-stat-value">{{ summary.vacantUnits }}</div>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+      </article>
+    </section>
 
-    <div class="content-grid">
-      <div class="app-card surface-glow">
+    <section class="dashboard-grid">
+      <article class="app-card estate-panel">
         <div class="app-card-header">
           <span class="app-card-title">{{ 'DASHBOARD.RECENT_REQUESTS' | translate }}</span>
-          <a class="view-all-link" routerLink="/admin/maintenance">{{ 'ACTIONS.VIEW_ALL' | translate }}</a>
+          <a class="panel-link" routerLink="/admin/maintenance">{{ 'ACTIONS.VIEW_ALL' | translate }}</a>
         </div>
-        <div *ngIf="recentRequests.length === 0" class="card-empty">
-          <span class="material-icons">build_circle</span>
-          <span>{{ 'REQUEST_LIST.EMPTY_TITLE' | translate }}</span>
-        </div>
-        <div class="request-list" *ngIf="recentRequests.length > 0">
-          <div class="request-row" *ngFor="let req of recentRequests">
-            <div class="req-number">{{ req.requestNumber }}</div>
-            <div class="req-info">
-              <span class="req-title">{{ req.title }}</span>
-              <span class="req-meta">{{ req.propertyName }} · {{ req.unitNumber }}</span>
-            </div>
-            <span class="status-badge" [attr.data-status]="req.status">{{ statusLabel(req.status) }}</span>
-            <span class="priority-badge" [class]="req.priority">{{ ('PRIORITY.' + req.priority) | translate }}</span>
-          </div>
-        </div>
-      </div>
 
-      <div class="app-card surface-glow">
+        <div class="app-table-wrap" *ngIf="recentRequests.length > 0; else emptyRequests">
+          <table class="app-data-table dashboard-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>{{ 'REQUEST_LIST.REQUEST_TITLE' | translate }}</th>
+                <th>{{ 'REQUEST_LIST.PROPERTY_UNIT' | translate }}</th>
+                <th>{{ 'MAINTENANCE.STATUS' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let req of recentRequests">
+                <td><span class="mono-cell">{{ req.requestNumber }}</span></td>
+                <td>
+                  <div class="table-title">{{ req.title }}</div>
+                  <div class="table-meta">
+                    <span class="priority-badge" [class]="req.priority">{{ priorityLabel(req.priority) }}</span>
+                    <span>{{ req.createdAt | date: 'dd MMM yyyy' }}</span>
+                  </div>
+                </td>
+                <td>
+                  <div class="table-title">{{ req.propertyName || '—' }}</div>
+                  <div class="table-meta">{{ 'REQUEST_LIST.UNIT' | translate }} {{ req.unitNumber || '—' }}</div>
+                </td>
+                <td><span class="status-badge" [attr.data-status]="req.status">{{ statusLabel(req.status) }}</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <ng-template #emptyRequests>
+          <div class="card-empty">
+            <span class="material-icons">build_circle</span>
+            <span>{{ 'REQUEST_LIST.EMPTY_TITLE' | translate }}</span>
+          </div>
+        </ng-template>
+      </article>
+
+      <article class="app-card estate-panel">
         <div class="app-card-header">
-          <span class="app-card-title">{{ 'DASHBOARD.LOW_STOCK_ALERTS' | translate }}</span>
-          <a class="view-all-link" routerLink="/admin/inventory">{{ 'INVENTORY.MANAGE' | translate }}</a>
+          <span class="app-card-title">{{ lowStockLabel }}</span>
+          <a class="panel-link" routerLink="/admin/inventory">{{ 'INVENTORY.MANAGE' | translate }}</a>
         </div>
-        <div *ngIf="lowStockItems.length === 0" class="card-empty">
-          <span class="material-icons">inventory</span>
-          <span>{{ 'DASHBOARD.NO_STOCK_ALERTS' | translate }}</span>
-        </div>
-        <div class="stock-list" *ngIf="lowStockItems.length > 0">
-          <div class="stock-row" *ngFor="let item of lowStockItems">
-            <div class="stock-icon-wrap">
-              <span class="material-icons">warning_amber</span>
+
+        <div class="app-card-body stock-stack" *ngIf="lowStockItems.length > 0; else emptyStock">
+          <div class="stock-item" *ngFor="let item of lowStockItems">
+            <div class="stock-copy">
+              <div class="stock-name">{{ item.itemNameAr }}</div>
+              <div class="stock-meta">{{ item.itemCode }} · {{ item.location || '—' }}</div>
             </div>
-            <div class="stock-info">
-              <span class="stock-name">{{ item.itemNameAr }}</span>
-              <span class="stock-meta">{{ 'INVENTORY.QTY' | translate }}: {{ item.quantity }} {{ item.unitOfMeasure }} / {{ 'INVENTORY.MIN' | translate }}: {{ item.minQuantity }}</span>
+            <div class="stock-qty">
+              <div class="stock-level">{{ item.quantity }}/{{ item.minQuantity }}</div>
+              <div class="stock-caption">{{ 'DASHBOARD.LOW_STOCK_ITEMS' | translate }}</div>
             </div>
-            <div class="stock-qty-bar">
-              <div class="stock-qty-fill" [style.width]="(item.quantity / item.minQuantity) * 100 + '%' "></div>
+            <div class="stock-progress">
+              <div class="stock-progress-fill" [style.width.%]="stockLevel(item)"></div>
             </div>
           </div>
         </div>
-      </div>
 
-    </div>
+        <ng-template #emptyStock>
+          <div class="card-empty">
+            <span class="material-icons">inventory_2</span>
+            <span>{{ 'DASHBOARD.NO_STOCK_ALERTS' | translate }}</span>
+          </div>
+        </ng-template>
+      </article>
+    </section>
 
-    <div class="app-card status-overview-card surface-glow">
+    <article class="app-card estate-panel status-strip">
       <div class="app-card-header">
-        <span class="app-card-title">{{ 'DASHBOARD.REQUESTS_BY_STATUS' | translate }}</span>
+        <span class="app-card-title">{{ requestsStatusLabel }}</span>
       </div>
-      <div class="status-overview-grid">
-        <div class="status-overview-item" data-status="PENDING">
-          <span class="soi-value">{{ stats.pendingRequests }}</span>
-          <span class="soi-label">{{ 'STATUS.PENDING' | translate }}</span>
-        </div>
-        <div class="status-overview-item" data-status="IN_PROGRESS">
-          <span class="soi-value">{{ stats.inProgressRequests }}</span>
-          <span class="soi-label">{{ 'STATUS.IN_PROGRESS' | translate }}</span>
-        </div>
-        <div class="status-overview-item" data-status="COMPLETED">
-          <span class="soi-value">{{ stats.completedThisMonth }}</span>
-          <span class="soi-label">{{ 'DASHBOARD.COMPLETED_THIS_MONTH' | translate }}</span>
-        </div>
-        <div class="status-overview-item" data-status="TENANT_ABSENT">
-          <span class="soi-value">—</span>
-          <span class="soi-label">{{ 'STATUS.TENANT_ABSENT' | translate }}</span>
+      <div class="status-strip-grid">
+        <div class="status-strip-item" *ngFor="let tile of statusTiles" [attr.data-status]="tile.status">
+          <span class="status-badge" [attr.data-status]="tile.status">{{ tile.label }}</span>
+          <div class="status-strip-value">{{ tile.value }}</div>
         </div>
       </div>
-    </div>
-
+    </article>
   </ng-container>
-
 </div>

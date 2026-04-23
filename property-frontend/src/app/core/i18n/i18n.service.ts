@@ -28,10 +28,14 @@ export class I18nService {
     private readonly translate: TranslateService,
     private readonly overlayContainer: OverlayContainer
   ) {
-    const saved = (localStorage.getItem(STORAGE_KEY) as LangCode) || 'ar';
+    const saved = this.readSavedLanguage();
     this.translate.addLangs(['ar', 'en']);
     this.translate.setDefaultLang('ar');
-    this.setLang(saved).subscribe();
+    this.setLang(saved).subscribe({
+      error: () => {
+        // Avoid blocking bootstrap when translation files are temporarily unavailable.
+      }
+    });
   }
 
   get currentLang(): LangCode {
@@ -48,7 +52,11 @@ export class I18nService {
 
   setLang(code: LangCode): Observable<unknown> {
     const lang = this.languages.find((l) => l.code === code) ? code : 'ar';
-    localStorage.setItem(STORAGE_KEY, lang);
+    try {
+      localStorage.setItem(STORAGE_KEY, lang);
+    } catch {
+      // Ignore storage write failures and continue with in-memory language state.
+    }
     this.applyLang(lang);
     return this.translate.use(lang).pipe(
       tap(() => this.updateDocumentTitle())
@@ -66,7 +74,11 @@ export class I18nService {
     document.documentElement.setAttribute('dir', lang.dir);
     document.documentElement.setAttribute('lang', htmlLang);
     document.body.setAttribute('dir', lang.dir);
-    this.overlayContainer.getContainerElement().setAttribute('dir', lang.dir);
+    try {
+      this.overlayContainer.getContainerElement().setAttribute('dir', lang.dir);
+    } catch {
+      // Overlay container can be unavailable during early bootstrap; safe to ignore.
+    }
   }
 
   private updateDocumentTitle(): void {
@@ -74,5 +86,15 @@ export class I18nService {
     if (title && title !== 'APP.TAGLINE') {
       document.title = title;
     }
+  }
+
+  private readSavedLanguage(): LangCode {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY) as LangCode | null;
+      if (saved === 'ar' || saved === 'en') return saved;
+    } catch {
+      // Ignore storage read failures and fallback to default language.
+    }
+    return 'ar';
   }
 }

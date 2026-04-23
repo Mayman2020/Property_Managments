@@ -1,0 +1,74 @@
+<div class="app-page reports-page">
+  <app-page-header
+    [eyebrow]="'NAV.REPORTS' | translate"
+    [title]="'NAV.REPORTS' | translate"
+    [subtitle]="'DASHBOARD.SUBTITLE' | translate"
+    [breadcrumbs]="[{label:('NAV.DASHBOARD' | translate), route:'/admin/dashboard'}, {label:('NAV.REPORTS' | translate)}]">
+    <button mat-stroked-button type="button">
+      <span class="material-icons">download</span>
+      Export
+    </button>
+  </app-page-header>
+
+  <div class="loading-center" *ngIf="loading">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <ng-container *ngIf="!loading">
+    <section class="stat-grid">
+      <article class="stat-card surface-glow" *ngFor="let tile of statTiles">
+        <div class="stat-top">
+          <div>
+            <div class="stat-label">{{ tile.label }}</div>
+            <div class="stat-value">{{ tile.value }}</div>
+          </div>
+          <span class="material-icons stat-icon">{{ tile.icon }}</span>
+        </div>
+        <div class="stat-bottom">
+          <span class="stat-delta">{{ tile.delta }}</span>
+          <svg viewBox="0 0 100 28" preserveAspectRatio="none" class="sparkline">
+            <polyline [attr.points]="sparkPoints(tile.spark)"></polyline>
+          </svg>
+        </div>
+      </article>
+    </section>
+
+    <section class="report-grid">
+      <article class="app-card report-chart-card">
+        <div class="app-card-header">
+          <span class="app-card-title">{{ i18n.currentLang === 'ar' ? 'الإنجازات / شهر' : 'Completions / month' }}</span>
+        </div>
+        <div class="app-card-body">
+          <div class="bar-chart">
+            <div class="bar-group" *ngFor="let month of monthlySeries">
+              <div class="bar-value">{{ month.value }}</div>
+              <div class="bar-track">
+                <div class="bar-fill" [style.height.px]="barHeight(month.value)"></div>
+              </div>
+              <div class="bar-label">{{ month.label }}</div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="app-card leaderboard-card">
+        <div class="app-card-header">
+          <span class="app-card-title">{{ i18n.currentLang === 'ar' ? 'قائمة الفنيين' : 'Officer leaderboard' }}</span>
+        </div>
+        <div class="app-card-body leaderboard-body">
+          <div class="leader-row" *ngFor="let row of leaderboard; let i = index">
+            <div class="leader-rank">{{ i + 1 }}</div>
+            <div class="leader-copy">
+              <div class="leader-name">{{ row.name }}</div>
+              <div class="leader-meta">{{ row.resolved }} {{ i18n.currentLang === 'ar' ? 'منجزة' : 'resolved' }}</div>
+              <div class="leader-progress">
+                <div class="leader-progress-fill" [style.width.%]="row.percent"></div>
+              </div>
+            </div>
+            <div class="leader-score">{{ row.percent }}%</div>
+          </div>
+        </div>
+      </article>
+    </section>
+  </ng-container>
+</div>

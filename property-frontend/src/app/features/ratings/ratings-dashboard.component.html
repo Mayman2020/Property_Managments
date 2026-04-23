@@ -26,7 +26,7 @@
         <mat-label>{{ 'RATING.STARS' | translate }}</mat-label>
         <mat-select [(value)]="selectedStars" (selectionChange)="applyFilters()">
           <mat-option [value]="null">{{ 'ACTIONS.VIEW_ALL' | translate }}</mat-option>
-          <mat-option *ngFor="let star of stars" [value]="star">{{ star }} ?</mat-option>
+          <mat-option *ngFor="let star of stars" [value]="star">{{ star }} *</mat-option>
         </mat-select>
       </mat-form-field>
 
@@ -37,16 +37,12 @@
 
       <mat-form-field appearance="outline">
         <mat-label>{{ 'RATINGS_DASHBOARD.DATE_FROM' | translate }}</mat-label>
-        <input matInput [matDatepicker]="pickerFrom" [value]="dateFrom" (dateChange)="dateFrom = $event.value; applyFilters()">
-        <mat-datepicker-toggle matIconSuffix [for]="pickerFrom"></mat-datepicker-toggle>
-        <mat-datepicker #pickerFrom></mat-datepicker>
+        <input matInput type="date" [value]="dateFrom" (change)="dateFrom = $any($event.target).value; applyFilters()">
       </mat-form-field>
 
       <mat-form-field appearance="outline">
         <mat-label>{{ 'RATINGS_DASHBOARD.DATE_TO' | translate }}</mat-label>
-        <input matInput [matDatepicker]="pickerTo" [value]="dateTo" (dateChange)="dateTo = $event.value; applyFilters()">
-        <mat-datepicker-toggle matIconSuffix [for]="pickerTo"></mat-datepicker-toggle>
-        <mat-datepicker #pickerTo></mat-datepicker>
+        <input matInput type="date" [value]="dateTo" (change)="dateTo = $any($event.target).value; applyFilters()">
       </mat-form-field>
 
       <button mat-stroked-button type="button" (click)="resetFilters()">
@@ -111,19 +107,19 @@
           <div class="row-main">
             <div class="row-top">
               <strong>{{ item.requestTitle || ('REQUEST_LIST.REQUEST_TITLE' | translate) }}</strong>
-              <span class="row-stars">{{ item.rating }} ?</span>
+              <span class="row-stars">{{ item.rating }} *</span>
             </div>
 
             <div class="row-meta">
-              <span>{{ item.propertyName || '�' }}</span>
-              <span>�</span>
-              <span>???? {{ item.unitNumber || '�' }}</span>
-              <span>�</span>
+              <span>{{ item.propertyName || '--' }}</span>
+              <span>|</span>
+              <span>{{ 'RATINGS_DASHBOARD.FOR_UNIT' | translate }} {{ item.unitNumber || '--' }}</span>
+              <span>|</span>
               <span>{{ item.tenantName || ('COMMON.NO_DATA' | translate) }}</span>
             </div>
 
             <p class="row-comment" *ngIf="item.comment">{{ item.comment }}</p>
-            <p class="row-comment muted" *ngIf="!item.comment">{{ 'RATING.COMMENT' | translate }}: �</p>
+            <p class="row-comment muted" *ngIf="!item.comment">{{ 'RATING.COMMENT' | translate }}: --</p>
           </div>
 
           <div class="row-date">{{ item.createdAt | date:'dd-MM-yyyy HH:mm' }}</div>

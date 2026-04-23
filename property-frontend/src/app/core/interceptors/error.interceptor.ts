@@ -10,11 +10,14 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     catchError((err: HttpErrorResponse) => {
-      if (err.status === 401) {
+      if (err.status === 401 && !req.url.includes('/auth/login')) {
         tokenStorage.clearAll();
         void router.navigateByUrl('/auth/login');
       }
-      const message = err.error?.message ?? err.message ?? 'An error occurred';
+      const message =
+        err.status === 0
+          ? 'Cannot reach backend server. Please make sure backend is running on the configured port.'
+          : (err.error?.message ?? err.message ?? 'An error occurred');
       return throwError(() => new Error(message));
     })
   );

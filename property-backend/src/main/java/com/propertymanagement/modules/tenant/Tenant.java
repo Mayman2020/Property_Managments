@@ -1,5 +1,6 @@
 package com.propertymanagement.modules.tenant;
 
+import com.propertymanagement.shared.persistence.StringListJsonConverter;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -10,6 +11,8 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "tenants")
@@ -54,6 +57,11 @@ public class Tenant {
 
     @Column(name = "profile_image", length = 500)
     private String profileImage;
+
+    @Builder.Default
+    @Convert(converter = StringListJsonConverter.class)
+    @Column(name = "lease_contract_files", columnDefinition = "TEXT")
+    private List<String> leaseContractFiles = new ArrayList<>();
 
     @Column(columnDefinition = "TEXT")
     private String notes;

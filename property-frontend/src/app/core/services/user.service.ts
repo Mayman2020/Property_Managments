@@ -57,6 +57,12 @@ export class UserService {
     );
   }
 
+  updateRole(id: number, role: UserRole): Observable<ApiResponse<User>> {
+    return this.api.patch<ApiResponse<User>>(`/users/${id}/role`, { role }).pipe(
+      map((res) => ({ ...res, data: res.data ? this.normalizeUser(res.data) : res.data }))
+    );
+  }
+
   private normalizeUser(user: User & { active?: boolean }): User {
     const isActive = typeof user.isActive === 'boolean' ? user.isActive : !!user.active;
     return {

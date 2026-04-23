@@ -10,8 +10,10 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { AuthService } from '../../../core/services/auth.service';
+import { PermissionService } from '../../../core/services/permission.service';
 import { SnackService } from '../../../core/services/snack.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
+import { switchMap } from 'rxjs';
 
 @Component({
   selector: 'app-login',
@@ -33,13 +35,14 @@ export class LoginComponent {
   constructor(
     private readonly fb: FormBuilder,
     private readonly auth: AuthService,
+    private readonly permissions: PermissionService,
     private readonly router: Router,
     private readonly snack: SnackService,
-    private readonly i18n: I18nService
+    readonly i18n: I18nService
   ) {
     this.form = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]]
+      password: ['', [Validators.required, Validators.minLength(5)]]
     });
 
     if (this.auth.isAuthenticated()) {
@@ -55,7 +58,9 @@ export class LoginComponent {
     this.loading = true;
     this.error = '';
 
-    this.auth.login(this.form.value).subscribe({
+    this.auth.login(this.form.value).pipe(
+      switchMap(() => this.permissions.loadMine())
+    ).subscribe({
       next: () => {
         this.loading = false;
         void this.router.navigateByUrl(this.auth.getDashboardRoute());

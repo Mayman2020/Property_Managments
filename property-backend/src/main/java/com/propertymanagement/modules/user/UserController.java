@@ -3,6 +3,7 @@ package com.propertymanagement.modules.user;
 import com.propertymanagement.modules.user.dto.UserRequest;
 import com.propertymanagement.modules.user.dto.UserProfileUpdateRequest;
 import com.propertymanagement.modules.user.dto.ChangePasswordRequest;
+import com.propertymanagement.modules.user.dto.UserRoleUpdateRequest;
 import com.propertymanagement.modules.user.dto.UserResponse;
 import com.propertymanagement.shared.response.ApiResponse;
 import jakarta.validation.Valid;
@@ -55,6 +56,14 @@ public class UserController {
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<UserResponse>> toggleActive(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok(userService.toggleActive(id)));
+    }
+
+    @PatchMapping("/{id}/role")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<ApiResponse<UserResponse>> updateRole(
+            @PathVariable Long id,
+            @Valid @RequestBody UserRoleUpdateRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(userService.updateRole(id, request)));
     }
 
     @GetMapping("/me")

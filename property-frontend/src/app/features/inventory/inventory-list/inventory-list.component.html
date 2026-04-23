@@ -1,5 +1,6 @@
-﻿<div class="app-page">
+<div class="app-page inventory-page">
   <app-page-header
+    [eyebrow]="i18n.currentLang === 'ar' ? 'العمليات' : 'Operations'"
     [title]="'INVENTORY.TITLE' | translate"
     [subtitle]="'INVENTORY.SUBTITLE' | translate"
     [breadcrumbs]="[{label:('NAV.DASHBOARD' | translate), route:'/admin/dashboard'}, {label:('NAV.INVENTORY' | translate)}]">
@@ -7,19 +8,15 @@
       <span class="material-icons">add</span>
       {{ 'INVENTORY.ADD_ITEM' | translate }}
     </button>
-    <button mat-stroked-button>
-      <span class="material-icons">swap_vert</span>
-      {{ 'INVENTORY.STOCK_MOVEMENT' | translate }}
-    </button>
   </app-page-header>
 
-  <div class="loading-center" *ngIf="loading"><mat-spinner diameter="40"></mat-spinner></div>
+  <div class="loading-center" *ngIf="loading">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
 
-  <div class="search-wrap app-card" *ngIf="!loading">
-    <mat-form-field appearance="outline">
-      <mat-label>{{ 'ACTIONS.SEARCH' | translate }}</mat-label>
-      <input matInput [value]="searchTerm" (input)="onSearch($any($event.target).value)">
-    </mat-form-field>
+  <div class="inventory-search-shell" *ngIf="!loading">
+    <span class="material-icons">search</span>
+    <input [value]="searchTerm" (input)="onSearch($any($event.target).value)" [placeholder]="'ACTIONS.SEARCH' | translate">
   </div>
 
   <app-empty-state
@@ -29,67 +26,57 @@
     [message]="'INVENTORY.EMPTY_MESSAGE' | translate">
   </app-empty-state>
 
-  <div class="app-card" *ngIf="!loading && items.length > 0">
+  <section class="app-card inventory-table-card" *ngIf="!loading && items.length > 0">
     <div class="app-table-wrap">
-      <table class="app-data-table">
+      <table class="app-data-table source-table">
         <thead>
           <tr>
             <th>{{ 'INVENTORY.ITEM_CODE' | translate }}</th>
             <th>{{ 'INVENTORY.ITEM_NAME' | translate }}</th>
-            <th>{{ 'INVENTORY.UNIT' | translate }}</th>
             <th>{{ 'INVENTORY.CURRENT_QTY' | translate }}</th>
             <th>{{ 'INVENTORY.MIN_QUANTITY' | translate }}</th>
-            <th>{{ 'INVENTORY.LEVEL' | translate }}</th>
             <th>{{ 'INVENTORY.LOCATION' | translate }}</th>
-            <th>{{ 'MAINTENANCE.STATUS' | translate }}</th>
-            <th>{{ 'REQUEST_LIST.ACTIONS' | translate }}</th>
+            <th>{{ 'INVENTORY.LEVEL' | translate }}</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let item of items" [class.low-row]="item.isLowStock">
-            <td>
-              <span class="item-code">{{ item.itemCode }}</span>
-            </td>
+          <tr *ngFor="let item of pagedItems">
+            <td><span class="item-code">{{ item.itemCode }}</span></td>
             <td>
               <div class="item-name-ar">{{ item.itemNameAr }}</div>
               <div class="item-name-en" *ngIf="item.itemNameEn">{{ item.itemNameEn }}</div>
             </td>
-            <td>{{ item.unitOfMeasure || '—' }}</td>
-            <td>
-              <span class="qty-value" [class.low]="item.isLowStock">{{ item.quantity }}</span>
-            </td>
-            <td>{{ item.minQuantity }}</td>
-            <td>
-              <div class="stock-bar">
-                <div class="stock-bar-fill"
-                  [style.width]="stockPercent(item) + '%'"
-                  [class.low]="item.isLowStock">
+            <td><span class="qty-value" [class.low]="item.isLowStock">{{ item.quantity }} {{ item.unitOfMeasure || '' }}</span></td>
+            <td><span class="item-min">{{ item.minQuantity }} {{ item.unitOfMeasure || '' }}</span></td>
+            <td class="item-location">{{ item.location || '-' }}</td>
+            <td class="level-cell">
+              <div class="stock-meta-line">
+                <div class="progress" style="flex: 1">
+                  <div
+                    class="progress-fill"
+                    [style.width.%]="stockPercent(item)"
+                    [style.background]="item.isLowStock ? 'linear-gradient(90deg, var(--bad), #c44b3e)' : null"></div>
                 </div>
+                <span class="status-badge" [attr.data-status]="item.isLowStock ? 'URGENT' : 'OK'" style="font-size: 10px">
+                  {{ item.isLowStock ? ('INVENTORY.LOW' | translate) : ('INVENTORY.OK' | translate) }}
+                </span>
               </div>
-              <span class="stock-pct">{{ stockPercent(item) }}%</span>
-            </td>
-            <td>{{ item.location || '—' }}</td>
-            <td>
-              <span class="status-badge" [attr.data-status]="item.isLowStock ? 'URGENT' : 'COMPLETED'">
-                {{ item.isLowStock ? ('INVENTORY.LOW' | translate) : ('INVENTORY.OK' | translate) }}
-              </span>
             </td>
             <td>
-              <div class="action-btns">
-                <button class="app-icon-btn success" [matTooltip]="'INVENTORY.ADD_QTY' | translate">
-                  <span class="material-icons">add</span>
-                </button>
-                <button class="app-icon-btn" [matTooltip]="'ACTIONS.EDIT' | translate">
-                  <span class="material-icons">edit</span>
-                </button>
-                <button class="app-icon-btn" [matTooltip]="'INVENTORY.TRANSACTIONS' | translate">
-                  <span class="material-icons">history</span>
-                </button>
-              </div>
+              <button class="table-stock-btn">
+                {{ i18n.currentLang === 'ar' ? 'إضافة' : '+ stock' }}
+              </button>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
-  </div>
+
+    <div class="table-pager" *ngIf="items.length > pageSize">
+      <button mat-stroked-button type="button" (click)="changePage(-1)" [disabled]="pageIndex === 0">&lt;</button>
+      <span>{{ pageIndex + 1 }} / {{ totalPages }}</span>
+      <button mat-stroked-button type="button" (click)="changePage(1)" [disabled]="pageIndex >= totalPages - 1">&gt;</button>
+    </div>
+  </section>
 </div>

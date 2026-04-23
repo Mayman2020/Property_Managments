@@ -1,0 +1,86 @@
+<div class="app-page officer-schedule-page">
+  <app-page-header
+    [eyebrow]="i18n.currentLang === 'ar' ? 'اليوم' : 'Today'"
+    [title]="'OFFICER_SCHEDULE.TITLE' | translate"
+    [subtitle]="'OFFICER_SCHEDULE.SUBTITLE' | translate"
+    [breadcrumbs]="[{ label: ('NAV.SCHEDULE' | translate) }]">
+    <button mat-stroked-button type="button">
+      <span class="material-icons">calendar_month</span>
+      This week
+    </button>
+  </app-page-header>
+
+  <div class="loading-center" *ngIf="loading">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <app-empty-state
+    *ngIf="!loading && visits.length === 0"
+    icon="event_busy"
+    [title]="'OFFICER_SCHEDULE.EMPTY_TITLE' | translate"
+    [message]="'OFFICER_SCHEDULE.EMPTY_SUBTITLE' | translate">
+  </app-empty-state>
+
+  <div class="schedule-grid" *ngIf="!loading && visits.length > 0">
+    <section class="visits-list">
+      <article class="app-card visit-card" *ngFor="let req of visits; let i = index">
+        <div class="visit-time">
+          <div class="time">{{ visitTime(req) }}</div>
+          <div class="travel">{{ 'OFFICER_SCHEDULE.TRAVEL' | translate }}<br>{{ travelMinutes(i) }} {{ 'OFFICER_SCHEDULE.MIN' | translate }}</div>
+        </div>
+
+        <div class="visit-content">
+          <div class="visit-meta">
+            <span class="req-id">{{ req.requestNumber }}</span>
+            <span class="priority-badge" [class]="req.priority">{{ ('PRIORITY.' + req.priority) | translate }}</span>
+          </div>
+          <h4>{{ req.title }}</h4>
+          <p>{{ req.propertyName || '---' }} - {{ req.unitNumber || '---' }}</p>
+
+          <div class="visit-actions">
+            <button mat-flat-button color="primary" [routerLink]="['/officer/requests', req.id]">
+              {{ 'OFFICER_SCHEDULE.START_VISIT' | translate }}
+            </button>
+            <button mat-stroked-button type="button">
+              <span class="material-icons">phone</span>
+            </button>
+            <button mat-stroked-button type="button">
+              <span class="material-icons">pin_drop</span>
+            </button>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="app-card map-card">
+      <header class="app-card-header">
+        <h3>{{ 'OFFICER_SCHEDULE.MAP' | translate }}</h3>
+      </header>
+
+      <div class="route-map">
+        <svg viewBox="0 0 560 520" class="route-svg" preserveAspectRatio="none">
+          <defs>
+            <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(14,31,51,0.06)" stroke-width="1"></path>
+            </pattern>
+          </defs>
+          <rect width="560" height="520" fill="url(#grid)"></rect>
+          <path d="M 58 430 Q 165 355 228 268 T 500 85"></path>
+
+          <g *ngFor="let req of visits | slice:0:4; let i = index">
+            <circle [attr.cx]="58 + (i * 145)" [attr.cy]="430 - (i * 112)"></circle>
+            <text [attr.x]="58 + (i * 145)" [attr.y]="434 - (i * 112)">{{ i + 1 }}</text>
+          </g>
+        </svg>
+
+        <div class="route-summary">
+          <div>
+            <div class="meta">{{ 'OFFICER_SCHEDULE.TOTAL_TODAY' | translate }}</div>
+            <div class="value">{{ totalDurationMin }} {{ 'OFFICER_SCHEDULE.MIN' | translate }} - {{ totalDistanceKm }} km</div>
+          </div>
+          <button mat-flat-button color="primary">{{ 'OFFICER_SCHEDULE.NAVIGATE' | translate }}</button>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>

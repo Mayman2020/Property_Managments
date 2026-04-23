@@ -1,5 +1,6 @@
 package com.propertymanagement.modules.property;
 
+import com.propertymanagement.shared.persistence.StringListJsonConverter;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -9,6 +10,8 @@ import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "properties")
@@ -64,6 +67,11 @@ public class Property {
 
     @Column(name = "cover_image_url", length = 500)
     private String coverImageUrl;
+
+    @Builder.Default
+    @Convert(converter = StringListJsonConverter.class)
+    @Column(name = "owner_document_files", columnDefinition = "TEXT")
+    private List<String> ownerDocumentFiles = new ArrayList<>();
 
     @Builder.Default
     @Column(name = "is_active")

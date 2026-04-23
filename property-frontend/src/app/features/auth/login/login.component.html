@@ -1,65 +1,78 @@
-<div class="login-page">
-  <div class="login-hero">
-    <div class="hero-overlay"></div>
-    <div class="hero-content">
-      <div class="hero-brand">
-        <div class="hero-brand-icon">
-          <span class="material-icons">domain</span>
-        </div>
-        <span class="hero-brand-name">{{ 'APP.NAME' | translate }}</span>
-      </div>
-      <h1 class="hero-title">{{ 'LOGIN.HERO_TITLE_1' | translate }}<br>{{ 'LOGIN.HERO_TITLE_2' | translate }}</h1>
-      <p class="hero-subtitle">{{ 'LOGIN.HERO_SUBTITLE' | translate }}</p>
-      <div class="hero-features">
-        <div class="hero-feature"><span class="material-icons">check_circle</span><span>{{ 'LOGIN.FEATURE_1' | translate }}</span></div>
-        <div class="hero-feature"><span class="material-icons">check_circle</span><span>{{ 'LOGIN.FEATURE_2' | translate }}</span></div>
-        <div class="hero-feature"><span class="material-icons">check_circle</span><span>{{ 'LOGIN.FEATURE_3' | translate }}</span></div>
-        <div class="hero-feature"><span class="material-icons">check_circle</span><span>{{ 'LOGIN.FEATURE_4' | translate }}</span></div>
+<div class="estate-login">
+  <section class="estate-login-hero">
+    <div class="login-bg" aria-hidden="true">
+      <svg viewBox="0 0 600 800">
+        <defs>
+          <pattern id="arch-pattern" width="120" height="160" patternUnits="userSpaceOnUse">
+            <path d="M 10 150 L 10 82 Q 10 20 60 20 Q 110 20 110 82 L 110 150 Z" fill="none" stroke="rgba(204,165,91,0.18)" stroke-width="1"></path>
+          </pattern>
+        </defs>
+        <rect width="600" height="800" fill="url(#arch-pattern)"></rect>
+        <circle cx="480" cy="120" r="180" fill="rgba(204,165,91,0.1)"></circle>
+      </svg>
+    </div>
+
+    <div class="hero-brand">
+      <div class="hero-brand-mark">É</div>
+      <div>
+        <div class="hero-brand-name">Estate</div>
+        <div class="hero-brand-sub">Operations Suite</div>
       </div>
     </div>
-  </div>
 
-  <div class="login-form-panel">
-    <div class="login-card surface-glow">
-      <div class="login-card-header">
-        <div class="login-logo">
-          <span class="material-icons">domain</span>
+    <div class="hero-copy">
+      <div class="hero-eyebrow">{{ i18n.currentLang === 'ar' ? 'مركز القيادة' : 'Command Center' }}</div>
+      <h1>
+        {{ 'LOGIN.HERO_TITLE_1' | translate }}<br>
+        <em>{{ 'LOGIN.HERO_TITLE_2' | translate }}</em>
+      </h1>
+      <p>{{ 'LOGIN.HERO_SUBTITLE' | translate }}</p>
+    </div>
+
+    <div class="hero-footer">
+      <span>© 2026 Estate OS</span>
+      <span>·</span>
+      <span>v4.2</span>
+    </div>
+  </section>
+
+  <section class="estate-login-panel">
+    <div class="login-shell">
+      <div class="login-title">{{ 'AUTH.LOGIN' | translate }}</div>
+      <p class="login-subtitle">{{ 'LOGIN.FORM_SUBTITLE' | translate }}</p>
+
+      <form [formGroup]="form" (ngSubmit)="submit()" class="login-form">
+        <label class="field-label">{{ 'AUTH.EMAIL' | translate }}</label>
+        <div class="login-field" [class.invalid]="emailCtrl.invalid && emailCtrl.touched">
+          <span class="material-icons">mail</span>
+          <input formControlName="email" type="email" placeholder="you@estate.om">
         </div>
-        <h2 class="login-title">{{ 'AUTH.LOGIN' | translate }}</h2>
-        <p class="login-subtitle">{{ 'LOGIN.FORM_SUBTITLE' | translate }}</p>
-      </div>
 
-      <form [formGroup]="form" (ngSubmit)="submit()" class="login-form-body">
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>{{ 'AUTH.EMAIL' | translate }}</mat-label>
-          <input matInput formControlName="email" type="email" placeholder="you@example.com">
-          <mat-icon matSuffix>email</mat-icon>
-          <mat-error *ngIf="emailCtrl.hasError('required')">{{ 'LOGIN.EMAIL_REQUIRED' | translate }}</mat-error>
-          <mat-error *ngIf="emailCtrl.hasError('email')">{{ 'LOGIN.EMAIL_INVALID' | translate }}</mat-error>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>{{ 'AUTH.PASSWORD' | translate }}</mat-label>
-          <input matInput formControlName="password" [type]="showPassword ? 'text' : 'password'" placeholder="��������">
-          <button type="button" mat-icon-button matSuffix (click)="showPassword = !showPassword">
-            <mat-icon>{{ showPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+        <label class="field-label field-row">
+          <span>{{ 'AUTH.PASSWORD' | translate }}</span>
+          <a class="field-link">{{ i18n.currentLang === 'ar' ? 'نسيت كلمة المرور؟' : 'Forgot password?' }}</a>
+        </label>
+        <div class="login-field" [class.invalid]="passwordCtrl.invalid && passwordCtrl.touched">
+          <span class="material-icons">lock</span>
+          <input formControlName="password" [type]="showPassword ? 'text' : 'password'" placeholder="••••••••">
+          <button type="button" class="field-icon-btn" (click)="showPassword = !showPassword">
+            <span class="material-icons">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
           </button>
-          <mat-error *ngIf="passwordCtrl.hasError('required')">{{ 'LOGIN.PASSWORD_REQUIRED' | translate }}</mat-error>
-          <mat-error *ngIf="passwordCtrl.hasError('minlength')">{{ 'LOGIN.PASSWORD_MIN' | translate }}</mat-error>
-        </mat-form-field>
+        </div>
 
         <div class="login-error" *ngIf="error">
           <span class="material-icons">error_outline</span>
           {{ error }}
         </div>
 
-        <button mat-flat-button type="submit" class="login-btn" [disabled]="form.invalid || loading">
+        <button type="submit" class="login-submit" [disabled]="form.invalid || loading">
           <mat-spinner *ngIf="loading" diameter="20"></mat-spinner>
-          <span *ngIf="!loading">{{ 'AUTH.ENTER' | translate }}</span>
+          <ng-container *ngIf="!loading">
+            <span>{{ 'AUTH.ENTER' | translate }}</span>
+            <span class="material-icons">{{ i18n.currentLang === 'ar' ? 'arrow_back' : 'arrow_forward' }}</span>
+          </ng-container>
         </button>
-
-        <p class="login-footer-text">{{ 'LOGIN.FOOTER' | translate }}</p>
       </form>
     </div>
-  </div>
+  </section>
 </div>

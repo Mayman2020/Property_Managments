@@ -10,6 +10,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class PropertyService {
@@ -26,6 +28,7 @@ public class PropertyService {
 
     @Transactional
     public PropertyResponse create(PropertyRequest request) {
+        validateOwnerData(request);
         String normalizedNameAr = firstNonBlank(request.getPropertyNameAr(), request.getPropertyName(), request.getPropertyNameEn());
         String normalizedNameEn = firstNonBlank(request.getPropertyNameEn(), request.getPropertyName(), request.getPropertyNameAr());
         String legacyName = firstNonBlank(request.getPropertyName(), normalizedNameAr, normalizedNameEn);
@@ -51,6 +54,7 @@ public class PropertyService {
                 .description(request.getDescription())
                 .coverImageUrl(request.getCoverImageUrl())
                 .ownerId(request.getOwnerId())
+                .ownerDocumentFiles(normalizeFiles(request.getOwnerDocumentFiles()))
                 .active(true)
                 .build();
         return toResponse(propertyRepository.save(property));
@@ -58,6 +62,7 @@ public class PropertyService {
 
     @Transactional
     public PropertyResponse update(Long id, PropertyRequest request) {
+        validateOwnerData(request);
         Property property = findActive(id);
         String normalizedNameAr = firstNonBlank(request.getPropertyNameAr(), request.getPropertyName(), request.getPropertyNameEn());
         String normalizedNameEn = firstNonBlank(request.getPropertyNameEn(), request.getPropertyName(), request.getPropertyNameAr());
@@ -84,6 +89,7 @@ public class PropertyService {
         property.setDescription(request.getDescription());
         property.setCoverImageUrl(request.getCoverImageUrl());
         property.setOwnerId(request.getOwnerId());
+        property.setOwnerDocumentFiles(normalizeFiles(request.getOwnerDocumentFiles()));
         return toResponse(propertyRepository.save(property));
     }
 
@@ -126,10 +132,30 @@ public class PropertyService {
                 .totalUnits(p.getTotalUnits())
                 .description(p.getDescription())
                 .coverImageUrl(p.getCoverImageUrl())
+                .ownerDocumentFiles(p.getOwnerDocumentFiles())
                 .active(p.isActive())
                 .createdAt(p.getCreatedAt())
                 .updatedAt(p.getUpdatedAt())
                 .build();
+    }
+
+    private void validateOwnerData(PropertyRequest request) {
+        if (request.getOwnerId() == null) {
+            throw AppException.badRequest("Owner is required");
+        }
+        List<String> files = normalizeFiles(request.getOwnerDocumentFiles());
+        if (files.isEmpty()) {
+            throw AppException.badRequest("At least one owner ownership/license attachment is required");
+        }
+    }
+
+    private List<String> normalizeFiles(List<String> files) {
+        if (files == null) return List.of();
+        return files.stream()
+                .map((f) -> f == null ? "" : f.trim())
+                .filter((f) -> !f.isEmpty())
+                .distinct()
+                .toList();
     }
 
     private String firstNonBlank(String... values) {

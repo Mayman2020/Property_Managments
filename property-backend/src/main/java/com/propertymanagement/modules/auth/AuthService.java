@@ -3,6 +3,7 @@ package com.propertymanagement.modules.auth;
 import com.propertymanagement.modules.auth.dto.LoginRequest;
 import com.propertymanagement.modules.auth.dto.LoginResponse;
 import com.propertymanagement.modules.auth.dto.RefreshTokenRequest;
+import com.propertymanagement.modules.permission.RolePermissionService;
 import com.propertymanagement.modules.tenant.TenantRepository;
 import com.propertymanagement.modules.user.User;
 import com.propertymanagement.modules.user.UserRepository;
@@ -13,7 +14,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +32,7 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
     private final TenantRepository tenantRepository;
+    private final RolePermissionService rolePermissionService;
 
     @Value("${jwt.expiration}")
     private long jwtExpiration;
@@ -43,8 +47,12 @@ public class AuthService {
             user.setLastLogin(LocalDateTime.now());
             userRepository.save(user);
             return buildResponse(user);
+        } catch (DisabledException e) {
+            throw AppException.badRequest("الحساب غير مفعّل");
         } catch (BadCredentialsException e) {
-            throw AppException.badRequest("Invalid email or password");
+            throw AppException.badRequest("الباسورد غلط");
+        } catch (AuthenticationException e) {
+            throw AppException.badRequest("الباسورد غلط");
         }
     }
 
@@ -92,6 +100,7 @@ public class AuthService {
                         .maintenanceOfficerType(user.getMaintenanceOfficerType() != null ? user.getMaintenanceOfficerType().name() : null)
                         .maintenanceCompanyName(user.getMaintenanceCompanyName())
                         .tenantId(tenantId)
+                        .permissions(rolePermissionService.getPermissionMap(user.getRole()))
                         .build())
                 .build();
     }

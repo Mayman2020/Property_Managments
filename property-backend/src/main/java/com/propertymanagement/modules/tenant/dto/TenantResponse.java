@@ -5,6 +5,7 @@ import lombok.Data;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -20,6 +21,7 @@ public class TenantResponse {
     private LocalDate leaseStart;
     private LocalDate leaseEnd;
     private String profileImage;
+    private List<String> leaseContractFiles;
     private String notes;
     private boolean active;
     private LocalDateTime createdAt;
