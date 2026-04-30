@@ -1,0 +1,69 @@
+<app-page-header
+  [title]="'OWNER_PORTAL.APPROVALS_TITLE' | translate"
+  [subtitle]="'OWNER_PORTAL.APPROVALS_SUBTITLE' | translate"
+  icon="approval">
+</app-page-header>
+
+<div class="page-content">
+  <div *ngIf="loading" class="loading-center">
+    <mat-spinner diameter="48"></mat-spinner>
+  </div>
+
+  <div *ngIf="!loading && contracts.length === 0" class="empty-state">
+    <mat-icon>check_circle</mat-icon>
+    <p>{{ 'OWNER_PORTAL.NO_PENDING_APPROVALS' | translate }}</p>
+  </div>
+
+  <div *ngIf="!loading && contracts.length > 0" class="contracts-grid">
+    <div class="contract-card" *ngFor="let c of contracts">
+      <div class="card-header">
+        <div class="contract-info">
+          <mat-icon class="contract-icon">description</mat-icon>
+          <div>
+            <div class="contract-number">{{ c.contractNumber }}</div>
+            <div class="tenant-name">{{ c.tenantName || ('COMMON.UNKNOWN' | translate) }}</div>
+          </div>
+        </div>
+        <span class="approval-badge">{{ 'OWNER_PORTAL.AWAITING_APPROVAL' | translate }}</span>
+      </div>
+
+      <div class="card-body">
+        <div class="info-row" *ngIf="c.unitNumber">
+          <mat-icon>meeting_room</mat-icon>
+          <span>{{ 'CONTRACT.UNIT' | translate }}: {{ c.unitNumber }}</span>
+        </div>
+        <div class="info-row" *ngIf="c.propertyName">
+          <mat-icon>apartment</mat-icon>
+          <span>{{ c.propertyName }}</span>
+        </div>
+        <div class="info-row">
+          <mat-icon>date_range</mat-icon>
+          <span>{{ c.startDate | date:'dd/MM/yyyy' }} → {{ c.endDate | date:'dd/MM/yyyy' }}</span>
+        </div>
+        <div class="info-row">
+          <mat-icon>payments</mat-icon>
+          <span>{{ c.monthlyRent | number:'1.2-2' }} {{ 'COMMON.OMR' | translate }} / {{ 'COMMON.MONTH' | translate }}</span>
+        </div>
+        <div class="info-row highlight" *ngIf="c.freeMonths && c.freeMonths > 0">
+          <mat-icon>star</mat-icon>
+          <span>{{ 'CONTRACT.FREE_MONTHS' | translate }}: {{ c.freeMonths }}</span>
+        </div>
+        <div class="info-row" *ngIf="c.contractPdfUrl">
+          <mat-icon>picture_as_pdf</mat-icon>
+          <a [href]="c.contractPdfUrl" target="_blank">{{ 'CONTRACT.VIEW_PDF' | translate }}</a>
+        </div>
+      </div>
+
+      <div class="card-actions">
+        <button mat-flat-button color="warn" (click)="openDecision(c)" class="reject-btn">
+          <mat-icon>close</mat-icon>
+          {{ 'OWNER_PORTAL.REJECT' | translate }}
+        </button>
+        <button mat-flat-button color="primary" (click)="openDecision(c)">
+          <mat-icon>check</mat-icon>
+          {{ 'OWNER_PORTAL.APPROVE' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

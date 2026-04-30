@@ -1,7 +1,8 @@
-﻿import { Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { DatePipe, NgFor, NgIf } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -13,28 +14,43 @@ import { catchError, map } from 'rxjs/operators';
 
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
+import { TablePagerComponent } from '../../shared/components/table-pager/table-pager.component';
+import { ExportColumn, TableExportToolbarComponent } from '../../shared/components/table-export-toolbar/table-export-toolbar.component';
 import { Property, PropertyService } from '../../core/services/property.service';
 import { SnackService } from '../../core/services/snack.service';
 import { I18nService } from '../../core/i18n/i18n.service';
-import { Unit, UnitRequest, UnitService } from '../../core/services/unit.service';
+import { Unit, UnitService } from '../../core/services/unit.service';
 import { TenantService } from '../../core/services/tenant.service';
 import { UserService } from '../../core/services/user.service';
+import { UnitDialogComponent } from '../units/unit-dialog.component';
 
 @Component({
   selector: 'app-unit-management',
   standalone: true,
   imports: [
-    NgFor, NgIf, DatePipe, ReactiveFormsModule, TranslateModule,
-    MatButtonModule, MatFormFieldModule, MatIconModule, MatInputModule, MatSelectModule, MatSlideToggleModule,
-    PageHeaderComponent, EmptyStateComponent
+    NgFor,
+    NgIf,
+    DatePipe,
+    FormsModule,
+    ReactiveFormsModule,
+    TranslateModule,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatIconModule,
+    MatInputModule,
+    MatSelectModule,
+    MatSlideToggleModule,
+    PageHeaderComponent,
+    EmptyStateComponent,
+    TablePagerComponent,
+    TableExportToolbarComponent
   ],
   templateUrl: './unit-management.component.html',
   styleUrl: './unit-management.component.scss'
 })
 export class UnitManagementComponent implements OnInit {
   loading = true;
-  saving = false;
-  showForm = false;
+  readonly pageSize = 5;
 
   properties: Property[] = [];
   allUnits: Unit[] = [];
@@ -45,34 +61,17 @@ export class UnitManagementComponent implements OnInit {
 
   selectedPropertyId: number | null = null;
   searchTerm = '';
-
-  form: FormGroup;
-  editingId: number | null = null;
-
-  readonly unitTypes: Array<UnitRequest['unitType']> = ['APARTMENT', 'SHOP', 'OFFICE', 'VILLA', 'WAREHOUSE', 'OTHER'];
+  pageIndex = 0;
 
   constructor(
-    private readonly fb: FormBuilder,
+    private readonly dialog: MatDialog,
     private readonly propertySvc: PropertyService,
     private readonly unitSvc: UnitService,
     private readonly tenantSvc: TenantService,
     private readonly userSvc: UserService,
     private readonly snack: SnackService,
-    private readonly i18n: I18nService
-  ) {
-    this.form = this.fb.group({
-      propertyId: [null, Validators.required],
-      floorId: [null],
-      unitNumber: ['', Validators.required],
-      unitType: ['APARTMENT', Validators.required],
-      areaSqm: [null],
-      bedrooms: [null],
-      bathrooms: [null],
-      rentAmount: [null],
-      currency: ['OMR'],
-      notes: ['']
-    });
-  }
+    readonly i18n: I18nService
+  ) {}
 
   ngOnInit(): void {
     this.loadUsers();
@@ -80,67 +79,42 @@ export class UnitManagementComponent implements OnInit {
   }
 
   onPropertyFilterChange(): void {
+    this.pageIndex = 0;
     this.applyFilters();
   }
 
   onSearch(term: string): void {
     this.searchTerm = term;
+    this.pageIndex = 0;
     this.applyFilters();
   }
 
   clearFilters(): void {
     this.selectedPropertyId = null;
     this.searchTerm = '';
+    this.pageIndex = 0;
     this.applyFilters();
   }
 
-  startCreate(): void {
-    this.showForm = true;
-    this.editingId = null;
-    this.form.reset({ propertyId: this.selectedPropertyId, unitType: 'APARTMENT', currency: 'OMR' });
-  }
-
-  startEdit(unit: Unit): void {
-    this.showForm = true;
-    this.editingId = unit.id;
-    this.form.patchValue({
-      propertyId: unit.propertyId,
-      floorId: unit.floorId ?? null,
-      unitNumber: unit.unitNumber,
-      unitType: unit.unitType ?? 'APARTMENT',
-      areaSqm: unit.areaSqm ?? null,
-      bedrooms: unit.bedrooms ?? null,
-      bathrooms: unit.bathrooms ?? null,
-      rentAmount: unit.rentAmount ?? null,
-      currency: unit.currency ?? 'OMR',
-      notes: unit.notes ?? ''
+  openAddDialog(): void {
+    this.dialog.open(UnitDialogComponent, {
+      data: { properties: this.properties, unit: null, defaultPropertyId: this.selectedPropertyId ?? undefined },
+      width: '680px',
+      maxWidth: '94vw',
+      panelClass: 'app-dialog-panel'
+    }).afterClosed().subscribe((ok) => {
+      if (ok) this.loadAllUnits();
     });
   }
 
-  cancelForm(): void {
-    this.showForm = false;
-    this.editingId = null;
-    this.form.reset({ propertyId: this.selectedPropertyId, unitType: 'APARTMENT', currency: 'OMR' });
-  }
-
-  save(): void {
-    if (this.form.invalid || this.saving) return;
-    this.saving = true;
-
-    const payload = this.form.getRawValue() as UnitRequest;
-    const req$ = this.editingId ? this.unitSvc.update(this.editingId, payload) : this.unitSvc.create(payload);
-
-    req$.subscribe({
-      next: () => {
-        this.saving = false;
-        this.snack.success(this.i18n.instant('UNITS.SAVE_SUCCESS'));
-        this.cancelForm();
-        this.loadAllUnits();
-      },
-      error: (err: Error) => {
-        this.saving = false;
-        this.snack.error(err.message || this.i18n.instant('UNITS.SAVE_ERROR'));
-      }
+  openEditDialog(unit: Unit): void {
+    this.dialog.open(UnitDialogComponent, {
+      data: { properties: this.properties, unit, defaultPropertyId: unit.propertyId },
+      width: '680px',
+      maxWidth: '94vw',
+      panelClass: 'app-dialog-panel'
+    }).afterClosed().subscribe((ok) => {
+      if (ok) this.loadAllUnits();
     });
   }
 
@@ -159,15 +133,42 @@ export class UnitManagementComponent implements OnInit {
   }
 
   propertyName(unit: Unit): string {
-    return this.propertyById[unit.propertyId]?.propertyName || `#${unit.propertyId}`;
+    const property = this.propertyById[unit.propertyId];
+    return (this.i18n.currentLang === 'ar' ? property?.propertyNameAr : property?.propertyNameEn) || property?.propertyName || `#${unit.propertyId}`;
+  }
+
+  get pagedUnits(): Unit[] {
+    const start = this.pageIndex * this.pageSize;
+    return this.filteredUnits.slice(start, start + this.pageSize);
+  }
+
+  get totalPages(): number {
+    return Math.max(1, Math.ceil(this.filteredUnits.length / this.pageSize));
+  }
+
+  get exportColumns(): ExportColumn<Unit>[] {
+    return [
+      { header: this.i18n.instant('UNITS.UNIT_NUMBER'), value: 'unitNumber' },
+      { header: this.i18n.instant('REQUEST_FORM.PROPERTY'), value: (row) => this.propertyName(row) },
+      { header: this.i18n.instant('UNITS.FLOOR'), value: (row) => row.floorId || '-' },
+      { header: this.i18n.instant('REQUEST_LIST.TENANT'), value: (row) => this.tenantName(row) },
+      { header: this.i18n.instant('UNITS.UNIT_TYPE'), value: (row) => row.unitType || '-' },
+      { header: this.i18n.instant('UNITS.AREA'), value: (row) => row.areaSqm || '-' },
+      { header: this.i18n.instant('MAINTENANCE.STATUS'), value: (row) => this.i18n.instant(row.rented ? 'UNITS.RENTED' : 'DASHBOARD.VACANT_UNITS') }
+    ];
+  }
+
+  changePage(step: number): void {
+    const next = this.pageIndex + step;
+    this.pageIndex = Math.max(0, Math.min(next, this.totalPages - 1));
   }
 
   private loadUsers(): void {
     this.userSvc.getAll(0, 500).subscribe({
       next: (res) => {
         const users = res.data?.content ?? [];
-        this.userById = users.reduce((acc, u) => {
-          acc[u.id] = (u.fullName || u.username || u.email || `#${u.id}`).trim();
+        this.userById = users.reduce((acc, user) => {
+          acc[user.id] = (user.fullName || user.username || user.email || `#${user.id}`).trim();
           return acc;
         }, {} as Record<number, string>);
       }
@@ -179,16 +180,15 @@ export class UnitManagementComponent implements OnInit {
     this.propertySvc.getAll(0, 500).subscribe({
       next: (res) => {
         this.properties = res.data?.content ?? [];
-        this.propertyById = this.properties.reduce((acc, p) => {
-          acc[p.id] = p;
+        this.propertyById = this.properties.reduce((acc, property) => {
+          acc[property.id] = property;
           return acc;
         }, {} as Record<number, Property>);
 
-        if (!this.properties.some((p) => p.id === this.selectedPropertyId)) {
+        if (!this.properties.some((property) => property.id === this.selectedPropertyId)) {
           this.selectedPropertyId = null;
         }
 
-        this.form.patchValue({ propertyId: this.selectedPropertyId });
         this.loadAllUnits();
       },
       error: () => {
@@ -233,36 +233,36 @@ export class UnitManagementComponent implements OnInit {
   }
 
   private applyFilters(): void {
-    const q = this.searchTerm.trim().toLowerCase();
+    const query = this.searchTerm.trim().toLowerCase();
     this.filteredUnits = this.allUnits.filter((unit) => {
       if (this.selectedPropertyId && unit.propertyId !== this.selectedPropertyId) return false;
-      if (!q) return true;
+      if (!query) return true;
 
       const propertyName = this.propertyName(unit).toLowerCase();
       const unitNumber = (unit.unitNumber || '').toLowerCase();
       const unitType = (unit.unitType || '').toLowerCase();
       const floor = unit.floorId != null ? String(unit.floorId) : '';
 
-      return unitNumber.includes(q) || propertyName.includes(q) || unitType.includes(q) || floor.includes(q);
+      return unitNumber.includes(query) || propertyName.includes(query) || unitType.includes(query) || floor.includes(query);
     });
+    this.pageIndex = Math.min(this.pageIndex, this.totalPages - 1);
   }
 
   private loadRenterNames(): void {
     this.tenantByUnitId = {};
     this.allUnits
-      .filter((u) => u.rented)
-      .forEach((u) => {
-        this.tenantSvc.getByUnitId(u.id).subscribe({
+      .filter((unit) => unit.rented)
+      .forEach((unit) => {
+        this.tenantSvc.getByUnitId(unit.id).subscribe({
           next: (tenantRes) => {
             const tenant = tenantRes.data;
             const fromUser = tenant?.userId ? this.userById[tenant.userId] : '';
-            this.tenantByUnitId[u.id] = fromUser || tenant?.fullName || '—';
+            this.tenantByUnitId[unit.id] = fromUser || tenant?.fullName || '—';
           },
           error: () => {
-            this.tenantByUnitId[u.id] = '—';
+            this.tenantByUnitId[unit.id] = '—';
           }
         });
       });
   }
 }
-

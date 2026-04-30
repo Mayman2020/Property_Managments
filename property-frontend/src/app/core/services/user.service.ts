@@ -16,6 +16,7 @@ export interface UserManageRequest {
   propertyId?: number;
   maintenanceOfficerType?: MaintenanceOfficerType;
   maintenanceCompanyName?: string;
+  contractorCompanyId?: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -61,6 +62,16 @@ export class UserService {
     return this.api.patch<ApiResponse<User>>(`/users/${id}/role`, { role }).pipe(
       map((res) => ({ ...res, data: res.data ? this.normalizeUser(res.data) : res.data }))
     );
+  }
+
+  getMaintenanceAssignableContractors(
+    propertyId: number,
+    contractorCompanyId: number
+  ): Observable<ApiResponse<User[]>> {
+    return this.api.get<ApiResponse<User[]>>('/users/maintenance-assignable-contractor', {
+      propertyId,
+      contractorCompanyId
+    });
   }
 
   private normalizeUser(user: User & { active?: boolean }): User {

@@ -3,10 +3,12 @@
     [eyebrow]="pageEyebrow"
     [title]="'DASHBOARD.TITLE' | translate"
     [subtitle]="'DASHBOARD.SUBTITLE' | translate">
-    <button mat-stroked-button type="button">
-      <span class="material-icons">filter_list</span>
-      {{ i18n.currentLang === 'ar' ? 'اليوم' : 'Today' }}
-    </button>
+    <select *ngIf="properties.length > 1" [(ngModel)]="selectedPropertyId" (change)="onPropertyChange()" class="estate-property-select">
+      <option [ngValue]="null">{{ i18n.currentLang === 'ar' ? 'كل العقارات' : 'All Properties' }}</option>
+      <option *ngFor="let p of properties" [ngValue]="p.id">
+        {{ i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName) }}
+      </option>
+    </select>
     <button mat-flat-button routerLink="/admin/maintenance/new" *ngIf="permissions.can('maintenance', 'create')">
       <span class="material-icons">add</span>
       {{ 'MAINTENANCE.NEW_REQUEST' | translate }}
@@ -70,7 +72,7 @@
       </article>
     </section>
 
-    <section class="dashboard-grid dashboard-grid-top">
+    <section class="dashboard-grid dashboard-grid-top" *ngIf="showMaintenanceInsights || showInventoryInsights">
       <article class="app-card estate-panel">
         <div class="app-card-header">
           <div>
@@ -106,7 +108,7 @@
         </div>
       </article>
 
-      <article class="app-card estate-panel occupancy-panel">
+      <article class="app-card estate-panel occupancy-panel" *ngIf="showMaintenanceInsights">
         <div class="app-card-header">
           <span class="app-card-title">{{ occupancyCardLabel }}</span>
           <span class="status-badge" data-status="COMPLETED">{{ 'COMMON.ACTIVE' | translate }}</span>
@@ -144,8 +146,8 @@
       </article>
     </section>
 
-    <section class="dashboard-grid">
-      <article class="app-card estate-panel">
+    <section class="dashboard-grid" *ngIf="showMaintenanceInsights || showInventoryInsights">
+      <article class="app-card estate-panel" *ngIf="showMaintenanceInsights">
         <div class="app-card-header">
           <span class="app-card-title">{{ 'DASHBOARD.RECENT_REQUESTS' | translate }}</span>
           <a class="panel-link" routerLink="/admin/maintenance">{{ 'ACTIONS.VIEW_ALL' | translate }}</a>
@@ -168,7 +170,7 @@
                   <div class="table-title">{{ req.title }}</div>
                   <div class="table-meta">
                     <span class="priority-badge" [class]="req.priority">{{ priorityLabel(req.priority) }}</span>
-                    <span>{{ req.createdAt | date: 'dd MMM yyyy' }}</span>
+                    <span>{{ req.createdAt | date:'dd/MM/yyyy' }}</span>
                   </div>
                 </td>
                 <td>
@@ -189,7 +191,7 @@
         </ng-template>
       </article>
 
-      <article class="app-card estate-panel">
+      <article class="app-card estate-panel" *ngIf="showInventoryInsights">
         <div class="app-card-header">
           <span class="app-card-title">{{ lowStockLabel }}</span>
           <a class="panel-link" routerLink="/admin/inventory">{{ 'INVENTORY.MANAGE' | translate }}</a>
@@ -198,7 +200,7 @@
         <div class="app-card-body stock-stack" *ngIf="lowStockItems.length > 0; else emptyStock">
           <div class="stock-item" *ngFor="let item of lowStockItems">
             <div class="stock-copy">
-              <div class="stock-name">{{ item.itemNameAr }}</div>
+              <div class="stock-name">{{ inventoryItemName(item) }}</div>
               <div class="stock-meta">{{ item.itemCode }} · {{ item.location || '—' }}</div>
             </div>
             <div class="stock-qty">
@@ -220,7 +222,7 @@
       </article>
     </section>
 
-    <article class="app-card estate-panel status-strip">
+    <article class="app-card estate-panel status-strip" *ngIf="showMaintenanceInsights">
       <div class="app-card-header">
         <span class="app-card-title">{{ requestsStatusLabel }}</span>
       </div>

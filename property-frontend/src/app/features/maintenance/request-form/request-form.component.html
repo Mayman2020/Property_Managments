@@ -1,9 +1,11 @@
 <div class="app-page request-form-page">
   <app-page-header
     [eyebrow]="'NAV.NEW_REQUEST' | translate"
-    [title]="i18n.currentLang === 'ar' ? 'ما الذي نحتاج إصلاحه؟' : 'What needs fixing?'"
-    [subtitle]="i18n.currentLang === 'ar' ? 'صف المشكلة بدقة وأضف الصور لنصل بسرعة.' : 'Describe the issue, add photos, and we will move quickly.'"
-    [breadcrumbs]="[{label:('NAV.DASHBOARD' | translate), route:auth.getDashboardRoute()}, {label:('NAV.NEW_REQUEST' | translate)}]">
+    [title]="'REQUEST_FORM.PAGE_TITLE' | translate"
+    [subtitle]="'REQUEST_FORM.PAGE_SUBTITLE' | translate"
+    [breadcrumbs]="[{label:('NAV.DASHBOARD' | translate), route:auth.getDashboardRoute()}, {label:('NAV.NEW_REQUEST' | translate)}]"
+    [showBack]="true"
+    (backClick)="goBack()">
   </app-page-header>
 
   <div class="request-form-shell">

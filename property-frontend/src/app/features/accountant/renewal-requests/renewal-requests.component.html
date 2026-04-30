@@ -1,0 +1,67 @@
+<app-page-header
+  [title]="'ACCOUNTANT_PORTAL.RENEWALS_TITLE' | translate"
+  [subtitle]="'ACCOUNTANT_PORTAL.RENEWALS_SUBTITLE' | translate"
+  icon="autorenew">
+</app-page-header>
+
+<div class="page-content">
+  <div *ngIf="loading" class="loading-center">
+    <mat-spinner diameter="48"></mat-spinner>
+  </div>
+
+  <div *ngIf="!loading && requests.length === 0" class="empty-state">
+    <mat-icon>check_circle</mat-icon>
+    <p>{{ 'ACCOUNTANT_PORTAL.NO_RENEWALS' | translate }}</p>
+  </div>
+
+  <div *ngIf="!loading && requests.length > 0" class="requests-grid">
+    <div class="request-card" *ngFor="let r of requests">
+      <div class="card-header">
+        <div class="tenant-info">
+          <mat-icon class="tenant-icon">person</mat-icon>
+          <div>
+            <div class="tenant-name">{{ r.tenantName || ('COMMON.UNKNOWN' | translate) }}</div>
+            <div class="contract-num" *ngIf="r.contractNumber">{{ r.contractNumber }}</div>
+          </div>
+        </div>
+        <span class="status-badge" [ngClass]="statusClass(r.status)">
+          {{ ('REQUEST_STATUS.' + r.status) | translate }}
+        </span>
+      </div>
+
+      <div class="card-body">
+        <div class="info-row" *ngIf="r.currentMonthlyRent">
+          <mat-icon>payments</mat-icon>
+          <span>{{ 'ACCOUNTANT_PORTAL.CURRENT_RENT' | translate }}: {{ r.currentMonthlyRent | number:'1.2-2' }} {{ 'COMMON.OMR' | translate }}</span>
+        </div>
+        <div class="info-row" *ngIf="r.currentEndDate">
+          <mat-icon>event</mat-icon>
+          <span>{{ 'ACCOUNTANT_PORTAL.CONTRACT_ENDS' | translate }}: {{ r.currentEndDate | date:'dd/MM/yyyy' }}</span>
+        </div>
+        <div class="info-row" *ngIf="r.reason">
+          <mat-icon>info</mat-icon>
+          <span>{{ r.reason }}</span>
+        </div>
+        <div class="info-row" *ngIf="r.notes">
+          <mat-icon>notes</mat-icon>
+          <span>{{ r.notes }}</span>
+        </div>
+        <div class="info-row">
+          <mat-icon>schedule</mat-icon>
+          <span>{{ r.createdAt | date:'dd/MM/yyyy' }}</span>
+        </div>
+      </div>
+
+      <div class="card-actions">
+        <button mat-stroked-button *ngIf="r.attachmentUrl" (click)="viewFile(r.attachmentUrl)">
+          <mat-icon>attach_file</mat-icon>
+          {{ 'COMMON.VIEW_FILE' | translate }}
+        </button>
+        <button mat-flat-button color="primary" *ngIf="r.status === 'PENDING'" (click)="openProcess(r)">
+          <mat-icon>check</mat-icon>
+          {{ 'ACCOUNTANT_PORTAL.PROCESS_RENEWAL' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

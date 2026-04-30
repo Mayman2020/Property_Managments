@@ -1,0 +1,73 @@
+.vacancy-page {
+  display: grid;
+  gap: 22px;
+}
+
+.row-main {
+  font-weight: 500;
+  color: var(--text-main);
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: 0.86rem;
+}
+
+.views-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.84rem;
+  color: var(--text-muted);
+
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+}
+
+.status-chip {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #f3f4f6;
+  color: #374151;
+
+  &[data-status='PENDING']   { background: #fef3c7; color: #92400e; }
+  &[data-status='CONTACTED'] { background: #dbeafe; color: #1e40af; }
+  &[data-status='CONVERTED'] { background: #d1fae5; color: #065f46; }
+  &[data-status='REJECTED']  { background: #fee2e2; color: #991b1b; }
+}
+
+.empty-card {
+  padding: 60px 24px;
+}
+
+.app-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+
+  .empty-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    color: var(--text-muted);
+    opacity: 0.5;
+  }
+
+  h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin: 0;
+  }
+
+  p {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    max-width: 340px;
+    margin: 0;
+  }
+}

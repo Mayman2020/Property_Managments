@@ -1,0 +1,58 @@
+<h2 mat-dialog-title>{{ 'ACCOUNTANT_PORTAL.PROCESS_RENEWAL' | translate }}</h2>
+
+<mat-dialog-content [formGroup]="form" class="dialog-content">
+
+  <div class="info-banner" *ngIf="data.request.tenantName">
+    <strong>{{ data.request.tenantName }}</strong> — {{ data.request.contractNumber }}
+  </div>
+
+  <div class="form-row">
+    <mat-form-field appearance="outline" class="half">
+      <mat-label>{{ 'CONTRACT.START_DATE' | translate }}</mat-label>
+      <input matInput [matDatepicker]="startPicker" formControlName="newStartDate" [min]="today">
+      <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+      <mat-datepicker #startPicker></mat-datepicker>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="half">
+      <mat-label>{{ 'CONTRACT.END_DATE' | translate }}</mat-label>
+      <input matInput [matDatepicker]="endPicker" formControlName="newEndDate" [min]="today" [max]="maxEndDate">
+      <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+      <mat-datepicker #endPicker></mat-datepicker>
+      <mat-hint>{{ 'CONTRACT.MAX_12_MONTHS' | translate }}</mat-hint>
+    </mat-form-field>
+  </div>
+
+  <div class="form-row">
+    <mat-form-field appearance="outline" class="half">
+      <mat-label>{{ 'ACCOUNTANT_PORTAL.NEW_MONTHLY_RENT' | translate }}</mat-label>
+      <input matInput type="number" formControlName="newMonthlyRent" min="1">
+      <span matSuffix>{{ 'COMMON.OMR' | translate }}</span>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="half">
+      <mat-label>{{ 'ACCOUNTANT_PORTAL.FREE_MONTHS' | translate }}</mat-label>
+      <input matInput type="number" formControlName="freeMonths" min="0" max="12">
+      <mat-hint>{{ 'ACCOUNTANT_PORTAL.FREE_MONTHS_HINT' | translate }}</mat-hint>
+    </mat-form-field>
+  </div>
+
+  <mat-form-field appearance="outline" class="full">
+    <mat-label>{{ 'CONTRACT.SECURITY_DEPOSIT' | translate }}</mat-label>
+    <input matInput type="number" formControlName="newSecurityDeposit" min="0">
+    <span matSuffix>{{ 'COMMON.OMR' | translate }}</span>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="full">
+    <mat-label>{{ 'COMMON.NOTES' | translate }}</mat-label>
+    <textarea matInput formControlName="notes" rows="3"></textarea>
+  </mat-form-field>
+
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>{{ 'COMMON.CANCEL' | translate }}</button>
+  <button mat-flat-button color="primary" (click)="confirm()">
+    {{ 'ACCOUNTANT_PORTAL.SEND_TO_OWNER' | translate }}
+  </button>
+</mat-dialog-actions>

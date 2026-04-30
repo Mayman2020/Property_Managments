@@ -56,6 +56,9 @@ public class MaintenanceRequest {
     @Column(name = "assigned_to")
     private Long assignedTo;
 
+    @Column(name = "contractor_company_id")
+    private Long contractorCompanyId;
+
     @Column(name = "scheduled_date")
     private LocalDate scheduledDate;
 

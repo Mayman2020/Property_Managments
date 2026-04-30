@@ -12,6 +12,13 @@ export interface DashboardStats {
   inProgressRequests: number;
   completedThisMonth: number;
   lowStockItems: number;
+  openMaintenanceRequests: number;
+  totalInventoryItems: number;
+  activeContracts?: number;
+  expiringIn30Days?: number;
+  overduePayments?: number;
+  openViolations?: number;
+  openComplaints?: number;
   requestsByStatus?: Record<string, number>;
   requestsByCategory?: Record<string, number>;
 }
@@ -56,6 +63,10 @@ export class DashboardService {
     return this.api.get('/dashboard/stats');
   }
 
+  getStatsByProperty(propertyId: number): Observable<ApiResponse<DashboardStats>> {
+    return this.api.get(`/dashboard/stats/property/${propertyId}`);
+  }
+
   getRequestsByStatus(): Observable<ApiResponse<ChartDataPoint[]>> {
     return this.api.get('/dashboard/requests-by-status');
   }
@@ -64,8 +75,9 @@ export class DashboardService {
     return this.api.get('/dashboard/requests-by-category');
   }
 
-  getMonthlyTrend(): Observable<ApiResponse<ChartDataPoint[]>> {
-    return this.api.get('/dashboard/monthly-trend');
+  getMonthlyTrend(propertyId?: number): Observable<ApiResponse<ChartDataPoint[]>> {
+    const query = propertyId ? `?propertyId=${propertyId}` : '';
+    return this.api.get(`/dashboard/monthly-trend${query}`);
   }
 
   getRatingsSummary(): Observable<ApiResponse<RatingsSummary>> {

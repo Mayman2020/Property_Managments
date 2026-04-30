@@ -1,0 +1,83 @@
+<div class="app-page vacancy-page">
+  <app-page-header
+    [eyebrow]="'NAV_SECTION.CONTRACTS' | translate"
+    [title]="title"
+    [subtitle]="subtitle"
+    [breadcrumbs]="breadcrumbs">
+  </app-page-header>
+
+  <!-- Listings section -->
+  <section *ngIf="section === 'list'">
+    <div *ngIf="listings.length; else emptyTpl" class="app-card table-card">
+      <div class="app-table-wrap">
+        <table class="app-data-table source-table">
+          <thead>
+            <tr>
+              <th>{{ 'VACANCIES.LISTING' | translate }}</th>
+              <th>{{ 'VACANCIES.PROPERTY' | translate }}</th>
+              <th>{{ 'VACANCIES.UNIT' | translate }}</th>
+              <th>{{ 'VACANCIES.RENT' | translate }}</th>
+              <th>{{ 'VACANCIES.VIEWS' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of listings">
+              <td>
+                <div class="row-main">{{ isArabic ? (item.titleAr || item.titleEn || '-') : (item.titleEn || item.titleAr || '-') }}</div>
+              </td>
+              <td>{{ item.propertyName || '-' }}</td>
+              <td class="mono">{{ item.unitNumber || '-' }}</td>
+              <td class="mono">{{ item.askingRent || 0 }}</td>
+              <td>
+                <span class="views-badge">
+                  <mat-icon>visibility</mat-icon>
+                  {{ item.viewsCount || 0 }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Inquiries section -->
+  <section *ngIf="section === 'inquiries'">
+    <div *ngIf="inquiries.length; else emptyTpl" class="app-card table-card">
+      <div class="app-table-wrap">
+        <table class="app-data-table source-table">
+          <thead>
+            <tr>
+              <th>{{ 'VACANCIES.NAME' | translate }}</th>
+              <th>{{ 'VACANCIES.PHONE' | translate }}</th>
+              <th>{{ 'VACANCIES.EMAIL' | translate }}</th>
+              <th>{{ 'VACANCIES.INQUIRY_STATUS' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of inquiries">
+              <td class="row-main">{{ item.inquirerName }}</td>
+              <td class="mono">{{ item.inquirerPhone }}</td>
+              <td class="mono">{{ item.inquirerEmail || '-' }}</td>
+              <td>
+                <span class="status-chip" [attr.data-status]="item.status || 'PENDING'">
+                  {{ item.status || 'NEW' }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <ng-template #emptyTpl>
+    <div class="app-card empty-card">
+      <div class="app-empty-state">
+        <mat-icon class="empty-icon">door_open</mat-icon>
+        <h4>{{ 'VACANCIES.EMPTY_LISTINGS' | translate }}</h4>
+        <p>{{ 'VACANCIES.EMPTY_DESC' | translate }}</p>
+      </div>
+    </div>
+  </ng-template>
+</div>

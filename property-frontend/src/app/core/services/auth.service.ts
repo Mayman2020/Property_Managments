@@ -5,7 +5,7 @@ import { ApiService } from './api.service';
 import { TokenStorageService } from '../auth/token-storage.service';
 import { JwtUtils } from '../utils/jwt-utils';
 import { ApiResponse } from '../models/api-response.model';
-import { CurrentUser, LoginRequest, LoginResponse, PermissionMap, UserRole } from '../models/user.model';
+import { ClientModuleMap, CurrentUser, LoginRequest, LoginResponse, PermissionMap, UserRole } from '../models/user.model';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -36,7 +36,9 @@ export class AuthService {
             tenantId: userDto.tenantId,
             maintenanceOfficerType: userDto.maintenanceOfficerType,
             maintenanceCompanyName: userDto.maintenanceCompanyName,
+            contractorCompanyId: userDto.contractorCompanyId,
             permissions: userDto.permissions,
+            clientModules: userDto.clientModules,
             initials: this.buildInitials(userDto.fullName)
           };
           this.tokenStorage.setUser(user);
@@ -79,11 +81,28 @@ export class AuthService {
     this.tokenStorage.setUser({ ...user, permissions });
   }
 
+  updateStoredClientModules(clientModules: ClientModuleMap): void {
+    const user = this.getCurrentUser();
+    if (!user) return;
+    this.tokenStorage.setUser({ ...user, clientModules });
+  }
+
   isSuperAdmin(): boolean { return this.getRole() === 'SUPER_ADMIN'; }
   isPropertyAdmin(): boolean { return this.getRole() === 'PROPERTY_ADMIN'; }
   isOfficer(): boolean { return this.getRole() === 'MAINTENANCE_OFFICER'; }
   isTenant(): boolean { return this.getRole() === 'TENANT'; }
-  isAdmin(): boolean { return this.isSuperAdmin() || this.isPropertyAdmin(); }
+  isContractsOfficer(): boolean { return this.getRole() === 'CONTRACTS_OFFICER'; }
+  isAccountant(): boolean { return this.getRole() === 'ACCOUNTANT'; }
+  isHrOfficer(): boolean { return this.getRole() === 'HR_OFFICER'; }
+  isOwner(): boolean { return this.getRole() === 'OWNER'; }
+  isAdmin(): boolean {
+    return this.isSuperAdmin()
+      || this.isPropertyAdmin()
+      || this.isContractsOfficer()
+      || this.isAccountant()
+      || this.isHrOfficer()
+      || this.isOwner();
+  }
 
   getDashboardRoute(): string {
     const role = this.getRole();
@@ -93,8 +112,12 @@ export class AuthService {
 
     switch (role) {
       case 'SUPER_ADMIN':
-      case 'PROPERTY_ADMIN': return '/admin/dashboard';
+      case 'PROPERTY_ADMIN': return '/admin/home';
       case 'MAINTENANCE_OFFICER': return '/officer/schedule';
+      case 'CONTRACTS_OFFICER': return '/admin/contracts/dashboard';
+      case 'ACCOUNTANT': return '/admin/finance/dashboard';
+      case 'HR_OFFICER': return '/admin/hr/employees';
+      case 'OWNER': return '/admin/owner-portal/dashboard';
       case 'TENANT': return '/tenant/my-unit';
       default: return '/auth/login';
     }
@@ -113,9 +136,26 @@ export class AuthService {
 
   private hasPermission(moduleKey: string, action: keyof NonNullable<PermissionMap[string]>): boolean {
     if (this.isSuperAdmin()) return true;
+    if (!this.isModuleEnabled(moduleKey)) return false;
     const module = this.getPermissions()?.[moduleKey];
     if (!module || module.enabled === false) return false;
     return module[action] === true;
+  }
+
+  private isModuleEnabled(moduleKey: string): boolean {
+    if (this.isSuperAdmin()) return true;
+    return this.getCurrentUser()?.clientModules?.[this.resolveModuleKey(moduleKey)] !== false;
+  }
+
+  private resolveModuleKey(moduleKey: string): string {
+    switch (moduleKey) {
+      case 'schedule':
+      case 'new_request':
+      case 'my_requests':
+        return 'maintenance';
+      default:
+        return moduleKey;
+    }
   }
 
   private roleLandingCandidates(role: UserRole | null): Array<{ route: string; permission: string; action: keyof NonNullable<PermissionMap[string]> }> {
@@ -133,6 +173,30 @@ export class AuthService {
           { route: '/officer/schedule', permission: 'schedule', action: 'view' },
           { route: '/officer/requests', permission: 'my_requests', action: 'view' },
           { route: '/officer/profile', permission: 'profile', action: 'view' }
+        ];
+      case 'CONTRACTS_OFFICER':
+        return [
+          { route: '/admin/contracts/dashboard', permission: 'contracts', action: 'view' },
+          { route: '/admin/contracts/list', permission: 'contracts', action: 'view' },
+          { route: '/admin/profile', permission: 'profile', action: 'view' }
+        ];
+      case 'ACCOUNTANT':
+        return [
+          { route: '/admin/finance/dashboard', permission: 'finance', action: 'view' },
+          { route: '/admin/contracts/payments', permission: 'contracts', action: 'view' },
+          { route: '/admin/profile', permission: 'profile', action: 'view' }
+        ];
+      case 'HR_OFFICER':
+        return [
+          { route: '/admin/hr/employees', permission: 'hr', action: 'view' },
+          { route: '/admin/hr/payroll', permission: 'hr', action: 'view' },
+          { route: '/admin/profile', permission: 'profile', action: 'view' }
+        ];
+      case 'OWNER':
+        return [
+          { route: '/admin/owner-portal/dashboard', permission: 'owner_portal', action: 'view' },
+          { route: '/admin/owner-portal/statements', permission: 'owner_portal', action: 'view' },
+          { route: '/admin/profile', permission: 'profile', action: 'view' }
         ];
       case 'TENANT':
         return [

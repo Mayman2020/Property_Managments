@@ -50,4 +50,11 @@ public interface InventoryRepository extends JpaRepository<InventoryItem, Long> 
 
     @Query("SELECT COUNT(i) FROM InventoryItem i WHERE i.active = true AND i.quantity <= i.minQuantity")
     long countLowStock();
+
+    @Query("SELECT COUNT(i) FROM InventoryItem i WHERE i.propertyId = :pid AND i.active = true AND i.quantity <= i.minQuantity")
+    long countLowStockByProperty(@Param("pid") Long propertyId);
+
+    long countByActiveTrue();
+
+    long countByPropertyIdAndActiveTrue(Long propertyId);
 }

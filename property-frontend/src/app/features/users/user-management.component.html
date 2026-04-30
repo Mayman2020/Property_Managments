@@ -1,10 +1,10 @@
 <div class="app-page users-page">
   <app-page-header
-    [eyebrow]="i18n.currentLang === 'ar' ? 'أنت' : 'You'"
+    [eyebrow]="'NAV_SECTION.DIRECTORY' | translate"
     [title]="'USER_MGMT.TITLE' | translate"
     [subtitle]="'USER_MGMT.SUBTITLE' | translate"
     [breadcrumbs]="[{label:('NAV.DASHBOARD' | translate), route:'/admin/dashboard'}, {label:('NAV.USERS' | translate)}]">
-    <button mat-flat-button type="button" *ngIf="permissions.can('users', 'create')" (click)="startCreate()">
+    <button mat-flat-button type="button" *ngIf="permissions.can('users', 'create')" (click)="openAdd()">
       <span class="material-icons">person_add</span>
       {{ 'USER_MGMT.ADD_USER' | translate }}
     </button>
@@ -19,89 +19,14 @@
     <input [value]="searchTerm" (input)="onSearch($any($event.target).value)" [placeholder]="'ACTIONS.SEARCH' | translate">
   </div>
 
-  <section class="app-card user-form-card" *ngIf="showForm && !loading">
-    <div class="section-head">
-      <div>
-        <div class="section-eyebrow">{{ i18n.currentLang === 'ar' ? 'المستخدمون' : 'Users' }}</div>
-        <h3>{{ (isEditing() ? 'USER_MGMT.EDIT_USER' : 'USER_MGMT.NEW_USER') | translate }}</h3>
-      </div>
-    </div>
-
-    <form [formGroup]="form" (ngSubmit)="save()">
-      <div class="form-grid">
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>{{ 'USER_MGMT.USERNAME' | translate }}</mat-label>
-          <input matInput formControlName="username">
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>{{ 'AUTH.EMAIL' | translate }}</mat-label>
-          <input matInput formControlName="email" type="email">
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>{{ 'AUTH.PASSWORD' | translate }}</mat-label>
-          <input matInput formControlName="password" type="password">
-          <mat-hint *ngIf="isEditing()">{{ 'USER_MGMT.PASSWORD_HINT' | translate }}</mat-hint>
-          <mat-error *ngIf="form.get('password')?.hasError('required')">{{ 'LOGIN.PASSWORD_REQUIRED' | translate }}</mat-error>
-          <mat-error *ngIf="form.get('password')?.hasError('minlength')">{{ 'LOGIN.PASSWORD_MIN' | translate }}</mat-error>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>{{ 'PROFILE.FULL_NAME' | translate }}</mat-label>
-          <input matInput formControlName="fullName">
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>{{ 'PROFILE.PHONE' | translate }}</mat-label>
-          <input matInput formControlName="phone">
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>{{ 'USER_MGMT.ROLE' | translate }}</mat-label>
-          <mat-select formControlName="role">
-            <mat-option *ngFor="let role of roleOptions" [value]="role">{{ roleLabel(role) }}</mat-option>
-          </mat-select>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="full-width"
-          *ngIf="form.get('role')?.value === 'TENANT' || form.get('role')?.value === 'PROPERTY_ADMIN'">
-          <mat-label>{{ 'REQUEST_FORM.PROPERTY' | translate }}</mat-label>
-          <mat-select formControlName="propertyId">
-            <mat-option *ngFor="let p of properties" [value]="p.id">
-              {{ p.propertyName }} ({{ p.propertyCode }})
-            </mat-option>
-          </mat-select>
-          <mat-error *ngIf="form.get('propertyId')?.hasError('required')">{{ 'REQUEST_FORM.PROPERTY_REQUIRED' | translate }}</mat-error>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="full-width" *ngIf="form.get('role')?.value === 'MAINTENANCE_OFFICER'">
-          <mat-label>{{ 'USER_MGMT.OFFICER_TYPE' | translate }}</mat-label>
-          <mat-select formControlName="maintenanceOfficerType">
-            <mat-option *ngFor="let type of officerTypeOptions" [value]="type">{{ officerTypeLabel(type) }}</mat-option>
-          </mat-select>
-          <mat-error *ngIf="form.get('maintenanceOfficerType')?.hasError('required')">{{ 'USER_MGMT.OFFICER_TYPE_REQUIRED' | translate }}</mat-error>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="full-width"
-          *ngIf="form.get('role')?.value === 'MAINTENANCE_OFFICER' && form.get('maintenanceOfficerType')?.value === 'CONTRACTOR_COMPANY'">
-          <mat-label>{{ 'USER_MGMT.COMPANY_NAME' | translate }}</mat-label>
-          <input matInput formControlName="maintenanceCompanyName">
-          <mat-error *ngIf="form.get('maintenanceCompanyName')?.hasError('required')">{{ 'USER_MGMT.COMPANY_REQUIRED' | translate }}</mat-error>
-        </mat-form-field>
-      </div>
-
-      <div class="form-actions">
-        <button mat-stroked-button type="button" (click)="cancelForm()">{{ 'ACTIONS.CANCEL' | translate }}</button>
-        <button mat-flat-button type="submit" [disabled]="form.invalid || saving">
-          <mat-spinner *ngIf="saving" diameter="18"></mat-spinner>
-          <span *ngIf="!saving">{{ isEditing() ? ('ACTIONS.EDIT' | translate) : ('ACTIONS.ADD' | translate) }}</span>
-        </button>
-      </div>
-    </form>
-  </section>
-
   <section class="app-card users-table-card" *ngIf="!loading">
+    <app-table-export-toolbar
+      permissionKey="users"
+      [title]="'USER_MGMT.TITLE' | translate"
+      fileName="users"
+      [columns]="exportColumns"
+      [rows]="filteredUsers">
+    </app-table-export-toolbar>
     <div class="app-table-wrap">
       <table class="app-data-table source-table">
         <thead>
@@ -115,7 +40,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let user of users">
+          <tr *ngFor="let user of pagedUsers">
             <td>
               <div class="user-cell">
                 <div class="user-avatar">{{ userInitials(user) }}</div>
@@ -125,13 +50,13 @@
                 </div>
               </div>
             </td>
-            <td><span class="status-badge" data-status="INFO">{{ roleLabel(user.role) }}</span></td>
+            <td><span class="status-badge" data-status="INFO">{{ roleLabel(user) }}</span></td>
             <td>{{ propertyName(user.propertyId) }}</td>
             <td><span class="status-badge" [attr.data-status]="user.isActive ? 'OK' : 'BAD'">{{ (user.isActive ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') | translate }}</span></td>
-            <td>{{ user.createdAt | date:'yyyy-MM-dd HH:mm' }}</td>
+            <td>{{ user.createdAt | date:'dd/MM/yyyy' }}</td>
             <td>
               <div class="table-actions">
-                <button class="table-action-btn" type="button" *ngIf="permissions.can('users', 'edit')" (click)="startEdit(user)">
+                <button class="table-action-btn" type="button" *ngIf="permissions.can('users', 'edit')" (click)="openEdit(user)">
                   <span class="material-icons">edit</span>
                 </button>
                 <button class="table-action-btn" type="button" *ngIf="permissions.can('users', 'toggle')" (click)="toggleActive(user)" [disabled]="togglingIds.has(user.id)">
@@ -140,8 +65,12 @@
               </div>
             </td>
           </tr>
+          <tr *ngIf="pagedUsers.length === 0">
+            <td colspan="6" class="empty-row">{{ 'COMMON.NO_DATA' | translate }}</td>
+          </tr>
         </tbody>
       </table>
     </div>
+    <app-table-pager [length]="filteredUsers.length" [pageSize]="pageSize" [pageIndex]="pageIndex" (pageIndexChange)="pageIndex = $event"></app-table-pager>
   </section>
 </div>

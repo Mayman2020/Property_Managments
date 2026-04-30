@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
-import { NgClass, NgFor, NgIf, UpperCasePipe } from '@angular/common';
+import { DatePipe, NgClass, NgFor, NgIf, UpperCasePipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
@@ -19,7 +19,7 @@ import { SnackService } from '../../core/services/snack.service';
 @Component({
   selector: 'app-topbar',
   standalone: true,
-  imports: [NgClass, NgFor, NgIf, AsyncPipe, UpperCasePipe, RouterLink, TranslateModule, MatIconModule, MatButtonModule, MatMenuModule, MatTooltipModule, MatDividerModule],
+  imports: [NgClass, NgFor, NgIf, AsyncPipe, DatePipe, UpperCasePipe, RouterLink, TranslateModule, MatIconModule, MatButtonModule, MatMenuModule, MatTooltipModule, MatDividerModule],
   templateUrl: './topbar.component.html',
   styleUrl: './topbar.component.scss'
 })
@@ -69,7 +69,7 @@ export class TopbarComponent implements OnInit, OnDestroy {
 
   profileRoute(): string {
     const role = this.currentUser?.role;
-    if (role === 'SUPER_ADMIN' || role === 'PROPERTY_ADMIN') return '/admin/profile';
+    if (role === 'SUPER_ADMIN' || role === 'PROPERTY_ADMIN' || role === 'CONTRACTS_OFFICER' || role === 'ACCOUNTANT' || role === 'HR_OFFICER' || role === 'OWNER') return '/admin/profile';
     if (role === 'MAINTENANCE_OFFICER') return '/officer/profile';
     if (role === 'TENANT') return '/tenant/profile';
     return '/auth/login';
@@ -93,6 +93,70 @@ export class TopbarComponent implements OnInit, OnDestroy {
     });
   }
 
+  notificationTitle(notification: AppNotification): string {
+    if (!this.i18n.isRtl) return notification.title;
+    const translated = this.i18n.instant(`NOTIFICATIONS.${notification.type}`);
+    if (translated && translated !== `NOTIFICATIONS.${notification.type}`) return translated;
+    if (this.hasArabic(notification.title)) return notification.title;
+    return this.i18n.instant('NOTIFICATIONS.GENERAL');
+  }
+
+  notificationMessage(notification: AppNotification): string {
+    if (!this.i18n.isRtl) return notification.message;
+    if (this.hasArabic(notification.message)) return notification.message;
+
+    const requestNo = this.extractRequestNo(notification.message);
+    const requestText = requestNo ? ` ${requestNo}` : '';
+    switch (notification.type) {
+      case 'REQUEST_CREATED':
+        return `تم إنشاء طلب الصيانة${requestText}.`;
+      case 'REQUEST_ASSIGNED':
+        return notification.title === 'Work started'
+          ? `بدأ مسؤول الصيانة العمل على طلب الصيانة${requestText}.`
+          : `تم تعيين طلب الصيانة${requestText}.`;
+      case 'REQUEST_SCHEDULED':
+        return `تمت جدولة زيارة لطلب الصيانة${requestText}${this.extractAfter(notification.message, ' on ') ? ` بتاريخ ${this.extractAfter(notification.message, ' on ')}` : ''}.`;
+      case 'REQUEST_SCHEDULE_ACCEPTED':
+        return `قبل المستأجر موعد الزيارة لطلب الصيانة${requestText}.`;
+      case 'REQUEST_SCHEDULE_REJECTED':
+        return `رفض المستأجر موعد الزيارة لطلب الصيانة${requestText}${this.extractAfter(notification.message, 'Note: ') ? `، الملاحظة: ${this.extractAfter(notification.message, 'Note: ')}` : ''}.`;
+      case 'REQUEST_VISIT_REPORTED':
+        return `تم إرسال تقرير الزيارة لطلب الصيانة${requestText}.`;
+      case 'REQUEST_COMPLETED':
+        return `تم إتمام طلب الصيانة${requestText}.`;
+      case 'REQUEST_RATED':
+        return `تم إرسال تقييم لطلب الصيانة${requestText}.`;
+      case 'REQUEST_CANCELLED':
+        return `تم إلغاء طلب الصيانة${requestText}.`;
+      case 'FINANCE_ALERT':
+        return 'يوجد تنبيه مالي جديد يحتاج إلى المتابعة.';
+      case 'OWNER_STATEMENT':
+        return 'تم إصدار كشف حساب جديد للمالك.';
+      case 'PAYMENT_RECEIVED':
+        return 'تم تسجيل دفعة جديدة.';
+      case 'RENT_DUE':
+        return 'يوجد إيجار مستحق قريباً.';
+      case 'RENT_OVERDUE':
+        return 'يوجد إيجار متأخر.';
+      case 'CONTRACT_EXPIRING':
+        return 'يوجد عقد يقترب من تاريخ الانتهاء.';
+      case 'CONTRACT_ACTIVATED':
+        return 'تم تفعيل عقد جديد.';
+      case 'PAYROLL_GENERATED':
+        return 'تم إنشاء مسير الرواتب.';
+      default:
+        return notification.message || this.i18n.instant('NOTIFICATIONS.GENERAL_MESSAGE');
+    }
+  }
+
+  notificationIcon(notification: AppNotification): string {
+    if (notification.type.includes('REQUEST')) return 'construction';
+    if (notification.type.includes('RENT') || notification.type.includes('PAYMENT') || notification.type.includes('FINANCE')) return 'payments';
+    if (notification.type.includes('CONTRACT')) return 'description';
+    if (notification.type.includes('OWNER')) return 'account_balance';
+    return 'notifications';
+  }
+
   private loadNotifications(): void {
     this.notificationService.getMy({ page: 0, size: 8 }).subscribe({
       next: (res) => { this.notifications = res.data?.content ?? []; },
@@ -105,6 +169,19 @@ export class TopbarComponent implements OnInit, OnDestroy {
       next: (res) => { this.unreadCount = res.data?.unreadCount ?? 0; },
       error: () => {}
     });
+  }
+
+  private extractRequestNo(message: string): string {
+    return message.match(/MR-\d{4}-\d{5}/)?.[0] ?? '';
+  }
+
+  private extractAfter(message: string, token: string): string {
+    const index = message.indexOf(token);
+    return index >= 0 ? message.slice(index + token.length).trim() : '';
+  }
+
+  private hasArabic(value: string): boolean {
+    return /[\u0600-\u06FF]/.test(value);
   }
 
   private notificationRoute(notification: AppNotification): string {

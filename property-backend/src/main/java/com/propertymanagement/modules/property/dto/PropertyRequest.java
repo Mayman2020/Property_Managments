@@ -15,7 +15,7 @@ public class PropertyRequest {
     private String propertyNameAr;
     private String propertyNameEn;
 
-    @NotBlank
+    @Size(max = 80)
     private String propertyCode;
 
     @NotNull
@@ -34,8 +34,19 @@ public class PropertyRequest {
     private Integer totalUnits = 0;
     private String description;
     private String coverImageUrl;
+    private String ownerNameAr;
+    private String ownerNameEn;
+    private String ownerEmail;
+    private String ownerCivilId;
+
     @NotNull
     private Long ownerId;
     @NotEmpty
     private List<String> ownerDocumentFiles;
+
+    /** Optional: internal maintenance officer (user id) for this property — mutually exclusive with contractor company. */
+    private Long maintenanceInternalOfficerUserId;
+
+    /** Optional: contractor company responsible for maintenance — mutually exclusive with internal officer. */
+    private Long maintenanceContractorCompanyId;
 }

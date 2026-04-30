@@ -34,6 +34,10 @@ export const OFFICER_ROUTES: Routes = [
         loadComponent: () => import('../maintenance/visit-report-form/visit-report-form.component').then((m) => m.VisitReportFormComponent)
       },
       {
+        path: 'invoices',
+        loadComponent: () => import('./invoice-portal/invoice-portal.component').then((m) => m.InvoicePortalComponent)
+      },
+      {
         canActivate: [permissionGuard],
         data: { permission: 'profile', permissionAction: 'view' },
         path: 'profile',

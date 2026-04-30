@@ -49,7 +49,7 @@ public class Unit {
 
     @Builder.Default
     @Column(length = 10)
-    private String currency = "SAR";
+    private String currency = "OMR";
 
     @Column(columnDefinition = "TEXT")
     private String notes;

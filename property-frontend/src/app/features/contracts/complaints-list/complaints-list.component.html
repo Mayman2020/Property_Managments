@@ -1,0 +1,97 @@
+<div class="app-page complaints-page">
+  <app-page-header
+    [eyebrow]="'NAV_SECTION.CONTRACTS' | translate"
+    [title]="'CONTRACTS.COMPLAINTS_TITLE' | translate"
+    [subtitle]="'CONTRACTS.COMPLAINTS_SUBTITLE' | translate"
+    [breadcrumbs]="[
+      { label: ('NAV.DASHBOARD' | translate), route: '/admin/dashboard' },
+      { label: ('NAV.CONTRACTS_DASHBOARD' | translate), route: '/admin/contracts/dashboard' },
+      { label: ('CONTRACTS.COMPLAINTS_TITLE' | translate) }
+    ]">
+  </app-page-header>
+
+  <div class="toolbar">
+    <!-- Property filter -->
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-label>{{ 'CONTRACTS.FILTER_PROPERTY' | translate }}</mat-label>
+      <mat-select [(ngModel)]="filterPropertyId" (ngModelChange)="onFilterChange()">
+        <mat-option [value]="null">{{ 'CONTRACTS.ALL_PROPERTIES' | translate }}</mat-option>
+        <mat-option *ngFor="let p of properties" [value]="p.id">{{ propertyLabel(p) }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <!-- Status filter from lookup -->
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-label>{{ 'CONTRACTS.STATUS' | translate }}</mat-label>
+      <mat-select [(ngModel)]="filterStatus" (ngModelChange)="onFilterChange()">
+        <mat-option value="">{{ 'COMMON.ALL' | translate }}</mat-option>
+        <mat-option *ngFor="let s of statusOptions" [value]="s.code">
+          {{ i18n.currentLang === 'ar' ? s.nameAr : s.nameEn }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <div *ngIf="loading" class="loading-wrap">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <section *ngIf="!loading" class="app-card table-card">
+    <div class="app-table-wrap">
+      <table class="app-data-table source-table">
+        <thead>
+          <tr>
+            <th>{{ 'CONTRACTS.DATE' | translate }}</th>
+            <th>{{ 'CONTRACTS.TENANT' | translate }}</th>
+            <th>{{ 'CONTRACTS.TITLE' | translate }}</th>
+            <th>{{ 'CONTRACTS.TYPE' | translate }}</th>
+            <th>{{ 'CONTRACTS.PRIORITY' | translate }}</th>
+            <th>{{ 'CONTRACTS.STATUS' | translate }}</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let c of complaints">
+            <td>{{ c.createdAt | date:'dd/MM/yyyy' }}</td>
+            <td>
+              <div class="row-main">{{ c.tenantName }}</div>
+              <div class="row-sub" *ngIf="c.propertyName">{{ c.propertyName }}</div>
+            </td>
+            <td class="col-title">{{ c.title }}</td>
+            <!-- Complaint type from lookup -->
+            <td>{{ lookupCache.label('COMPLAINT_TYPE', c.complaintType) || c.complaintType }}</td>
+            <!-- Priority from lookup -->
+            <td>
+              <span class="status-chip" [ngClass]="getPriorityClass(c.priority)">
+                {{ lookupCache.label('COMPLAINT_PRIORITY', c.priority) || c.priority }}
+              </span>
+            </td>
+            <!-- Status from lookup -->
+            <td>
+              <span class="status-chip" [ngClass]="getStatusClass(c.status)">
+                {{ lookupCache.label('COMPLAINT_STATUS', c.status) || c.status }}
+              </span>
+            </td>
+            <td>
+              <button type="button" class="app-icon-btn"
+                      *ngIf="c.status !== 'RESOLVED' && c.status !== 'CLOSED'"
+                      (click)="resolve(c.id)"
+                      [title]="'CONTRACTS.RESOLVE' | translate">
+                <mat-icon>check_circle_outline</mat-icon>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="complaints.length === 0">
+            <td colspan="7" class="empty-row">{{ 'COMMON.NO_DATA' | translate }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <app-table-pager
+      [length]="totalElements"
+      [pageSize]="pageSize"
+      [pageIndex]="pageIndex"
+      (pageIndexChange)="goToPage($event)">
+    </app-table-pager>
+  </section>
+</div>

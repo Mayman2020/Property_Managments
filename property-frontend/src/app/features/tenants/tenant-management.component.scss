@@ -22,24 +22,8 @@
     font: inherit;
   }
 
-  .tenant-form-card {
-    margin-bottom: 18px;
-  }
-
-  .tenant-form-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-  }
-
-  .tenant-form-grid .full {
-    grid-column: 1 / -1;
-  }
-
-  .tenant-form-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
+  .tenant-filter-bar {
+    margin-bottom: 16px;
   }
 
   .tenant-grid {

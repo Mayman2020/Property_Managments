@@ -1,4 +1,5 @@
 ﻿import { Component, OnInit } from '@angular/core';
+import { forkJoin } from 'rxjs';
 import { NgFor, NgIf, DatePipe } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -11,11 +12,15 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatTabsModule } from '@angular/material/tabs';
 import { TranslateModule } from '@ngx-translate/core';
 
+import { MatDialog } from '@angular/material/dialog';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
+import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
 import { MaintenanceService, MaintenanceRequest } from '../../../core/services/maintenance.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { PropertyService, Property } from '../../../core/services/property.service';
+import { RequestTimelineDialogComponent } from '../request-timeline-dialog.component';
 
 export type RequestListContext = 'admin' | 'tenant' | 'officer';
 
@@ -28,7 +33,7 @@ const ACTIVE_STATUSES = new Set(['PENDING', 'ASSIGNED', 'SCHEDULED', 'IN_PROGRES
     NgFor, NgIf, DatePipe, FormsModule, RouterLink, TranslateModule,
     MatButtonModule, MatIconModule, MatSelectModule, MatFormFieldModule,
     MatProgressSpinnerModule, MatTooltipModule, MatTabsModule,
-    PageHeaderComponent, EmptyStateComponent
+    PageHeaderComponent, EmptyStateComponent, TablePagerComponent
   ],
   templateUrl: './request-list.component.html',
   styleUrl: './request-list.component.scss'
@@ -38,15 +43,16 @@ export class RequestListComponent implements OnInit {
   loading = true;
   filterStatus = '';
   filterPriority = '';
+  filterPropertyId: number | null = null;
   searchTerm = '';
   totalElements = 0;
-  page = 0;
   listContext: RequestListContext = 'admin';
   missingTenantLink = false;
   readonly pageSize = 5;
   adminPageIndex = 0;
   tenantCurrentPageIndex = 0;
   tenantPreviousPageIndex = 0;
+  properties: Property[] = [];
 
   readonly statuses: { value: string; labelKey: string }[] = [
     { value: '', labelKey: 'REQUEST_LIST.ALL_STATUS' },
@@ -72,7 +78,9 @@ export class RequestListComponent implements OnInit {
     private readonly maintSvc: MaintenanceService,
     readonly i18n: I18nService,
     private readonly route: ActivatedRoute,
-    readonly auth: AuthService
+    readonly auth: AuthService,
+    private readonly propertySvc: PropertyService,
+    private readonly dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
@@ -80,15 +88,20 @@ export class RequestListComponent implements OnInit {
     if (d === 'tenant' || d === 'officer' || d === 'admin') {
       this.listContext = d;
     }
+    if (this.listContext === 'admin') {
+      this.propertySvc.getAll(0, 100).subscribe({
+        next: (res) => { this.properties = res.data?.content ?? []; }
+      });
+    }
     this.load();
   }
 
   get currentRequests(): MaintenanceRequest[] {
-    return this.requests.filter((r) => ACTIVE_STATUSES.has(r.status));
+    return this.filteredRequests.filter((r) => ACTIVE_STATUSES.has(r.status));
   }
 
   get previousRequests(): MaintenanceRequest[] {
-    return this.requests.filter((r) => !ACTIVE_STATUSES.has(r.status));
+    return this.filteredRequests.filter((r) => !ACTIVE_STATUSES.has(r.status));
   }
 
   get activeTenantRequest(): MaintenanceRequest | null {
@@ -96,7 +109,7 @@ export class RequestListComponent implements OnInit {
   }
 
   get filteredAdminRequests(): MaintenanceRequest[] {
-    return this.filterBySearch(this.requests);
+    return this.filteredRequests;
   }
 
   get pagedAdminRequests(): MaintenanceRequest[] {
@@ -114,10 +127,7 @@ export class RequestListComponent implements OnInit {
   load(): void {
     this.loading = true;
     this.missingTenantLink = false;
-    const params: Record<string, string | number | boolean> = { page: this.page, size: this.listContext === 'tenant' ? 200 : 20 };
-    if (this.filterStatus) params['status'] = this.filterStatus;
-    if (this.filterPriority) params['priority'] = this.filterPriority;
-    if (this.searchTerm.trim()) params['q'] = this.searchTerm.trim();
+    const params: Record<string, string | number | boolean> = { page: 0, size: 500 };
 
     if (this.listContext === 'tenant') {
       const tenantId = this.auth.getCurrentUser()?.tenantId;
@@ -130,8 +140,8 @@ export class RequestListComponent implements OnInit {
       }
       this.maintSvc.getByTenant(tenantId, params).subscribe({
         next: (res) => {
-          this.requests = res.data?.content ?? [];
-          this.totalElements = res.data?.totalElements ?? 0;
+          this.requests = this.sortRequests(res.data?.content ?? []);
+          this.totalElements = this.filteredRequests.length;
           this.resetPagerIndexes();
           this.loading = false;
         },
@@ -148,10 +158,25 @@ export class RequestListComponent implements OnInit {
         this.loading = false;
         return;
       }
-      this.maintSvc.getByOfficer(officerId, params).subscribe({
-        next: (res) => {
-          this.requests = res.data?.content ?? [];
-          this.totalElements = res.data?.totalElements ?? 0;
+      const mergedParams: Record<string, string | number | boolean> = {
+        ...params,
+        page: 0,
+        size: 500
+      };
+      forkJoin({
+        mine: this.maintSvc.getByOfficer(officerId, mergedParams),
+        queue: this.maintSvc.getCompanyQueue(mergedParams)
+      }).subscribe({
+        next: ({ mine, queue }) => {
+          const a = mine.data?.content ?? [];
+          const b = queue.data?.content ?? [];
+          const map = new Map<number, MaintenanceRequest>();
+          for (const r of b) map.set(r.id, r);
+          for (const r of a) map.set(r.id, r);
+          this.requests = Array.from(map.values()).sort(
+            (x, y) => new Date(y.createdAt).getTime() - new Date(x.createdAt).getTime()
+          );
+          this.totalElements = this.filteredRequests.length;
           this.resetPagerIndexes();
           this.loading = false;
         },
@@ -164,8 +189,8 @@ export class RequestListComponent implements OnInit {
 
     this.maintSvc.getRequests(params).subscribe({
       next: (res) => {
-        this.requests = res.data?.content ?? [];
-        this.totalElements = res.data?.totalElements ?? 0;
+        this.requests = this.sortRequests(res.data?.content ?? []);
+        this.totalElements = this.filteredRequests.length;
         this.resetPagerIndexes();
         this.loading = false;
       },
@@ -176,15 +201,14 @@ export class RequestListComponent implements OnInit {
   }
 
   applyFilter(): void {
-    this.page = 0;
+    this.totalElements = this.filteredRequests.length;
     this.resetPagerIndexes();
-    this.load();
   }
 
   onSearch(value: string): void {
     this.searchTerm = value;
+    this.totalElements = this.filteredRequests.length;
     this.resetPagerIndexes();
-    this.load();
   }
 
   totalPages(length: number): number {
@@ -222,6 +246,10 @@ export class RequestListComponent implements OnInit {
     }
   }
 
+  openTimeline(req: MaintenanceRequest): void {
+    this.dialog.open(RequestTimelineDialogComponent, { data: req, width: '560px', panelClass: 'app-dialog-panel' });
+  }
+
   private pageSlice(list: MaintenanceRequest[], pageIndex: number): MaintenanceRequest[] {
     const start = pageIndex * this.pageSize;
     return list.slice(start, start + this.pageSize);
@@ -230,6 +258,10 @@ export class RequestListComponent implements OnInit {
   private clampPage(nextIndex: number, listLength: number): number {
     const max = this.totalPages(listLength) - 1;
     return Math.max(0, Math.min(nextIndex, max));
+  }
+
+  get filteredRequests(): MaintenanceRequest[] {
+    return this.applyClientFilters(this.requests);
   }
 
   filterBySearch(list: MaintenanceRequest[]): MaintenanceRequest[] {
@@ -246,6 +278,19 @@ export class RequestListComponent implements OnInit {
         req.assignedOfficerName
       ].join(' ').toLowerCase().includes(q)
     );
+  }
+
+  private applyClientFilters(list: MaintenanceRequest[]): MaintenanceRequest[] {
+    return this.filterBySearch(list).filter((req) => {
+      if (this.filterStatus && req.status !== this.filterStatus) return false;
+      if (this.filterPriority && req.priority !== this.filterPriority) return false;
+      if (this.filterPropertyId && req.propertyId !== this.filterPropertyId) return false;
+      return true;
+    });
+  }
+
+  private sortRequests(list: MaintenanceRequest[]): MaintenanceRequest[] {
+    return [...list].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
 
   private resetPagerIndexes(): void {

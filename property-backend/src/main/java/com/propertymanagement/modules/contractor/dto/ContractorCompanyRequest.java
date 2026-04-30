@@ -3,6 +3,9 @@ package com.propertymanagement.modules.contractor.dto;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+import java.time.LocalDate;
+import java.util.List;
+
 @Data
 public class ContractorCompanyRequest {
     @Size(max = 200)
@@ -23,4 +26,10 @@ public class ContractorCompanyRequest {
     private String notes;
 
     private Boolean active;
+
+    private LocalDate contractStart;
+
+    private LocalDate contractEnd;
+
+    private List<String> attachmentFiles;
 }

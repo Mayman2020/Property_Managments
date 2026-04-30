@@ -4,10 +4,14 @@
     [title]="'NAV.REPORTS' | translate"
     [subtitle]="'DASHBOARD.SUBTITLE' | translate"
     [breadcrumbs]="[{label:('NAV.DASHBOARD' | translate), route:'/admin/dashboard'}, {label:('NAV.REPORTS' | translate)}]">
-    <button mat-stroked-button type="button">
-      <span class="material-icons">download</span>
-      Export
-    </button>
+
+    <select [(ngModel)]="selectedPropertyId" (change)="onPropertyChange()" class="estate-property-select">
+      <option [ngValue]="null">{{ isArabic ? 'كل العقارات' : 'All Properties' }}</option>
+      <option *ngFor="let p of properties" [ngValue]="p.id">
+        {{ isArabic ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName) }}
+      </option>
+    </select>
+
   </app-page-header>
 
   <div class="loading-center" *ngIf="loading">
@@ -36,7 +40,7 @@
     <section class="report-grid">
       <article class="app-card report-chart-card">
         <div class="app-card-header">
-          <span class="app-card-title">{{ i18n.currentLang === 'ar' ? 'الإنجازات / شهر' : 'Completions / month' }}</span>
+          <span class="app-card-title">{{ isArabic ? 'الإنجازات / شهر' : 'Completions / month' }}</span>
         </div>
         <div class="app-card-body">
           <div class="bar-chart">
@@ -53,22 +57,69 @@
 
       <article class="app-card leaderboard-card">
         <div class="app-card-header">
-          <span class="app-card-title">{{ i18n.currentLang === 'ar' ? 'قائمة الفنيين' : 'Officer leaderboard' }}</span>
+          <span class="app-card-title">{{ isArabic ? 'قائمة الفنيين' : 'Officer leaderboard' }}</span>
         </div>
         <div class="app-card-body leaderboard-body">
           <div class="leader-row" *ngFor="let row of leaderboard; let i = index">
             <div class="leader-rank">{{ i + 1 }}</div>
             <div class="leader-copy">
               <div class="leader-name">{{ row.name }}</div>
-              <div class="leader-meta">{{ row.resolved }} {{ i18n.currentLang === 'ar' ? 'منجزة' : 'resolved' }}</div>
+              <div class="leader-meta">{{ row.resolved }} {{ isArabic ? 'منجزة' : 'resolved' }}</div>
               <div class="leader-progress">
                 <div class="leader-progress-fill" [style.width.%]="row.percent"></div>
               </div>
             </div>
             <div class="leader-score">{{ row.percent }}%</div>
           </div>
+          <div *ngIf="!leaderboard.length" class="leader-empty">
+            {{ isArabic ? 'لا توجد بيانات' : 'No data' }}
+          </div>
         </div>
       </article>
     </section>
+
+    <article class="app-card" style="margin-top:20px" *ngIf="rows.length">
+      <div class="app-card-header">
+        <span class="app-card-title">{{ isArabic ? 'ملخص العقارات' : 'Property Summary' }}</span>
+      </div>
+      <app-table-export-toolbar
+        permissionKey="reports"
+        [title]="isArabic ? 'تقرير الصيانة' : 'Maintenance Report'"
+        fileName="maintenance-report"
+        [columns]="exportColumns"
+        [rows]="rows">
+      </app-table-export-toolbar>
+      <div class="app-table-wrap">
+        <table class="app-data-table">
+          <thead>
+            <tr>
+              <th>{{ isArabic ? 'العقار' : 'Property' }}</th>
+              <th>{{ isArabic ? 'الإجمالي' : 'Total' }}</th>
+              <th>{{ isArabic ? 'قيد الانتظار' : 'Pending' }}</th>
+              <th>{{ isArabic ? 'جاري التنفيذ' : 'In Progress' }}</th>
+              <th>{{ isArabic ? 'مكتمل' : 'Completed' }}</th>
+              <th>{{ isArabic ? 'نسبة الإنجاز' : 'Completion %' }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of rows">
+              <td><strong>{{ row.propertyName }}</strong></td>
+              <td>{{ row.total }}</td>
+              <td><span class="status-badge" data-status="PENDING">{{ row.pending }}</span></td>
+              <td><span class="status-badge" data-status="IN_PROGRESS">{{ row.inProgress }}</span></td>
+              <td><span class="status-badge" data-status="COMPLETED">{{ row.completed }}</span></td>
+              <td>
+                <div class="completion-bar-wrap">
+                  <div class="completion-bar">
+                    <div class="completion-fill" [style.width.%]="row.total ? (row.completed / row.total * 100) : 0"></div>
+                  </div>
+                  <span class="completion-pct">{{ row.total ? (row.completed / row.total * 100 | number:'1.0-0') : 0 }}%</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </article>
   </ng-container>
 </div>

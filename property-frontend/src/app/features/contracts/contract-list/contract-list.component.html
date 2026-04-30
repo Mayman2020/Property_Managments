@@ -1,0 +1,112 @@
+<div class="app-page contracts-list-page">
+  <app-page-header
+    [eyebrow]="i18n.currentLang === 'ar' ? 'التشغيل' : 'Operations'"
+    [title]="'CONTRACTS.LIST_TITLE' | translate"
+    [subtitle]="'CONTRACTS.LIST_SUBTITLE' | translate"
+    [breadcrumbs]="[
+      { label: ('NAV.DASHBOARD' | translate), route: '/admin/dashboard' },
+      { label: ('NAV.CONTRACTS_DASHBOARD' | translate), route: '/admin/contracts/dashboard' },
+      { label: ('NAV.CONTRACTS_LIST' | translate) }
+    ]">
+    <button mat-flat-button routerLink="/admin/contracts/new">
+      <mat-icon>add</mat-icon>
+      {{ 'CONTRACTS.NEW_CONTRACT' | translate }}
+    </button>
+  </app-page-header>
+
+  <div *ngIf="loading" class="loading-wrap">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <ng-container *ngIf="!loading">
+    <section class="contracts-stats">
+      <article class="stat-pill">
+        <span class="stat-label">{{ 'COMMON.ALL' | translate }}</span>
+        <strong>{{ totalElements || contracts.length }}</strong>
+      </article>
+      <article class="stat-pill">
+        <span class="stat-label">{{ 'CONTRACTS.STATUS_ACTIVE' | translate }}</span>
+        <strong>{{ getStatusCount('ACTIVE') }}</strong>
+      </article>
+      <article class="stat-pill">
+        <span class="stat-label">{{ 'CONTRACTS.STATUS_DRAFT' | translate }}</span>
+        <strong>{{ getStatusCount('DRAFT') }}</strong>
+      </article>
+      <article class="stat-pill">
+        <span class="stat-label">{{ 'CONTRACTS.STATUS_EXPIRED' | translate }}</span>
+        <strong>{{ getStatusCount('EXPIRED') }}</strong>
+      </article>
+    </section>
+
+    <section class="app-card table-card">
+      <div class="estate-table-toolbar">
+        <div class="estate-search-inline">
+          <span class="material-icons">search</span>
+          <input [(ngModel)]="searchQuery" (ngModelChange)="onSearch()" [placeholder]="'CONTRACTS.SEARCH_PLACEHOLDER' | translate">
+          <select [(ngModel)]="filterStatus" (change)="onFilterChange()" class="estate-property-select">
+            <option value="">{{ 'COMMON.ALL' | translate }}</option>
+            <option *ngFor="let s of statusOptions" [value]="s">{{ 'CONTRACTS.STATUS_' + s | translate }}</option>
+          </select>
+        </div>
+        <div class="estate-filter-row">
+          <button type="button" class="estate-filter-btn" [class.active]="filterStatus === ''" (click)="filterStatus = ''; onFilterChange()">
+            {{ 'COMMON.ALL' | translate }}
+          </button>
+          <button
+            type="button"
+            class="estate-filter-btn"
+            *ngFor="let s of statusOptions"
+            [class.active]="filterStatus === s"
+            (click)="filterStatus = s; onFilterChange()">
+            {{ 'CONTRACTS.STATUS_' + s | translate }}
+          </button>
+        </div>
+      </div>
+
+      <div class="app-table-wrap">
+        <table class="app-data-table source-table">
+          <thead>
+            <tr>
+              <th>{{ 'CONTRACTS.CONTRACT_NUMBER' | translate }}</th>
+              <th>{{ 'CONTRACTS.TENANT' | translate }}</th>
+              <th>{{ 'CONTRACTS.UNIT' | translate }}</th>
+              <th>{{ 'CONTRACTS.PERIOD' | translate }}</th>
+              <th>{{ 'CONTRACTS.MONTHLY_RENT' | translate }}</th>
+              <th>{{ 'CONTRACTS.STATUS' | translate }}</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let c of contracts">
+              <td>
+                <a [routerLink]="['/admin/contracts', c.id]" class="contract-link">{{ c.contractNumber }}</a>
+              </td>
+              <td>{{ c.tenantName || '—' }}</td>
+              <td class="request-cell">
+                <span class="req-title">{{ c.unitNumber || '—' }}</span>
+                <span class="unit-info">{{ c.propertyName || '—' }}</span>
+              </td>
+              <td>
+                <span class="property-info">{{ c.startDate | date:'dd/MM/yyyy' }}</span>
+                <span class="unit-info">{{ c.endDate | date:'dd/MM/yyyy' }}</span>
+              </td>
+              <td class="rent-cell">{{ c.monthlyRent | number }} {{ c.currency }}</td>
+              <td>
+                <span class="status-chip" [ngClass]="getStatusClass(c.status)">
+                  {{ 'CONTRACTS.STATUS_' + c.status | translate }}
+                </span>
+              </td>
+              <td>
+                <a class="table-arrow" [routerLink]="['/admin/contracts', c.id]">
+                  <span class="material-icons">{{ i18n.currentLang === 'ar' ? 'arrow_back' : 'arrow_forward' }}</span>
+                </a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <app-table-pager [length]="totalElements" [pageSize]="pageSize" [pageIndex]="pageIndex" (pageIndexChange)="goToPage($event)"></app-table-pager>
+    </section>
+  </ng-container>
+</div>

@@ -1,0 +1,221 @@
+<div class="app-page contract-form-page">
+  <app-page-header
+    [eyebrow]="'NAV_SECTION.CONTRACTS' | translate"
+    [title]="'CONTRACTS.NEW_CONTRACT' | translate"
+    [subtitle]="'CONTRACTS.NEW_CONTRACT_SUBTITLE' | translate"
+    [breadcrumbs]="[
+      { label: ('NAV.DASHBOARD' | translate), route: '/admin/dashboard' },
+      { label: ('NAV.CONTRACTS_DASHBOARD' | translate), route: '/admin/contracts/dashboard' },
+      { label: ('CONTRACTS.NEW_CONTRACT' | translate) }
+    ]"
+    [showBack]="true"
+    (backClick)="cancel()">
+  </app-page-header>
+
+  <div class="form-shell">
+    <mat-stepper [linear]="true" orientation="horizontal" class="contract-stepper">
+
+      <!-- ── Step 1: Parties ─────────────────────────────── -->
+      <mat-step [stepControl]="partyForm" [label]="'CONTRACTS.STEP_PARTIES' | translate">
+        <form [formGroup]="partyForm" class="step-form">
+
+          <div class="step-section-label">
+            {{ i18n.currentLang === 'ar' ? 'اختر العقار أولاً' : 'Select Property First' }}
+          </div>
+
+          <!-- Property selector -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ 'CONTRACTS.PROPERTY' | translate }}</mat-label>
+            <mat-select formControlName="propertyId" [disabled]="loadingProperties">
+              <mat-option [value]="null" disabled>
+                {{ loadingProperties ? ('COMMON.LOADING' | translate) : ('REQUEST_FORM.SELECT_PROPERTY' | translate) }}
+              </mat-option>
+              <mat-option *ngFor="let p of properties" [value]="p.id">
+                {{ i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName) }}
+                <span class="option-code">{{ p.propertyCode }}</span>
+              </mat-option>
+            </mat-select>
+            <mat-error>{{ 'COMMON.REQUIRED' | translate }}</mat-error>
+          </mat-form-field>
+
+          <!-- Selected property info chip -->
+          <div class="property-info-chip" *ngIf="selectedProperty">
+            <mat-icon>apartment</mat-icon>
+            <div class="chip-text">
+              <span class="chip-name">{{ propertyLabel }}</span>
+              <span class="chip-meta">{{ selectedProperty.city || '' }} · {{ selectedProperty.propertyCode }}</span>
+            </div>
+            <span class="chip-units">{{ selectedProperty.totalUnits }} {{ 'PROPERTY_LIST.UNITS' | translate }}</span>
+          </div>
+
+          <!-- Unit selector (reactive to property) -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ 'CONTRACTS.UNIT' | translate }}</mat-label>
+            <mat-select formControlName="unitId" [disabled]="!partyForm.get('propertyId')?.value || loadingUnits">
+              <mat-option [value]="null" disabled>
+                <ng-container *ngIf="!partyForm.get('propertyId')?.value">{{ 'REQUEST_FORM.SELECT_PROPERTY_FIRST' | translate }}</ng-container>
+                <ng-container *ngIf="partyForm.get('propertyId')?.value && loadingUnits">{{ 'COMMON.LOADING' | translate }}</ng-container>
+                <ng-container *ngIf="partyForm.get('propertyId')?.value && !loadingUnits && units.length === 0">{{ 'REQUEST_FORM.NO_UNITS' | translate }}</ng-container>
+                <ng-container *ngIf="partyForm.get('propertyId')?.value && !loadingUnits && units.length > 0">{{ 'REQUEST_FORM.SELECT_UNIT' | translate }}</ng-container>
+              </mat-option>
+              <mat-option *ngFor="let u of units" [value]="u.id">
+                {{ u.unitNumber }}
+                <ng-container *ngIf="u.unitType"> — {{ u.unitType }}</ng-container>
+                <span class="option-rented" *ngIf="u.rented"> · {{ 'REQUEST_FORM.RENTED' | translate }}</span>
+              </mat-option>
+            </mat-select>
+            <mat-error>{{ 'COMMON.REQUIRED' | translate }}</mat-error>
+          </mat-form-field>
+
+          <!-- Tenant selector -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ 'CONTRACTS.TENANT' | translate }}</mat-label>
+            <mat-select formControlName="tenantId" [disabled]="loadingTenants">
+              <mat-option [value]="null" disabled>
+                {{ loadingTenants ? ('COMMON.LOADING' | translate) : ('TENANTS.SELECT_USER' | translate) }}
+              </mat-option>
+              <mat-option *ngFor="let t of tenants" [value]="t.id">
+                {{ t.fullName }}
+                <span class="option-phone" *ngIf="t.phone"> · {{ t.phone }}</span>
+              </mat-option>
+            </mat-select>
+            <mat-error>{{ 'COMMON.REQUIRED' | translate }}</mat-error>
+          </mat-form-field>
+
+          <!-- Owner (auto-filled, read-only) -->
+          <div class="owner-display" *ngIf="partyForm.get('ownerId')?.value">
+            <mat-icon>person</mat-icon>
+            <div class="owner-text">
+              <span class="owner-label">{{ 'PROPERTY_LIST.OWNER' | translate }}</span>
+              <span class="owner-id">
+                {{ i18n.currentLang === 'ar' ? 'رقم المالك: ' : 'Owner ID: ' }}{{ partyForm.get('ownerId')?.value }}
+                <ng-container *ngIf="selectedProperty?.ownerNameAr || selectedProperty?.ownerNameEn">
+                  · {{ i18n.currentLang === 'ar' ? selectedProperty?.ownerNameAr : selectedProperty?.ownerNameEn }}
+                </ng-container>
+              </span>
+            </div>
+          </div>
+
+          <div class="step-actions">
+            <button mat-stroked-button type="button" (click)="cancel()">{{ 'COMMON.CANCEL' | translate }}</button>
+            <button mat-flat-button matStepperNext [disabled]="partyForm.invalid">
+              {{ 'COMMON.NEXT' | translate }}
+              <mat-icon>arrow_forward</mat-icon>
+            </button>
+          </div>
+        </form>
+      </mat-step>
+
+      <!-- ── Step 2: Period ───────────────────────────────── -->
+      <mat-step [stepControl]="periodForm" [label]="'CONTRACTS.STEP_PERIOD' | translate">
+        <form [formGroup]="periodForm" class="step-form">
+
+          <div class="two-col">
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'CONTRACTS.START_DATE' | translate }}</mat-label>
+              <input matInput [matDatepicker]="startPicker" formControlName="startDate" required>
+              <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+              <mat-datepicker #startPicker></mat-datepicker>
+              <mat-error>{{ 'COMMON.REQUIRED' | translate }}</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'CONTRACTS.END_DATE' | translate }}</mat-label>
+              <input matInput [matDatepicker]="endPicker" formControlName="endDate" required>
+              <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+              <mat-datepicker #endPicker></mat-datepicker>
+              <mat-error>{{ 'COMMON.REQUIRED' | translate }}</mat-error>
+            </mat-form-field>
+          </div>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ 'CONTRACTS.SIGNING_DATE' | translate }}</mat-label>
+            <input matInput [matDatepicker]="signPicker" formControlName="signingDate">
+            <mat-datepicker-toggle matSuffix [for]="signPicker"></mat-datepicker-toggle>
+            <mat-datepicker #signPicker></mat-datepicker>
+          </mat-form-field>
+
+          <mat-checkbox formControlName="autoRenewable" class="auto-renew-check">
+            {{ 'CONTRACTS.AUTO_RENEWABLE' | translate }}
+          </mat-checkbox>
+
+          <div class="step-actions">
+            <button mat-stroked-button matStepperPrevious>
+              <mat-icon>arrow_back</mat-icon>
+              {{ 'COMMON.BACK' | translate }}
+            </button>
+            <button mat-flat-button matStepperNext [disabled]="periodForm.invalid">
+              {{ 'COMMON.NEXT' | translate }}
+              <mat-icon>arrow_forward</mat-icon>
+            </button>
+          </div>
+        </form>
+      </mat-step>
+
+      <!-- ── Step 3: Financial ───────────────────────────── -->
+      <mat-step [stepControl]="financialForm" [label]="'CONTRACTS.STEP_FINANCIAL' | translate">
+        <form [formGroup]="financialForm" class="step-form">
+
+          <div class="two-col">
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'CONTRACTS.MONTHLY_RENT' | translate }}</mat-label>
+              <input matInput type="number" formControlName="monthlyRent" min="1" required>
+              <mat-error>{{ 'COMMON.REQUIRED' | translate }}</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'CONTRACTS.SECURITY_DEPOSIT' | translate }}</mat-label>
+              <input matInput type="number" formControlName="securityDeposit">
+            </mat-form-field>
+          </div>
+
+          <div class="two-col">
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'CONTRACTS.PAYMENT_FREQUENCY' | translate }}</mat-label>
+              <mat-select formControlName="paymentFrequency">
+                <mat-option *ngFor="let f of frequencyOptions" [value]="f.code">
+                  {{ i18n.currentLang === 'ar' ? f.nameAr : f.nameEn }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'CONTRACTS.PAYMENT_DAY' | translate }}</mat-label>
+              <mat-select formControlName="paymentDay">
+                <mat-option *ngFor="let d of paymentDays" [value]="d">{{ d }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ 'CONTRACTS.CURRENCY' | translate }}</mat-label>
+            <mat-select formControlName="currency">
+              <mat-option *ngFor="let c of currencies" [value]="c">{{ c }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ 'CONTRACTS.NOTES' | translate }}</mat-label>
+            <textarea matInput formControlName="notes" rows="3"></textarea>
+          </mat-form-field>
+
+          <div *ngIf="errorMsg" class="error-msg">{{ errorMsg }}</div>
+
+          <div class="step-actions">
+            <button mat-stroked-button matStepperPrevious>
+              <mat-icon>arrow_back</mat-icon>
+              {{ 'COMMON.BACK' | translate }}
+            </button>
+            <button mat-stroked-button type="button" (click)="cancel()">{{ 'COMMON.CANCEL' | translate }}</button>
+            <button mat-flat-button [disabled]="financialForm.invalid || saving" (click)="submit()">
+              <mat-spinner diameter="20" *ngIf="saving"></mat-spinner>
+              <mat-icon *ngIf="!saving">save</mat-icon>
+              {{ 'CONTRACTS.SAVE_DRAFT' | translate }}
+            </button>
+          </div>
+        </form>
+      </mat-step>
+
+    </mat-stepper>
+  </div>
+</div>

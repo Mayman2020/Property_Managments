@@ -1,0 +1,120 @@
+<app-page-header
+  [title]="'INVOICE_PORTAL.TITLE' | translate"
+  [subtitle]="'INVOICE_PORTAL.SUBTITLE' | translate"
+  icon="receipt">
+  <button mat-flat-button color="primary" (click)="showForm = !showForm">
+    <mat-icon>{{ showForm ? 'close' : 'add' }}</mat-icon>
+    {{ (showForm ? 'COMMON.CANCEL' : 'INVOICE_PORTAL.NEW_INVOICE') | translate }}
+  </button>
+</app-page-header>
+
+<div class="page-content">
+
+  <!-- Submit form -->
+  <div class="form-card" *ngIf="showForm">
+    <h3 class="form-title">{{ 'INVOICE_PORTAL.NEW_INVOICE' | translate }}</h3>
+
+    <form [formGroup]="form" class="form-grid">
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'COMMON.MONTH' | translate }}</mat-label>
+        <mat-select formControlName="periodMonth">
+          <mat-option *ngFor="let m of months" [value]="m">{{ monthLabel(m) }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'COMMON.YEAR' | translate }}</mat-label>
+        <mat-select formControlName="periodYear">
+          <mat-option *ngFor="let y of years" [value]="y">{{ y }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'INVOICE_PORTAL.AMOUNT' | translate }}</mat-label>
+        <input matInput type="number" formControlName="amount" min="0.01">
+        <span matSuffix>{{ 'COMMON.OMR' | translate }}</span>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" *ngIf="properties.length > 0">
+        <mat-label>{{ 'INVOICE_PORTAL.PROPERTY' | translate }}</mat-label>
+        <mat-select formControlName="propertyId">
+          <mat-option [value]="null">{{ 'COMMON.ALL' | translate }}</mat-option>
+          <mat-option *ngFor="let p of properties" [value]="p.id">{{ p.propertyName }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-col">
+        <mat-label>{{ 'INVOICE_PORTAL.DESCRIPTION' | translate }}</mat-label>
+        <textarea matInput formControlName="description" rows="2"></textarea>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-col">
+        <mat-label>{{ 'COMMON.NOTES' | translate }}</mat-label>
+        <textarea matInput formControlName="notes" rows="2"></textarea>
+      </mat-form-field>
+
+      <div class="full-col">
+        <p class="upload-label">{{ 'INVOICE_PORTAL.ATTACH_INVOICE' | translate }}</p>
+        <app-upload-zone
+          [label]="'INVOICE_PORTAL.DROP_HINT' | translate"
+          [multiple]="false"
+          accept="image/*,.pdf"
+          (filesChanged)="onFilesChange($event)">
+        </app-upload-zone>
+      </div>
+
+    </form>
+
+    <div class="form-actions">
+      <button mat-button (click)="showForm = false">{{ 'COMMON.CANCEL' | translate }}</button>
+      <button mat-flat-button color="primary" (click)="submit()" [disabled]="submitting">
+        <mat-spinner diameter="18" *ngIf="submitting"></mat-spinner>
+        {{ 'INVOICE_PORTAL.SUBMIT' | translate }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Invoice list -->
+  <div *ngIf="loading" class="loading-center">
+    <mat-spinner diameter="48"></mat-spinner>
+  </div>
+
+  <div *ngIf="!loading && invoices.length === 0 && !showForm" class="empty-state">
+    <mat-icon>receipt_long</mat-icon>
+    <p>{{ 'INVOICE_PORTAL.NO_INVOICES' | translate }}</p>
+    <button mat-flat-button color="primary" (click)="showForm = true">
+      {{ 'INVOICE_PORTAL.NEW_INVOICE' | translate }}
+    </button>
+  </div>
+
+  <div *ngIf="!loading && invoices.length > 0" class="invoices-list">
+    <div class="invoice-row" *ngFor="let inv of invoices">
+      <div class="row-left">
+        <mat-icon class="inv-icon">receipt</mat-icon>
+        <div>
+          <div class="inv-number">{{ inv.invoiceNumber }}</div>
+          <div class="inv-period">{{ monthLabel(inv.periodMonth) }} {{ inv.periodYear }}</div>
+          <div class="inv-property" *ngIf="inv.propertyName">{{ inv.propertyName }}</div>
+        </div>
+      </div>
+
+      <div class="row-center">
+        <div class="inv-amount">{{ inv.amount | number:'1.2-2' }} {{ 'COMMON.OMR' | translate }}</div>
+        <div class="inv-desc" *ngIf="inv.description">{{ inv.description }}</div>
+      </div>
+
+      <div class="row-right">
+        <span class="status-badge" [ngClass]="statusClass(inv.status)">
+          {{ ('RECEIPT_STATUS.' + inv.status) | translate }}
+        </span>
+        <div class="inv-date">{{ inv.createdAt | date:'dd/MM/yyyy' }}</div>
+        <button mat-icon-button *ngIf="inv.fileUrl" (click)="viewFile(inv.fileUrl)"
+                [matTooltip]="'COMMON.VIEW_FILE' | translate">
+          <mat-icon>open_in_new</mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>

@@ -5,6 +5,8 @@ import com.propertymanagement.modules.user.dto.UserProfileUpdateRequest;
 import com.propertymanagement.modules.user.dto.ChangePasswordRequest;
 import com.propertymanagement.modules.user.dto.UserRoleUpdateRequest;
 import com.propertymanagement.modules.user.dto.UserResponse;
+import com.propertymanagement.modules.contractor.ContractorCompany;
+import com.propertymanagement.modules.contractor.ContractorCompanyRepository;
 import com.propertymanagement.shared.exception.AppException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -15,11 +17,15 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 public class UserService {
 
     private final UserRepository userRepository;
+    private final ContractorCompanyRepository contractorCompanyRepository;
     private final PasswordEncoder passwordEncoder;
 
     public Page<UserResponse> getAll(Pageable pageable, String q, UserRole role) {
@@ -56,8 +62,10 @@ public class UserService {
                 .propertyId(request.getPropertyId())
                 .maintenanceOfficerType(request.getMaintenanceOfficerType())
                 .maintenanceCompanyName(request.getMaintenanceCompanyName())
+                .contractorCompanyId(request.getContractorCompanyId())
                 .active(true)
                 .build();
+        syncContractorDisplayName(user);
         normalizeRoleSpecificFields(user);
         return toResponse(userRepository.save(user));
     }
@@ -74,9 +82,11 @@ public class UserService {
         user.setPropertyId(request.getPropertyId());
         user.setMaintenanceOfficerType(request.getMaintenanceOfficerType());
         user.setMaintenanceCompanyName(request.getMaintenanceCompanyName());
+        user.setContractorCompanyId(request.getContractorCompanyId());
         if (request.getPassword() != null && !request.getPassword().isBlank()) {
             user.setPassword(passwordEncoder.encode(request.getPassword()));
         }
+        syncContractorDisplayName(user);
         normalizeRoleSpecificFields(user);
         return toResponse(userRepository.save(user));
     }
@@ -142,6 +152,7 @@ public class UserService {
                 .propertyId(u.getPropertyId())
                 .maintenanceOfficerType(u.getMaintenanceOfficerType())
                 .maintenanceCompanyName(u.getMaintenanceCompanyName())
+                .contractorCompanyId(u.getContractorCompanyId())
                 .active(u.isActive())
                 .lastLogin(u.getLastLogin())
                 .createdAt(u.getCreatedAt())
@@ -157,30 +168,85 @@ public class UserService {
             throw AppException.badRequest("Maintenance officer type is required");
         }
         if (request.getMaintenanceOfficerType() == MaintenanceOfficerType.CONTRACTOR_COMPANY) {
-            String companyName = request.getMaintenanceCompanyName();
-            if (companyName == null || companyName.isBlank()) {
-                throw AppException.badRequest("Contractor company name is required for external maintenance officers");
+            if (request.getContractorCompanyId() == null) {
+                throw AppException.badRequest("contractorCompanyId is required for contractor maintenance officers");
+            }
+            if (!contractorCompanyRepository.existsById(request.getContractorCompanyId())) {
+                throw AppException.badRequest("Contractor company not found: " + request.getContractorCompanyId());
             }
         }
+    }
+
+    public List<UserResponse> findAssignableContractorOfficers(Long propertyId, Long contractorCompanyId) {
+        User caller = requireCallerUser();
+        if (caller.getRole() == UserRole.MAINTENANCE_OFFICER) {
+            if (caller.getContractorCompanyId() == null
+                    || caller.getPropertyId() == null
+                    || !caller.getContractorCompanyId().equals(contractorCompanyId)
+                    || !caller.getPropertyId().equals(propertyId)) {
+                throw AppException.forbidden("Access denied");
+            }
+        } else if (caller.getRole() != UserRole.SUPER_ADMIN && caller.getRole() != UserRole.PROPERTY_ADMIN) {
+            throw AppException.forbidden("Access denied");
+        }
+        return userRepository
+                .findAssignableContractorOfficers(
+                        UserRole.MAINTENANCE_OFFICER, propertyId, contractorCompanyId, MaintenanceOfficerType.CONTRACTOR_COMPANY)
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
     }
 
     private void normalizeRoleSpecificFields(User user) {
         if (user.getRole() != UserRole.MAINTENANCE_OFFICER) {
             user.setMaintenanceOfficerType(null);
             user.setMaintenanceCompanyName(null);
+            user.setContractorCompanyId(null);
             return;
         }
         if (user.getMaintenanceOfficerType() != MaintenanceOfficerType.CONTRACTOR_COMPANY) {
             user.setMaintenanceCompanyName(null);
+            user.setContractorCompanyId(null);
         }
     }
 
-    private Long currentUserId() {
+    private void syncContractorDisplayName(User user) {
+        if (user.getRole() != UserRole.MAINTENANCE_OFFICER
+                || user.getMaintenanceOfficerType() != MaintenanceOfficerType.CONTRACTOR_COMPANY
+                || user.getContractorCompanyId() == null) {
+            return;
+        }
+        ContractorCompany cc = contractorCompanyRepository.findById(user.getContractorCompanyId()).orElse(null);
+        if (cc != null) {
+            String label = firstNonBlank(cc.getNameAr(), cc.getNameEn(), cc.getName());
+            if (label != null) {
+                user.setMaintenanceCompanyName(label);
+            }
+        }
+    }
+
+    private static String firstNonBlank(String... values) {
+        if (values == null) {
+            return null;
+        }
+        for (String v : values) {
+            if (v != null && !v.isBlank()) {
+                return v.trim();
+            }
+        }
+        return null;
+    }
+
+    private User requireCallerUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getPrincipal() instanceof User user && user.getId() != null) {
-            return user.getId();
+            return user;
         }
         throw AppException.forbidden("Authenticated user is required");
+    }
+
+    private Long currentUserId() {
+        return requireCallerUser().getId();
     }
 
     private String trimToNull(String value) {

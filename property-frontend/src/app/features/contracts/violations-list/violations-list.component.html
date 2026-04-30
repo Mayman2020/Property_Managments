@@ -1,0 +1,95 @@
+<div class="app-page violations-page">
+  <app-page-header
+    [eyebrow]="'NAV_SECTION.CONTRACTS' | translate"
+    [title]="'CONTRACTS.VIOLATIONS_TITLE' | translate"
+    [subtitle]="'CONTRACTS.VIOLATIONS_SUBTITLE' | translate"
+    [breadcrumbs]="[
+      { label: ('NAV.DASHBOARD' | translate), route: '/admin/dashboard' },
+      { label: ('NAV.CONTRACTS_DASHBOARD' | translate), route: '/admin/contracts/dashboard' },
+      { label: ('CONTRACTS.VIOLATIONS_TITLE' | translate) }
+    ]">
+  </app-page-header>
+
+  <div class="toolbar">
+    <!-- Property filter -->
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-label>{{ 'CONTRACTS.FILTER_PROPERTY' | translate }}</mat-label>
+      <mat-select [(ngModel)]="filterPropertyId" (ngModelChange)="onFilterChange()">
+        <mat-option [value]="null">{{ 'CONTRACTS.ALL_PROPERTIES' | translate }}</mat-option>
+        <mat-option *ngFor="let p of properties" [value]="p.id">{{ propertyLabel(p) }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <!-- Status filter from lookup -->
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-label>{{ 'CONTRACTS.STATUS' | translate }}</mat-label>
+      <mat-select [(ngModel)]="filterStatus" (ngModelChange)="onFilterChange()">
+        <mat-option value="">{{ 'COMMON.ALL' | translate }}</mat-option>
+        <mat-option *ngFor="let s of statusOptions" [value]="s.code">
+          {{ i18n.currentLang === 'ar' ? s.nameAr : s.nameEn }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <div *ngIf="loading" class="loading-wrap">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <section *ngIf="!loading" class="app-card table-card">
+    <div class="app-table-wrap">
+      <table class="app-data-table source-table">
+        <thead>
+          <tr>
+            <th>{{ 'CONTRACTS.DATE' | translate }}</th>
+            <th>{{ 'CONTRACTS.TENANT' | translate }}</th>
+            <th>{{ 'CONTRACTS.VIOLATION_TYPE' | translate }}</th>
+            <th>{{ 'CONTRACTS.SEVERITY' | translate }}</th>
+            <th>{{ 'CONTRACTS.FINE' | translate }}</th>
+            <th>{{ 'CONTRACTS.STATUS' | translate }}</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let v of violations">
+            <td>{{ v.createdAt | date:'dd/MM/yyyy' }}</td>
+            <td>
+              <div class="row-main">{{ v.tenantName }}</div>
+              <div class="row-sub">{{ v.unitNumber }}</div>
+            </td>
+            <!-- Violation type from lookup -->
+            <td>{{ lookupCache.label('VIOLATION_TYPE', v.violationType) || v.violationType }}</td>
+            <!-- Severity from lookup -->
+            <td>
+              <span class="status-chip" [ngClass]="getSeverityClass(v.severity)">
+                {{ lookupCache.label('VIOLATION_SEVERITY', v.severity) || v.severity }}
+              </span>
+            </td>
+            <td>{{ v.fineAmount | number }}</td>
+            <!-- Status from lookup -->
+            <td>
+              <span class="status-chip" [ngClass]="getStatusClass(v.status)">
+                {{ lookupCache.label('VIOLATION_STATUS', v.status) || v.status }}
+              </span>
+            </td>
+            <td>
+              <button type="button" class="app-icon-btn" *ngIf="v.status !== 'RESOLVED'" (click)="resolve(v.id)"
+                      [title]="'CONTRACTS.RESOLVE' | translate">
+                <mat-icon>check_circle_outline</mat-icon>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="violations.length === 0">
+            <td colspan="7" class="empty-row">{{ 'CONTRACTS.NO_VIOLATIONS' | translate }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <app-table-pager
+      [length]="totalElements"
+      [pageSize]="pageSize"
+      [pageIndex]="pageIndex"
+      (pageIndexChange)="goToPage($event)">
+    </app-table-pager>
+  </section>
+</div>

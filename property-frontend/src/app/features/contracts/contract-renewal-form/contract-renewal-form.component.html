@@ -1,0 +1,63 @@
+<app-page-header
+  [title]="'CONTRACTS.RENEW_TITLE' | translate"
+  [subtitle]="contract?.contractNumber ?? ''"
+  [showBack]="true"
+  (backClick)="goBack()">
+</app-page-header>
+
+<div *ngIf="loading" class="loading-wrap"><mat-spinner diameter="40"></mat-spinner></div>
+
+<mat-card class="form-card" *ngIf="!loading && contract">
+  <mat-card-content>
+    <!-- Current Info -->
+    <div class="current-info">
+      <div class="info-row">
+        <span class="label">{{ 'CONTRACTS.CURRENT_END_DATE' | translate }}</span>
+        <span class="value">{{ contract.endDate }}</span>
+      </div>
+      <div class="info-row">
+        <span class="label">{{ 'CONTRACTS.CURRENT_RENT' | translate }}</span>
+        <span class="value">{{ contract.monthlyRent | number }} {{ contract.currency }}</span>
+      </div>
+    </div>
+
+    <form [formGroup]="form" class="renewal-form">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>{{ 'CONTRACTS.NEW_START_DATE' | translate }}</mat-label>
+        <input matInput [matDatepicker]="startPicker" formControlName="newStartDate" required>
+        <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+        <mat-datepicker #startPicker></mat-datepicker>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>{{ 'CONTRACTS.NEW_END_DATE' | translate }}</mat-label>
+        <input matInput [matDatepicker]="endPicker" formControlName="newEndDate" required>
+        <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+        <mat-datepicker #endPicker></mat-datepicker>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>{{ 'CONTRACTS.NEW_MONTHLY_RENT' | translate }}</mat-label>
+        <input matInput type="number" formControlName="newMonthlyRent" required>
+        <mat-hint *ngIf="rentIncreasePercent !== 0" [class.increase]="rentIncreasePercent > 0" [class.decrease]="rentIncreasePercent < 0">
+          {{ rentIncreasePercent > 0 ? '+' : '' }}{{ rentIncreasePercent | number:'1.1-1' }}%
+        </mat-hint>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>{{ 'CONTRACTS.NOTES' | translate }}</mat-label>
+        <textarea matInput formControlName="notes" rows="3"></textarea>
+      </mat-form-field>
+
+      <div *ngIf="errorMsg" class="error-msg">{{ errorMsg }}</div>
+
+      <div class="form-actions">
+        <button mat-stroked-button type="button" (click)="cancel()">{{ 'COMMON.CANCEL' | translate }}</button>
+        <button mat-flat-button color="primary" [disabled]="form.invalid || saving" (click)="submit()">
+          <mat-spinner diameter="16" *ngIf="saving"></mat-spinner>
+          {{ 'CONTRACTS.CONFIRM_RENEW' | translate }}
+        </button>
+      </div>
+    </form>
+  </mat-card-content>
+</mat-card>

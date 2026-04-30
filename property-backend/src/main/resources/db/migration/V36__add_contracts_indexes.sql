@@ -1,0 +1,14 @@
+CREATE INDEX IF NOT EXISTS idx_lease_contracts_tenant      ON lease_contracts(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_lease_contracts_unit        ON lease_contracts(unit_id);
+CREATE INDEX IF NOT EXISTS idx_lease_contracts_property    ON lease_contracts(property_id);
+CREATE INDEX IF NOT EXISTS idx_lease_contracts_status      ON lease_contracts(status);
+CREATE INDEX IF NOT EXISTS idx_lease_contracts_end_date    ON lease_contracts(end_date);
+CREATE INDEX IF NOT EXISTS idx_rent_payments_contract      ON rent_payments(contract_id);
+CREATE INDEX IF NOT EXISTS idx_rent_payments_date          ON rent_payments(payment_date);
+CREATE INDEX IF NOT EXISTS idx_rent_schedule_status        ON rent_payment_schedule(status);
+CREATE INDEX IF NOT EXISTS idx_rent_schedule_due           ON rent_payment_schedule(due_date);
+CREATE INDEX IF NOT EXISTS idx_violations_tenant           ON tenant_violations(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_complaints_property         ON tenant_complaints(property_id);
+CREATE INDEX IF NOT EXISTS idx_contract_fees_contract      ON contract_fees(contract_id);
+CREATE INDEX IF NOT EXISTS idx_inspections_unit            ON unit_inspections(unit_id);
+CREATE INDEX IF NOT EXISTS idx_inspections_contract        ON unit_inspections(contract_id);

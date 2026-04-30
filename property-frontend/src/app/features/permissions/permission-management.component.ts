@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Inject, OnInit } from '@angular/core';
 import { NgClass, NgFor, NgIf } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
+import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
@@ -12,6 +13,8 @@ import { PermissionService } from '../../core/services/permission.service';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { SnackService } from '../../core/services/snack.service';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { TablePagerComponent } from '../../shared/components/table-pager/table-pager.component';
+import { ExportColumn, TableExportToolbarComponent } from '../../shared/components/table-export-toolbar/table-export-toolbar.component';
 
 interface PermissionRoleConfig {
   key: UserRole;
@@ -21,13 +24,252 @@ interface PermissionRoleConfig {
 interface PermissionModuleConfig {
   key: string;
   icon: string;
-  label: string;
-  description: string;
 }
 
+type PermissionActionKey = Exclude<keyof PermissionMap[string], 'enabled'>;
+
 interface PermissionActionConfig {
-  key: Exclude<keyof PermissionMap[string], 'enabled'>;
-  label: string;
+  key: PermissionActionKey;
+}
+
+interface PermissionRoleDialogData {
+  role: PermissionRoleConfig;
+  modules: PermissionModuleConfig[];
+  actions: PermissionActionConfig[];
+  permissions: PermissionMap;
+  saving: boolean;
+  roleLabel: (role: UserRole) => string;
+  moduleTitle: (moduleKey: string) => string;
+  moduleDesc: (moduleKey: string) => string;
+  actionLabel: (actionKey: string) => string;
+  modulePermissions: (permissions: PermissionMap, moduleKey: string) => PermissionMap[string];
+}
+
+@Component({
+  selector: 'app-permission-role-dialog',
+  standalone: true,
+  imports: [
+    NgClass,
+    NgFor,
+    NgIf,
+    TranslateModule,
+    MatButtonModule,
+    MatDialogModule,
+    MatIconModule,
+    MatSlideToggleModule
+  ],
+  template: `
+    <h2 mat-dialog-title>
+      <span class="material-icons">{{ data.role.icon }}</span>
+      {{ data.roleLabel(data.role.key) }}
+    </h2>
+
+    <mat-dialog-content class="permission-dialog-body">
+      <div class="dialog-summary">
+        <div>
+          <span>{{ isAr ? 'الموديولات المفعلة' : 'Enabled Modules' }}</span>
+          <strong>{{ enabledModulesCount }} / {{ data.modules.length }}</strong>
+        </div>
+        <div>
+          <span>{{ isAr ? 'إجمالي الصلاحيات' : 'Enabled Actions' }}</span>
+          <strong>{{ enabledActionsCount }}</strong>
+        </div>
+      </div>
+
+      <section class="permission-module-box" *ngFor="let module of data.modules">
+        <div class="permission-module-head">
+          <div class="module-title">
+            <span class="material-icons">{{ module.icon }}</span>
+            <div>
+              <h3>{{ data.moduleTitle(module.key) | translate }}</h3>
+              <p>{{ data.moduleDesc(module.key) | translate }}</p>
+            </div>
+          </div>
+          <mat-slide-toggle
+            color="primary"
+            [checked]="modulePermissions(module.key).enabled"
+            (change)="setPermission(module.key, 'enabled', $event.checked)">
+            {{ 'PERMISSIONS.ENABLED' | translate }}
+          </mat-slide-toggle>
+        </div>
+
+        <div class="action-grid">
+          <label
+            class="action-toggle"
+            *ngFor="let action of data.actions"
+            [ngClass]="{ muted: !modulePermissions(module.key).enabled }">
+            <span>{{ data.actionLabel(action.key) | translate }}</span>
+            <mat-slide-toggle
+              color="accent"
+              [checked]="modulePermissions(module.key)[action.key]"
+              [disabled]="!modulePermissions(module.key).enabled"
+              (change)="setPermission(module.key, action.key, $event.checked)">
+            </mat-slide-toggle>
+          </label>
+        </div>
+      </section>
+    </mat-dialog-content>
+
+    <mat-dialog-actions align="end">
+      <button mat-stroked-button type="button" (click)="ref.close()">{{ 'ACTIONS.CANCEL' | translate }}</button>
+      <button mat-flat-button type="button" (click)="ref.close(data.permissions)">
+        <span class="material-icons">done</span>
+        {{ isAr ? 'تطبيق' : 'Apply' }}
+      </button>
+    </mat-dialog-actions>
+  `,
+  styles: [`
+    h2[mat-dialog-title] {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 0;
+    }
+
+    h2 .material-icons {
+      color: var(--primary);
+    }
+
+    .permission-dialog-body {
+      min-width: min(820px, 94vw);
+      max-height: 70vh;
+      display: grid;
+      gap: 14px;
+      padding-top: 12px;
+    }
+
+    .dialog-summary {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .dialog-summary div {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: var(--surface-2);
+      display: grid;
+      gap: 4px;
+    }
+
+    .dialog-summary span {
+      color: var(--text-muted);
+      font-size: 0.82rem;
+    }
+
+    .permission-module-box {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: var(--card-bg, #fff);
+      display: grid;
+      gap: 12px;
+    }
+
+    .permission-module-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .module-title {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .module-title .material-icons {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: rgba(19, 78, 74, 0.08);
+      color: var(--brand-deep);
+    }
+
+    .module-title h3 {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .module-title p {
+      margin: 3px 0 0;
+      color: var(--text-muted);
+      font-size: 0.84rem;
+    }
+
+    .action-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 8px;
+    }
+
+    .action-toggle {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface-2);
+      padding: 8px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-weight: 600;
+    }
+
+    .action-toggle.muted {
+      opacity: 0.58;
+    }
+
+    @media (max-width: 640px) {
+      .dialog-summary {
+        grid-template-columns: 1fr;
+      }
+
+      .permission-module-head {
+        flex-direction: column;
+      }
+    }
+  `]
+})
+export class PermissionRoleDialogComponent {
+  constructor(
+    readonly ref: MatDialogRef<PermissionRoleDialogComponent, PermissionMap>,
+    @Inject(MAT_DIALOG_DATA) readonly data: PermissionRoleDialogData,
+    private readonly i18n: I18nService
+  ) {}
+
+  get isAr(): boolean {
+    return this.i18n.currentLang === 'ar';
+  }
+
+  get enabledModulesCount(): number {
+    return this.data.modules.filter((module) => this.modulePermissions(module.key).enabled).length;
+  }
+
+  get enabledActionsCount(): number {
+    return this.data.modules.reduce((sum, module) => {
+      const permissions = this.modulePermissions(module.key);
+      return sum + this.data.actions.filter((action) => permissions[action.key]).length;
+    }, 0);
+  }
+
+  modulePermissions(moduleKey: string): PermissionMap[string] {
+    return this.data.modulePermissions(this.data.permissions, moduleKey);
+  }
+
+  setPermission(moduleKey: string, action: PermissionActionKey | 'enabled', checked: boolean): void {
+    const modulePermissions = this.modulePermissions(moduleKey);
+    modulePermissions[action] = checked;
+    if (action !== 'enabled' && checked) {
+      modulePermissions.enabled = true;
+    }
+    if (action === 'enabled' && !checked) {
+      this.data.actions.forEach((item) => { modulePermissions[item.key] = false; });
+    }
+  }
 }
 
 @Component({
@@ -39,10 +281,12 @@ interface PermissionActionConfig {
     NgIf,
     TranslateModule,
     MatButtonModule,
+    MatDialogModule,
     MatIconModule,
     MatProgressSpinnerModule,
-    MatSlideToggleModule,
-    PageHeaderComponent
+    PageHeaderComponent,
+    TablePagerComponent,
+    TableExportToolbarComponent
   ],
   template: `
     <div class="app-page permissions-page">
@@ -50,260 +294,124 @@ interface PermissionActionConfig {
         [title]="'PERMISSIONS.TITLE' | translate"
         [subtitle]="'PERMISSIONS.SUBTITLE' | translate"
         [breadcrumbs]="[{label:('NAV.DASHBOARD' | translate), route:'/admin/dashboard'}, {label:('NAV.PERMISSIONS' | translate)}]">
-        <button mat-stroked-button type="button" (click)="resetSelectedRole()" [disabled]="loading || saving || !selectedRole">
-          <span class="material-icons">restart_alt</span>
-          {{ 'PERMISSIONS.RESET_ROLE' | translate }}
-        </button>
-        <button mat-flat-button type="button" (click)="saveSelectedRole()" [disabled]="loading || saving || !selectedRole">
-          <mat-spinner *ngIf="saving" diameter="18"></mat-spinner>
-          <span *ngIf="!saving" class="btn-inline">
-            <span class="material-icons">save</span>
-            {{ 'PERMISSIONS.SAVE_ROLE' | translate }}
-          </span>
-        </button>
       </app-page-header>
 
       <div class="loading-center" *ngIf="loading">
         <mat-spinner diameter="44"></mat-spinner>
       </div>
 
-      <ng-container *ngIf="!loading && selectedRole">
-        <div class="roles-grid">
-          <button
-            *ngFor="let role of roles"
-            type="button"
-            class="role-pill surface-glow"
-            [ngClass]="{ active: selectedRole === role.key }"
-            (click)="selectedRole = role.key">
-            <span class="material-icons">{{ role.icon }}</span>
-            <div>
-              <strong>{{ roleLabel(role.key) }}</strong>
-              <span>{{ roleSummary(role.key) }}</span>
-            </div>
-          </button>
+      <section class="app-card" *ngIf="!loading">
+        <app-table-export-toolbar
+          permissionKey="permissions"
+          [title]="'PERMISSIONS.TITLE' | translate"
+          fileName="permissions"
+          [columns]="exportColumns"
+          [rows]="roles">
+        </app-table-export-toolbar>
+        <div class="app-table-wrap">
+          <table class="app-data-table permission-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>{{ isAr ? 'الرول' : 'Role' }}</th>
+                <th>{{ isAr ? 'الموديولات المفعلة' : 'Enabled Modules' }}</th>
+                <th>{{ isAr ? 'إجمالي الصلاحيات' : 'Enabled Actions' }}</th>
+                <th>{{ 'COMMON.ACTIONS' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let role of pagedRoles; let i = index" class="permission-row" (click)="openRole(role)">
+                <td>{{ rolePageIndex * rolePageSize + i + 1 }}</td>
+                <td>
+                  <div class="role-title-cell">
+                    <span class="material-icons">{{ role.icon }}</span>
+                    <div>
+                      <strong>{{ roleLabel(role.key) }}</strong>
+                      <small>{{ role.key }}</small>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="count-pill visible">{{ enabledModulesCount(role.key) }} / {{ modules.length }}</span></td>
+                <td><span class="count-pill">{{ enabledActionsCount(role.key) }}</span></td>
+                <td>
+                  <button mat-stroked-button type="button" (click)="openRole(role); $event.stopPropagation()">
+                    <mat-icon>tune</mat-icon>
+                    {{ isAr ? 'التفاصيل' : 'Details' }}
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
 
-        <div class="surface-glow permissions-board">
-          <div class="board-intro">
-            <div>
-              <h3>{{ roleLabel(selectedRole) }}</h3>
-              <p>{{ 'PERMISSIONS.BOARD_HINT' | translate }}</p>
-            </div>
-            <div class="summary-chip">
-              <span class="material-icons">verified_user</span>
-              {{ enabledModulesCount(selectedRole) }} / {{ modules.length }} {{ 'PERMISSIONS.MODULES_ENABLED' | translate }}
-            </div>
-          </div>
-
-          <div class="module-card" *ngFor="let module of modules">
-            <div class="module-head">
-              <div class="module-title">
-                <span class="material-icons">{{ module.icon }}</span>
-                <div>
-                  <h4>{{ module.label }}</h4>
-                  <p>{{ module.description }}</p>
-                </div>
-              </div>
-
-              <mat-slide-toggle
-                color="primary"
-                [checked]="modulePermissions(selectedRole, module.key).enabled"
-                (change)="setPermission(module.key, 'enabled', $event.checked)">
-                {{ 'PERMISSIONS.ENABLED' | translate }}
-              </mat-slide-toggle>
-            </div>
-
-            <div class="action-grid">
-              <label
-                *ngFor="let action of actions"
-                class="action-toggle"
-                [ngClass]="{ muted: !modulePermissions(selectedRole, module.key).enabled }">
-                <span>{{ action.label }}</span>
-                <mat-slide-toggle
-                  color="accent"
-                  [checked]="modulePermissions(selectedRole, module.key)[action.key]"
-                  [disabled]="!modulePermissions(selectedRole, module.key).enabled"
-                  (change)="setPermission(module.key, action.key, $event.checked)">
-                </mat-slide-toggle>
-              </label>
-            </div>
-          </div>
-        </div>
-      </ng-container>
+        <app-table-pager
+          [length]="roles.length"
+          [pageIndex]="rolePageIndex"
+          [pageSize]="rolePageSize"
+          (pageIndexChange)="rolePageIndex = $event">
+        </app-table-pager>
+      </section>
     </div>
   `,
   styles: [`
     .permissions-page {
       display: grid;
-      gap: 1.5rem;
+      gap: 1.25rem;
     }
 
-    .btn-inline {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.45rem;
-    }
-
-    .roles-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 1rem;
-    }
-
-    .role-pill {
-      border: 1px solid rgba(15, 23, 42, 0.08);
-      background: rgba(255, 255, 255, 0.88);
-      border-radius: 1.4rem;
-      padding: 1rem 1.1rem;
+    .loading-center {
       display: flex;
-      align-items: center;
-      gap: 0.9rem;
-      text-align: start;
+      justify-content: center;
+      padding: 2rem 0;
+    }
+
+    .permission-row {
       cursor: pointer;
-      transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
     }
 
-    .role-pill .material-icons {
-      width: 2.8rem;
-      height: 2.8rem;
-      border-radius: 0.9rem;
-      display: grid;
-      place-items: center;
-      background: rgba(19, 78, 74, 0.08);
-      color: var(--brand-deep);
-      font-size: 1.35rem;
-    }
-
-    .role-pill strong,
-    .role-pill span {
-      display: block;
-    }
-
-    .role-pill span:last-child {
-      color: var(--ink-soft);
-      font-size: 0.84rem;
-      margin-top: 0.2rem;
-    }
-
-    .role-pill.active {
-      border-color: rgba(19, 78, 74, 0.28);
-      box-shadow: 0 18px 40px rgba(19, 78, 74, 0.12);
-      transform: translateY(-2px);
-    }
-
-    .permissions-board {
-      border-radius: 1.75rem;
-      padding: 1.35rem;
-      display: grid;
-      gap: 1rem;
-    }
-
-    .board-intro {
+    .role-title-cell {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-      border-bottom: 1px solid rgba(15, 23, 42, 0.08);
-      padding-bottom: 1rem;
+      gap: 10px;
+      min-width: 230px;
     }
 
-    .board-intro h3 {
-      margin: 0;
-      font-size: 1.15rem;
+    .role-title-cell .material-icons {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: rgba(19, 78, 74, 0.08);
+      color: var(--brand-deep);
     }
 
-    .board-intro p {
-      margin: 0.3rem 0 0;
-      color: var(--ink-soft);
+    .role-title-cell div {
+      display: grid;
+      gap: 2px;
     }
 
-    .summary-chip {
+    .role-title-cell small {
+      color: var(--text-muted);
+      font-size: 0.78rem;
+    }
+
+    .count-pill {
       display: inline-flex;
+      min-width: 42px;
+      min-height: 28px;
       align-items: center;
-      gap: 0.5rem;
+      justify-content: center;
       border-radius: 999px;
-      padding: 0.7rem 1rem;
-      background: rgba(19, 78, 74, 0.08);
-      color: var(--brand-deep);
-      font-weight: 700;
-      white-space: nowrap;
+      padding: 0 10px;
+      background: rgba(15, 23, 42, 0.08);
+      font-weight: 800;
+      font-size: 0.84rem;
     }
 
-    .module-card {
-      border: 1px solid rgba(15, 23, 42, 0.08);
-      border-radius: 1.4rem;
-      background: rgba(255, 255, 255, 0.8);
-      padding: 1rem 1.1rem;
-      display: grid;
-      gap: 1rem;
-    }
-
-    .module-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-    }
-
-    .module-title {
-      display: flex;
-      align-items: center;
-      gap: 0.9rem;
-    }
-
-    .module-title .material-icons {
-      width: 2.7rem;
-      height: 2.7rem;
-      display: grid;
-      place-items: center;
-      border-radius: 0.95rem;
-      background: rgba(180, 83, 9, 0.1);
-      color: #b45309;
-    }
-
-    .module-title h4 {
-      margin: 0;
-      font-size: 1rem;
-    }
-
-    .module-title p {
-      margin: 0.18rem 0 0;
-      color: var(--ink-soft);
-      font-size: 0.87rem;
-    }
-
-    .action-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-      gap: 0.85rem;
-    }
-
-    .action-toggle {
-      border-radius: 1rem;
-      border: 1px solid rgba(15, 23, 42, 0.08);
-      background: rgba(248, 250, 252, 0.9);
-      padding: 0.8rem 0.95rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.75rem;
-      font-weight: 600;
-    }
-
-    .action-toggle.muted {
-      opacity: 0.62;
-    }
-
-    @media (max-width: 768px) {
-      .board-intro,
-      .module-head {
-        align-items: flex-start;
-        flex-direction: column;
-      }
-
-      .summary-chip {
-        white-space: normal;
-      }
+    .count-pill.visible {
+      background: rgba(22, 163, 74, 0.12);
+      color: #15803d;
     }
   `]
 })
@@ -311,60 +419,69 @@ export class PermissionManagementComponent implements OnInit {
   readonly roles: PermissionRoleConfig[] = [
     { key: 'SUPER_ADMIN', icon: 'admin_panel_settings' },
     { key: 'PROPERTY_ADMIN', icon: 'business_center' },
+    { key: 'CONTRACTS_OFFICER', icon: 'description' },
+    { key: 'ACCOUNTANT', icon: 'payments' },
+    { key: 'HR_OFFICER', icon: 'badge' },
+    { key: 'OWNER', icon: 'apartment' },
     { key: 'MAINTENANCE_OFFICER', icon: 'engineering' },
     { key: 'TENANT', icon: 'home' }
   ];
 
   readonly modules: PermissionModuleConfig[] = [
-    { key: 'dashboard', icon: 'dashboard', label: 'Dashboard', description: 'Overview screen and summary widgets.' },
-    { key: 'properties', icon: 'apartment', label: 'Properties', description: 'Property list and property forms.' },
-    { key: 'units', icon: 'meeting_room', label: 'Units', description: 'Units list and unit editing actions.' },
-    { key: 'tenants', icon: 'groups', label: 'Tenants', description: 'Tenant records and assignment management.' },
-    { key: 'maintenance', icon: 'plumbing', label: 'Maintenance', description: 'Maintenance requests, assignment, scheduling, and execution.' },
-    { key: 'inventory', icon: 'inventory_2', label: 'Inventory', description: 'Inventory items and stock operations.' },
-    { key: 'reports', icon: 'bar_chart', label: 'Reports', description: 'Analytics dashboards and exports.' },
-    { key: 'users', icon: 'manage_accounts', label: 'Users', description: 'User accounts, activation, and role management.' },
-    { key: 'lookups', icon: 'public', label: 'Lookups', description: 'Country and city lookup data.' },
-    { key: 'contractors', icon: 'engineering', label: 'Contractors', description: 'Contractor companies and external maintenance providers.' },
-    { key: 'ratings', icon: 'star_rate', label: 'Ratings', description: 'Visit ratings and tenant feedback.' },
-    { key: 'schedule', icon: 'calendar_month', label: 'Schedule', description: 'Officer schedule screen and visit planning.' },
-    { key: 'profile', icon: 'person', label: 'Profile', description: 'Profile page and personal data editing.' },
-    { key: 'my_unit', icon: 'home_work', label: 'My Unit', description: 'Tenant unit overview and lease context.' },
-    { key: 'new_request', icon: 'add_circle', label: 'New Request', description: 'Tenant request creation entry point.' },
-    { key: 'my_requests', icon: 'assignment', label: 'My Requests', description: 'Tenant or officer personal request lists and actions.' },
-    { key: 'permissions', icon: 'verified_user', label: 'Permissions', description: 'Role permissions management screen.' }
+    { key: 'dashboard', icon: 'dashboard' },
+    { key: 'properties', icon: 'apartment' },
+    { key: 'units', icon: 'meeting_room' },
+    { key: 'tenants', icon: 'groups' },
+    { key: 'maintenance', icon: 'plumbing' },
+    { key: 'inventory', icon: 'inventory_2' },
+    { key: 'reports', icon: 'bar_chart' },
+    { key: 'users', icon: 'manage_accounts' },
+    { key: 'lookups', icon: 'public' },
+    { key: 'contractors', icon: 'engineering' },
+    { key: 'vendors', icon: 'engineering' },
+    { key: 'vacancies', icon: 'door_open' },
+    { key: 'ratings', icon: 'star_rate' },
+    { key: 'finance', icon: 'bar_chart' },
+    { key: 'hr', icon: 'badge' },
+    { key: 'notifications', icon: 'notifications' },
+    { key: 'audit', icon: 'history' },
+    { key: 'owner_portal', icon: 'apartment' },
+    { key: 'schedule', icon: 'calendar_month' },
+    { key: 'profile', icon: 'person' },
+    { key: 'my_unit', icon: 'home_work' },
+    { key: 'new_request', icon: 'add_circle' },
+    { key: 'my_requests', icon: 'assignment' },
+    { key: 'permissions', icon: 'verified_user' }
   ];
 
   readonly actions: PermissionActionConfig[] = [
-    { key: 'menu', label: 'Menu' },
-    { key: 'view', label: 'View' },
-    { key: 'create', label: 'Create' },
-    { key: 'edit', label: 'Edit' },
-    { key: 'delete', label: 'Delete' },
-    { key: 'assign', label: 'Assign' },
-    { key: 'schedule', label: 'Schedule' },
-    { key: 'start', label: 'Start' },
-    { key: 'submit', label: 'Submit' },
-    { key: 'approve', label: 'Approve' },
-    { key: 'reject', label: 'Reject' },
-    { key: 'export', label: 'Export' },
-    { key: 'rate', label: 'Rate' },
-    { key: 'manage', label: 'Manage' },
-    { key: 'toggle', label: 'Toggle' }
+    { key: 'menu' },
+    { key: 'view' },
+    { key: 'create' },
+    { key: 'edit' },
+    { key: 'delete' },
+    { key: 'assign' },
+    { key: 'schedule' },
+    { key: 'start' },
+    { key: 'submit' },
+    { key: 'approve' },
+    { key: 'reject' },
+    { key: 'export' },
+    { key: 'rate' },
+    { key: 'manage' },
+    { key: 'toggle' }
   ];
 
+  readonly rolePageSize = 6;
+  rolePageIndex = 0;
   loading = true;
-  saving = false;
-  selectedRole: UserRole = 'SUPER_ADMIN';
-  private originalPermissions: Record<UserRole, PermissionMap> = {
+  private rolePermissions: Record<UserRole, PermissionMap> = {
     SUPER_ADMIN: {},
     PROPERTY_ADMIN: {},
-    MAINTENANCE_OFFICER: {},
-    TENANT: {}
-  };
-  private editablePermissions: Record<UserRole, PermissionMap> = {
-    SUPER_ADMIN: {},
-    PROPERTY_ADMIN: {},
+    CONTRACTS_OFFICER: {},
+    ACCOUNTANT: {},
+    HR_OFFICER: {},
+    OWNER: {},
     MAINTENANCE_OFFICER: {},
     TENANT: {}
   };
@@ -373,15 +490,33 @@ export class PermissionManagementComponent implements OnInit {
     private readonly permissionService: PermissionService,
     private readonly auth: AuthService,
     private readonly snack: SnackService,
-    private readonly i18n: I18nService
+    private readonly i18n: I18nService,
+    private readonly dialog: MatDialog
   ) {}
+
+  get isAr(): boolean {
+    return this.i18n.currentLang === 'ar';
+  }
+
+  get pagedRoles(): PermissionRoleConfig[] {
+    const start = this.rolePageIndex * this.rolePageSize;
+    return this.roles.slice(start, start + this.rolePageSize);
+  }
+
+  get exportColumns(): ExportColumn<PermissionRoleConfig>[] {
+    return [
+      { header: this.isAr ? 'الرول' : 'Role', value: (row) => this.roleLabel(row.key) },
+      { header: this.isAr ? 'الكود' : 'Code', value: 'key' },
+      { header: this.isAr ? 'الموديولات المفعلة' : 'Enabled Modules', value: (row) => `${this.enabledModulesCount(row.key)} / ${this.modules.length}` },
+      { header: this.isAr ? 'إجمالي الصلاحيات' : 'Enabled Actions', value: (row) => this.enabledActionsCount(row.key) }
+    ];
+  }
 
   ngOnInit(): void {
     this.permissionService.getAll().subscribe({
       next: (res) => {
         for (const item of res.data ?? []) {
-          this.originalPermissions[item.role] = this.clonePermissions(item.permissions);
-          this.editablePermissions[item.role] = this.clonePermissions(item.permissions);
+          this.rolePermissions[item.role] = this.clonePermissions(item.permissions);
         }
         this.loading = false;
       },
@@ -392,21 +527,83 @@ export class PermissionManagementComponent implements OnInit {
     });
   }
 
+  openRole(role: PermissionRoleConfig): void {
+    const draft = this.clonePermissions(this.rolePermissions[role.key]);
+    this.dialog.open(PermissionRoleDialogComponent, {
+      width: '920px',
+      panelClass: 'app-dialog-panel',
+      data: {
+        role,
+        modules: this.modules,
+        actions: this.actions,
+        permissions: draft,
+        saving: false,
+        roleLabel: this.roleLabel.bind(this),
+        moduleTitle: this.moduleTitle.bind(this),
+        moduleDesc: this.moduleDesc.bind(this),
+        actionLabel: this.actionLabel.bind(this),
+        modulePermissions: this.modulePermissions.bind(this)
+      } satisfies PermissionRoleDialogData
+    }).afterClosed().subscribe((permissions?: PermissionMap) => {
+      if (!permissions) return;
+      this.saveRole(role.key, permissions);
+    });
+  }
+
   roleLabel(role: UserRole): string {
     return this.i18n.instant(`ROLE.${role}`);
   }
 
-  roleSummary(role: UserRole): string {
-    return `${this.enabledModulesCount(role)} ${this.i18n.instant('PERMISSIONS.ENABLED_COUNT')}`;
+  moduleTitle(moduleKey: string): string {
+    return `PERMISSIONS.MODULE.${moduleKey}.TITLE`;
+  }
+
+  moduleDesc(moduleKey: string): string {
+    return `PERMISSIONS.MODULE.${moduleKey}.DESC`;
+  }
+
+  actionLabel(actionKey: string): string {
+    return `PERMISSIONS.ACTION.${actionKey}`;
   }
 
   enabledModulesCount(role: UserRole): number {
-    return this.modules.filter((module) => this.modulePermissions(role, module.key).enabled).length;
+    return this.modules.filter((module) => this.modulePermissions(this.rolePermissions[role], module.key).enabled).length;
   }
 
-  modulePermissions(role: UserRole, moduleKey: string) {
-    const rolePermissions = this.editablePermissions[role] ?? {};
-    return rolePermissions[moduleKey] ?? {
+  enabledActionsCount(role: UserRole): number {
+    return this.modules.reduce((sum, module) => {
+      const permissions = this.modulePermissions(this.rolePermissions[role], module.key);
+      return sum + this.actions.filter((action) => permissions[action.key]).length;
+    }, 0);
+  }
+
+  modulePermissions(permissions: PermissionMap, moduleKey: string): PermissionMap[string] {
+    permissions[moduleKey] ??= this.emptyModulePermissions();
+    return permissions[moduleKey];
+  }
+
+  private saveRole(role: UserRole, permissions: PermissionMap): void {
+    this.permissionService.update(role, { permissions }).subscribe({
+      next: (res) => {
+        const updated = this.clonePermissions(res.data?.permissions ?? permissions);
+        this.rolePermissions[role] = updated;
+        if (this.auth.getRole() === role) {
+          this.permissionService.setPermissions(updated);
+        }
+        this.snack.success(this.i18n.instant('PERMISSIONS.SAVE_SUCCESS'));
+      },
+      error: () => {
+        this.snack.error(this.i18n.instant('PERMISSIONS.SAVE_ERROR'));
+      }
+    });
+  }
+
+  private clonePermissions(permissions: PermissionMap): PermissionMap {
+    return JSON.parse(JSON.stringify(permissions ?? {})) as PermissionMap;
+  }
+
+  private emptyModulePermissions(): PermissionMap[string] {
+    return {
       enabled: false,
       menu: false,
       view: false,
@@ -424,42 +621,5 @@ export class PermissionManagementComponent implements OnInit {
       manage: false,
       toggle: false
     };
-  }
-
-  setPermission(moduleKey: string, action: string, checked: boolean): void {
-    const modulePermissions = this.modulePermissions(this.selectedRole, moduleKey);
-    modulePermissions[action as keyof typeof modulePermissions] = checked;
-    if (action !== 'enabled' && checked) {
-      modulePermissions.enabled = true;
-    }
-  }
-
-  resetSelectedRole(): void {
-    this.editablePermissions[this.selectedRole] = this.clonePermissions(this.originalPermissions[this.selectedRole]);
-  }
-
-  saveSelectedRole(): void {
-    const permissions = this.clonePermissions(this.editablePermissions[this.selectedRole]);
-    this.saving = true;
-    this.permissionService.update(this.selectedRole, { permissions }).subscribe({
-      next: (res) => {
-        const updated = this.clonePermissions(res.data?.permissions ?? permissions);
-        this.originalPermissions[this.selectedRole] = updated;
-        this.editablePermissions[this.selectedRole] = this.clonePermissions(updated);
-        if (this.auth.getRole() === this.selectedRole) {
-          this.permissionService.setPermissions(updated);
-        }
-        this.saving = false;
-        this.snack.success(this.i18n.instant('PERMISSIONS.SAVE_SUCCESS'));
-      },
-      error: () => {
-        this.saving = false;
-        this.snack.error(this.i18n.instant('PERMISSIONS.SAVE_ERROR'));
-      }
-    });
-  }
-
-  private clonePermissions(permissions: PermissionMap): PermissionMap {
-    return JSON.parse(JSON.stringify(permissions ?? {})) as PermissionMap;
   }
 }

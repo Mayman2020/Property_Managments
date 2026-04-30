@@ -2,6 +2,11 @@ package com.propertymanagement.modules.property;
 
 import com.propertymanagement.modules.property.dto.PropertyRequest;
 import com.propertymanagement.modules.property.dto.PropertyResponse;
+import com.propertymanagement.modules.user.MaintenanceOfficerType;
+import com.propertymanagement.modules.user.User;
+import com.propertymanagement.modules.user.UserRepository;
+import com.propertymanagement.modules.user.UserRole;
+import com.propertymanagement.modules.contractor.ContractorCompanyRepository;
 import com.propertymanagement.shared.exception.AppException;
 import com.propertymanagement.shared.i18n.LocalizedNameResolver;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +22,8 @@ import java.util.List;
 public class PropertyService {
 
     private final PropertyRepository propertyRepository;
+    private final UserRepository userRepository;
+    private final ContractorCompanyRepository contractorCompanyRepository;
 
     public Page<PropertyResponse> getAll(Pageable pageable, String q) {
         return propertyRepository.searchActive(trimToNull(q), pageable).map(this::toResponse);
@@ -36,14 +43,15 @@ public class PropertyService {
             throw AppException.badRequest("Property name is required in Arabic and English");
         }
 
-        if (propertyRepository.existsByPropertyCode(request.getPropertyCode())) {
-            throw AppException.conflict("Property code already exists: " + request.getPropertyCode());
+        String propertyCode = resolvePropertyCode(request.getPropertyCode());
+        if (propertyRepository.existsByPropertyCode(propertyCode)) {
+            throw AppException.conflict("Property code already exists: " + propertyCode);
         }
         Property property = Property.builder()
                 .propertyName(legacyName)
                 .propertyNameAr(normalizedNameAr)
                 .propertyNameEn(normalizedNameEn)
-                .propertyCode(request.getPropertyCode())
+                .propertyCode(propertyCode)
                 .propertyType(request.getPropertyType())
                 .address(request.getAddress())
                 .city(request.getCity())
@@ -54,10 +62,16 @@ public class PropertyService {
                 .description(request.getDescription())
                 .coverImageUrl(request.getCoverImageUrl())
                 .ownerId(request.getOwnerId())
+                .ownerNameAr(request.getOwnerNameAr())
+                .ownerNameEn(request.getOwnerNameEn())
+                .ownerEmail(request.getOwnerEmail())
+                .ownerCivilId(request.getOwnerCivilId())
                 .ownerDocumentFiles(normalizeFiles(request.getOwnerDocumentFiles()))
                 .active(true)
                 .build();
-        return toResponse(propertyRepository.save(property));
+        Property saved = propertyRepository.save(property);
+        applyMaintenanceRouting(saved, request.getMaintenanceInternalOfficerUserId(), request.getMaintenanceContractorCompanyId());
+        return toResponse(propertyRepository.save(saved));
     }
 
     @Transactional
@@ -71,14 +85,16 @@ public class PropertyService {
             throw AppException.badRequest("Property name is required in Arabic and English");
         }
 
-        if (!property.getPropertyCode().equals(request.getPropertyCode())
-                && propertyRepository.existsByPropertyCode(request.getPropertyCode())) {
-            throw AppException.conflict("Property code already exists: " + request.getPropertyCode());
+        String incomingCode = trimToNull(request.getPropertyCode());
+        String effectiveCode = incomingCode != null ? incomingCode : property.getPropertyCode();
+        if (!property.getPropertyCode().equals(effectiveCode)
+                && propertyRepository.existsByPropertyCode(effectiveCode)) {
+            throw AppException.conflict("Property code already exists: " + effectiveCode);
         }
         property.setPropertyName(legacyName);
         property.setPropertyNameAr(normalizedNameAr);
         property.setPropertyNameEn(normalizedNameEn);
-        property.setPropertyCode(request.getPropertyCode());
+        property.setPropertyCode(effectiveCode);
         property.setPropertyType(request.getPropertyType());
         property.setAddress(request.getAddress());
         property.setCity(request.getCity());
@@ -89,7 +105,12 @@ public class PropertyService {
         property.setDescription(request.getDescription());
         property.setCoverImageUrl(request.getCoverImageUrl());
         property.setOwnerId(request.getOwnerId());
+        property.setOwnerNameAr(request.getOwnerNameAr());
+        property.setOwnerNameEn(request.getOwnerNameEn());
+        property.setOwnerEmail(request.getOwnerEmail());
+        property.setOwnerCivilId(request.getOwnerCivilId());
         property.setOwnerDocumentFiles(normalizeFiles(request.getOwnerDocumentFiles()));
+        applyMaintenanceRouting(property, request.getMaintenanceInternalOfficerUserId(), request.getMaintenanceContractorCompanyId());
         return toResponse(propertyRepository.save(property));
     }
 
@@ -132,7 +153,13 @@ public class PropertyService {
                 .totalUnits(p.getTotalUnits())
                 .description(p.getDescription())
                 .coverImageUrl(p.getCoverImageUrl())
+                .ownerNameAr(p.getOwnerNameAr())
+                .ownerNameEn(p.getOwnerNameEn())
+                .ownerEmail(p.getOwnerEmail())
+                .ownerCivilId(p.getOwnerCivilId())
                 .ownerDocumentFiles(p.getOwnerDocumentFiles())
+                .maintenanceInternalOfficerUserId(p.getMaintenanceInternalOfficerUserId())
+                .maintenanceContractorCompanyId(p.getMaintenanceContractorCompanyId())
                 .active(p.isActive())
                 .createdAt(p.getCreatedAt())
                 .updatedAt(p.getUpdatedAt())
@@ -172,5 +199,52 @@ public class PropertyService {
         if (value == null) return null;
         String t = value.trim();
         return t.isEmpty() ? null : t;
+    }
+
+    private String resolvePropertyCode(String requested) {
+        String trimmed = trimToNull(requested);
+        if (trimmed != null) {
+            return trimmed;
+        }
+        long seq = propertyRepository.count() + 1;
+        String candidate;
+        do {
+            candidate = "PROP-" + String.format("%05d", seq++);
+        } while (propertyRepository.existsByPropertyCode(candidate));
+        return candidate;
+    }
+
+    private void applyMaintenanceRouting(Property property, Long internalOfficerUserId, Long contractorCompanyId) {
+        if (internalOfficerUserId != null && contractorCompanyId != null) {
+            throw AppException.badRequest("Choose either an internal maintenance officer or a contractor company, not both");
+        }
+        property.setMaintenanceInternalOfficerUserId(null);
+        property.setMaintenanceContractorCompanyId(null);
+        if (internalOfficerUserId != null) {
+            assertInternalOfficerForProperty(property.getId(), internalOfficerUserId);
+            property.setMaintenanceInternalOfficerUserId(internalOfficerUserId);
+        } else if (contractorCompanyId != null) {
+            if (!contractorCompanyRepository.existsById(contractorCompanyId)) {
+                throw AppException.badRequest("Contractor company not found: " + contractorCompanyId);
+            }
+            property.setMaintenanceContractorCompanyId(contractorCompanyId);
+        }
+    }
+
+    private void assertInternalOfficerForProperty(Long propertyId, Long officerUserId) {
+        if (propertyId == null) {
+            throw AppException.badRequest("Property must be saved before linking an internal officer");
+        }
+        User officer = userRepository.findById(officerUserId)
+                .orElseThrow(() -> AppException.badRequest("User not found: " + officerUserId));
+        if (officer.getRole() != UserRole.MAINTENANCE_OFFICER || !officer.isActive()) {
+            throw AppException.badRequest("Internal maintenance officer must be an active maintenance officer account");
+        }
+        if (officer.getMaintenanceOfficerType() != MaintenanceOfficerType.INTERNAL_PROPERTY) {
+            throw AppException.badRequest("Internal maintenance officer must have type INTERNAL_PROPERTY");
+        }
+        if (officer.getPropertyId() == null || !officer.getPropertyId().equals(propertyId)) {
+            throw AppException.badRequest("Officer must be assigned to this same property");
+        }
     }
 }

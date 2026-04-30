@@ -2,9 +2,9 @@ import { ApplicationConfig, APP_INITIALIZER, importProvidersFrom } from '@angula
 import { provideRouter } from '@angular/router';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { provideNativeDateAdapter } from '@angular/material/core';
+import { MAT_DATE_FORMATS, provideNativeDateAdapter } from '@angular/material/core';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatDialogModule } from '@angular/material/dialog';
+import { MAT_DIALOG_DEFAULT_OPTIONS, MatDialogModule } from '@angular/material/dialog';
 import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
 import { TranslateHttpLoader, provideTranslateHttpLoader } from '@ngx-translate/http-loader';
 
@@ -16,6 +16,16 @@ import { errorInterceptor } from './core/interceptors/error.interceptor';
 import { ThemeService } from './core/services/theme.service';
 import { AuthService } from './core/services/auth.service';
 import { PermissionService } from './core/services/permission.service';
+
+export const DD_MM_YYYY_DATE_FORMATS = {
+  parse: { dateInput: 'DD/MM/YYYY' },
+  display: {
+    dateInput: 'dd/MM/yyyy',
+    monthYearLabel: 'MMM yyyy',
+    dateA11yLabel: 'dd/MM/yyyy',
+    monthYearA11yLabel: 'MMMM yyyy'
+  }
+};
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -40,11 +50,19 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideAnimationsAsync(),
     provideNativeDateAdapter(),
+    { provide: MAT_DATE_FORMATS, useValue: DD_MM_YYYY_DATE_FORMATS },
     provideHttpClient(withInterceptors([loadingInterceptor, languageInterceptor, authInterceptor, errorInterceptor])),
     provideTranslateHttpLoader({
       prefix: '/assets/i18n/',
       suffix: '.json'
     }),
+    {
+      provide: MAT_DIALOG_DEFAULT_OPTIONS,
+      useFactory: () => ({
+        direction: (localStorage.getItem('pm_lang') || 'ar') === 'ar' ? 'rtl' : 'ltr',
+        maxWidth: '95vw'
+      })
+    },
     importProvidersFrom(
       MatSnackBarModule,
       MatDialogModule,

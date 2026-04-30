@@ -37,7 +37,7 @@ public class UnitService {
                 .bedrooms(request.getBedrooms())
                 .bathrooms(request.getBathrooms())
                 .rentAmount(request.getRentAmount())
-                .currency(request.getCurrency() != null ? request.getCurrency() : "SAR")
+                .currency(request.getCurrency() != null ? request.getCurrency() : "OMR")
                 .notes(request.getNotes())
                 .active(true)
                 .build();
@@ -58,7 +58,7 @@ public class UnitService {
         unit.setBedrooms(request.getBedrooms());
         unit.setBathrooms(request.getBathrooms());
         unit.setRentAmount(request.getRentAmount());
-        unit.setCurrency(request.getCurrency() != null ? request.getCurrency() : "SAR");
+        unit.setCurrency(request.getCurrency() != null ? request.getCurrency() : "OMR");
         unit.setNotes(request.getNotes());
         return toResponse(unitRepository.save(unit));
     }

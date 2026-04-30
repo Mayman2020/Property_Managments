@@ -29,26 +29,6 @@
     font: inherit;
   }
 
-  .unit-form-card {
-    margin-bottom: 18px;
-  }
-
-  .unit-form-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-  }
-
-  .unit-form-grid .full {
-    grid-column: 1 / -1;
-  }
-
-  .unit-form-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-  }
-
   .mono-cell {
     font-family: var(--font-mono);
     font-size: 0.76rem;
@@ -62,8 +42,7 @@
   }
 
   @media (max-width: 980px) {
-    .unit-filters,
-    .unit-form-grid {
+    .unit-filters {
       grid-template-columns: 1fr;
     }
   }

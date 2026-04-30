@@ -1,0 +1,85 @@
+<div class="app-page payments-page">
+  <app-page-header
+    [eyebrow]="'NAV_SECTION.CONTRACTS' | translate"
+    [title]="'CONTRACTS.PAYMENTS_TITLE' | translate"
+    [subtitle]="'CONTRACTS.PAYMENTS_SUBTITLE' | translate"
+    [breadcrumbs]="[
+      { label: ('NAV.DASHBOARD' | translate), route: '/admin/dashboard' },
+      { label: ('NAV.CONTRACTS_DASHBOARD' | translate), route: '/admin/contracts/dashboard' },
+      { label: ('CONTRACTS.PAYMENTS_TITLE' | translate) }
+    ]">
+    <button mat-flat-button routerLink="/admin/contracts/payments/record">
+      <mat-icon>add</mat-icon>
+      {{ 'CONTRACTS.RECORD_PAYMENT' | translate }}
+    </button>
+  </app-page-header>
+
+  <div class="toolbar">
+    <!-- Property filter -->
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-label>{{ 'CONTRACTS.FILTER_PROPERTY' | translate }}</mat-label>
+      <mat-select [(ngModel)]="filterPropertyId" (ngModelChange)="onFilterChange()">
+        <mat-option [value]="null">{{ 'CONTRACTS.ALL_PROPERTIES' | translate }}</mat-option>
+        <mat-option *ngFor="let p of properties" [value]="p.id">{{ propertyLabel(p) }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <button mat-stroked-button [class.active-filter]="showOverdueOnly" (click)="toggleOverdue()">
+      <mat-icon>{{ showOverdueOnly ? 'filter_alt_off' : 'filter_alt' }}</mat-icon>
+      {{ (showOverdueOnly ? 'CONTRACTS.SHOW_ALL' : 'CONTRACTS.OVERDUE_ONLY') | translate }}
+    </button>
+  </div>
+
+  <div *ngIf="loading" class="loading-wrap">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <section *ngIf="!loading" class="app-card table-card">
+    <div class="app-table-wrap">
+      <table class="app-data-table source-table">
+        <thead>
+          <tr>
+            <th>{{ 'CONTRACTS.PAYMENT_DATE' | translate }}</th>
+            <th>{{ 'CONTRACTS.CONTRACT' | translate }}</th>
+            <th>{{ 'CONTRACTS.TENANT' | translate }}</th>
+            <th>{{ 'CONTRACTS.AMOUNT_PAID' | translate }}</th>
+            <th>{{ 'CONTRACTS.AMOUNT_DUE' | translate }}</th>
+            <th>{{ 'CONTRACTS.BALANCE' | translate }}</th>
+            <th>{{ 'CONTRACTS.METHOD' | translate }}</th>
+            <th>{{ 'CONTRACTS.REFERENCE' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of payments">
+            <td>{{ p.paymentDate | date:'dd/MM/yyyy' }}</td>
+            <td>
+              <a [routerLink]="['/admin/contracts', p.contractId]" class="contract-link">
+                {{ p.contractNumber }}
+              </a>
+            </td>
+            <td>{{ p.tenantName }}</td>
+            <td class="amount">{{ p.amountPaid | number }}</td>
+            <td class="amount">{{ p.amountDue | number }}</td>
+            <td>
+              <span class="status-chip" [ngClass]="getBalanceClass(p.balance)">
+                {{ p.balance | number }}
+              </span>
+            </td>
+            <!-- Payment method from lookup -->
+            <td>{{ lookupCache.label('PAYMENT_METHOD', p.paymentMethod) || p.paymentMethod }}</td>
+            <td class="ref-col">{{ p.referenceNumber }}</td>
+          </tr>
+          <tr *ngIf="payments.length === 0">
+            <td colspan="8" class="empty-row">{{ 'CONTRACTS.NO_PAYMENTS' | translate }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <app-table-pager
+      [length]="totalElements"
+      [pageSize]="pageSize"
+      [pageIndex]="pageIndex"
+      (pageIndexChange)="goToPage($event)">
+    </app-table-pager>
+  </section>
+</div>

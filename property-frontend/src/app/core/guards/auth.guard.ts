@@ -39,10 +39,34 @@ export const permissionGuard: CanActivateFn = (route: ActivatedRouteSnapshot) =>
   return router.createUrlTree([resolveFallbackRoute(auth, permissions)]);
 };
 
-export const adminGuard: CanActivateFn = roleGuard(['SUPER_ADMIN', 'PROPERTY_ADMIN']);
+export const moduleGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
+  const auth = inject(AuthService);
+  const permissions = inject(PermissionService);
+  const router = inject(Router);
+
+  if (!auth.isAuthenticated()) return router.createUrlTree(['/auth/login']);
+
+  const moduleKey = route.data['module'] as string | undefined;
+  if (!moduleKey || permissions.can(moduleKey, 'view')) {
+    return true;
+  }
+
+  return router.createUrlTree([resolveFallbackRoute(auth, permissions)]);
+};
+
+export const adminGuard: CanActivateFn = roleGuard([
+  'SUPER_ADMIN',
+  'PROPERTY_ADMIN',
+  'CONTRACTS_OFFICER',
+  'ACCOUNTANT',
+  'HR_OFFICER',
+  'OWNER'
+]);
 export const officerGuard: CanActivateFn = roleGuard(['SUPER_ADMIN', 'PROPERTY_ADMIN', 'MAINTENANCE_OFFICER']);
 export const tenantGuard: CanActivateFn = roleGuard(['SUPER_ADMIN', 'PROPERTY_ADMIN', 'TENANT']);
+export const ownerGuard: CanActivateFn = roleGuard(['OWNER']);
 export const superAdminGuard: CanActivateFn = roleGuard(['SUPER_ADMIN']);
+export const contractsGuard: CanActivateFn = roleGuard(['SUPER_ADMIN', 'PROPERTY_ADMIN', 'CONTRACTS_OFFICER', 'ACCOUNTANT']);
 
 function resolveFallbackRoute(auth: AuthService, permissions: PermissionService): string {
   const role = auth.getRole();
@@ -59,13 +83,37 @@ function resolveFallbackRoute(auth: AuthService, permissions: PermissionService)
           { route: '/officer/requests', permission: 'my_requests', action: 'view' as PermissionAction },
           { route: '/officer/profile', permission: 'profile', action: 'view' as PermissionAction }
         ]
-      : role === 'TENANT'
+      : role === 'CONTRACTS_OFFICER'
         ? [
-            { route: '/tenant/my-unit', permission: 'my_unit', action: 'view' as PermissionAction },
-            { route: '/tenant/requests', permission: 'my_requests', action: 'view' as PermissionAction },
-            { route: '/tenant/profile', permission: 'profile', action: 'view' as PermissionAction }
+            { route: '/admin/contracts/dashboard', permission: 'contracts', action: 'view' as PermissionAction },
+            { route: '/admin/contracts/list', permission: 'contracts', action: 'view' as PermissionAction },
+            { route: '/admin/profile', permission: 'profile', action: 'view' as PermissionAction }
           ]
-        : [];
+        : role === 'ACCOUNTANT'
+          ? [
+              { route: '/admin/finance/dashboard', permission: 'finance', action: 'view' as PermissionAction },
+              { route: '/admin/contracts/payments', permission: 'contracts', action: 'view' as PermissionAction },
+              { route: '/admin/profile', permission: 'profile', action: 'view' as PermissionAction }
+            ]
+          : role === 'HR_OFFICER'
+            ? [
+                { route: '/admin/hr/employees', permission: 'hr', action: 'view' as PermissionAction },
+                { route: '/admin/hr/payroll', permission: 'hr', action: 'view' as PermissionAction },
+                { route: '/admin/profile', permission: 'profile', action: 'view' as PermissionAction }
+              ]
+            : role === 'OWNER'
+              ? [
+                  { route: '/admin/owner-portal/dashboard', permission: 'owner_portal', action: 'view' as PermissionAction },
+                  { route: '/admin/owner-portal/statements', permission: 'owner_portal', action: 'view' as PermissionAction },
+                  { route: '/admin/profile', permission: 'profile', action: 'view' as PermissionAction }
+                ]
+        : role === 'TENANT'
+          ? [
+              { route: '/tenant/my-unit', permission: 'my_unit', action: 'view' as PermissionAction },
+              { route: '/tenant/requests', permission: 'my_requests', action: 'view' as PermissionAction },
+              { route: '/tenant/profile', permission: 'profile', action: 'view' as PermissionAction }
+            ]
+          : [];
 
   const firstAllowed = candidates.find((item) => permissions.can(item.permission, item.action));
   return firstAllowed?.route ?? auth.getDashboardRoute();

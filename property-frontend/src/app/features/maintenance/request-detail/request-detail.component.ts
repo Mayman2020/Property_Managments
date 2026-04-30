@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { NgIf, NgFor, DatePipe } from '@angular/common';
+import { Location, NgIf, NgFor, DatePipe } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -9,14 +9,16 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { TranslateModule } from '@ngx-translate/core';
 
-import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { MaintenanceService, MaintenanceRequest } from '../../../core/services/maintenance.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { PermissionService } from '../../../core/services/permission.service';
+import { UserService } from '../../../core/services/user.service';
+import { User } from '../../../core/models/user.model';
 
 @Component({
   selector: 'app-request-detail',
@@ -24,8 +26,7 @@ import { PermissionService } from '../../../core/services/permission.service';
   imports: [
     NgIf, NgFor, DatePipe, RouterLink, ReactiveFormsModule, TranslateModule,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule,
-    MatFormFieldModule, MatInputModule, MatSelectModule, MatDatepickerModule,
-    PageHeaderComponent
+    MatFormFieldModule, MatInputModule, MatSelectModule, MatDatepickerModule, MatMenuModule
   ],
   templateUrl: './request-detail.component.html',
   styleUrl: './request-detail.component.scss'
@@ -63,16 +64,17 @@ export class RequestDetailComponent implements OnInit {
     private readonly fb: FormBuilder,
     private readonly snack: MatSnackBar,
     readonly auth: AuthService,
-    readonly permissions: PermissionService
+    readonly permissions: PermissionService,
+    private readonly userSvc: UserService,
+    private readonly location: Location
   ) {}
+
+  goBack(): void { this.location.back(); }
 
   ngOnInit(): void {
     this.buildForms();
     const id = Number(this.route.snapshot.paramMap.get('id'));
     this.load(id);
-    if (this.auth.isAdmin()) {
-      this.maintSvc.getOfficers().subscribe({ next: r => this.officers = r.data?.content ?? [] });
-    }
   }
 
   private buildForms(): void {
@@ -92,10 +94,43 @@ export class RequestDetailComponent implements OnInit {
       next: (res) => {
         this.request = res.data;
         this.loading = false;
+        this.assignForm.patchValue({ officerId: null }, { emitEvent: false });
+        this.hydrateAssignableOfficers();
         this.loadVisitReport(id);
       },
       error: () => { this.loading = false; }
     });
+  }
+
+  private hydrateAssignableOfficers(): void {
+    this.officers = [];
+    const req = this.request;
+    if (!req || req.status !== 'PENDING') return;
+
+    const companyId = req.contractorCompanyId;
+    if (companyId != null && req.assignedTo == null && req.propertyId != null) {
+      this.userSvc.getMaintenanceAssignableContractors(req.propertyId, companyId).subscribe({
+        next: (res) => {
+          const list = res.data ?? [];
+          this.officers = list.map((u: User) => ({ id: u.id, fullName: u.fullName }));
+        },
+        error: () => {
+          this.officers = [];
+        }
+      });
+      return;
+    }
+
+    if (this.auth.isAdmin()) {
+      this.maintSvc.getOfficers().subscribe({
+        next: (r) => {
+          this.officers = (r.data?.content ?? []).map((o) => ({ id: o.id, fullName: o.fullName }));
+        },
+        error: () => {
+          this.officers = [];
+        }
+      });
+    }
   }
 
   private loadVisitReport(id: number): void {
@@ -179,11 +214,30 @@ export class RequestDetailComponent implements OnInit {
     });
   }
 
+  openWhatsApp(phone: string | null | undefined): void {
+    const normalized = this.whatsAppPhone(phone);
+    if (!normalized) return;
+    window.open(`https://wa.me/${normalized}`, '_blank', 'noopener');
+  }
+
+  callOfficer(phone: string | null | undefined): void {
+    const tel = this.cleanPhone(phone);
+    if (!tel) return;
+    window.location.href = `tel:${tel}`;
+  }
+
   get canAssign(): boolean {
-    return !!this.request
-      && this.auth.isAdmin()
-      && this.permissions.can('maintenance', 'assign')
-      && this.request.status === 'PENDING';
+    const req = this.request;
+    if (!req || req.status !== 'PENDING') return false;
+    if (this.auth.isAdmin() && this.permissions.can('maintenance', 'assign')) return true;
+    if (this.auth.isOfficer() && req.contractorCompanyId != null && req.assignedTo == null) {
+      const u = this.auth.getCurrentUser();
+      if (!u?.contractorCompanyId || !u.propertyId) return false;
+      return u.maintenanceOfficerType === 'CONTRACTOR_COMPANY'
+        && u.contractorCompanyId === req.contractorCompanyId
+        && u.propertyId === req.propertyId;
+    }
+    return false;
   }
 
   get canSchedule(): boolean {
@@ -230,38 +284,93 @@ export class RequestDetailComponent implements OnInit {
     return this.i18n.currentLang === 'ar' ? 'العمليات' : 'Operations';
   }
 
-  get timelineSteps(): Array<{ label: string; date: string; done: boolean; active?: boolean }> {
+  /** Visual for each dot: complete = green + check, current = spinner, upcoming = dim + index */
+  get timelineSteps(): Array<{
+    label: string;
+    date: string;
+    visual: 'complete' | 'current' | 'upcoming';
+  }> {
     if (!this.request) return [];
     const request = this.request;
+    const ar = this.i18n.currentLang === 'ar';
+    const st = request.status;
+    const cancelled = st === 'CANCELLED';
+
     const createdAt = request.createdAt ? this.formatDateTime(request.createdAt) : '—';
     const scheduledAt = request.scheduledDate
       ? `${this.formatDate(request.scheduledDate)}${request.scheduledTimeFrom ? ` · ${request.scheduledTimeFrom}` : ''}`
       : '—';
-    const startedAt = request.status === 'IN_PROGRESS' || request.status === 'COMPLETED'
-      ? (request.updatedAt ? this.formatDateTime(request.updatedAt) : (this.i18n.currentLang === 'ar' ? 'قيد التنفيذ' : 'In progress'))
+    const startedAt = st === 'IN_PROGRESS' || st === 'COMPLETED'
+      ? (request.updatedAt ? this.formatDateTime(request.updatedAt) : (ar ? 'قيد التنفيذ' : 'In progress'))
       : '—';
     const completedAt = request.closedAt ? this.formatDateTime(request.closedAt) : '—';
 
-    return [
-      { label: this.i18n.currentLang === 'ar' ? 'تم الإرسال' : 'Submitted', date: createdAt, done: true },
-      {
-        label: this.i18n.currentLang === 'ar' ? 'المراجعة والتعيين' : 'Reviewed & assigned',
-        date: request.assignedOfficerName || '—',
-        done: request.status !== 'PENDING'
-      },
-      { label: this.i18n.currentLang === 'ar' ? 'الجدولة' : 'Scheduled', date: scheduledAt, done: !!request.scheduledDate },
-      {
-        label: this.i18n.currentLang === 'ar' ? 'الزيارة' : 'Visit',
-        date: startedAt,
-        done: request.status === 'IN_PROGRESS' || request.status === 'COMPLETED',
-        active: request.status === 'IN_PROGRESS'
-      },
-      {
-        label: this.i18n.currentLang === 'ar' ? 'الإنجاز' : 'Completed',
-        date: completedAt,
-        done: request.status === 'COMPLETED'
-      }
+    const assigned =
+      (request.assignedTo != null && request.assignedTo > 0)
+      || ['SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'NEEDS_REVISIT', 'TENANT_ABSENT'].includes(st);
+
+    const stepDone = cancelled
+      ? [false, false, false, false, false]
+      : [
+          st !== 'PENDING',
+          assigned,
+          !!request.scheduledDate,
+          st === 'IN_PROGRESS' || st === 'COMPLETED',
+          st === 'COMPLETED'
+        ];
+
+    const labels = [
+      ar ? 'تم الإرسال' : 'Submitted',
+      ar ? 'المراجعة والتعيين' : 'Reviewed & assigned',
+      ar ? 'الجدولة' : 'Scheduled',
+      ar ? 'الزيارة' : 'Visit',
+      ar ? 'الإنجاز' : 'Completed'
     ];
+
+    const dates = [
+      createdAt,
+      request.assignedOfficerName || '—',
+      scheduledAt,
+      startedAt,
+      completedAt
+    ];
+
+    let firstOpen = stepDone.findIndex((d) => !d);
+    if (firstOpen === -1) {
+      firstOpen = 5;
+    }
+
+    return labels.map((label, i) => {
+      let visual: 'complete' | 'current' | 'upcoming';
+      if (cancelled) {
+        visual = 'upcoming';
+      } else if (stepDone[i]) {
+        visual = 'complete';
+      } else if (i === firstOpen) {
+        visual = 'current';
+      } else {
+        visual = 'upcoming';
+      }
+      return { label, date: dates[i], visual };
+    });
+  }
+
+  /** 0–100: how much of the spine between steps should appear completed (4 segments). */
+  get timelineRailPercent(): number {
+    if (!this.request) return 0;
+    const st = this.request.status;
+    if (st === 'CANCELLED') return 0;
+    const assigned =
+      (this.request.assignedTo != null && this.request.assignedTo > 0)
+      || ['SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'NEEDS_REVISIT', 'TENANT_ABSENT'].includes(st);
+    const segments = [
+      st !== 'PENDING',
+      assigned,
+      !!this.request.scheduledDate,
+      st === 'IN_PROGRESS' || st === 'COMPLETED'
+    ];
+    const n = segments.filter(Boolean).length;
+    return (n / 4) * 100;
   }
 
   formatDate(date: string | null | undefined): string {
@@ -289,4 +398,16 @@ export class RequestDetailComponent implements OnInit {
 
   statusLabel(status: string): string { return this.i18n.instant(`STATUS.${status}`); }
   priorityLabel(priority: string): string { return this.i18n.instant(`PRIORITY.${priority}`); }
+
+  private whatsAppPhone(phone: string | null | undefined): string {
+    let digits = this.cleanPhone(phone).replace(/^\+/, '');
+    if (digits.startsWith('00')) digits = digits.slice(2);
+    if (digits.startsWith('0')) digits = digits.replace(/^0+/, '');
+    if (digits.length === 8) digits = `968${digits}`;
+    return digits;
+  }
+
+  private cleanPhone(phone: string | null | undefined): string {
+    return (phone ?? '').replace(/[^\d+]/g, '');
+  }
 }

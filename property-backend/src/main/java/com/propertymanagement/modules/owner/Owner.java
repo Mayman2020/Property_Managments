@@ -32,6 +32,13 @@ public class Owner {
     @Column(length = 100)
     private String email;
 
+    @Column(name = "user_id")
+    private Long userId;
+
+    @Builder.Default
+    @Column(name = "portal_access")
+    private boolean portalAccess = false;
+
     @Column(columnDefinition = "TEXT")
     private String address;
 

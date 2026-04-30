@@ -1,10 +1,10 @@
 <div class="app-page inventory-page">
   <app-page-header
-    [eyebrow]="i18n.currentLang === 'ar' ? 'العمليات' : 'Operations'"
+    [eyebrow]="isAr ? 'العمليات' : 'Operations'"
     [title]="'INVENTORY.TITLE' | translate"
     [subtitle]="'INVENTORY.SUBTITLE' | translate"
     [breadcrumbs]="[{label:('NAV.DASHBOARD' | translate), route:'/admin/dashboard'}, {label:('NAV.INVENTORY' | translate)}]">
-    <button mat-flat-button>
+    <button mat-flat-button (click)="openAddDialog()">
       <span class="material-icons">add</span>
       {{ 'INVENTORY.ADD_ITEM' | translate }}
     </button>
@@ -17,6 +17,13 @@
   <div class="inventory-search-shell" *ngIf="!loading">
     <span class="material-icons">search</span>
     <input [value]="searchTerm" (input)="onSearch($any($event.target).value)" [placeholder]="'ACTIONS.SEARCH' | translate">
+
+    <select *ngIf="properties.length > 1" [(ngModel)]="filterPropertyId" (change)="onPropertyChange()" class="estate-property-select">
+      <option [ngValue]="null">{{ isAr ? 'كل العقارات' : 'All Properties' }}</option>
+      <option *ngFor="let p of properties" [ngValue]="p.id">
+        {{ isAr ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName) }}
+      </option>
+    </select>
   </div>
 
   <app-empty-state
@@ -27,6 +34,13 @@
   </app-empty-state>
 
   <section class="app-card inventory-table-card" *ngIf="!loading && items.length > 0">
+    <app-table-export-toolbar
+      permissionKey="inventory"
+      [title]="'INVENTORY.TITLE' | translate"
+      fileName="inventory"
+      [columns]="exportColumns"
+      [rows]="items">
+    </app-table-export-toolbar>
     <div class="app-table-wrap">
       <table class="app-data-table source-table">
         <thead>
@@ -44,8 +58,7 @@
           <tr *ngFor="let item of pagedItems">
             <td><span class="item-code">{{ item.itemCode }}</span></td>
             <td>
-              <div class="item-name-ar">{{ item.itemNameAr }}</div>
-              <div class="item-name-en" *ngIf="item.itemNameEn">{{ item.itemNameEn }}</div>
+              <div class="item-name-ar">{{ isAr ? item.itemNameAr : (item.itemNameEn || item.itemNameAr) }}</div>
             </td>
             <td><span class="qty-value" [class.low]="item.isLowStock">{{ item.quantity }} {{ item.unitOfMeasure || '' }}</span></td>
             <td><span class="item-min">{{ item.minQuantity }} {{ item.unitOfMeasure || '' }}</span></td>
@@ -64,19 +77,20 @@
               </div>
             </td>
             <td>
-              <button class="table-stock-btn">
-                {{ i18n.currentLang === 'ar' ? 'إضافة' : '+ stock' }}
-              </button>
+              <div class="row-actions">
+                <button mat-icon-button [matTooltip]="isAr ? 'تعديل' : 'Edit'" (click)="openEditDialog(item)">
+                  <span class="material-icons" style="font-size:18px">edit</span>
+                </button>
+                <button mat-icon-button [matTooltip]="isAr ? 'حذف' : 'Delete'" color="warn" (click)="confirmDelete(item)">
+                  <span class="material-icons" style="font-size:18px">delete_outline</span>
+                </button>
+              </div>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <div class="table-pager" *ngIf="items.length > pageSize">
-      <button mat-stroked-button type="button" (click)="changePage(-1)" [disabled]="pageIndex === 0">&lt;</button>
-      <span>{{ pageIndex + 1 }} / {{ totalPages }}</span>
-      <button mat-stroked-button type="button" (click)="changePage(1)" [disabled]="pageIndex >= totalPages - 1">&gt;</button>
-    </div>
+    <app-table-pager [length]="items.length" [pageSize]="pageSize" [pageIndex]="pageIndex" (pageIndexChange)="pageIndex = $event"></app-table-pager>
   </section>
 </div>

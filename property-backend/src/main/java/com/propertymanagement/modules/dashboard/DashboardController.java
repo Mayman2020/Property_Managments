@@ -1,5 +1,7 @@
 package com.propertymanagement.modules.dashboard;
 
+import com.propertymanagement.modules.contract.lease.dto.ContractSummaryDto;
+import com.propertymanagement.modules.contract.payment.dto.ScheduleItemResponse;
 import com.propertymanagement.modules.maintenance.rating.RatingsSummaryResponse;
 import com.propertymanagement.modules.maintenance.rating.RatingDashboardItemResponse;
 import com.propertymanagement.modules.maintenance.rating.VisitRatingService;
@@ -41,8 +43,9 @@ public class DashboardController {
     }
 
     @GetMapping("/monthly-trend")
-    public ResponseEntity<ApiResponse<List<ChartDataPoint>>> getMonthlyTrend() {
-        return ResponseEntity.ok(ApiResponse.ok(dashboardService.getMonthlyTrend()));
+    public ResponseEntity<ApiResponse<List<ChartDataPoint>>> getMonthlyTrend(
+            @RequestParam(required = false) Long propertyId) {
+        return ResponseEntity.ok(ApiResponse.ok(dashboardService.getMonthlyTrendByProperty(propertyId)));
     }
 
     @GetMapping("/ratings-summary")
@@ -55,5 +58,18 @@ public class DashboardController {
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN')")
     public ResponseEntity<ApiResponse<List<RatingDashboardItemResponse>>> getRatingsDetails() {
         return ResponseEntity.ok(ApiResponse.ok(visitRatingService.getDashboardDetails()));
+    }
+
+    @GetMapping("/expiring-contracts")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','CONTRACTS_OFFICER')")
+    public ResponseEntity<ApiResponse<List<ContractSummaryDto>>> getExpiringContracts(
+            @RequestParam(defaultValue = "30") int days) {
+        return ResponseEntity.ok(ApiResponse.ok(dashboardService.getExpiringContracts(days)));
+    }
+
+    @GetMapping("/overdue-payments")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','CONTRACTS_OFFICER','ACCOUNTANT')")
+    public ResponseEntity<ApiResponse<List<ScheduleItemResponse>>> getOverduePayments() {
+        return ResponseEntity.ok(ApiResponse.ok(dashboardService.getOverduePayments()));
     }
 }

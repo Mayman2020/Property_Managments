@@ -1,6 +1,6 @@
 ﻿import { Component, OnDestroy, OnInit } from '@angular/core';
 import { AbstractControl, FormBuilder, FormGroup, ValidationErrors, Validators, ReactiveFormsModule } from '@angular/forms';
-import { NgFor, NgIf } from '@angular/common';
+import { Location, NgFor, NgIf } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -65,7 +65,8 @@ export class RequestFormComponent implements OnInit, OnDestroy {
     readonly i18n: I18nService,
     private readonly router: Router,
     readonly permissions: PermissionService,
-    readonly auth: AuthService
+    readonly auth: AuthService,
+    private readonly location: Location
   ) {
     this.form = this.fb.group({
       propertyId: [null, Validators.required],
@@ -144,6 +145,8 @@ export class RequestFormComponent implements OnInit, OnDestroy {
       }
     });
   }
+
+  goBack(): void { this.location.back(); }
 
   cancelRoute(): string {
     return this.auth.isTenant() ? '/tenant/requests' : '/admin/maintenance';

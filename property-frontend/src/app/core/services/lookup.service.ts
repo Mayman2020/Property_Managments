@@ -1,9 +1,17 @@
-﻿import { Injectable } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
 import { ApiResponse } from '../models/api-response.model';
 
-export type LookupType = 'COUNTRY' | 'CITY';
+export type LookupType =
+  | 'COUNTRY' | 'CITY'
+  | 'UNIT_TYPE' | 'PROPERTY_TYPE' | 'FLOOR_TYPE'
+  | 'PAYMENT_METHOD' | 'PAYMENT_FREQUENCY'
+  | 'CONTRACT_TYPE' | 'CONTRACT_STATUS' | 'TERMINATION_REASON'
+  | 'JOB_TITLE'
+  | 'VIOLATION_STATUS' | 'VIOLATION_SEVERITY' | 'VIOLATION_TYPE'
+  | 'COMPLAINT_STATUS' | 'COMPLAINT_PRIORITY' | 'COMPLAINT_TYPE'
+  | 'INSPECTION_TYPE' | 'INSPECTION_CONDITION';
 
 export interface LookupItem {
   id: number;
@@ -18,7 +26,7 @@ export interface LookupItem {
 }
 
 export interface CreateCountryRequest {
-  code: string;
+  code?: string;
   nameAr: string;
   nameEn: string;
   sortOrder?: number;
@@ -26,10 +34,26 @@ export interface CreateCountryRequest {
 
 export interface CreateCityRequest {
   countryId: number;
+  code?: string;
+  nameAr: string;
+  nameEn: string;
+  sortOrder?: number;
+}
+
+export interface CreateClassificationRequest {
+  type: LookupType;
+  code?: string;
+  nameAr: string;
+  nameEn: string;
+  sortOrder?: number;
+}
+
+export interface UpdateLookupRequest {
   code: string;
   nameAr: string;
   nameEn: string;
   sortOrder?: number;
+  active: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -48,12 +72,24 @@ export class LookupService {
     return this.api.get('/lookups/cities', { countryId });
   }
 
+  getByType(type: LookupType): Observable<ApiResponse<LookupItem[]>> {
+    return this.api.get('/lookups/by-type', { type });
+  }
+
+  getAllByType(type: LookupType): Observable<ApiResponse<LookupItem[]>> {
+    return this.api.get('/lookups/classifications', { type });
+  }
+
   createCountry(payload: CreateCountryRequest): Observable<ApiResponse<LookupItem>> {
     return this.api.post('/lookups/countries', payload);
   }
 
   createCity(payload: CreateCityRequest): Observable<ApiResponse<LookupItem>> {
     return this.api.post('/lookups/cities', payload);
+  }
+
+  createClassification(payload: CreateClassificationRequest): Observable<ApiResponse<LookupItem>> {
+    return this.api.post('/lookups/classifications', payload);
   }
 
   update(id: number, payload: UpdateLookupRequest): Observable<ApiResponse<LookupItem>> {
@@ -63,12 +99,4 @@ export class LookupService {
   delete(id: number): Observable<ApiResponse<void>> {
     return this.api.delete(`/lookups/${id}`);
   }
-}
-
-export interface UpdateLookupRequest {
-  code: string;
-  nameAr: string;
-  nameEn: string;
-  sortOrder?: number;
-  active: boolean;
 }

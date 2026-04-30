@@ -6,7 +6,6 @@ import lombok.Data;
 
 @Data
 public class CreateCountryRequest {
-    @NotBlank
     @Size(max = 50)
     private String code;
 

@@ -1,6 +1,7 @@
 package com.propertymanagement.modules.lookup;
 
 import com.propertymanagement.modules.lookup.dto.CreateCityRequest;
+import com.propertymanagement.modules.lookup.dto.CreateClassificationRequest;
 import com.propertymanagement.modules.lookup.dto.CreateCountryRequest;
 import com.propertymanagement.modules.lookup.dto.LookupResponse;
 import com.propertymanagement.modules.lookup.dto.UpdateLookupRequest;
@@ -39,6 +40,18 @@ public class LookupController {
         return ResponseEntity.ok(ApiResponse.ok(lookupService.getCities(countryId)));
     }
 
+    @GetMapping("/by-type")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<List<LookupResponse>>> getByType(@RequestParam LookupType type) {
+        return ResponseEntity.ok(ApiResponse.ok(lookupService.getByType(type)));
+    }
+
+    @GetMapping("/classifications")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<ApiResponse<List<LookupResponse>>> getAllByType(@RequestParam LookupType type) {
+        return ResponseEntity.ok(ApiResponse.ok(lookupService.getAllByType(type)));
+    }
+
     @PostMapping("/countries")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<LookupResponse>> createCountry(@Valid @RequestBody CreateCountryRequest request) {
@@ -49,6 +62,12 @@ public class LookupController {
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<LookupResponse>> createCity(@Valid @RequestBody CreateCityRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(lookupService.createCity(request)));
+    }
+
+    @PostMapping("/classifications")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<ApiResponse<LookupResponse>> createClassification(@Valid @RequestBody CreateClassificationRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(lookupService.createClassification(request)));
     }
 
     @PutMapping("/{id}")

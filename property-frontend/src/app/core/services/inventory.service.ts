@@ -54,6 +54,10 @@ export class InventoryService {
     return this.api.put(`/inventory/${id}`, item);
   }
 
+  delete(id: number): Observable<ApiResponse<void>> {
+    return this.api.delete(`/inventory/${id}`);
+  }
+
   addTransaction(transaction: { itemId: number; quantity: number; transactionType: 'IN' | 'OUT'; notes?: string }): Observable<ApiResponse<InventoryTransaction>> {
     return this.api.post('/inventory/transactions', transaction);
   }

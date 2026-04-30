@@ -7,7 +7,12 @@ import java.util.Optional;
 
 public interface LookupRepository extends JpaRepository<Lookup, Long> {
     List<Lookup> findByTypeAndActiveTrueOrderBySortOrderAscNameEnAsc(LookupType type);
+    List<Lookup> findByTypeOrderBySortOrderAscNameEnAsc(LookupType type);
     List<Lookup> findByTypeAndParentIdAndActiveTrueOrderBySortOrderAscNameEnAsc(LookupType type, Long parentId);
     Optional<Lookup> findByTypeAndCodeIgnoreCase(LookupType type, String code);
     boolean existsByTypeAndCodeIgnoreCase(LookupType type, String code);
+
+    long countByType(LookupType type);
+
+    long countByTypeAndParentId(LookupType type, Long parentId);
 }

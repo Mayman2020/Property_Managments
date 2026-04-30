@@ -1,11 +1,15 @@
 import { Component, OnInit } from '@angular/core';
-import { NgFor, NgIf } from '@angular/common';
+import { DecimalPipe, NgFor, NgIf } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { TranslateModule } from '@ngx-translate/core';
+import { MatButtonModule } from '@angular/material/button';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { TableExportToolbarComponent, ExportColumn } from '../../shared/components/table-export-toolbar/table-export-toolbar.component';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { MaintenanceRequest, MaintenanceService } from '../../core/services/maintenance.service';
+import { Property, PropertyService } from '../../core/services/property.service';
 
 interface PropertyReportRow {
   propertyName: string;
@@ -33,7 +37,7 @@ interface LeaderboardRow {
 @Component({
   selector: 'app-reports-dashboard',
   standalone: true,
-  imports: [NgFor, NgIf, TranslateModule, MatProgressSpinnerModule, PageHeaderComponent],
+  imports: [NgFor, NgIf, DecimalPipe, FormsModule, TranslateModule, MatProgressSpinnerModule, MatButtonModule, PageHeaderComponent, TableExportToolbarComponent],
   templateUrl: './reports-dashboard.component.html',
   styleUrl: './reports-dashboard.component.scss'
 })
@@ -43,29 +47,59 @@ export class ReportsDashboardComponent implements OnInit {
   monthlySeries: Array<{ label: string; value: number }> = [];
   leaderboard: LeaderboardRow[] = [];
   statTiles: ReportStatTile[] = [];
+  properties: Property[] = [];
+  selectedPropertyId: number | null = null;
+  private allRequests: MaintenanceRequest[] = [];
 
-  totals = {
-    requests: 0,
-    pending: 0,
-    inProgress: 0,
-    completed: 0
-  };
+  totals = { requests: 0, pending: 0, inProgress: 0, completed: 0 };
 
   constructor(
     private readonly maintenanceService: MaintenanceService,
+    private readonly propertyService: PropertyService,
+    private readonly translate: TranslateService,
     readonly i18n: I18nService
   ) {}
 
+  get isArabic(): boolean { return this.i18n.currentLang === 'ar'; }
+
+  get exportTitle(): string {
+    return this.translate.instant('REPORTS.MAINTENANCE_REPORT');
+  }
+
+  get exportColumns(): ExportColumn<PropertyReportRow>[] {
+    return [
+      { header: this.translate.instant('REPORTS.PROPERTY_COL'), value: 'propertyName' },
+      { header: this.translate.instant('REPORTS.TOTAL_COL'), value: 'total' },
+      { header: this.translate.instant('REPORTS.PENDING_COL'), value: 'pending' },
+      { header: this.translate.instant('REPORTS.IN_PROGRESS_COL'), value: 'inProgress' },
+      { header: this.translate.instant('REPORTS.COMPLETED_COL'), value: 'completed' }
+    ];
+  }
+
   ngOnInit(): void {
+    this.propertyService.getAll(0, 100).subscribe({
+      next: (res) => { this.properties = res.data?.content ?? []; },
+      error: () => {}
+    });
+    this.loadData();
+  }
+
+  onPropertyChange(): void {
+    const filtered = this.selectedPropertyId
+      ? this.allRequests.filter(r => r.propertyId === this.selectedPropertyId)
+      : this.allRequests;
+    this.buildRows(filtered);
+  }
+
+  private loadData(): void {
+    this.loading = true;
     this.maintenanceService.getRequests({ page: 0, size: 500 }).subscribe({
       next: (res) => {
-        const list = res.data?.content ?? [];
-        this.buildRows(list);
+        this.allRequests = res.data?.content ?? [];
+        this.buildRows(this.allRequests);
         this.loading = false;
       },
-      error: () => {
-        this.loading = false;
-      }
+      error: () => { this.loading = false; }
     });
   }
 
@@ -102,16 +136,12 @@ export class ReportsDashboardComponent implements OnInit {
       const key = `${parsed.getFullYear()}-${String(parsed.getMonth()).padStart(2, '0')}`;
       months.set(key, (months.get(key) ?? 0) + 1);
     }
-
     const now = new Date();
     const series: Array<{ label: string; value: number }> = [];
     for (let i = 5; i >= 0; i -= 1) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const key = `${date.getFullYear()}-${String(date.getMonth()).padStart(2, '0')}`;
-      series.push({
-        label: new Intl.DateTimeFormat('en', { month: 'short' }).format(date),
-        value: months.get(key) ?? 0
-      });
+      series.push({ label: new Intl.DateTimeFormat('en', { month: 'short' }).format(date), value: months.get(key) ?? 0 });
     }
     this.monthlySeries = series;
   }
@@ -125,13 +155,9 @@ export class ReportsDashboardComponent implements OnInit {
       if (req.status === 'COMPLETED') existing.resolved += 1;
       grouped.set(officer, existing);
     }
-
     this.leaderboard = Array.from(grouped.values())
       .filter((row) => row.name !== 'Unassigned')
-      .map((row) => ({
-        ...row,
-        percent: row.total ? Math.round((row.resolved / row.total) * 100) : 0
-      }))
+      .map((row) => ({ ...row, percent: row.total ? Math.round((row.resolved / row.total) * 100) : 0 }))
       .sort((a, b) => b.resolved - a.resolved)
       .slice(0, 4);
   }
@@ -144,49 +170,23 @@ export class ReportsDashboardComponent implements OnInit {
     const avgResolve = this.totals.completed
       ? Math.max(4, Math.round((this.totals.requests / this.totals.completed) * 10))
       : 0;
-    const isArabic = this.i18n.currentLang === 'ar';
-
+    const activeLabel = `${this.totals.inProgress} ${this.translate.instant('REPORTS.ACTIVE_LABEL')}`;
     this.statTiles = [
-      {
-        label: isArabic ? 'الطلبات' : 'Requests',
-        value: String(this.totals.requests),
-        delta: `+${Math.max(1, this.totals.pending)}`,
-        spark: this.sparkFromTotals(this.totals.requests)
-      },
-      {
-        label: isArabic ? 'المكتمل' : 'Resolved',
-        value: String(this.totals.completed),
-        delta: `+${Math.max(1, this.totals.completed)}`,
-        spark: this.sparkFromTotals(this.totals.completed)
-      },
-      {
-        label: isArabic ? 'التغطية' : 'Coverage',
-        value: `${propertyCount}`,
-        delta: `${completionRate}%`,
-        spark: this.sparkFromTotals(propertyCount)
-      },
-      {
-        label: isArabic ? 'متوسط الإنجاز' : 'Avg. resolve',
-        value: `${avgResolve}h`,
-        delta: isArabic ? `${this.totals.inProgress} نشط` : `${this.totals.inProgress} active`,
-        spark: this.sparkFromTotals(Math.max(1, avgResolve))
-      }
-    ].map((tile, index) => ({
-      ...tile,
-      icon: ['insights', 'check_circle', 'apartment', 'schedule'][index]
-    }));
+      { label: this.translate.instant('REPORTS.STAT_REQUESTS'), value: String(this.totals.requests), delta: `+${Math.max(1, this.totals.pending)}`, spark: this.sparkFromTotals(this.totals.requests) },
+      { label: this.translate.instant('REPORTS.STAT_RESOLVED'), value: String(this.totals.completed), delta: `+${Math.max(1, this.totals.completed)}`, spark: this.sparkFromTotals(this.totals.completed) },
+      { label: this.translate.instant('REPORTS.STAT_COVERAGE'), value: `${propertyCount}`, delta: `${completionRate}%`, spark: this.sparkFromTotals(propertyCount) },
+      { label: this.translate.instant('REPORTS.STAT_AVG_RESOLVE'), value: `${avgResolve}h`, delta: activeLabel, spark: this.sparkFromTotals(Math.max(1, avgResolve)) }
+    ].map((tile, index) => ({ ...tile, icon: ['insights', 'check_circle', 'apartment', 'schedule'][index] }));
   }
 
   sparkPoints(values: number[]): string {
     if (!values.length) return '';
     const max = Math.max(...values, 1);
-    return values
-      .map((value, index) => {
-        const x = (index / Math.max(values.length - 1, 1)) * 100;
-        const y = 28 - (value / max) * 24;
-        return `${x},${y}`;
-      })
-      .join(' ');
+    return values.map((value, index) => {
+      const x = (index / Math.max(values.length - 1, 1)) * 100;
+      const y = 28 - (value / max) * 24;
+      return `${x},${y}`;
+    }).join(' ');
   }
 
   barHeight(value: number): number {

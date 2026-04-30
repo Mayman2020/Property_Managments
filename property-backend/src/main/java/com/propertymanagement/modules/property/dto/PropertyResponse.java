@@ -26,6 +26,12 @@ public class PropertyResponse {
     private String description;
     private String coverImageUrl;
     private List<String> ownerDocumentFiles;
+    private String ownerNameAr;
+    private String ownerNameEn;
+    private String ownerEmail;
+    private String ownerCivilId;
+    private Long maintenanceInternalOfficerUserId;
+    private Long maintenanceContractorCompanyId;
     private boolean active;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

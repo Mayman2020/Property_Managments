@@ -30,4 +30,18 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Page<User> search(@Param("q") String q, @Param("role") UserRole role, Pageable pageable);
     List<User> findByRoleAndActiveTrue(UserRole role);
     List<User> findByPropertyIdAndRoleAndActiveTrue(Long propertyId, UserRole role);
+
+    @Query("""
+            SELECT u FROM User u
+            WHERE u.role = :role
+              AND u.active = true
+              AND u.propertyId = :propertyId
+              AND u.contractorCompanyId = :companyId
+              AND u.maintenanceOfficerType = :officerType
+            """)
+    List<User> findAssignableContractorOfficers(
+            @Param("role") UserRole role,
+            @Param("propertyId") Long propertyId,
+            @Param("companyId") Long companyId,
+            @Param("officerType") MaintenanceOfficerType officerType);
 }

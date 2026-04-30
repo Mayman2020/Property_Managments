@@ -20,6 +20,12 @@ public interface MaintenanceRequestRepository extends JpaRepository<MaintenanceR
     Page<MaintenanceRequest> findByPropertyId(Long propertyId, Pageable pageable);
     Page<MaintenanceRequest> findByTenantId(Long tenantId, Pageable pageable);
     Page<MaintenanceRequest> findByAssignedTo(Long officerId, Pageable pageable);
+
+    Page<MaintenanceRequest> findByContractorCompanyIdAndPropertyIdAndAssignedToIsNullAndStatusOrderByCreatedAtDesc(
+            Long contractorCompanyId,
+            Long propertyId,
+            RequestStatus status,
+            Pageable pageable);
     Page<MaintenanceRequest> findByStatus(RequestStatus status, Pageable pageable);
     Page<MaintenanceRequest> findByPropertyIdAndStatus(Long propertyId, RequestStatus status, Pageable pageable);
 
@@ -29,8 +35,20 @@ public interface MaintenanceRequestRepository extends JpaRepository<MaintenanceR
     @Query("SELECT COUNT(r) FROM MaintenanceRequest r WHERE r.status = 'COMPLETED' AND r.updatedAt >= :from")
     long countCompletedSince(@Param("from") LocalDateTime from);
 
+    @Query("SELECT COUNT(r) FROM MaintenanceRequest r WHERE r.status NOT IN ('COMPLETED', 'CANCELLED')")
+    long countOpenExcludingTerminal();
+
+    @Query("""
+            SELECT COUNT(r) FROM MaintenanceRequest r
+            WHERE r.assignedTo = :officerId AND r.status NOT IN ('COMPLETED', 'CANCELLED')
+            """)
+    long countOpenAssignedToOfficer(@Param("officerId") Long officerId);
+
     @Query("SELECT r.status, COUNT(r) FROM MaintenanceRequest r GROUP BY r.status")
     List<Object[]> countByStatusGrouped();
+
+    @Query("SELECT r.status, COUNT(r) FROM MaintenanceRequest r WHERE r.propertyId = :pid GROUP BY r.status")
+    List<Object[]> countByStatusGroupedForProperty(@Param("pid") Long propertyId);
 
     @Query("SELECT r.categoryId, COUNT(r) FROM MaintenanceRequest r WHERE r.propertyId = :pid GROUP BY r.categoryId")
     List<Object[]> countByCategoryForProperty(@Param("pid") Long propertyId);
@@ -38,6 +56,35 @@ public interface MaintenanceRequestRepository extends JpaRepository<MaintenanceR
     @Query("SELECT r.categoryId, COUNT(r) FROM MaintenanceRequest r GROUP BY r.categoryId")
     List<Object[]> countByCategoryGrouped();
 
+    @Query("""
+            SELECT r FROM MaintenanceRequest r
+            WHERE (:status IS NULL OR r.status = :status)
+              AND (:priority IS NULL OR r.priority = :priority)
+              AND (:propertyId IS NULL OR r.propertyId = :propertyId)
+            ORDER BY r.createdAt DESC
+            """)
+    Page<MaintenanceRequest> findFiltered(
+            @Param("status") RequestStatus status,
+            @Param("priority") RequestPriority priority,
+            @Param("propertyId") Long propertyId,
+            Pageable pageable);
+
     @Query("SELECT YEAR(r.createdAt), MONTH(r.createdAt), COUNT(r) FROM MaintenanceRequest r WHERE r.createdAt >= :since GROUP BY YEAR(r.createdAt), MONTH(r.createdAt) ORDER BY YEAR(r.createdAt), MONTH(r.createdAt)")
     List<Object[]> countByMonth(@Param("since") LocalDateTime since);
+
+    @Query("""
+            SELECT YEAR(r.createdAt), MONTH(r.createdAt), COUNT(r)
+            FROM MaintenanceRequest r
+            WHERE r.createdAt >= :since
+              AND r.propertyId = :pid
+            GROUP BY YEAR(r.createdAt), MONTH(r.createdAt)
+            ORDER BY YEAR(r.createdAt), MONTH(r.createdAt)
+            """)
+    List<Object[]> countByMonthForProperty(@Param("since") LocalDateTime since, @Param("pid") Long propertyId);
+
+    @Query("SELECT COUNT(r) FROM MaintenanceRequest r WHERE r.status = 'COMPLETED' AND r.updatedAt >= :from AND r.propertyId = :pid")
+    long countCompletedSinceForProperty(@Param("from") LocalDateTime from, @Param("pid") Long propertyId);
+
+    @Query("SELECT COUNT(r) FROM MaintenanceRequest r WHERE r.propertyId = :pid AND r.status NOT IN ('COMPLETED', 'CANCELLED')")
+    long countOpenExcludingTerminalForProperty(@Param("pid") Long propertyId);
 }

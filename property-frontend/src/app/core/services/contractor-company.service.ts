@@ -12,6 +12,9 @@ export interface ContractorCompany {
   email?: string;
   notes?: string;
   active: boolean;
+  contractStart?: string;
+  contractEnd?: string;
+  attachmentFiles?: string[];
   createdAt?: string;
   updatedAt?: string;
 }
@@ -24,6 +27,9 @@ export interface ContractorCompanyForm {
   email?: string;
   notes?: string;
   active?: boolean;
+  contractStart?: string;
+  contractEnd?: string;
+  attachmentFiles?: string[];
 }
 
 @Injectable({ providedIn: 'root' })

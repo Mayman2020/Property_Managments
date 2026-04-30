@@ -1,0 +1,114 @@
+<div class="app-page templates-page">
+  <app-page-header
+    [eyebrow]="'NAV_SECTION.CONTRACTS' | translate"
+    [title]="'CONTRACTS.TEMPLATES_TITLE' | translate"
+    [subtitle]="'CONTRACTS.TEMPLATES_SUBTITLE' | translate"
+    [breadcrumbs]="[
+      { label: ('NAV.DASHBOARD' | translate), route: '/admin/dashboard' },
+      { label: ('NAV.CONTRACTS_DASHBOARD' | translate), route: '/admin/contracts/dashboard' },
+      { label: ('CONTRACTS.TEMPLATES_TITLE' | translate) }
+    ]">
+    <button mat-flat-button (click)="openNew()">
+      <mat-icon>add</mat-icon>
+      {{ 'CONTRACTS.NEW_TEMPLATE' | translate }}
+    </button>
+  </app-page-header>
+
+  <!-- Template Form Panel -->
+  <div class="app-card form-panel" *ngIf="showForm">
+    <div class="form-panel-head">
+      <span class="form-panel-title">
+        {{ (editingId ? 'CONTRACTS.EDIT_TEMPLATE' : 'CONTRACTS.NEW_TEMPLATE') | translate }}
+      </span>
+    </div>
+    <form [formGroup]="form" class="template-form">
+      <div class="two-col">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'CONTRACTS.TEMPLATE_NAME' | translate }}</mat-label>
+          <input matInput formControlName="templateName" required>
+          <mat-error>{{ 'COMMON.REQUIRED' | translate }}</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'CONTRACTS.TEMPLATE_TYPE' | translate }}</mat-label>
+          <mat-select formControlName="templateType">
+            <mat-option *ngFor="let t of types" [value]="t">{{ 'CONTRACTS.TMPL_TYPE_' + t | translate }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>{{ 'CONTRACTS.TEMPLATE_CONTENT' | translate }}</mat-label>
+        <textarea matInput formControlName="content" rows="10" required></textarea>
+        <mat-error>{{ 'COMMON.REQUIRED' | translate }}</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>{{ 'CONTRACTS.TEMPLATE_VARIABLES' | translate }}</mat-label>
+        <textarea matInput formControlName="variables" rows="2"></textarea>
+        <mat-hint>JSON: {{ '{"key": "description"}' }}</mat-hint>
+      </mat-form-field>
+
+      <mat-checkbox formControlName="isActive">{{ 'CONTRACTS.ACTIVE' | translate }}</mat-checkbox>
+
+      <div *ngIf="errorMsg" class="error-msg">{{ errorMsg }}</div>
+
+      <div class="form-actions">
+        <button mat-stroked-button type="button" (click)="cancel()">{{ 'COMMON.CANCEL' | translate }}</button>
+        <button mat-flat-button [disabled]="form.invalid || saving" (click)="submit()">
+          <mat-spinner diameter="16" *ngIf="saving"></mat-spinner>
+          <mat-icon *ngIf="!saving">save</mat-icon>
+          {{ 'COMMON.SAVE' | translate }}
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Table -->
+  <div *ngIf="loading" class="loading-wrap">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <section *ngIf="!loading" class="app-card table-card">
+    <div class="app-table-wrap">
+      <table class="app-data-table source-table">
+        <thead>
+          <tr>
+            <th>{{ 'CONTRACTS.TEMPLATE_NAME' | translate }}</th>
+            <th>{{ 'CONTRACTS.TEMPLATE_TYPE' | translate }}</th>
+            <th>{{ 'CONTRACTS.ACTIVE' | translate }}</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let t of pagedTemplates">
+            <td class="name-col">{{ t.templateName }}</td>
+            <td>
+              <span class="type-chip">{{ 'CONTRACTS.TMPL_TYPE_' + t.templateType | translate }}</span>
+            </td>
+            <td>
+              <span class="status-chip" [class.chip-success]="t.isActive" [class.chip-default]="!t.isActive">
+                <mat-icon>{{ t.isActive ? 'check_circle' : 'cancel' }}</mat-icon>
+                {{ t.isActive ? ('CONTRACTS.ACTIVE' | translate) : ('COMMON.INACTIVE' | translate) }}
+              </span>
+            </td>
+            <td>
+              <button type="button" class="app-icon-btn" (click)="openEdit(t)" [title]="'COMMON.EDIT' | translate">
+                <mat-icon>edit</mat-icon>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="templates.length === 0">
+            <td colspan="4" class="empty-row">{{ 'COMMON.NO_DATA' | translate }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <app-table-pager
+      [length]="templates.length"
+      [pageSize]="pageSize"
+      [pageIndex]="pageIndex"
+      (pageIndexChange)="pageIndex = $event">
+    </app-table-pager>
+  </section>
+</div>

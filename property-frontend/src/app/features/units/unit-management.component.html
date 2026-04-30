@@ -1,10 +1,10 @@
 <div class="app-page unit-page">
   <app-page-header
-    [eyebrow]="'Directory'"
+    [eyebrow]="'NAV_SECTION.DIRECTORY' | translate"
     [title]="'UNITS.TITLE' | translate"
     [subtitle]="'UNITS.SUBTITLE' | translate"
     [breadcrumbs]="[{ label: ('NAV.DASHBOARD' | translate), route: '/admin/dashboard' }, { label: ('NAV.UNITS' | translate) }]">
-    <button mat-flat-button type="button" (click)="startCreate()">
+    <button mat-flat-button type="button" (click)="openAddDialog()">
       <span class="material-icons">add</span>
       {{ 'UNITS.ADD' | translate }}
     </button>
@@ -15,7 +15,7 @@
       <mat-label>{{ 'REQUEST_FORM.PROPERTY' | translate }}</mat-label>
       <mat-select [(value)]="selectedPropertyId" (selectionChange)="onPropertyFilterChange()">
         <mat-option [value]="null">{{ 'ACTIONS.VIEW_ALL' | translate }}</mat-option>
-        <mat-option *ngFor="let p of properties" [value]="p.id">{{ p.propertyName }}</mat-option>
+        <mat-option *ngFor="let p of properties" [value]="p.id">{{ (i18n.currentLang === 'ar' ? p.propertyNameAr : p.propertyNameEn) || p.propertyName }}</mat-option>
       </mat-select>
     </mat-form-field>
 
@@ -27,59 +27,6 @@
     <button mat-stroked-button type="button" (click)="clearFilters()">{{ 'ACTIONS.CANCEL' | translate }}</button>
   </div>
 
-  <div class="unit-form-card app-card" *ngIf="showForm">
-    <div class="app-card-header">
-      <span class="app-card-title">{{ editingId ? ('UNITS.EDIT' | translate) : ('UNITS.ADD' | translate) }}</span>
-    </div>
-    <div class="app-card-body">
-      <form [formGroup]="form" (ngSubmit)="save()" class="unit-form-grid">
-        <mat-form-field appearance="outline">
-          <mat-label>{{ 'REQUEST_FORM.PROPERTY' | translate }}</mat-label>
-          <mat-select formControlName="propertyId" required>
-            <mat-option *ngFor="let p of properties" [value]="p.id">{{ p.propertyName }}</mat-option>
-          </mat-select>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>{{ 'UNITS.UNIT_NUMBER' | translate }}</mat-label>
-          <input matInput formControlName="unitNumber">
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>{{ 'UNITS.FLOOR' | translate }}</mat-label>
-          <input matInput type="number" formControlName="floorId">
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>{{ 'UNITS.UNIT_TYPE' | translate }}</mat-label>
-          <mat-select formControlName="unitType">
-            <mat-option *ngFor="let t of unitTypes" [value]="t">{{ t }}</mat-option>
-          </mat-select>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>{{ 'UNITS.AREA' | translate }}</mat-label>
-          <input matInput type="number" formControlName="areaSqm">
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>{{ 'UNITS.RENT' | translate }}</mat-label>
-          <input matInput type="number" formControlName="rentAmount">
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="full">
-          <mat-label>{{ 'MAINTENANCE.DESCRIPTION' | translate }}</mat-label>
-          <textarea matInput rows="2" formControlName="notes"></textarea>
-        </mat-form-field>
-
-        <div class="unit-form-actions full">
-          <button mat-stroked-button type="button" (click)="cancelForm()">{{ 'ACTIONS.CANCEL' | translate }}</button>
-          <button mat-flat-button type="submit" [disabled]="form.invalid || saving">{{ 'ACTIONS.SAVE' | translate }}</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
   <app-empty-state
     *ngIf="!loading && filteredUnits.length === 0"
     icon="meeting_room"
@@ -88,6 +35,13 @@
   </app-empty-state>
 
   <div class="app-card units-table-card" *ngIf="!loading && filteredUnits.length > 0">
+    <app-table-export-toolbar
+      permissionKey="units"
+      [title]="'UNITS.TITLE' | translate"
+      fileName="units"
+      [columns]="exportColumns"
+      [rows]="filteredUnits">
+    </app-table-export-toolbar>
     <div class="app-table-wrap">
       <table class="app-data-table">
         <thead>
@@ -103,7 +57,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let u of filteredUnits">
+          <tr *ngFor="let u of pagedUnits">
             <td><span class="mono-cell">{{ u.unitNumber }}</span></td>
             <td>{{ propertyName(u) }}</td>
             <td>{{ u.floorId || '—' }}</td>
@@ -117,7 +71,7 @@
             </td>
             <td>
               <div class="table-actions">
-                <button class="app-icon-btn" type="button" (click)="startEdit(u)">
+                <button class="app-icon-btn" type="button" (click)="openEditDialog(u)">
                   <span class="material-icons">edit</span>
                 </button>
                 <mat-slide-toggle [checked]="u.rented" (change)="toggleRented(u)"></mat-slide-toggle>
@@ -127,5 +81,6 @@
         </tbody>
       </table>
     </div>
+    <app-table-pager [length]="filteredUnits.length" [pageSize]="pageSize" [pageIndex]="pageIndex" (pageIndexChange)="pageIndex = $event"></app-table-pager>
   </div>
 </div>

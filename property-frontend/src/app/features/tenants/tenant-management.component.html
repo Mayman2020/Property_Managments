@@ -1,109 +1,30 @@
 <div class="app-page tenant-page">
   <app-page-header
-    [eyebrow]="'Directory'"
+    [eyebrow]="'NAV_SECTION.DIRECTORY' | translate"
     [title]="'TENANTS.TITLE' | translate"
     [subtitle]="'TENANTS.SUBTITLE' | translate"
     [breadcrumbs]="[{ label: ('NAV.DASHBOARD' | translate), route: '/admin/dashboard' }, { label: ('NAV.TENANTS' | translate) }]">
-    <button mat-flat-button type="button" (click)="showCreateForm = !showCreateForm">
+    <button mat-flat-button type="button" (click)="openAddDialog()">
       <span class="material-icons">add</span>
       {{ 'TENANTS.ADD' | translate }}
     </button>
   </app-page-header>
 
-  <div class="tenant-search" *ngIf="!loading">
-    <span class="material-icons">search</span>
-    <input [value]="searchTerm" (input)="onSearch($any($event.target).value)" [placeholder]="'ACTIONS.SEARCH' | translate">
+  <div class="tenant-filter-bar" *ngIf="properties.length > 1">
+    <select [(ngModel)]="filterPropertyId" (change)="onPropertyFilterChange()" class="estate-property-select">
+      <option [ngValue]="null">{{ 'COMMON.ALL_PROPERTIES' | translate }}</option>
+      <option *ngFor="let p of properties" [ngValue]="p.id">
+        {{ isAr ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName) }}
+      </option>
+    </select>
   </div>
 
-  <div class="app-card tenant-form-card" *ngIf="showCreateForm">
-    <div class="app-card-header">
-      <span class="app-card-title">{{ 'TENANTS.ADD' | translate }}</span>
-    </div>
-    <div class="app-card-body">
-      <form [formGroup]="form" (ngSubmit)="save()" class="tenant-form-grid">
-        <mat-form-field appearance="outline" class="full">
-          <mat-label>{{ 'PROFILE.FULL_NAME' | translate }}</mat-label>
-          <input matInput formControlName="fullName">
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>{{ 'TENANTS.SCOPE' | translate }}</mat-label>
-          <mat-select formControlName="scope">
-            <mat-option value="UNIT">{{ 'TENANTS.SCOPE_UNIT' | translate }}</mat-option>
-            <mat-option value="PROPERTY">{{ 'TENANTS.SCOPE_PROPERTY' | translate }}</mat-option>
-          </mat-select>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>{{ 'REQUEST_FORM.PROPERTY' | translate }}</mat-label>
-          <mat-select formControlName="propertyId">
-            <mat-option *ngFor="let p of properties" [value]="p.id">{{ p.propertyName }}</mat-option>
-          </mat-select>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" *ngIf="scope === 'UNIT'">
-          <mat-label>{{ 'REQUEST_FORM.UNIT' | translate }}</mat-label>
-          <mat-select formControlName="unitId">
-            <mat-option *ngFor="let u of units" [value]="u.id">{{ u.unitNumber }}</mat-option>
-          </mat-select>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>{{ 'TENANTS.SELECT_USER' | translate }}</mat-label>
-          <mat-select formControlName="userId">
-            <mat-option [value]="null">{{ 'TENANTS.NO_USER_LINK' | translate }}</mat-option>
-            <mat-option *ngFor="let u of tenantUsers" [value]="u.id">{{ userLabel(u) }}</mat-option>
-          </mat-select>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>{{ 'PROFILE.PHONE' | translate }}</mat-label>
-          <input matInput formControlName="phone">
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>{{ 'AUTH.EMAIL' | translate }}</mat-label>
-          <input matInput formControlName="email">
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>{{ 'TENANTS.LEASE_START' | translate }}</mat-label>
-          <input matInput [matDatepicker]="pickerStart" formControlName="leaseStart">
-          <mat-datepicker-toggle matIconSuffix [for]="pickerStart"></mat-datepicker-toggle>
-          <mat-datepicker #pickerStart></mat-datepicker>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>{{ 'TENANTS.LEASE_END' | translate }}</mat-label>
-          <input matInput [matDatepicker]="pickerEnd" formControlName="leaseEnd">
-          <mat-datepicker-toggle matIconSuffix [for]="pickerEnd"></mat-datepicker-toggle>
-          <mat-datepicker #pickerEnd></mat-datepicker>
-        </mat-form-field>
-
-        <div class="full">
-          <app-upload-zone
-            [multiple]="true"
-            [accept]="'image/*,.pdf,.doc,.docx'"
-            [label]="'TENANTS.LEASE_CONTRACT_UPLOAD_LABEL' | translate"
-            (filesUploaded)="onLeaseContractsUploaded($event)">
-          </app-upload-zone>
-        </div>
-
-        <mat-form-field appearance="outline" class="full">
-          <mat-label>{{ 'MAINTENANCE.DESCRIPTION' | translate }}</mat-label>
-          <textarea matInput rows="2" formControlName="notes"></textarea>
-        </mat-form-field>
-
-        <div class="tenant-form-actions full">
-          <button mat-stroked-button type="button" (click)="showCreateForm = false">{{ 'ACTIONS.CANCEL' | translate }}</button>
-          <button mat-flat-button type="submit" [disabled]="form.invalid || saving">{{ 'ACTIONS.SAVE' | translate }}</button>
-        </div>
-      </form>
-    </div>
+  <div class="app-loading" *ngIf="loading">
+    <mat-spinner diameter="48"></mat-spinner>
   </div>
 
   <div class="tenant-grid" *ngIf="!loading && filteredTenants.length > 0">
-    <article class="tenant-card" *ngFor="let t of filteredTenants">
+    <article class="tenant-card" *ngFor="let t of pagedTenants">
       <div class="tenant-card-top">
         <div class="tenant-avatar">{{ t.fullName.slice(0, 2).toUpperCase() }}</div>
         <div>
@@ -115,9 +36,9 @@
       <div class="tenant-divider"></div>
 
       <div class="tenant-lines">
-        <div class="tenant-line"><span class="material-icons">mail</span>{{ t.email || '—' }}</div>
-        <div class="tenant-line"><span class="material-icons">phone</span>{{ t.phone || '—' }}</div>
-        <div class="tenant-line"><span class="material-icons">calendar_month</span>{{ t.leaseStart || '—' }} → {{ t.leaseEnd || '—' }}</div>
+        <div class="tenant-line"><span class="material-icons">mail</span>{{ t.email || '-' }}</div>
+        <div class="tenant-line"><span class="material-icons">phone</span>{{ t.phone || '-' }}</div>
+        <div class="tenant-line"><span class="material-icons">calendar_month</span>{{ t.leaseStart | date:'dd/MM/yyyy' }} → {{ t.leaseEnd | date:'dd/MM/yyyy' }}</div>
       </div>
 
       <div class="tenant-card-actions">
@@ -126,6 +47,8 @@
       </div>
     </article>
   </div>
+
+  <app-table-pager *ngIf="!loading" [length]="filteredTenants.length" [pageSize]="pageSize" [pageIndex]="pageIndex" (pageIndexChange)="pageIndex = $event"></app-table-pager>
 
   <app-empty-state
     *ngIf="!loading && filteredTenants.length === 0"

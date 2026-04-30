@@ -73,6 +73,24 @@ public class Property {
     @Column(name = "owner_document_files", columnDefinition = "TEXT")
     private List<String> ownerDocumentFiles = new ArrayList<>();
 
+    @Column(name = "owner_name_ar", length = 200)
+    private String ownerNameAr;
+
+    @Column(name = "owner_name_en", length = 200)
+    private String ownerNameEn;
+
+    @Column(name = "owner_email", length = 200)
+    private String ownerEmail;
+
+    @Column(name = "owner_civil_id", length = 100)
+    private String ownerCivilId;
+
+    @Column(name = "maintenance_internal_officer_user_id")
+    private Long maintenanceInternalOfficerUserId;
+
+    @Column(name = "maintenance_contractor_company_id")
+    private Long maintenanceContractorCompanyId;
+
     @Builder.Default
     @Column(name = "is_active")
     private boolean active = true;

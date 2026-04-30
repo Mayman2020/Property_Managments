@@ -27,8 +27,10 @@ export interface MaintenanceRequest {
   description: string;
   priority: RequestPriority;
   status: RequestStatus;
+  contractorCompanyId?: number;
   assignedTo?: number;
   assignedOfficerName?: string;
+  assignedOfficerPhone?: string;
   scheduledDate?: string;
   scheduledTimeFrom?: string;
   scheduledTimeTo?: string;
@@ -108,6 +110,14 @@ export class MaintenanceService {
 
   getByOfficer(officerId: number, params?: Record<string, string | number | boolean>): Observable<ApiResponse<PagedResponse<MaintenanceRequest>>> {
     return this.api.get(`/maintenance/requests/officer/${officerId}`, params);
+  }
+
+  getCompanyQueue(params?: Record<string, string | number | boolean>): Observable<ApiResponse<PagedResponse<MaintenanceRequest>>> {
+    return this.api.get('/maintenance/requests/company-queue', params);
+  }
+
+  getOfficerOpenCount(officerId: number): Observable<ApiResponse<number>> {
+    return this.api.get(`/maintenance/requests/officer/${officerId}/open-count`);
   }
 
   getById(id: number): Observable<ApiResponse<MaintenanceRequest>> {

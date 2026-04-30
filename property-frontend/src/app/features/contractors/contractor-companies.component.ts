@@ -1,27 +1,37 @@
 import { Component, OnInit } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TranslateModule } from '@ngx-translate/core';
+import { MatDialog } from '@angular/material/dialog';
 
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
+import { TablePagerComponent } from '../../shared/components/table-pager/table-pager.component';
+import { ExportColumn, TableExportToolbarComponent } from '../../shared/components/table-export-toolbar/table-export-toolbar.component';
 import { ContractorCompany, ContractorCompanyService } from '../../core/services/contractor-company.service';
 import { AuthService } from '../../core/services/auth.service';
+import { I18nService } from '../../core/i18n/i18n.service';
+import {
+  ContractorCompanyDialogComponent,
+  ContractorCompanyDialogData
+} from './contractor-company-dialog.component';
 
 @Component({
   selector: 'app-contractor-companies',
   standalone: true,
   imports: [
-    NgFor, NgIf, ReactiveFormsModule, TranslateModule,
-    MatButtonModule, MatFormFieldModule, MatInputModule, MatProgressSpinnerModule,
-    MatSlideToggleModule, MatIconModule,
-    PageHeaderComponent, EmptyStateComponent
+    NgFor,
+    NgIf,
+    TranslateModule,
+    MatButtonModule,
+    MatProgressSpinnerModule,
+    MatIconModule,
+    PageHeaderComponent,
+    EmptyStateComponent,
+    TablePagerComponent,
+    TableExportToolbarComponent
   ],
   templateUrl: './contractor-companies.component.html',
   styleUrl: './contractor-companies.component.scss'
@@ -32,29 +42,31 @@ export class ContractorCompaniesComponent implements OnInit {
   readonly pageSize = 5;
   pageIndex = 0;
   loading = true;
-  saving = false;
-  formVisible = false;
-  editing: ContractorCompany | null = null;
-  searchTerm = '';
-
-  readonly form = this.fb.nonNullable.group({
-    name: [''],
-    nameAr: ['', [Validators.required, Validators.maxLength(200)]],
-    nameEn: ['', [Validators.required, Validators.maxLength(200)]],
-    phone: ['', [Validators.maxLength(40)]],
-    email: ['', [Validators.maxLength(150)]],
-    notes: [''],
-    active: [true]
-  });
 
   constructor(
-    private readonly fb: FormBuilder,
     private readonly svc: ContractorCompanyService,
-    readonly auth: AuthService
+    private readonly dialog: MatDialog,
+    readonly auth: AuthService,
+    readonly i18n: I18nService
   ) {}
 
   get canHardDelete(): boolean {
     return this.auth.isSuperAdmin();
+  }
+
+  get isArabic(): boolean {
+    return this.i18n.currentLang === 'ar';
+  }
+
+  get exportColumns(): ExportColumn<ContractorCompany>[] {
+    return [
+      { header: this.i18n.instant('CONTRACTORS.NAME'), value: (row) => this.companyName(row) },
+      { header: this.i18n.instant('CONTRACTORS.CONTRACT_START'), value: (row) => this.formatDate(row.contractStart) },
+      { header: this.i18n.instant('CONTRACTORS.CONTRACT_END'), value: (row) => this.formatDate(row.contractEnd) },
+      { header: this.i18n.instant('CONTRACTORS.PHONE'), value: (row) => row.phone || '-' },
+      { header: this.i18n.instant('CONTRACTORS.EMAIL'), value: (row) => row.email || '-' },
+      { header: this.i18n.instant('COMMON.ACTIVE'), value: (row) => this.i18n.instant(row.active ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') }
+    ];
   }
 
   ngOnInit(): void {
@@ -63,7 +75,7 @@ export class ContractorCompaniesComponent implements OnInit {
 
   load(): void {
     this.loading = true;
-    this.svc.list(true, this.searchTerm).subscribe({
+    this.svc.list(true).subscribe({
       next: (res) => {
         this.companies = res.data ?? [];
         this.filteredCompanies = [...this.companies];
@@ -76,58 +88,18 @@ export class ContractorCompaniesComponent implements OnInit {
     });
   }
 
-  startCreate(): void {
-    this.editing = null;
-    this.formVisible = true;
-    this.form.reset({ name: '', nameAr: '', nameEn: '', phone: '', email: '', notes: '', active: true });
-  }
-
-  startEdit(c: ContractorCompany): void {
-    this.editing = c;
-    this.formVisible = true;
-    this.form.patchValue({
-      name: c.name,
-      nameAr: c.nameAr ?? c.name,
-      nameEn: c.nameEn ?? c.name,
-      phone: c.phone ?? '',
-      email: c.email ?? '',
-      notes: c.notes ?? '',
-      active: c.active
-    });
-  }
-
-  cancelForm(): void {
-    this.editing = null;
-    this.formVisible = false;
-    this.form.reset({ name: '', nameAr: '', nameEn: '', phone: '', email: '', notes: '', active: true });
-  }
-
-  save(): void {
-    if (this.form.invalid) return;
-    this.saving = true;
-    const v = this.form.getRawValue();
-    const body = {
-      name: (v.nameAr || v.nameEn || v.name).trim(),
-      nameAr: (v.nameAr || v.name || v.nameEn).trim(),
-      nameEn: (v.nameEn || v.name || v.nameAr).trim(),
-      phone: v.phone?.trim() || undefined,
-      email: v.email?.trim() || undefined,
-      notes: v.notes?.trim() || undefined,
-      active: v.active
-    };
-    const req = this.editing
-      ? this.svc.update(this.editing.id, body)
-      : this.svc.create(body);
-    req.subscribe({
-      next: () => {
-        this.saving = false;
-        this.cancelForm();
-        this.load();
-      },
-      error: () => {
-        this.saving = false;
-      }
-    });
+  openDialog(company: ContractorCompany | null): void {
+    this.dialog
+      .open<ContractorCompanyDialogComponent, ContractorCompanyDialogData, boolean>(ContractorCompanyDialogComponent, {
+        width: '560px',
+        maxWidth: '95vw',
+        panelClass: 'app-dialog-panel',
+        data: { company }
+      })
+      .afterClosed()
+      .subscribe((saved) => {
+        if (saved) this.load();
+      });
   }
 
   remove(c: ContractorCompany): void {
@@ -136,12 +108,6 @@ export class ContractorCompaniesComponent implements OnInit {
       next: () => this.load(),
       error: () => {}
     });
-  }
-
-  onSearch(value: string): void {
-    this.searchTerm = value;
-    this.pageIndex = 0;
-    this.load();
   }
 
   get pagedCompanies(): ContractorCompany[] {
@@ -155,5 +121,18 @@ export class ContractorCompaniesComponent implements OnInit {
 
   changePage(step: number): void {
     this.pageIndex = Math.max(0, Math.min(this.pageIndex + step, this.totalPages - 1));
+  }
+
+  companyName(company: ContractorCompany): string {
+    return (this.isArabic ? company.nameAr : company.nameEn) || company.name || '-';
+  }
+
+  formatDate(value?: string): string {
+    if (!value) return '-';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    return `${day}/${month}/${date.getFullYear()}`;
   }
 }

@@ -23,6 +23,8 @@ public class MaintenanceRequestResponse {
     private RequestPriority priority;
     private RequestStatus status;
     private Long assignedTo;
+    /** When set with assignedTo null, request is waiting for the contractor company to assign an officer. */
+    private Long contractorCompanyId;
     private LocalDate scheduledDate;
     private LocalTime scheduledTimeFrom;
     private LocalTime scheduledTimeTo;
@@ -32,6 +34,7 @@ public class MaintenanceRequestResponse {
     private String scheduleRejectionNote;
     private String tenantName;
     private String assignedOfficerName;
+    private String assignedOfficerPhone;
     private String propertyName;
     private String propertyNameAr;
     private String propertyNameEn;

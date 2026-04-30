@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -36,6 +38,7 @@ public class ContractorCompanyService {
         if (!LocalizedNameResolver.notBlank(legacyName)) {
             throw AppException.badRequest("Contractor name is required in Arabic and English");
         }
+        validateContractFields(dto.getContractStart(), dto.getContractEnd(), dto.getAttachmentFiles());
         ContractorCompany e = ContractorCompany.builder()
                 .name(legacyName)
                 .nameAr(nameAr)
@@ -43,6 +46,9 @@ public class ContractorCompanyService {
                 .phone(blankToNull(dto.getPhone()))
                 .email(blankToNull(dto.getEmail()))
                 .notes(blankToNull(dto.getNotes()))
+                .contractStart(dto.getContractStart())
+                .contractEnd(dto.getContractEnd())
+                .attachmentFiles(new ArrayList<>(normalizeFiles(dto.getAttachmentFiles())))
                 .active(dto.getActive() == null || dto.getActive())
                 .build();
         return toResponse(repository.save(e));
@@ -57,6 +63,18 @@ public class ContractorCompanyService {
         if (!LocalizedNameResolver.notBlank(legacyName)) {
             throw AppException.badRequest("Contractor name is required in Arabic and English");
         }
+        boolean contractTouched =
+                dto.getContractStart() != null || dto.getContractEnd() != null || dto.getAttachmentFiles() != null;
+        if (contractTouched) {
+            LocalDate effectiveStart = dto.getContractStart() != null ? dto.getContractStart() : e.getContractStart();
+            LocalDate effectiveEnd = dto.getContractEnd() != null ? dto.getContractEnd() : e.getContractEnd();
+            List<String> effectiveFiles = dto.getAttachmentFiles() != null ? dto.getAttachmentFiles() : e.getAttachmentFiles();
+            validateContractFields(effectiveStart, effectiveEnd, effectiveFiles);
+            e.setContractStart(effectiveStart);
+            e.setContractEnd(effectiveEnd);
+            e.setAttachmentFiles(new ArrayList<>(normalizeFiles(effectiveFiles)));
+        }
+
         e.setName(legacyName);
         e.setNameAr(nameAr);
         e.setNameEn(nameEn);
@@ -100,9 +118,36 @@ public class ContractorCompanyService {
                 .email(e.getEmail())
                 .notes(e.getNotes())
                 .active(e.isActive())
+                .contractStart(e.getContractStart())
+                .contractEnd(e.getContractEnd())
+                .attachmentFiles(e.getAttachmentFiles() == null ? List.of() : List.copyOf(e.getAttachmentFiles()))
                 .createdAt(e.getCreatedAt())
                 .updatedAt(e.getUpdatedAt())
                 .build();
+    }
+
+    private void validateContractFields(LocalDate start, LocalDate end, List<String> files) {
+        if (start == null || end == null) {
+            throw AppException.badRequest("Contract start and end dates are required");
+        }
+        if (end.isBefore(start)) {
+            throw AppException.badRequest("Contract end date must be on or after contract start date");
+        }
+        List<String> normalized = normalizeFiles(files);
+        if (normalized.isEmpty()) {
+            throw AppException.badRequest("At least one contract attachment is required");
+        }
+    }
+
+    private List<String> normalizeFiles(List<String> files) {
+        if (files == null) {
+            return List.of();
+        }
+        return files.stream()
+                .map((f) -> f == null ? "" : f.trim())
+                .filter((f) -> !f.isEmpty())
+                .distinct()
+                .toList();
     }
 
     private static String firstNonBlank(String... values) {

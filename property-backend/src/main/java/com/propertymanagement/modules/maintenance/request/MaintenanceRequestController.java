@@ -36,8 +36,11 @@ public class MaintenanceRequestController {
     @GetMapping
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN', 'MAINTENANCE_OFFICER')")
     public ResponseEntity<ApiResponse<Page<MaintenanceRequestResponse>>> getAll(
-            @PageableDefault(size = 10) Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.ok(requestService.getAll(pageable)));
+            @RequestParam(required = false) RequestStatus status,
+            @RequestParam(required = false) RequestPriority priority,
+            @RequestParam(required = false) Long propertyId,
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.ok(requestService.getAll(status, priority, propertyId, pageable)));
     }
 
     @GetMapping("/property/{propertyId}")
@@ -59,11 +62,23 @@ public class MaintenanceRequestController {
         return ResponseEntity.ok(ApiResponse.ok(requestService.getByTenantSecured(tenantId, pageable)));
     }
 
+    @GetMapping("/officer/{officerId}/open-count")
+    public ResponseEntity<ApiResponse<Long>> getOfficerOpenCount(@PathVariable Long officerId) {
+        return ResponseEntity.ok(ApiResponse.ok(requestService.countOpenAssignedToOfficerSecured(officerId)));
+    }
+
     @GetMapping("/officer/{officerId}")
     public ResponseEntity<ApiResponse<Page<MaintenanceRequestResponse>>> getByOfficer(
             @PathVariable Long officerId,
             @PageableDefault(size = 10) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.ok(requestService.getByOfficerSecured(officerId, pageable)));
+    }
+
+    @GetMapping("/company-queue")
+    @PreAuthorize("hasRole('MAINTENANCE_OFFICER')")
+    public ResponseEntity<ApiResponse<Page<MaintenanceRequestResponse>>> getCompanyQueue(
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.ok(requestService.getCompanyQueueForCurrentOfficer(pageable)));
     }
 
     @GetMapping("/{id}")
@@ -79,7 +94,7 @@ public class MaintenanceRequestController {
     }
 
     @PatchMapping("/{id}/assign")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN', 'MAINTENANCE_OFFICER')")
     public ResponseEntity<ApiResponse<MaintenanceRequestResponse>> assign(
             @PathVariable Long id, @Valid @RequestBody AssignRequestDto dto) {
         return ResponseEntity.ok(ApiResponse.ok(requestService.assign(id, dto)));

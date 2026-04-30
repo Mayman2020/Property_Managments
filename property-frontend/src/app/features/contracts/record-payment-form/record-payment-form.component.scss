@@ -1,0 +1,6 @@
+.form-card { border-radius: 14px !important; max-width: 640px; mat-card-content { padding: 24px; } }
+.payment-form { display: flex; flex-direction: column; gap: 16px; }
+.full-width { width: 100%; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.error-msg { color: #dc2626; font-size: 0.875rem; padding: 8px; background: #fee2e2; border-radius: 6px; }
+.form-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 8px; }

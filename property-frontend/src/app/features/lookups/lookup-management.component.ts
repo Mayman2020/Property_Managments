@@ -1,23 +1,37 @@
 import { Component, OnInit } from '@angular/core';
-import { DatePipe, NgFor, NgIf } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { NgFor, NgIf, NgTemplateOutlet } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDialog } from '@angular/material/dialog';
 import { MatExpansionModule } from '@angular/material/expansion';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSelectModule } from '@angular/material/select';
+import { MatTabsModule } from '@angular/material/tabs';
 import { TranslateModule } from '@ngx-translate/core';
 import { catchError } from 'rxjs/operators';
 import { forkJoin, of } from 'rxjs';
 
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { TablePagerComponent } from '../../shared/components/table-pager/table-pager.component';
+import { ExportColumn, TableExportToolbarComponent } from '../../shared/components/table-export-toolbar/table-export-toolbar.component';
 import { I18nService } from '../../core/i18n/i18n.service';
-import { LookupItem, LookupService } from '../../core/services/lookup.service';
+import { LookupItem, LookupService, LookupType } from '../../core/services/lookup.service';
 import { SnackService } from '../../core/services/snack.service';
+import { LookupDialogComponent, LookupDialogData } from './lookup-dialog.component';
+import { ClassificationDialogComponent, ClassificationDialogData } from './classification-dialog.component';
 
 type CityRow = LookupItem & { governorateNameAr: string; governorateNameEn: string };
+
+interface ClassificationList {
+  type: LookupType;
+  labelAr: string;
+  labelEn: string;
+  icon: string;
+  items: LookupItem[];
+  pageIndex: number;
+  loading: boolean;
+}
 
 @Component({
   selector: 'app-lookup-management',
@@ -25,80 +39,74 @@ type CityRow = LookupItem & { governorateNameAr: string; governorateNameEn: stri
   imports: [
     NgFor,
     NgIf,
-    DatePipe,
-    ReactiveFormsModule,
+    NgTemplateOutlet,
     TranslateModule,
     MatButtonModule,
+    MatExpansionModule,
     MatFormFieldModule,
-    MatInputModule,
     MatSelectModule,
     MatProgressSpinnerModule,
-    MatExpansionModule,
     MatIconModule,
-    PageHeaderComponent
+    MatTabsModule,
+    PageHeaderComponent,
+    TablePagerComponent,
+    TableExportToolbarComponent
   ],
   templateUrl: './lookup-management.component.html',
   styleUrl: './lookup-management.component.scss'
 })
 export class LookupManagementComponent implements OnInit {
   loading = true;
-  savingGovernorate = false;
-  savingCity = false;
   deletingLookupId: number | null = null;
 
   governorates: LookupItem[] = [];
-  filteredGovernorates: LookupItem[] = [];
   allCities: CityRow[] = [];
-  filteredCities: CityRow[] = [];
-
-  governorateSearch = '';
-  citySearch = '';
   cityGovernorateFilter: number | null = null;
 
   readonly pageSize = 5;
   governoratesPageIndex = 0;
   citiesPageIndex = 0;
 
-  governorateForm: FormGroup;
-  cityForm: FormGroup;
+  readonly propertyLists: ClassificationList[] = [
+    { type: 'PROPERTY_TYPE', labelAr: 'نوع العقار', labelEn: 'Property Type', icon: 'apartment', items: [], pageIndex: 0, loading: false },
+    { type: 'UNIT_TYPE', labelAr: 'نوع الوحدة', labelEn: 'Unit Type', icon: 'meeting_room', items: [], pageIndex: 0, loading: false },
+    { type: 'FLOOR_TYPE', labelAr: 'نوع الطابق', labelEn: 'Floor Type', icon: 'layers', items: [], pageIndex: 0, loading: false }
+  ];
 
-  editingGovernorateId: number | null = null;
-  editingCityId: number | null = null;
+  readonly contractLists: ClassificationList[] = [
+    { type: 'CONTRACT_TYPE', labelAr: 'نوع العقد', labelEn: 'Contract Type', icon: 'description', items: [], pageIndex: 0, loading: false },
+    { type: 'TERMINATION_REASON', labelAr: 'أسباب إنهاء العقد', labelEn: 'Termination Reasons', icon: 'cancel', items: [], pageIndex: 0, loading: false }
+  ];
+
+  readonly jobLists: ClassificationList[] = [
+    { type: 'JOB_TITLE', labelAr: 'المسميات الوظيفية', labelEn: 'Job Titles', icon: 'badge', items: [], pageIndex: 0, loading: false }
+  ];
 
   constructor(
-    private readonly fb: FormBuilder,
+    private readonly dialog: MatDialog,
     private readonly lookups: LookupService,
     private readonly snack: SnackService,
     readonly i18n: I18nService
-  ) {
-    this.governorateForm = this.fb.group({
-      code: ['', [Validators.required, Validators.maxLength(50)]],
-      nameAr: ['', [Validators.required, Validators.maxLength(150)]],
-      nameEn: ['', [Validators.required, Validators.maxLength(150)]],
-      sortOrder: [0]
-    });
-
-    this.cityForm = this.fb.group({
-      countryId: [null, Validators.required],
-      code: ['', [Validators.required, Validators.maxLength(50)]],
-      nameAr: ['', [Validators.required, Validators.maxLength(150)]],
-      nameEn: ['', [Validators.required, Validators.maxLength(150)]],
-      sortOrder: [0],
-      active: [true]
-    });
-  }
+  ) {}
 
   ngOnInit(): void {
-    this.loadGovernoratesAndCities();
+    this.loadLocationData();
+    [...this.propertyLists, ...this.contractLists, ...this.jobLists].forEach((list) => this.loadClassification(list));
   }
 
-  nameOf(item: LookupItem): string {
-    return this.i18n.currentLang === 'ar' ? item.nameAr : item.nameEn;
+  get isArabic(): boolean {
+    return this.i18n.currentLang === 'ar';
+  }
+
+  get filteredCities(): CityRow[] {
+    return this.cityGovernorateFilter
+      ? this.allCities.filter((item) => item.parentId === this.cityGovernorateFilter)
+      : this.allCities;
   }
 
   get pagedGovernorates(): LookupItem[] {
     const start = this.governoratesPageIndex * this.pageSize;
-    return this.filteredGovernorates.slice(start, start + this.pageSize);
+    return this.governorates.slice(start, start + this.pageSize);
   }
 
   get pagedCities(): CityRow[] {
@@ -106,159 +114,91 @@ export class LookupManagementComponent implements OnInit {
     return this.filteredCities.slice(start, start + this.pageSize);
   }
 
-  get governoratesTotalPages(): number {
-    return Math.max(1, Math.ceil(this.filteredGovernorates.length / this.pageSize));
+  get lookupExportColumns(): ExportColumn<LookupItem>[] {
+    return [
+      { header: this.isArabic ? 'الاسم' : 'Name', value: (row) => this.nameOf(row) },
+      { header: this.i18n.instant('LOOKUPS.CODE'), value: 'code' },
+      { header: this.i18n.instant('COMMON.ACTIVE'), value: (row) => row.active ? this.i18n.instant('COMMON.ACTIVE') : this.i18n.instant('COMMON.INACTIVE') }
+    ];
   }
 
-  get citiesTotalPages(): number {
-    return Math.max(1, Math.ceil(this.filteredCities.length / this.pageSize));
+  get cityExportColumns(): ExportColumn<CityRow>[] {
+    return [
+      { header: this.i18n.instant('LOOKUPS.COUNTRY'), value: (row) => this.cityGovernorateName(row) },
+      { header: this.isArabic ? 'الاسم' : 'Name', value: (row) => this.nameOf(row) },
+      { header: this.i18n.instant('LOOKUPS.CODE'), value: 'code' },
+      { header: this.i18n.instant('COMMON.ACTIVE'), value: (row) => row.active ? this.i18n.instant('COMMON.ACTIVE') : this.i18n.instant('COMMON.INACTIVE') }
+    ];
   }
 
-  onGovernorateSearch(value: string): void {
-    this.governorateSearch = value;
-    this.applyGovernorateSearch();
-    this.governoratesPageIndex = 0;
+  nameOf(item: LookupItem): string {
+    return this.isArabic ? item.nameAr : item.nameEn;
   }
 
-  onCitySearch(value: string): void {
-    this.citySearch = value;
-    this.applyCitySearch();
-    this.citiesPageIndex = 0;
+  cityGovernorateName(city: CityRow): string {
+    return this.isArabic ? city.governorateNameAr : city.governorateNameEn;
+  }
+
+  listLabel(list: ClassificationList): string {
+    return this.isArabic ? list.labelAr : list.labelEn;
+  }
+
+  pagedListItems(list: ClassificationList): LookupItem[] {
+    const start = list.pageIndex * this.pageSize;
+    return list.items.slice(start, start + this.pageSize);
   }
 
   onCityGovernorateFilter(value: number | null): void {
     this.cityGovernorateFilter = value;
-    this.applyCitySearch();
     this.citiesPageIndex = 0;
   }
 
-  changeGovernoratesPage(step: number): void {
-    this.governoratesPageIndex = Math.max(0, Math.min(this.governoratesPageIndex + step, this.governoratesTotalPages - 1));
+  openAddGovernorate(): void {
+    const data: LookupDialogData = { mode: 'governorate', item: null };
+    this.dialog.open(LookupDialogComponent, { data, panelClass: 'app-dialog-panel', width: '540px' })
+      .afterClosed().subscribe((saved) => { if (saved) this.loadLocationData(); });
   }
 
-  changeCitiesPage(step: number): void {
-    this.citiesPageIndex = Math.max(0, Math.min(this.citiesPageIndex + step, this.citiesTotalPages - 1));
+  openEditGovernorate(item: LookupItem): void {
+    const data: LookupDialogData = { mode: 'governorate', item };
+    this.dialog.open(LookupDialogComponent, { data, panelClass: 'app-dialog-panel', width: '540px' })
+      .afterClosed().subscribe((saved) => { if (saved) this.loadLocationData(); });
   }
 
-  editGovernorate(item: LookupItem): void {
-    this.editingGovernorateId = item.id;
-    this.governorateForm.patchValue({
-      code: item.code,
-      nameAr: item.nameAr,
-      nameEn: item.nameEn,
-      sortOrder: item.sortOrder
-    });
+  openAddCity(): void {
+    const data: LookupDialogData = { mode: 'city', item: null, governorates: this.governorates };
+    this.dialog.open(LookupDialogComponent, { data, panelClass: 'app-dialog-panel', width: '540px' })
+      .afterClosed().subscribe((saved) => { if (saved) this.loadLocationData(); });
   }
 
-  editCity(item: CityRow): void {
-    this.editingCityId = item.id;
-    this.cityForm.patchValue({
-      countryId: item.parentId ?? null,
-      code: item.code,
-      nameAr: item.nameAr,
-      nameEn: item.nameEn,
-      sortOrder: item.sortOrder,
-      active: item.active
-    });
+  openEditCity(item: CityRow): void {
+    const data: LookupDialogData = { mode: 'city', item, governorates: this.governorates };
+    this.dialog.open(LookupDialogComponent, { data, panelClass: 'app-dialog-panel', width: '540px' })
+      .afterClosed().subscribe((saved) => { if (saved) this.loadLocationData(); });
   }
 
-  cancelGovernorateEdit(): void {
-    this.resetGovernorateForm();
+  openAddClassification(list: ClassificationList): void {
+    const data: ClassificationDialogData = { type: list.type, item: null };
+    this.dialog.open(ClassificationDialogComponent, { data, panelClass: 'app-dialog-panel', width: '520px' })
+      .afterClosed().subscribe((saved) => { if (saved) this.loadClassification(list); });
   }
 
-  cancelCityEdit(): void {
-    this.resetCityForm(this.cityForm.get('countryId')?.value as number | null);
+  openEditClassification(list: ClassificationList, item: LookupItem): void {
+    const data: ClassificationDialogData = { type: list.type, item };
+    this.dialog.open(ClassificationDialogComponent, { data, panelClass: 'app-dialog-panel', width: '520px' })
+      .afterClosed().subscribe((saved) => { if (saved) this.loadClassification(list); });
   }
 
-  saveGovernorate(): void {
-    if (this.governorateForm.invalid || this.savingGovernorate) {
-      this.governorateForm.markAllAsTouched();
-      return;
-    }
-
-    this.savingGovernorate = true;
-    const payload = {
-      code: this.governorateForm.value.code,
-      nameAr: this.governorateForm.value.nameAr,
-      nameEn: this.governorateForm.value.nameEn,
-      sortOrder: this.governorateForm.value.sortOrder ?? 0,
-      active: true
-    };
-
-    const request$ = this.editingGovernorateId
-      ? this.lookups.update(this.editingGovernorateId, payload)
-      : this.lookups.createCountry(payload);
-
-    request$.subscribe({
-      next: () => {
-        this.savingGovernorate = false;
-        this.resetGovernorateForm();
-        this.snack.success(this.i18n.instant('COMMON.SUCCESS'));
-        this.loadGovernoratesAndCities();
-      },
-      error: (err: Error) => {
-        this.savingGovernorate = false;
-        this.snack.error(err.message || this.i18n.instant('LOOKUPS.SAVE_ERROR'));
-      }
-    });
-  }
-
-  saveCity(): void {
-    if (this.cityForm.invalid || this.savingCity) {
-      this.cityForm.markAllAsTouched();
-      return;
-    }
-
-    this.savingCity = true;
-    const payload = {
-      code: this.cityForm.value.code,
-      nameAr: this.cityForm.value.nameAr,
-      nameEn: this.cityForm.value.nameEn,
-      sortOrder: this.cityForm.value.sortOrder ?? 0,
-      active: this.cityForm.value.active ?? true
-    };
-
-    const request$ = this.editingCityId
-      ? this.lookups.update(this.editingCityId, payload)
-      : this.lookups.createCity({
-          countryId: this.cityForm.value.countryId,
-          code: payload.code,
-          nameAr: payload.nameAr,
-          nameEn: payload.nameEn,
-          sortOrder: payload.sortOrder
-        });
-
-    request$.subscribe({
-      next: () => {
-        const selectedGovernorate = this.cityForm.get('countryId')?.value as number | null;
-        this.savingCity = false;
-        this.resetCityForm(selectedGovernorate);
-        this.snack.success(this.i18n.instant('COMMON.SUCCESS'));
-        this.loadGovernoratesAndCities();
-      },
-      error: (err: Error) => {
-        this.savingCity = false;
-        this.snack.error(err.message || this.i18n.instant('LOOKUPS.SAVE_ERROR'));
-      }
-    });
-  }
-
-  deleteLookup(item: LookupItem): void {
-    if (item.locked || this.deletingLookupId) {
-      return;
-    }
-
-    const confirmed = window.confirm(this.i18n.instant('ACTIONS.DELETE'));
-    if (!confirmed) {
-      return;
-    }
+  deleteLookup(item: LookupItem, reload?: () => void): void {
+    if (item.locked || this.deletingLookupId) return;
+    if (!window.confirm(this.i18n.instant('ACTIONS.DELETE'))) return;
 
     this.deletingLookupId = item.id;
     this.lookups.delete(item.id).subscribe({
       next: () => {
         this.deletingLookupId = null;
         this.snack.success(this.i18n.instant('COMMON.SUCCESS'));
-        this.loadGovernoratesAndCities();
+        reload ? reload() : this.loadLocationData();
       },
       error: (err: Error) => {
         this.deletingLookupId = null;
@@ -267,45 +207,35 @@ export class LookupManagementComponent implements OnInit {
     });
   }
 
-  private loadGovernoratesAndCities(): void {
-    this.loading = true;
+  deleteClassification(list: ClassificationList, item: LookupItem): void {
+    this.deleteLookup(item, () => this.loadClassification(list));
+  }
 
+  private loadLocationData(): void {
+    this.loading = true;
     this.lookups.getCountries().subscribe({
       next: (res) => {
         this.governorates = res.data ?? [];
-        this.applyGovernorateSearch();
-
         const requests = this.governorates.map((g) =>
           this.lookups.getCities(g.id).pipe(catchError(() => of({ data: [] as LookupItem[] })))
         );
 
         if (!requests.length) {
           this.allCities = [];
-          this.filteredCities = [];
           this.loading = false;
           return;
         }
 
         forkJoin(requests).subscribe({
           next: (responses) => {
-            const collected: CityRow[] = [];
-
-            responses.forEach((response, index) => {
-              const governorate = this.governorates[index];
-              const rows = response.data ?? [];
-
-              rows.forEach((city) => {
-                collected.push({
-                  ...city,
-                  governorateNameAr: governorate?.nameAr ?? '',
-                  governorateNameEn: governorate?.nameEn ?? ''
-                });
-              });
+            this.allCities = responses.flatMap((response, index) => {
+              const gov = this.governorates[index];
+              return (response.data ?? []).map((city) => ({
+                ...city,
+                governorateNameAr: gov?.nameAr ?? '',
+                governorateNameEn: gov?.nameEn ?? ''
+              }));
             });
-
-            this.allCities = collected;
-            this.applyCitySearch();
-            this.ensureFormDefaults();
             this.loading = false;
           },
           error: () => {
@@ -317,70 +247,25 @@ export class LookupManagementComponent implements OnInit {
       error: () => {
         this.loading = false;
         this.governorates = [];
+        this.allCities = [];
         this.snack.error(this.i18n.instant('LOOKUPS.LOAD_ERROR'));
       }
     });
   }
 
-  private applyGovernorateSearch(): void {
-    const q = this.governorateSearch.trim().toLowerCase();
-    if (!q) {
-      this.filteredGovernorates = [...this.governorates];
-      return;
-    }
-
-    this.filteredGovernorates = this.governorates.filter((item) => {
-      const text = [item.nameAr, item.nameEn, item.code].join(' ').toLowerCase();
-      return text.includes(q);
-    });
-  }
-
-  private applyCitySearch(): void {
-    const q = this.citySearch.trim().toLowerCase();
-    const byGovernorate = this.cityGovernorateFilter
-      ? this.allCities.filter((item) => item.parentId === this.cityGovernorateFilter)
-      : [...this.allCities];
-
-    if (!q) {
-      this.filteredCities = byGovernorate;
-      return;
-    }
-
-    this.filteredCities = byGovernorate.filter((item) => {
-      const text = [item.nameAr, item.nameEn, item.code, item.governorateNameAr, item.governorateNameEn]
-        .join(' ')
-        .toLowerCase();
-      return text.includes(q);
-    });
-  }
-
-  private ensureFormDefaults(): void {
-    const current = this.cityForm.get('countryId')?.value as number | null;
-
-    if (!current && this.governorates.length > 0) {
-      const firstId = this.governorates[0].id;
-      this.cityForm.patchValue({ countryId: firstId });
-      if (!this.cityGovernorateFilter) {
-        this.cityGovernorateFilter = firstId;
-        this.applyCitySearch();
+  loadClassification(list: ClassificationList): void {
+    list.loading = true;
+    this.lookups.getAllByType(list.type).subscribe({
+      next: (res) => {
+        list.items = res.data ?? [];
+        list.pageIndex = Math.min(list.pageIndex, Math.max(Math.ceil(list.items.length / this.pageSize) - 1, 0));
+        list.loading = false;
+      },
+      error: () => {
+        list.items = [];
+        list.loading = false;
+        this.snack.error(this.i18n.instant('LOOKUPS.LOAD_ERROR'));
       }
-    }
-  }
-
-  private resetGovernorateForm(): void {
-    this.editingGovernorateId = null;
-    this.governorateForm.reset({ code: '', nameAr: '', nameEn: '', sortOrder: 0 });
-  }
-
-  private resetCityForm(selectedGovernorate: number | null): void {
-    this.editingCityId = null;
-    this.cityForm.reset({
-      countryId: selectedGovernorate,
-      code: '',
-      nameAr: '',
-      nameEn: '',
-      sortOrder: 0,
-      active: true
     });
   }
 }

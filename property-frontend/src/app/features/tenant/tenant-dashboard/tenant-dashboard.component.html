@@ -57,7 +57,7 @@
             <div class="visit-icon"><span class="material-icons">event</span></div>
             <div>
               <strong>{{ 'TENANT_DASHBOARD.VISIT' | translate }}</strong>
-              <span>{{ currentRequests[0].scheduledDate | date:'fullDate' }}</span>
+              <span>{{ currentRequests[0].scheduledDate | date:'dd/MM/yyyy' }}</span>
             </div>
           </div>
 
@@ -91,7 +91,7 @@
               <td>{{ req.title }}</td>
               <td>{{ req.assignedOfficerName || '—' }}</td>
               <td><span class="status-badge" [attr.data-status]="req.status">{{ statusLabel(req.status) }}</span></td>
-              <td>{{ req.createdAt | date:'dd MMM yyyy' }}</td>
+              <td>{{ req.createdAt | date:'dd/MM/yyyy' }}</td>
               <td>
                 <a class="app-icon-btn" [routerLink]="['/tenant/requests', req.id]">
                   <span class="material-icons">visibility</span>

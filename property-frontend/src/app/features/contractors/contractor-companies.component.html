@@ -6,71 +6,39 @@
       { label: ('NAV.DASHBOARD' | translate), route: '/admin/dashboard' },
       { label: ('NAV.CONTRACTOR_COMPANIES' | translate) }
     ]">
-    <button mat-flat-button type="button" (click)="startCreate()" *ngIf="!formVisible">
+    <button mat-flat-button type="button" (click)="openDialog(null)">
       <span class="material-icons">add</span>
       {{ 'CONTRACTORS.ADD' | translate }}
     </button>
   </app-page-header>
 
-  <div class="form-panel app-card" *ngIf="formVisible">
-    <h2 class="form-title">{{ editing ? ('CONTRACTORS.EDIT' | translate) : ('CONTRACTORS.NEW' | translate) }}</h2>
-    <form [formGroup]="form" (ngSubmit)="save()" class="contractor-form">
-      <mat-form-field appearance="outline">
-        <mat-label>{{ 'CONTRACTORS.NAME_AR' | translate }}</mat-label>
-        <input matInput formControlName="nameAr" [placeholder]="'CONTRACTORS.NAME_AR' | translate" />
-      </mat-form-field>
-      <mat-form-field appearance="outline">
-        <mat-label>{{ 'CONTRACTORS.NAME_EN' | translate }}</mat-label>
-        <input matInput formControlName="nameEn" [placeholder]="'CONTRACTORS.NAME_EN' | translate" />
-      </mat-form-field>
-      <mat-form-field appearance="outline">
-        <mat-label>{{ 'CONTRACTORS.PHONE' | translate }}</mat-label>
-        <input matInput formControlName="phone" />
-      </mat-form-field>
-      <mat-form-field appearance="outline">
-        <mat-label>{{ 'CONTRACTORS.EMAIL' | translate }}</mat-label>
-        <input matInput type="email" formControlName="email" />
-      </mat-form-field>
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>{{ 'CONTRACTORS.NOTES' | translate }}</mat-label>
-        <textarea matInput rows="2" formControlName="notes"></textarea>
-      </mat-form-field>
-      <mat-slide-toggle formControlName="active">{{ 'COMMON.ACTIVE' | translate }}</mat-slide-toggle>
-      <div class="form-actions">
-        <button mat-stroked-button type="button" (click)="cancelForm()">{{ 'COMMON.CANCEL' | translate }}</button>
-        <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid || saving">
-          <span *ngIf="!saving">{{ 'COMMON.SAVE' | translate }}</span>
-          <span *ngIf="saving">{{ 'COMMON.LOADING' | translate }}</span>
-        </button>
-      </div>
-    </form>
-  </div>
-
   <div class="loading-center" *ngIf="loading"><mat-spinner diameter="40"></mat-spinner></div>
 
-  <div class="search-wrap app-card" *ngIf="!loading">
-    <mat-form-field appearance="outline">
-      <mat-label>{{ 'ACTIONS.SEARCH' | translate }}</mat-label>
-      <input matInput [value]="searchTerm" (input)="onSearch($any($event.target).value)">
-    </mat-form-field>
-  </div>
-
   <app-empty-state
-    *ngIf="!loading && filteredCompanies.length === 0 && !formVisible"
+    *ngIf="!loading && filteredCompanies.length === 0"
     icon="engineering"
     [title]="'CONTRACTORS.EMPTY_TITLE' | translate"
     [message]="'CONTRACTORS.EMPTY_MSG' | translate">
-    <button mat-flat-button type="button" (click)="startCreate()" style="margin-top: 12px">
+    <button mat-flat-button type="button" (click)="openDialog(null)" style="margin-top: 12px">
       <span class="material-icons">add</span> {{ 'CONTRACTORS.ADD' | translate }}
     </button>
   </app-empty-state>
 
   <div class="app-card table-card" *ngIf="!loading && filteredCompanies.length > 0">
+    <app-table-export-toolbar
+      permissionKey="contractors"
+      [title]="'CONTRACTORS.TITLE' | translate"
+      fileName="contractors"
+      [columns]="exportColumns"
+      [rows]="filteredCompanies">
+    </app-table-export-toolbar>
     <div class="app-table-wrap">
       <table class="app-data-table">
         <thead>
           <tr>
             <th>{{ 'CONTRACTORS.NAME' | translate }}</th>
+            <th>{{ 'CONTRACTORS.CONTRACT_START' | translate }}</th>
+            <th>{{ 'CONTRACTORS.CONTRACT_END' | translate }}</th>
             <th>{{ 'CONTRACTORS.PHONE' | translate }}</th>
             <th>{{ 'CONTRACTORS.EMAIL' | translate }}</th>
             <th>{{ 'COMMON.ACTIVE' | translate }}</th>
@@ -79,12 +47,14 @@
         </thead>
         <tbody>
           <tr *ngFor="let c of pagedCompanies">
-            <td><strong>{{ c.name }}</strong></td>
+            <td><strong>{{ companyName(c) }}</strong></td>
+            <td>{{ formatDate(c.contractStart) }}</td>
+            <td>{{ formatDate(c.contractEnd) }}</td>
             <td>{{ c.phone || '--' }}</td>
             <td>{{ c.email || '--' }}</td>
             <td>{{ (c.active ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') | translate }}</td>
             <td>
-              <button type="button" class="app-icon-btn" (click)="startEdit(c)" [title]="'ACTIONS.EDIT' | translate">
+              <button type="button" class="app-icon-btn" (click)="openDialog(c)" [title]="'ACTIONS.EDIT' | translate">
                 <span class="material-icons">edit</span>
               </button>
               <button type="button" class="app-icon-btn danger" *ngIf="canHardDelete" (click)="remove(c)" [title]="'ACTIONS.DELETE' | translate">
@@ -95,10 +65,6 @@
         </tbody>
       </table>
     </div>
-    <div class="table-pager" *ngIf="filteredCompanies.length > pageSize">
-      <button mat-stroked-button type="button" (click)="changePage(-1)" [disabled]="pageIndex === 0">&lt;</button>
-      <span>{{ pageIndex + 1 }} / {{ totalPages }}</span>
-      <button mat-stroked-button type="button" (click)="changePage(1)" [disabled]="pageIndex >= totalPages - 1">&gt;</button>
-    </div>
+    <app-table-pager [length]="filteredCompanies.length" [pageSize]="pageSize" [pageIndex]="pageIndex" (pageIndexChange)="pageIndex = $event"></app-table-pager>
   </div>
 </div>

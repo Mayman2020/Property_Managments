@@ -1,0 +1,66 @@
+<app-page-header
+  [title]="'HOME_PORTAL.TITLE' | translate"
+  [subtitle]="'HOME_PORTAL.SUBTITLE' | translate">
+</app-page-header>
+
+<div *ngIf="loading" class="loading-wrap">
+  <mat-spinner diameter="48"></mat-spinner>
+</div>
+
+<div *ngIf="!loading" class="portal-grid">
+
+  <!-- Maintenance System Card -->
+  <mat-card class="portal-card maintenance-card" *ngIf="showMaintenanceCard" (click)="goToMaintenance()" tabindex="0" (keydown.enter)="goToMaintenance()">
+    <mat-card-content>
+      <div class="card-icon">
+        <mat-icon>construction</mat-icon>
+      </div>
+      <h2 class="card-title">{{ 'HOME_PORTAL.MAINTENANCE_SYSTEM' | translate }}</h2>
+      <p class="card-desc">{{ 'HOME_PORTAL.MAINTENANCE_DESC' | translate }}</p>
+      <div class="stats-row">
+        <span class="stat-chip warn">
+          <mat-icon>pending</mat-icon>
+          {{ stats.pendingRequests }} {{ 'HOME_PORTAL.PENDING_REQUESTS' | translate }}
+        </span>
+        <span class="stat-chip" [class.danger]="stats.lowStockItems > 0">
+          <mat-icon>inventory_2</mat-icon>
+          {{ stats.lowStockItems }} {{ 'HOME_PORTAL.LOW_STOCK_ALERTS' | translate }}
+        </span>
+      </div>
+      <button mat-flat-button color="primary" class="enter-btn">
+        {{ 'HOME_PORTAL.ENTER_SYSTEM' | translate }}
+        <mat-icon>arrow_forward</mat-icon>
+      </button>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Contracts System Card -->
+  <mat-card class="portal-card contracts-card" *ngIf="showContractsCard" (click)="goToContracts()" tabindex="0" (keydown.enter)="goToContracts()">
+    <mat-card-content>
+      <div class="card-icon contracts-icon">
+        <mat-icon>description</mat-icon>
+      </div>
+      <h2 class="card-title">{{ 'HOME_PORTAL.CONTRACTS_SYSTEM' | translate }}</h2>
+      <p class="card-desc">{{ 'HOME_PORTAL.CONTRACTS_DESC' | translate }}</p>
+      <div class="stats-row">
+        <span class="stat-chip success">
+          <mat-icon>article</mat-icon>
+          {{ stats.activeContracts }} {{ 'HOME_PORTAL.ACTIVE_CONTRACTS' | translate }}
+        </span>
+        <span class="stat-chip" [class.danger]="stats.overduePayments > 0">
+          <mat-icon>payment</mat-icon>
+          {{ stats.overduePayments }} {{ 'HOME_PORTAL.OVERDUE_PAYMENTS' | translate }}
+        </span>
+        <span class="stat-chip warn" *ngIf="stats.expiringIn30Days > 0">
+          <mat-icon>event</mat-icon>
+          {{ stats.expiringIn30Days }} {{ 'HOME_PORTAL.EXPIRING_SOON' | translate }}
+        </span>
+      </div>
+      <button mat-flat-button color="accent" class="enter-btn">
+        {{ 'HOME_PORTAL.ENTER_SYSTEM' | translate }}
+        <mat-icon>arrow_forward</mat-icon>
+      </button>
+    </mat-card-content>
+  </mat-card>
+
+</div>

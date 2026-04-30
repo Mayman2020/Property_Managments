@@ -1,96 +1,265 @@
-<div class="app-page property-portfolio-page">
+<div class="app-page property-list-page">
   <app-page-header
-    [eyebrow]="pageEyebrow"
+    [eyebrow]="'PAGE.DIRECTORY' | translate"
     [title]="'PROPERTY_LIST.TITLE' | translate"
     [subtitle]="'PROPERTY_LIST.SUBTITLE' | translate"
-    [breadcrumbs]="[{ label: ('NAV.DASHBOARD' | translate), route: '/admin/dashboard' }, { label: ('NAV.PROPERTIES' | translate) }]">
-    <button mat-flat-button routerLink="/admin/properties/new">
+    [breadcrumbs]="[
+      { label: ('NAV.DASHBOARD' | translate), route: '/admin/dashboard' },
+      { label: ('NAV.PROPERTIES' | translate) }
+    ]">
+    <button mat-flat-button type="button" (click)="openAddDialog()">
       <span class="material-icons">add</span>
       {{ 'PROPERTY_LIST.ADD_PROPERTY' | translate }}
     </button>
   </app-page-header>
 
+  <section class="property-summary-grid" *ngIf="!loading && filteredProperties.length > 0">
+    <article class="stat-card property-summary-card">
+      <div class="stat-icon"><span class="material-icons">apartment</span></div>
+      <div class="stat-content">
+        <div class="stat-label">{{ 'PROPERTY_LIST.RESULTS' | translate }}</div>
+        <div class="stat-value">{{ totalElements }}</div>
+      </div>
+    </article>
+
+    <article class="stat-card property-summary-card">
+      <div class="stat-icon"><span class="material-icons">check_circle</span></div>
+      <div class="stat-content">
+        <div class="stat-label">{{ 'COMMON.ACTIVE' | translate }}</div>
+        <div class="stat-value">{{ activeCount }}</div>
+      </div>
+    </article>
+
+    <article class="stat-card property-summary-card">
+      <div class="stat-icon"><span class="material-icons">pause_circle</span></div>
+      <div class="stat-content">
+        <div class="stat-label">{{ 'COMMON.INACTIVE' | translate }}</div>
+        <div class="stat-value">{{ inactiveCount }}</div>
+      </div>
+    </article>
+
+    <article class="stat-card property-summary-card">
+      <div class="stat-icon"><span class="material-icons">stacked_bar_chart</span></div>
+      <div class="stat-content">
+        <div class="stat-label">{{ 'DASHBOARD.OCCUPANCY_RATE' | translate }}</div>
+        <div class="stat-value">{{ averageOccupancy }}%</div>
+      </div>
+    </article>
+  </section>
+
   <div class="loading-center" *ngIf="loading">
     <mat-spinner diameter="40"></mat-spinner>
   </div>
 
-  <div class="portfolio-search" *ngIf="!loading">
-    <span class="material-icons">search</span>
-    <input
-      [value]="searchTerm"
-      (input)="onSearch($any($event.target).value)"
-      [placeholder]="'ACTIONS.SEARCH' | translate">
-  </div>
-
   <app-empty-state
-    *ngIf="!loading && properties.length === 0"
+    *ngIf="!loading && filteredProperties.length === 0"
     icon="apartment"
     [title]="'PROPERTY_LIST.EMPTY_TITLE' | translate"
     [message]="'PROPERTY_LIST.EMPTY_MESSAGE' | translate">
-    <button mat-flat-button routerLink="/admin/properties/new" style="margin-top: 16px">
+    <button mat-flat-button type="button" (click)="openAddDialog()">
       <span class="material-icons">add</span>
       {{ 'PROPERTY_LIST.ADD_PROPERTY' | translate }}
     </button>
   </app-empty-state>
 
-  <div class="portfolio-grid" *ngIf="!loading && properties.length > 0">
-    <article class="portfolio-card" *ngFor="let prop of properties">
-      <div class="portfolio-visual" [style.background-image]="prop.coverImageUrl ? 'url(' + prop.coverImageUrl + ')' : ''">
-        <div class="portfolio-placeholder" *ngIf="!prop.coverImageUrl">property photo</div>
-        <span class="property-chip" [attr.data-status]="prop.isActive ? 'ACTIVE' : 'INACTIVE'">
-          {{ (prop.isActive ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') | translate }}
-        </span>
-      </div>
-
-      <div class="portfolio-body">
-        <div class="portfolio-topline">
-          <div>
-            <h3>{{ prop.propertyName }}</h3>
-            <p>
-              <span class="material-icons">pin_drop</span>
-              {{ prop.city || '—' }} · {{ typeLabel(prop.propertyType) }}
-            </p>
-          </div>
-          <span class="portfolio-code">{{ prop.propertyCode }}</span>
+  <section class="app-card property-table-card" *ngIf="!loading && filteredProperties.length > 0">
+    <div class="estate-table-toolbar property-toolbar">
+      <div class="property-toolbar-top">
+        <div class="estate-search-inline property-search">
+          <span class="material-icons">search</span>
+          <input
+            [value]="searchTerm"
+            (input)="onSearch($any($event.target).value)"
+            [placeholder]="'ACTIONS.SEARCH' | translate">
         </div>
 
-        <div class="portfolio-stats">
-          <div class="mini-block">
-            <span class="mini-label">{{ 'PROPERTY_LIST.UNITS' | translate }}</span>
-            <strong>{{ prop.totalUnits }}</strong>
-          </div>
-          <div class="mini-block">
-            <span class="mini-label">{{ 'DASHBOARD.OCCUPANCY_RATE' | translate }}</span>
-            <strong>{{ occupancy(prop) }}%</strong>
-          </div>
-          <div class="mini-block">
-            <span class="mini-label">{{ 'PROPERTY_LIST.FLOORS' | translate }}</span>
-            <strong>{{ prop.totalFloors }}</strong>
-          </div>
-        </div>
-
-        <div class="portfolio-progress">
-          <div class="portfolio-progress-fill" [style.width.%]="occupancy(prop)"></div>
-        </div>
-
-        <div class="portfolio-meta">
-          <span>{{ 'PROPERTY_LIST.OWNER' | translate }}: {{ prop.ownerName || '—' }}</span>
-          <span>{{ i18n.currentLang === 'ar' ? 'شاغر' : 'Vacant' }}: {{ vacantUnits(prop) }}</span>
-        </div>
-
-        <div class="portfolio-actions">
-          <a mat-stroked-button [routerLink]="['/admin/properties', prop.id]">
-            <span class="material-icons">visibility</span>
-            {{ 'ACTIONS.VIEW' | translate }}
-          </a>
-          <a class="icon-link" [routerLink]="['/admin/properties', prop.id, 'edit']">
-            <span class="material-icons">edit</span>
-          </a>
-          <a class="icon-link" *ngIf="prop.googleMapUrl" [href]="prop.googleMapUrl" target="_blank" rel="noopener">
-            <span class="material-icons">map</span>
-          </a>
+        <div class="property-toolbar-actions">
+          <button mat-stroked-button type="button" (click)="toggleFilters()">
+            <span class="material-icons">{{ showFilters ? 'filter_alt_off' : 'filter_alt' }}</span>
+            {{ 'PROPERTY_LIST.FILTERS' | translate }}
+          </button>
+          <button mat-stroked-button type="button" (click)="clearFilters()" *ngIf="filterStatus !== null || filterType !== null">
+            <span class="material-icons">restart_alt</span>
+            {{ 'ACTIONS.VIEW_ALL' | translate }}
+          </button>
         </div>
       </div>
-    </article>
-  </div>
+
+      <div class="property-filters" *ngIf="showFilters">
+        <div class="filter-group">
+          <div class="filter-label">{{ 'MAINTENANCE.STATUS' | translate }}</div>
+          <div class="estate-filter-row">
+            <button type="button" class="estate-filter-btn" [class.active]="filterStatus === null" (click)="setStatusFilter(null)">
+              {{ 'ACTIONS.VIEW_ALL' | translate }}
+            </button>
+            <button type="button" class="estate-filter-btn" [class.active]="filterStatus === true" (click)="setStatusFilter(true)">
+              {{ 'COMMON.ACTIVE' | translate }}
+            </button>
+            <button type="button" class="estate-filter-btn" [class.active]="filterStatus === false" (click)="setStatusFilter(false)">
+              {{ 'COMMON.INACTIVE' | translate }}
+            </button>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <div class="filter-label">{{ 'PROPERTY_FORM.PROPERTY_TYPE' | translate }}</div>
+          <div class="estate-filter-row">
+            <button type="button" class="estate-filter-btn" [class.active]="filterType === null" (click)="setTypeFilter(null)">
+              {{ 'ACTIONS.VIEW_ALL' | translate }}
+            </button>
+            <button
+              type="button"
+              class="estate-filter-btn"
+              *ngFor="let type of propertyTypes"
+              [class.active]="filterType === type"
+              (click)="setTypeFilter(type)">
+              {{ ('PROPERTY_TYPE.' + type) | translate }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <app-table-export-toolbar
+      permissionKey="properties"
+      [title]="'PROPERTY_LIST.TITLE' | translate"
+      fileName="properties"
+      [columns]="exportColumns"
+      [rows]="filteredProperties"
+      [loadRows]="loadExportProperties">
+    </app-table-export-toolbar>
+    <div class="app-table-wrap">
+      <table class="app-data-table property-table">
+        <thead>
+          <tr>
+            <th>{{ 'PROPERTY_FORM.PROPERTY_CODE' | translate }}</th>
+            <th>{{ 'PROPERTY_FORM.PROPERTY_NAME' | translate }}</th>
+            <th>{{ 'PROPERTY_FORM.CITY' | translate }}</th>
+            <th>{{ 'PROPERTY_FORM.PROPERTY_TYPE' | translate }}</th>
+            <th>{{ 'PROPERTY_LIST.UNITS' | translate }}</th>
+            <th>{{ 'DASHBOARD.OCCUPANCY_RATE' | translate }}</th>
+            <th>{{ 'MAINTENANCE.STATUS' | translate }}</th>
+            <th>{{ 'PROPERTY_LIST.OWNER' | translate }}</th>
+            <th>{{ 'REQUEST_LIST.ACTIONS' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let property of filteredProperties">
+            <td>
+              <div class="property-code">{{ property.propertyCode || '-' }}</div>
+            </td>
+            <td>
+              <div class="property-primary-cell">
+                <div class="property-avatar" [class.has-image]="!!property.coverImageUrl">
+                  <img *ngIf="property.coverImageUrl" [src]="property.coverImageUrl" [alt]="propertyName(property)">
+                  <span class="material-icons" *ngIf="!property.coverImageUrl">apartment</span>
+                </div>
+                <div class="property-copy">
+                  <strong>{{ propertyName(property) }}</strong>
+                  <span>{{ property.address || '-' }}</span>
+                </div>
+              </div>
+            </td>
+            <td>{{ property.city || '-' }}</td>
+            <td>
+              <span class="status-badge" [attr.data-status]="property.propertyType === 'RESIDENTIAL' ? 'INFO' : property.propertyType === 'COMMERCIAL' ? 'HIGH' : 'NORMAL'">
+                {{ typeLabel(property.propertyType) }}
+              </span>
+            </td>
+            <td>
+              <div class="stacked-metric">
+                <strong>{{ property.totalUnits || 0 }}</strong>
+                <span>{{ 'PROPERTY_LIST.FLOORS' | translate }}: {{ property.totalFloors || 0 }}</span>
+              </div>
+            </td>
+            <td>
+              <div class="occupancy-cell">
+                <strong>{{ occupancy(property) }}%</strong>
+                <div class="occupancy-track">
+                  <div class="occupancy-fill" [style.width.%]="occupancy(property)"></div>
+                </div>
+                <span>{{ 'PROPERTY_LIST.VACANT' | translate }}: {{ vacantUnits(property) }}</span>
+              </div>
+            </td>
+            <td>
+              <span class="status-badge" [attr.data-status]="property.isActive ? 'ACTIVE' : 'INACTIVE'">
+                {{ (property.isActive ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') | translate }}
+              </span>
+            </td>
+            <td>{{ ownerName(property) || ('PROPERTY_FORM.OWNER_ID' | translate) + ': ' + property.ownerId }}</td>
+            <td>
+              <div class="row-actions">
+                <a
+                  class="app-icon-btn accent"
+                  [routerLink]="['/admin/properties', propertyId(property)]"
+                  (click)="$event.stopPropagation()"
+                  [attr.aria-label]="'ACTIONS.VIEW' | translate">
+                  <span class="material-icons">visibility</span>
+                </a>
+                <a
+                  class="app-icon-btn"
+                  [routerLink]="['/admin/properties', propertyId(property), 'edit']"
+                  (click)="$event.stopPropagation()"
+                  [attr.aria-label]="'ACTIONS.EDIT' | translate">
+                  <span class="material-icons">edit</span>
+                </a>
+                <a
+                  class="app-icon-btn"
+                  *ngIf="property.googleMapUrl"
+                  [href]="property.googleMapUrl"
+                  target="_blank"
+                  rel="noopener"
+                  (click)="$event.stopPropagation()"
+                  [attr.aria-label]="'PROPERTY_LIST.OPEN_MAP' | translate">
+                  <span class="material-icons">map</span>
+                </a>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="srs-pager-shell" *ngIf="totalElements > pageSize">
+      <div class="srs-pager__info">
+        {{ 'PROPERTY_LIST.PAGE_RANGE' | translate:{ start: pageStart, end: pageEnd, total: totalElements } }}
+      </div>
+
+      <div class="srs-pager__controls">
+        <button type="button" class="srs-pager__nav" (click)="previousPage()" [disabled]="page === 0">
+          <span class="material-icons">chevron_left</span>
+        </button>
+
+        <ng-container *ngFor="let item of pageItems()">
+          <span *ngIf="item === 'ellipsis'" class="srs-pager__gap">...</span>
+          <button
+            *ngIf="item !== 'ellipsis'"
+            type="button"
+            class="srs-pager__page"
+            [class.srs-pager__page--active]="item === page + 1"
+            (click)="goToPage(item)">
+            {{ item }}
+          </button>
+        </ng-container>
+
+        <button type="button" class="srs-pager__nav" (click)="nextPage()" [disabled]="page + 1 >= totalPages">
+          <span class="material-icons">chevron_right</span>
+        </button>
+      </div>
+
+      <div class="srs-pager__size">
+        <span class="srs-pager__size-label">{{ 'PROPERTY_LIST.RESULTS' | translate }}: {{ filteredProperties.length }}</span>
+      </div>
+    </div>
+
+    <mat-paginator
+      class="property-paginator"
+      [length]="totalElements"
+      [pageIndex]="page"
+      [pageSize]="pageSize"
+      [pageSizeOptions]="[pageSize]"
+      [hidePageSize]="true"
+      (page)="onPage($event)">
+    </mat-paginator>
+  </section>
 </div>

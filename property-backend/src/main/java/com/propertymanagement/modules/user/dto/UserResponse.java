@@ -21,6 +21,7 @@ public class UserResponse {
     private Long propertyId;
     private MaintenanceOfficerType maintenanceOfficerType;
     private String maintenanceCompanyName;
+    private Long contractorCompanyId;
     private boolean active;
     private LocalDateTime lastLogin;
     private LocalDateTime createdAt;

@@ -1,0 +1,100 @@
+<app-page-header
+  [title]="'MAINTENANCE_INVOICES.TITLE' | translate"
+  [subtitle]="'MAINTENANCE_INVOICES.SUBTITLE' | translate"
+  icon="receipt_long">
+</app-page-header>
+
+<div class="page-content">
+  <!-- Filter -->
+  <div class="filter-bar" [formGroup]="filterForm">
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-label>{{ 'COMMON.YEAR' | translate }}</mat-label>
+      <mat-select formControlName="year">
+        <mat-option [value]="null">{{ 'COMMON.ALL' | translate }}</mat-option>
+        <mat-option *ngFor="let y of years" [value]="y">{{ y }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-label>{{ 'COMMON.MONTH' | translate }}</mat-label>
+      <mat-select formControlName="month">
+        <mat-option [value]="null">{{ 'COMMON.ALL' | translate }}</mat-option>
+        <mat-option *ngFor="let m of months" [value]="m">{{ monthLabel(m) }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <button mat-flat-button color="primary" (click)="load()">
+      <mat-icon>search</mat-icon>
+      {{ 'COMMON.SEARCH' | translate }}
+    </button>
+  </div>
+
+  <div *ngIf="loading" class="loading-center">
+    <mat-spinner diameter="48"></mat-spinner>
+  </div>
+
+  <div *ngIf="!loading && invoices.length === 0" class="empty-state">
+    <mat-icon>inbox</mat-icon>
+    <p>{{ 'MAINTENANCE_INVOICES.NO_INVOICES' | translate }}</p>
+  </div>
+
+  <div *ngIf="!loading && invoices.length > 0" class="invoices-grid">
+    <div class="invoice-card" *ngFor="let inv of invoices">
+
+      <div class="card-header">
+        <div class="company-info">
+          <mat-icon class="co-icon">engineering</mat-icon>
+          <div>
+            <div class="co-name">{{ inv.companyName || ('COMMON.UNKNOWN' | translate) }}</div>
+            <div class="inv-number">{{ inv.invoiceNumber }}</div>
+          </div>
+        </div>
+        <span class="status-badge" [ngClass]="statusClass(inv.status)">
+          {{ ('RECEIPT_STATUS.' + inv.status) | translate }}
+        </span>
+      </div>
+
+      <div class="card-body">
+        <div class="info-row">
+          <mat-icon>calendar_month</mat-icon>
+          <span>{{ monthLabel(inv.periodMonth) }} {{ inv.periodYear }}</span>
+        </div>
+        <div class="info-row amount-row">
+          <mat-icon>payments</mat-icon>
+          <span class="amount">{{ inv.amount | number:'1.2-2' }} {{ 'COMMON.OMR' | translate }}</span>
+        </div>
+        <div class="info-row" *ngIf="inv.propertyName">
+          <mat-icon>apartment</mat-icon>
+          <span>{{ inv.propertyName }}</span>
+        </div>
+        <div class="info-row" *ngIf="inv.unitNumber">
+          <mat-icon>meeting_room</mat-icon>
+          <span>{{ 'INVOICE_PORTAL.UNIT' | translate }}: {{ inv.unitNumber }}</span>
+        </div>
+        <div class="info-row" *ngIf="inv.description">
+          <mat-icon>description</mat-icon>
+          <span>{{ inv.description }}</span>
+        </div>
+        <div class="info-row" *ngIf="inv.notes && inv.status !== 'PENDING'">
+          <mat-icon>notes</mat-icon>
+          <span>{{ inv.notes }}</span>
+        </div>
+        <div class="info-row">
+          <mat-icon>schedule</mat-icon>
+          <span>{{ inv.createdAt | date:'dd/MM/yyyy' }}</span>
+        </div>
+      </div>
+
+      <div class="card-actions">
+        <button mat-stroked-button *ngIf="inv.fileUrl" (click)="viewFile(inv.fileUrl)">
+          <mat-icon>open_in_new</mat-icon>
+          {{ 'COMMON.VIEW_FILE' | translate }}
+        </button>
+        <button mat-flat-button color="primary" *ngIf="inv.status === 'PENDING'" (click)="openReview(inv)">
+          <mat-icon>rate_review</mat-icon>
+          {{ 'ACCOUNTANT_PORTAL.REVIEW' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

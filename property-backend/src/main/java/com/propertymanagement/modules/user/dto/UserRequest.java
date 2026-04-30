@@ -24,4 +24,6 @@ public class UserRequest {
     private Long propertyId;
     private MaintenanceOfficerType maintenanceOfficerType;
     private String maintenanceCompanyName;
+    /** Required when maintenanceOfficerType is CONTRACTOR_COMPANY — links officer to registry company. */
+    private Long contractorCompanyId;
 }

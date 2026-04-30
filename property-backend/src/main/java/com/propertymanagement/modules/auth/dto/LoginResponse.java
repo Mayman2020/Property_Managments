@@ -27,8 +27,12 @@ public class LoginResponse {
         private Long propertyId;
         private String maintenanceOfficerType;
         private String maintenanceCompanyName;
+        private Long contractorCompanyId;
         /** Populated for TENANT role when the user account is linked to a tenants row. */
         private Long tenantId;
+        /** Populated for OWNER role when the user account is linked to an owners row. */
+        private Long ownerId;
         private Map<String, Map<String, Boolean>> permissions;
+        private Map<String, Boolean> clientModules;
     }
 }

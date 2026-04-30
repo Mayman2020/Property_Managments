@@ -1,0 +1,30 @@
+.loading-wrap { display: flex; justify-content: center; padding: 60px 0; }
+
+.form-card {
+  border-radius: 14px !important;
+  max-width: 560px;
+  mat-card-content { padding: 24px; }
+}
+
+.current-info {
+  display: flex;
+  gap: 24px;
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+}
+
+.info-row { display: flex; flex-direction: column; gap: 2px; }
+.label { font-size: 0.73rem; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; }
+.value { font-weight: 600; color: #1A3C5E; }
+
+.renewal-form { display: flex; flex-direction: column; gap: 16px; }
+.full-width { width: 100%; }
+
+.increase { color: #dc2626; }
+.decrease { color: #16a34a; }
+
+.error-msg { color: #dc2626; font-size: 0.875rem; padding: 8px; background: #fee2e2; border-radius: 6px; }
+
+.form-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 8px; }

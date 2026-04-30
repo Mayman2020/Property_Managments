@@ -29,7 +29,11 @@ public interface PropertyRepository extends JpaRepository<Property, Long> {
     Page<Property> searchActive(@Param("q") String q, Pageable pageable);
     boolean existsByPropertyCode(String code);
     Optional<Property> findByPropertyCode(String code);
+    long countByOwnerIdAndActiveTrue(Long ownerId);
+    java.util.List<Property> findByOwnerIdAndActiveTrue(Long ownerId);
 
     @Query("SELECT COUNT(p) FROM Property p WHERE p.active = true")
     long countActive();
+
+    java.util.List<Property> findByMaintenanceContractorCompanyIdAndActiveTrue(Long companyId);
 }

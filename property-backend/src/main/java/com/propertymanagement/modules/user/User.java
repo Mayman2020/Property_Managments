@@ -60,6 +60,9 @@ public class User implements UserDetails {
     @Column(name = "maintenance_company_name", length = 180)
     private String maintenanceCompanyName;
 
+    @Column(name = "contractor_company_id")
+    private Long contractorCompanyId;
+
     @Builder.Default
     @Column(name = "is_active")
     private boolean active = true;

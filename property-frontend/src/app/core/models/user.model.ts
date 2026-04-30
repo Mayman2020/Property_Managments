@@ -1,4 +1,12 @@
-export type UserRole = 'SUPER_ADMIN' | 'PROPERTY_ADMIN' | 'MAINTENANCE_OFFICER' | 'TENANT';
+export type UserRole =
+  | 'SUPER_ADMIN'
+  | 'PROPERTY_ADMIN'
+  | 'MAINTENANCE_OFFICER'
+  | 'CONTRACTS_OFFICER'
+  | 'ACCOUNTANT'
+  | 'HR_OFFICER'
+  | 'OWNER'
+  | 'TENANT';
 export type MaintenanceOfficerType = 'INTERNAL_PROPERTY' | 'CONTRACTOR_COMPANY';
 export type PermissionAction =
   | 'enabled'
@@ -20,6 +28,7 @@ export type PermissionAction =
 
 export type ModulePermissions = Record<PermissionAction, boolean>;
 export type PermissionMap = Record<string, ModulePermissions>;
+export type ClientModuleMap = Record<string, boolean>;
 
 export interface User {
   id: number;
@@ -35,10 +44,12 @@ export interface User {
   tenantId?: number;
   maintenanceOfficerType?: MaintenanceOfficerType;
   maintenanceCompanyName?: string;
+  contractorCompanyId?: number;
   isActive: boolean;
   lastLogin?: string;
   createdAt: string;
   permissions?: PermissionMap;
+  clientModules?: ClientModuleMap;
 }
 
 export interface CurrentUser {
@@ -53,8 +64,10 @@ export interface CurrentUser {
   tenantId?: number;
   maintenanceOfficerType?: MaintenanceOfficerType;
   maintenanceCompanyName?: string;
+  contractorCompanyId?: number;
   initials: string;
   permissions?: PermissionMap;
+  clientModules?: ClientModuleMap;
 }
 
 export interface LoginRequest {
@@ -79,6 +92,8 @@ export interface LoginResponse {
     tenantId?: number;
     maintenanceOfficerType?: MaintenanceOfficerType;
     maintenanceCompanyName?: string;
+    contractorCompanyId?: number;
     permissions?: PermissionMap;
+    clientModules?: ClientModuleMap;
   };
 }

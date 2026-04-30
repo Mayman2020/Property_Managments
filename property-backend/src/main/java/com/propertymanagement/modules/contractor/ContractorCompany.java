@@ -1,9 +1,13 @@
 package com.propertymanagement.modules.contractor;
 
+import com.propertymanagement.shared.persistence.StringListJsonConverter;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "contractor_companies")
@@ -35,6 +39,17 @@ public class ContractorCompany {
 
     @Column(columnDefinition = "TEXT")
     private String notes;
+
+    @Column(name = "contract_start")
+    private LocalDate contractStart;
+
+    @Column(name = "contract_end")
+    private LocalDate contractEnd;
+
+    @Builder.Default
+    @Convert(converter = StringListJsonConverter.class)
+    @Column(name = "attachment_files", columnDefinition = "TEXT")
+    private List<String> attachmentFiles = new ArrayList<>();
 
     @Builder.Default
     @Column(nullable = false)

@@ -22,6 +22,18 @@ export const TENANT_ROUTES: Routes = [
         loadComponent: () => import('./tenant-dashboard/tenant-dashboard.component').then((m) => m.TenantDashboardComponent)
       },
       {
+        path: 'my-contract',
+        loadComponent: () => import('./my-contract/my-contract.component').then((m) => m.MyContractComponent)
+      },
+      {
+        path: 'rent-receipts',
+        loadComponent: () => import('./rent-receipts/rent-receipts.component').then((m) => m.RentReceiptsComponent)
+      },
+      {
+        path: 'contract-request',
+        loadComponent: () => import('./contract-request/contract-request.component').then((m) => m.ContractRequestComponent)
+      },
+      {
         canActivate: [permissionGuard],
         data: { permission: 'new_request', permissionAction: 'create' },
         path: 'new-request',

@@ -1,0 +1,5 @@
+ALTER TABLE properties
+    ADD COLUMN IF NOT EXISTS owner_name_ar  VARCHAR(200),
+    ADD COLUMN IF NOT EXISTS owner_name_en  VARCHAR(200),
+    ADD COLUMN IF NOT EXISTS owner_email    VARCHAR(200),
+    ADD COLUMN IF NOT EXISTS owner_civil_id VARCHAR(100);

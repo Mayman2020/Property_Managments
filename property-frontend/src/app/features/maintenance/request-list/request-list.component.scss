@@ -59,6 +59,26 @@
   font-family: var(--font-mono);
 }
 
+.timeline-cell {
+  cursor: pointer;
+  position: relative;
+}
+
+.timeline-cell:hover {
+  background: var(--paper-2);
+}
+
+.timeline-hint {
+  display: none;
+  font-size: 14px;
+  color: var(--ink-400);
+  margin-top: 3px;
+}
+
+.timeline-cell:hover .timeline-hint {
+  display: block;
+}
+
 .table-arrow {
   width: auto;
   height: auto;

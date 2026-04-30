@@ -1,4 +1,4 @@
-﻿<div class="app-page">
+<div class="app-page">
   <app-page-header
     [title]="'RATINGS_DASHBOARD.TITLE' | translate"
     [subtitle]="'RATINGS_DASHBOARD.SUBTITLE' | translate"
@@ -37,12 +37,16 @@
 
       <mat-form-field appearance="outline">
         <mat-label>{{ 'RATINGS_DASHBOARD.DATE_FROM' | translate }}</mat-label>
-        <input matInput type="date" [value]="dateFrom" (change)="dateFrom = $any($event.target).value; applyFilters()">
+        <input matInput [matDatepicker]="fromPicker" [value]="dateFrom" (dateChange)="dateFrom = $event.value; applyFilters()">
+        <mat-datepicker-toggle matIconSuffix [for]="fromPicker"></mat-datepicker-toggle>
+        <mat-datepicker #fromPicker></mat-datepicker>
       </mat-form-field>
 
       <mat-form-field appearance="outline">
         <mat-label>{{ 'RATINGS_DASHBOARD.DATE_TO' | translate }}</mat-label>
-        <input matInput type="date" [value]="dateTo" (change)="dateTo = $any($event.target).value; applyFilters()">
+        <input matInput [matDatepicker]="toPicker" [value]="dateTo" (dateChange)="dateTo = $event.value; applyFilters()">
+        <mat-datepicker-toggle matIconSuffix [for]="toPicker"></mat-datepicker-toggle>
+        <mat-datepicker #toPicker></mat-datepicker>
       </mat-form-field>
 
       <button mat-stroked-button type="button" (click)="resetFilters()">
@@ -122,7 +126,7 @@
             <p class="row-comment muted" *ngIf="!item.comment">{{ 'RATING.COMMENT' | translate }}: --</p>
           </div>
 
-          <div class="row-date">{{ item.createdAt | date:'dd-MM-yyyy HH:mm' }}</div>
+          <div class="row-date">{{ item.createdAt | date:'dd/MM/yyyy' }}</div>
         </div>
       </section>
     </div>

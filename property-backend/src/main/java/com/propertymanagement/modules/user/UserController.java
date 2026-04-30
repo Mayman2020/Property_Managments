@@ -32,6 +32,14 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.ok(userService.getAll(pageable, q, role)));
     }
 
+    @GetMapping("/maintenance-assignable-contractor")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN', 'MAINTENANCE_OFFICER')")
+    public ResponseEntity<ApiResponse<java.util.List<UserResponse>>> maintenanceAssignableContractorOfficers(
+            @RequestParam Long propertyId,
+            @RequestParam Long contractorCompanyId) {
+        return ResponseEntity.ok(ApiResponse.ok(userService.findAssignableContractorOfficers(propertyId, contractorCompanyId)));
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN')")
     public ResponseEntity<ApiResponse<UserResponse>> getById(@PathVariable Long id) {

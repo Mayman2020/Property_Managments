@@ -20,6 +20,6 @@ public class UnitRequest {
     private Integer bedrooms;
     private Integer bathrooms;
     private BigDecimal rentAmount;
-    private String currency = "SAR";
+    private String currency = "OMR";
     private String notes;
 }

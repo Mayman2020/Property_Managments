@@ -1,0 +1,64 @@
+.page-content { padding: 24px; }
+
+.filter-bar {
+  display: flex; align-items: center; gap: 16px; margin-bottom: 24px; flex-wrap: wrap;
+  .filter-field { width: 160px; }
+}
+
+.loading-center { display: flex; justify-content: center; padding: 64px; }
+
+.empty-state {
+  text-align: center; padding: 64px; color: var(--text-secondary);
+  mat-icon { font-size: 48px; width: 48px; height: 48px; margin-bottom: 12px; }
+}
+
+.invoices-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 20px;
+}
+
+.invoice-card {
+  background: var(--surface-card);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  display: flex; flex-direction: column;
+}
+
+.card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--surface-hover);
+}
+
+.company-info {
+  display: flex; align-items: center; gap: 10px;
+  .co-icon { color: var(--primary); font-size: 28px; width: 28px; height: 28px; }
+  .co-name { font-weight: 600; font-size: 15px; }
+  .inv-number { font-size: 12px; color: var(--text-secondary); }
+}
+
+.status-badge {
+  padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;
+  &.pending { background: rgba(255,193,7,0.15); color: #b8860b; }
+  &.approved { background: rgba(76,175,80,0.15); color: #2e7d32; }
+  &.rejected { background: rgba(244,67,54,0.15); color: #c62828; }
+}
+
+.card-body {
+  padding: 16px 20px; flex: 1;
+  display: flex; flex-direction: column; gap: 10px;
+}
+
+.info-row {
+  display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text-secondary);
+  mat-icon { font-size: 18px; width: 18px; height: 18px; color: var(--primary); }
+  &.amount-row .amount { font-size: 18px; font-weight: 700; color: var(--primary); }
+}
+
+.card-actions {
+  padding: 12px 20px; border-top: 1px solid var(--border-color);
+  display: flex; gap: 8px; justify-content: flex-end;
+}

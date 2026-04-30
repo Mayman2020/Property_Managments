@@ -1,0 +1,102 @@
+.receipt-form-wrap {
+  margin-bottom: 24px;
+  padding: 24px;
+
+  .form-title {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    color: var(--primary);
+    margin: 0 0 20px;
+  }
+}
+
+.receipt-form {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+
+  .full { grid-column: 1 / -1; }
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+    .full { grid-column: 1; }
+  }
+}
+
+.upload-section {
+  margin-bottom: 20px;
+  .upload-label {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    font-weight: 600;
+    .required { color: var(--danger); }
+  }
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.receipts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.receipt-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  border-radius: 12px;
+  border: 1.5px solid var(--line);
+  transition: box-shadow .18s, border-color .18s;
+  &:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,.1);
+    border-color: var(--primary);
+  }
+}
+
+.receipt-period {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  .period-icon {
+    font-size: 28px;
+    color: var(--primary);
+    background: rgba(var(--primary-rgb),.1);
+    padding: 8px;
+    border-radius: 8px;
+  }
+  .period-label { font-weight: 700; font-size: 1rem; color: var(--text-main); }
+  .period-date { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
+}
+
+.receipt-amount {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.receipt-actions {
+  display: flex;
+  gap: 4px;
+  margin-top: auto;
+  a { color: var(--primary); }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 64px 24px;
+  text-align: center;
+  .material-icons { font-size: 56px; color: var(--text-muted); }
+  p { color: var(--text-muted); font-size: 0.95rem; }
+}

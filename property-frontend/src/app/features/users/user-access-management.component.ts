@@ -73,7 +73,7 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
 
             <div class="access-meta">
               <span>{{ 'USER_ACCESS.CURRENT_ROLE' | translate }}: <strong>{{ roleLabel(user.role) }}</strong></span>
-              <span>{{ 'REQUEST_LIST.CREATED_AT' | translate }}: {{ user.createdAt | date:'yyyy-MM-dd' }}</span>
+              <span>{{ 'REQUEST_LIST.CREATED_AT' | translate }}: {{ user.createdAt | date:'dd/MM/yyyy' }}</span>
             </div>
 
             <div class="role-editor" *ngIf="permissions.can('users', 'edit')">
@@ -202,7 +202,7 @@ export class UserAccessManagementComponent implements OnInit {
   loading = true;
   savingIds = new Set<number>();
   draftRoles: Record<number, UserRole> = {};
-  readonly roleOptions: UserRole[] = ['SUPER_ADMIN', 'PROPERTY_ADMIN', 'MAINTENANCE_OFFICER', 'TENANT'];
+  readonly roleOptions: UserRole[] = ['SUPER_ADMIN', 'PROPERTY_ADMIN', 'CONTRACTS_OFFICER', 'ACCOUNTANT', 'HR_OFFICER', 'OWNER', 'MAINTENANCE_OFFICER', 'TENANT'];
 
   constructor(
     private readonly userService: UserService,

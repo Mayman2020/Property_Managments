@@ -1,0 +1,83 @@
+<app-page-header
+  [title]="'CONTRACTS.RECORD_PAYMENT' | translate"
+  [subtitle]="'CONTRACTS.RECORD_PAYMENT_SUBTITLE' | translate"
+  [showBack]="true"
+  (backClick)="goBack()">
+</app-page-header>
+
+<mat-card class="form-card">
+  <mat-card-content>
+    <form [formGroup]="form" class="payment-form">
+
+      <div class="two-col">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'CONTRACTS.CONTRACT_ID' | translate }}</mat-label>
+          <input matInput type="number" formControlName="contractId" required>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'CONTRACTS.SCHEDULE_ID' | translate }}</mat-label>
+          <input matInput type="number" formControlName="scheduleId">
+        </mat-form-field>
+      </div>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>{{ 'CONTRACTS.PAYMENT_DATE' | translate }}</mat-label>
+        <input matInput [matDatepicker]="datePicker" formControlName="paymentDate" required>
+        <mat-datepicker-toggle matSuffix [for]="datePicker"></mat-datepicker-toggle>
+        <mat-datepicker #datePicker></mat-datepicker>
+      </mat-form-field>
+
+      <div class="two-col">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'CONTRACTS.AMOUNT_PAID' | translate }}</mat-label>
+          <input matInput type="number" step="0.01" formControlName="amountPaid" required>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'CONTRACTS.AMOUNT_DUE' | translate }}</mat-label>
+          <input matInput type="number" step="0.01" formControlName="amountDue" required>
+        </mat-form-field>
+      </div>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>{{ 'CONTRACTS.METHOD' | translate }}</mat-label>
+        <mat-select formControlName="paymentMethod">
+          <mat-option *ngFor="let m of methods" [value]="m">{{ 'CONTRACTS.METHOD_' + m | translate }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>{{ 'CONTRACTS.REFERENCE' | translate }}</mat-label>
+        <input matInput formControlName="referenceNumber">
+      </mat-form-field>
+
+      <div class="two-col">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'CONTRACTS.LATE_FEE' | translate }}</mat-label>
+          <input matInput type="number" formControlName="lateFee">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'CONTRACTS.DISCOUNT' | translate }}</mat-label>
+          <input matInput type="number" formControlName="discount">
+        </mat-form-field>
+      </div>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>{{ 'CONTRACTS.NOTES' | translate }}</mat-label>
+        <textarea matInput formControlName="notes" rows="2"></textarea>
+      </mat-form-field>
+
+      <div *ngIf="errorMsg" class="error-msg">{{ errorMsg }}</div>
+
+      <div class="form-actions">
+        <button mat-stroked-button type="button" (click)="cancel()">{{ 'COMMON.CANCEL' | translate }}</button>
+        <button mat-flat-button color="primary" [disabled]="form.invalid || saving" (click)="submit()">
+          <mat-spinner diameter="16" *ngIf="saving"></mat-spinner>
+          {{ 'CONTRACTS.SAVE_PAYMENT' | translate }}
+        </button>
+      </div>
+    </form>
+  </mat-card-content>
+</mat-card>

@@ -4,11 +4,6 @@
       <span class="material-icons">{{ sidebarCollapsed ? 'menu_open' : 'menu' }}</span>
     </button>
 
-    <div class="topbar-search">
-      <span class="material-icons">search</span>
-      <input type="text" [placeholder]="'TOPBAR.SEARCH_PLACEHOLDER' | translate">
-      <kbd>Ctrl K</kbd>
-    </div>
   </div>
 
   <div class="topbar-end">
@@ -40,13 +35,15 @@
       </div>
       <mat-divider></mat-divider>
       <div class="tb-notify-empty" *ngIf="notifications.length === 0">{{ 'NOTIFICATIONS.EMPTY' | translate }}</div>
-      <button mat-menu-item *ngFor="let n of notifications" (click)="markAsRead(n)" class="tb-notify-item">
+      <button mat-menu-item *ngFor="let n of notifications" (click)="markAsRead(n)" class="tb-notify-item" [class.unread]="!n.read">
         <div class="tb-notify-item-content">
           <div class="tb-notify-title">
-            <span>{{ n.title }}</span>
+            <span class="material-icons tb-notify-type-icon">{{ notificationIcon(n) }}</span>
+            <span>{{ notificationTitle(n) }}</span>
             <span class="tb-dot" *ngIf="!n.read"></span>
           </div>
-          <div class="tb-notify-message">{{ n.message }}</div>
+          <div class="tb-notify-message">{{ notificationMessage(n) }}</div>
+          <div class="tb-notify-meta">{{ n.createdAt | date:'dd/MM/yyyy' }}</div>
         </div>
       </button>
     </mat-menu>

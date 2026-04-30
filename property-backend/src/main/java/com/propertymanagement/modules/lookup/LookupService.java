@@ -1,6 +1,7 @@
 package com.propertymanagement.modules.lookup;
 
 import com.propertymanagement.modules.lookup.dto.CreateCityRequest;
+import com.propertymanagement.modules.lookup.dto.CreateClassificationRequest;
 import com.propertymanagement.modules.lookup.dto.CreateCountryRequest;
 import com.propertymanagement.modules.lookup.dto.LookupResponse;
 import com.propertymanagement.modules.lookup.dto.UpdateLookupRequest;
@@ -45,7 +46,7 @@ public class LookupService {
 
     @Transactional
     public LookupResponse createCountry(CreateCountryRequest request) {
-        String code = normalizeCode(request.getCode());
+        String code = resolveCountryCode(request.getCode());
         if (lookupRepository.existsByTypeAndCodeIgnoreCase(LookupType.COUNTRY, code)) {
             throw AppException.conflict("Country code already exists: " + code);
         }
@@ -69,7 +70,7 @@ public class LookupService {
                 .filter((l) -> l.getType() == LookupType.COUNTRY)
                 .orElseThrow(() -> AppException.badRequest("Valid country is required"));
 
-        String code = normalizeCode(request.getCode());
+        String code = resolveCityCode(request.getCountryId(), request.getCode());
         if (lookupRepository.existsByTypeAndCodeIgnoreCase(LookupType.CITY, code)) {
             throw AppException.conflict("City code already exists: " + code);
         }
@@ -110,6 +111,54 @@ public class LookupService {
         return toResponse(lookupRepository.save(lookup));
     }
 
+    public List<LookupResponse> getByType(LookupType type) {
+        return lookupRepository.findByTypeAndActiveTrueOrderBySortOrderAscNameEnAsc(type)
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    public List<LookupResponse> getAllByType(LookupType type) {
+        return lookupRepository.findByTypeOrderBySortOrderAscNameEnAsc(type)
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    @Transactional
+    public LookupResponse createClassification(CreateClassificationRequest request) {
+        LookupType type = request.getType();
+        String code = request.getCode() != null && !request.getCode().isBlank()
+                ? normalizeCode(request.getCode())
+                : generateClassificationCode(type);
+
+        if (lookupRepository.existsByTypeAndCodeIgnoreCase(type, code)) {
+            throw AppException.conflict("Code already exists: " + code);
+        }
+
+        Lookup item = Lookup.builder()
+                .type(type)
+                .code(code)
+                .nameAr(request.getNameAr().trim())
+                .nameEn(request.getNameEn().trim())
+                .sortOrder(request.getSortOrder() != null ? request.getSortOrder() : 0)
+                .active(true)
+                .locked(false)
+                .build();
+
+        return toResponse(lookupRepository.save(item));
+    }
+
+    private String generateClassificationCode(LookupType type) {
+        long base = lookupRepository.countByType(type) + 1;
+        String prefix = type.name().substring(0, Math.min(3, type.name().length()));
+        String candidate;
+        do {
+            candidate = prefix + "-" + base++;
+        } while (lookupRepository.existsByTypeAndCodeIgnoreCase(type, candidate));
+        return candidate;
+    }
+
     @Transactional
     public void delete(Long id) {
         Lookup lookup = lookupRepository.findById(id)
@@ -136,5 +185,37 @@ public class LookupService {
 
     private String normalizeCode(String code) {
         return code.trim().toUpperCase(Locale.ROOT);
+    }
+
+    private String resolveCountryCode(String requested) {
+        if (requested == null || requested.isBlank()) {
+            return generateUniqueCountryCode();
+        }
+        return normalizeCode(requested);
+    }
+
+    private String resolveCityCode(Long countryId, String requested) {
+        if (requested == null || requested.isBlank()) {
+            return generateUniqueCityCode(countryId);
+        }
+        return normalizeCode(requested);
+    }
+
+    private String generateUniqueCountryCode() {
+        long base = lookupRepository.countByType(LookupType.COUNTRY) + 1;
+        String candidate;
+        do {
+            candidate = "CN-" + base++;
+        } while (lookupRepository.existsByTypeAndCodeIgnoreCase(LookupType.COUNTRY, candidate));
+        return candidate;
+    }
+
+    private String generateUniqueCityCode(Long countryId) {
+        long base = lookupRepository.countByTypeAndParentId(LookupType.CITY, countryId) + 1;
+        String candidate;
+        do {
+            candidate = "CT-" + countryId + "-" + base++;
+        } while (lookupRepository.existsByTypeAndCodeIgnoreCase(LookupType.CITY, candidate));
+        return candidate;
     }
 }

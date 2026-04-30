@@ -2,259 +2,235 @@
   <app-page-header
     [title]="'LOOKUPS.TITLE' | translate"
     [subtitle]="'LOOKUPS.SUBTITLE' | translate"
-    [breadcrumbs]="[{label:('NAV.DASHBOARD' | translate), route:'/admin/dashboard'}, {label:('NAV.LOOKUPS' | translate)}]"
-  >
+    [breadcrumbs]="[{label:('NAV.DASHBOARD' | translate), route:'/admin/dashboard'}, {label:('NAV.LOOKUPS' | translate)}]">
   </app-page-header>
 
-  <div class="loading-center" *ngIf="loading">
-    <mat-spinner diameter="40"></mat-spinner>
-  </div>
+  <mat-tab-group class="lookup-tabs" animationDuration="180ms">
+    <mat-tab [label]="isArabic ? 'الدولة / المحافظة / المدينة' : 'Country / Governorate / City'">
+      <mat-accordion class="lookup-panel-stack" multi>
+        <mat-expansion-panel class="lookup-box">
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <span class="material-icons">public</span>
+              <span>{{ isArabic ? 'الدول والمحافظات' : 'Countries and Governorates' }}</span>
+              <span class="panel-count">{{ governorates.length }}</span>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
 
-  <mat-accordion class="cities-panels-accordion" *ngIf="!loading" multi>
-    <mat-expansion-panel class="cities-panel" [expanded]="true">
-      <mat-expansion-panel-header>
-        <mat-panel-title>
-          <mat-icon>public</mat-icon>
-          {{ 'LOOKUPS.COUNTRIES' | translate }}
-          <span class="panel-count" *ngIf="filteredGovernorates.length">({{ filteredGovernorates.length }})</span>
-        </mat-panel-title>
-      </mat-expansion-panel-header>
-
-      <div class="panel-content">
-        <div class="app-table-toolbar">
-          <div class="app-table-toolbar-copy">
-            <h2>{{ 'LOOKUPS.COUNTRIES' | translate }}</h2>
-            <p>{{ 'LOOKUPS.SUBTITLE' | translate }}</p>
-          </div>
-          <div class="app-table-toolbar-actions">
-            <mat-form-field appearance="outline" class="app-filter-field">
-              <mat-label>{{ 'ACTIONS.SEARCH' | translate }}</mat-label>
-              <input matInput [value]="governorateSearch" (input)="onGovernorateSearch($any($event.target).value)" />
-              <mat-icon matSuffix>search</mat-icon>
-            </mat-form-field>
-          </div>
-        </div>
-
-        <form [formGroup]="governorateForm" (ngSubmit)="saveGovernorate()" class="inline-form">
-          <mat-form-field appearance="outline">
-            <mat-label>{{ 'LOOKUPS.CODE' | translate }}</mat-label>
-            <input matInput formControlName="code" />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>{{ 'LOOKUPS.NAME_AR' | translate }}</mat-label>
-            <input matInput formControlName="nameAr" />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>{{ 'LOOKUPS.NAME_EN' | translate }}</mat-label>
-            <input matInput formControlName="nameEn" />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>{{ 'LOOKUPS.SORT_ORDER' | translate }}</mat-label>
-            <input matInput type="number" formControlName="sortOrder" />
-          </mat-form-field>
-
-          <div class="inline-form-actions">
-            <button mat-flat-button color="primary" type="submit" [disabled]="governorateForm.invalid || savingGovernorate">
-              <mat-spinner *ngIf="savingGovernorate" diameter="18"></mat-spinner>
-              <span *ngIf="!savingGovernorate">
-                {{ (editingGovernorateId ? 'ACTIONS.SAVE' : 'LOOKUPS.ADD_COUNTRY') | translate }}
-              </span>
-            </button>
-            <button mat-stroked-button type="button" *ngIf="editingGovernorateId" (click)="cancelGovernorateEdit()">
-              {{ 'ACTIONS.CANCEL' | translate }}
+          <div class="lookup-box-head">
+            <div>
+              <h2>{{ isArabic ? 'الدول والمحافظات' : 'Countries and Governorates' }}</h2>
+              <p>{{ governorates.length }} {{ isArabic ? 'عنصر' : 'items' }}</p>
+            </div>
+            <button mat-flat-button type="button" (click)="openAddGovernorate()">
+              <mat-icon>add</mat-icon>
+              {{ 'LOOKUPS.ADD_COUNTRY' | translate }}
             </button>
           </div>
-        </form>
 
-        <div class="app-table-wrap" *ngIf="filteredGovernorates.length; else noGovernoratesTpl">
-          <table class="app-data-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>{{ 'LOOKUPS.NAME_AR' | translate }}</th>
-                <th>{{ 'LOOKUPS.NAME_EN' | translate }}</th>
-                <th>{{ 'LOOKUPS.CODE' | translate }}</th>
-                <th>{{ 'LOOKUPS.SORT_ORDER' | translate }}</th>
-                <th>{{ 'COMMON.ACTIVE' | translate }}</th>
-                <th>{{ 'REQUEST_LIST.ACTIONS' | translate }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let gov of pagedGovernorates; let i = index">
-                <td>{{ governoratesPageIndex * pageSize + i + 1 }}</td>
-                <td>{{ gov.nameAr }}</td>
-                <td>{{ gov.nameEn }}</td>
-                <td>{{ gov.code }}</td>
-                <td>{{ gov.sortOrder }}</td>
-                <td>
-                  <span class="status-badge" [attr.data-status]="gov.active ? 'ACTIVE' : 'INACTIVE'">
-                    {{ (gov.active ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') | translate }}
-                  </span>
-                </td>
-                <td>
-                  <div class="app-row-actions">
-                    <button type="button" class="app-icon-btn" (click)="editGovernorate(gov)">
-                      <mat-icon>edit</mat-icon>
-                    </button>
-                    <button
-                      type="button"
-                      class="app-icon-btn danger"
-                      [disabled]="gov.locked || deletingLookupId === gov.id"
-                      (click)="deleteLookup(gov)"
-                    >
-                      <mat-icon>delete</mat-icon>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="table-pager" *ngIf="filteredGovernorates.length > pageSize">
-          <button mat-stroked-button type="button" (click)="changeGovernoratesPage(-1)" [disabled]="governoratesPageIndex === 0">&lt;</button>
-          <span>{{ governoratesPageIndex + 1 }} / {{ governoratesTotalPages }}</span>
-          <button
-            mat-stroked-button
-            type="button"
-            (click)="changeGovernoratesPage(1)"
-            [disabled]="governoratesPageIndex >= governoratesTotalPages - 1"
-          >
-            &gt;
-          </button>
-        </div>
-      </div>
-    </mat-expansion-panel>
-
-    <mat-expansion-panel class="cities-panel" [expanded]="true">
-      <mat-expansion-panel-header>
-        <mat-panel-title>
-          <mat-icon>location_city</mat-icon>
-          {{ 'LOOKUPS.CITIES' | translate }}
-          <span class="panel-count" *ngIf="filteredCities.length">({{ filteredCities.length }})</span>
-        </mat-panel-title>
-      </mat-expansion-panel-header>
-
-      <div class="panel-content">
-        <div class="app-table-toolbar">
-          <div class="app-table-toolbar-copy">
-            <h2>{{ 'LOOKUPS.CITIES' | translate }}</h2>
-            <p>{{ 'LOOKUPS.SUBTITLE' | translate }}</p>
+          <app-table-export-toolbar
+            permissionKey="lookups"
+            [title]="isArabic ? 'الدول والمحافظات' : 'Countries and Governorates'"
+            fileName="countries-governorates"
+            [columns]="lookupExportColumns"
+            [rows]="governorates">
+          </app-table-export-toolbar>
+          <div class="loading-center" *ngIf="loading"><mat-spinner diameter="32"></mat-spinner></div>
+          <div class="app-table-wrap" *ngIf="!loading && governorates.length; else noGovernoratesTpl">
+            <table class="app-data-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>{{ isArabic ? 'الاسم' : 'Name' }}</th>
+                  <th>{{ 'LOOKUPS.CODE' | translate }}</th>
+                  <th>{{ 'COMMON.ACTIVE' | translate }}</th>
+                  <th>{{ 'REQUEST_LIST.ACTIONS' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let gov of pagedGovernorates; let i = index">
+                  <td>{{ governoratesPageIndex * pageSize + i + 1 }}</td>
+                  <td>{{ nameOf(gov) }}</td>
+                  <td>{{ gov.code }}</td>
+                  <td>
+                    <span class="status-badge" [attr.data-status]="gov.active ? 'ACTIVE' : 'INACTIVE'">
+                      {{ (gov.active ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') | translate }}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="app-row-actions">
+                      <button type="button" class="app-icon-btn" (click)="openEditGovernorate(gov)"><mat-icon>edit</mat-icon></button>
+                      <button type="button" class="app-icon-btn danger" [disabled]="gov.locked || deletingLookupId === gov.id" (click)="deleteLookup(gov)">
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-          <div class="app-table-toolbar-actions">
-            <mat-form-field appearance="outline" class="app-filter-field governorate-filter">
-              <mat-label>{{ 'LOOKUPS.COUNTRY' | translate }}</mat-label>
-              <mat-select [value]="cityGovernorateFilter" (valueChange)="onCityGovernorateFilter($event)">
-                <mat-option [value]="null">{{ 'ACTIONS.VIEW_ALL' | translate }}</mat-option>
-                <mat-option *ngFor="let g of governorates" [value]="g.id">{{ nameOf(g) }}</mat-option>
-              </mat-select>
-            </mat-form-field>
-            <mat-form-field appearance="outline" class="app-filter-field">
-              <mat-label>{{ 'ACTIONS.SEARCH' | translate }}</mat-label>
-              <input matInput [value]="citySearch" (input)="onCitySearch($any($event.target).value)" />
-              <mat-icon matSuffix>search</mat-icon>
-            </mat-form-field>
+          <app-table-pager [length]="governorates.length" [pageSize]="pageSize" [pageIndex]="governoratesPageIndex" (pageIndexChange)="governoratesPageIndex = $event"></app-table-pager>
+        </mat-expansion-panel>
+
+        <mat-expansion-panel class="lookup-box">
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <span class="material-icons">location_city</span>
+              <span>{{ 'LOOKUPS.CITIES' | translate }}</span>
+              <span class="panel-count">{{ filteredCities.length }}</span>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+
+          <div class="lookup-box-head">
+            <div>
+              <h2>{{ 'LOOKUPS.CITIES' | translate }}</h2>
+              <p>{{ filteredCities.length }} {{ isArabic ? 'عنصر' : 'items' }}</p>
+            </div>
+            <div class="lookup-actions">
+              <mat-form-field appearance="outline" class="lookup-filter">
+                <mat-label>{{ 'LOOKUPS.COUNTRY' | translate }}</mat-label>
+                <mat-select [value]="cityGovernorateFilter" (valueChange)="onCityGovernorateFilter($event)">
+                  <mat-option [value]="null">{{ 'ACTIONS.VIEW_ALL' | translate }}</mat-option>
+                  <mat-option *ngFor="let g of governorates" [value]="g.id">{{ nameOf(g) }}</mat-option>
+                </mat-select>
+              </mat-form-field>
+              <button mat-flat-button type="button" (click)="openAddCity()">
+                <mat-icon>add</mat-icon>
+                {{ 'LOOKUPS.ADD_CITY' | translate }}
+              </button>
+            </div>
           </div>
-        </div>
 
-        <form [formGroup]="cityForm" (ngSubmit)="saveCity()" class="inline-form">
-          <mat-form-field appearance="outline">
-            <mat-label>{{ 'LOOKUPS.COUNTRY' | translate }}</mat-label>
-            <mat-select formControlName="countryId">
-              <mat-option *ngFor="let g of governorates" [value]="g.id">{{ nameOf(g) }}</mat-option>
-            </mat-select>
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>{{ 'LOOKUPS.CODE' | translate }}</mat-label>
-            <input matInput formControlName="code" />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>{{ 'LOOKUPS.NAME_AR' | translate }}</mat-label>
-            <input matInput formControlName="nameAr" />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>{{ 'LOOKUPS.NAME_EN' | translate }}</mat-label>
-            <input matInput formControlName="nameEn" />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>{{ 'LOOKUPS.SORT_ORDER' | translate }}</mat-label>
-            <input matInput type="number" formControlName="sortOrder" />
-          </mat-form-field>
-
-          <div class="inline-form-actions">
-            <button mat-flat-button color="primary" type="submit" [disabled]="cityForm.invalid || savingCity">
-              <mat-spinner *ngIf="savingCity" diameter="18"></mat-spinner>
-              <span *ngIf="!savingCity">{{ (editingCityId ? 'ACTIONS.SAVE' : 'LOOKUPS.ADD_CITY') | translate }}</span>
-            </button>
-            <button mat-stroked-button type="button" *ngIf="editingCityId" (click)="cancelCityEdit()">
-              {{ 'ACTIONS.CANCEL' | translate }}
-            </button>
+          <app-table-export-toolbar
+            permissionKey="lookups"
+            [title]="'LOOKUPS.CITIES' | translate"
+            fileName="cities"
+            [columns]="cityExportColumns"
+            [rows]="filteredCities">
+          </app-table-export-toolbar>
+          <div class="app-table-wrap" *ngIf="filteredCities.length; else noCitiesTpl">
+            <table class="app-data-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>{{ 'LOOKUPS.COUNTRY' | translate }}</th>
+                  <th>{{ isArabic ? 'الاسم' : 'Name' }}</th>
+                  <th>{{ 'LOOKUPS.CODE' | translate }}</th>
+                  <th>{{ 'COMMON.ACTIVE' | translate }}</th>
+                  <th>{{ 'REQUEST_LIST.ACTIONS' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let city of pagedCities; let i = index">
+                  <td>{{ citiesPageIndex * pageSize + i + 1 }}</td>
+                  <td>{{ cityGovernorateName(city) }}</td>
+                  <td>{{ nameOf(city) }}</td>
+                  <td>{{ city.code }}</td>
+                  <td>
+                    <span class="status-badge" [attr.data-status]="city.active ? 'ACTIVE' : 'INACTIVE'">
+                      {{ (city.active ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') | translate }}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="app-row-actions">
+                      <button type="button" class="app-icon-btn" (click)="openEditCity(city)"><mat-icon>edit</mat-icon></button>
+                      <button type="button" class="app-icon-btn danger" [disabled]="city.locked || deletingLookupId === city.id" (click)="deleteLookup(city)">
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-        </form>
+          <app-table-pager [length]="filteredCities.length" [pageSize]="pageSize" [pageIndex]="citiesPageIndex" (pageIndexChange)="citiesPageIndex = $event"></app-table-pager>
+        </mat-expansion-panel>
+      </mat-accordion>
+    </mat-tab>
 
-        <div class="app-table-wrap" *ngIf="filteredCities.length; else noCitiesTpl">
-          <table class="app-data-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>{{ 'LOOKUPS.COUNTRY' | translate }}</th>
-                <th>{{ 'LOOKUPS.NAME_AR' | translate }}</th>
-                <th>{{ 'LOOKUPS.NAME_EN' | translate }}</th>
-                <th>{{ 'LOOKUPS.CODE' | translate }}</th>
-                <th>{{ 'LOOKUPS.SORT_ORDER' | translate }}</th>
-                <th>{{ 'COMMON.ACTIVE' | translate }}</th>
-                <th>{{ 'REQUEST_LIST.ACTIONS' | translate }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let city of pagedCities; let i = index">
-                <td>{{ citiesPageIndex * pageSize + i + 1 }}</td>
-                <td>{{ i18n.currentLang === 'ar' ? city.governorateNameAr : city.governorateNameEn }}</td>
-                <td>{{ city.nameAr }}</td>
-                <td>{{ city.nameEn }}</td>
-                <td>{{ city.code }}</td>
-                <td>{{ city.sortOrder }}</td>
-                <td>
-                  <span class="status-badge" [attr.data-status]="city.active ? 'ACTIVE' : 'INACTIVE'">
-                    {{ (city.active ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') | translate }}
-                  </span>
-                </td>
-                <td>
-                  <div class="app-row-actions">
-                    <button type="button" class="app-icon-btn" (click)="editCity(city)">
-                      <mat-icon>edit</mat-icon>
-                    </button>
-                    <button
-                      type="button"
-                      class="app-icon-btn danger"
-                      [disabled]="city.locked || deletingLookupId === city.id"
-                      (click)="deleteLookup(city)"
-                    >
-                      <mat-icon>delete</mat-icon>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+    <mat-tab [label]="isArabic ? 'العقار / الوحدة / الطابق' : 'Property / Unit / Floor'">
+      <ng-container *ngTemplateOutlet="classificationGrid; context: { lists: propertyLists }"></ng-container>
+    </mat-tab>
 
-        <div class="table-pager" *ngIf="filteredCities.length > pageSize">
-          <button mat-stroked-button type="button" (click)="changeCitiesPage(-1)" [disabled]="citiesPageIndex === 0">&lt;</button>
-          <span>{{ citiesPageIndex + 1 }} / {{ citiesTotalPages }}</span>
-          <button mat-stroked-button type="button" (click)="changeCitiesPage(1)" [disabled]="citiesPageIndex >= citiesTotalPages - 1">
-            &gt;
-          </button>
-        </div>
-      </div>
-    </mat-expansion-panel>
-  </mat-accordion>
+    <mat-tab [label]="isArabic ? 'العقود' : 'Contracts'">
+      <ng-container *ngTemplateOutlet="classificationGrid; context: { lists: contractLists }"></ng-container>
+    </mat-tab>
+
+    <mat-tab [label]="isArabic ? 'المسميات الوظيفية' : 'Job Titles'">
+      <ng-container *ngTemplateOutlet="classificationGrid; context: { lists: jobLists }"></ng-container>
+    </mat-tab>
+  </mat-tab-group>
 </div>
 
-<ng-template #noGovernoratesTpl>
-  <p class="app-empty-state-inline">{{ 'COMMON.NO_DATA' | translate }}</p>
+<ng-template #classificationGrid let-lists="lists">
+  <mat-accordion class="lookup-panel-stack" multi>
+    <mat-expansion-panel class="lookup-box" *ngFor="let list of lists">
+      <mat-expansion-panel-header>
+        <mat-panel-title>
+          <span class="material-icons">{{ list.icon }}</span>
+          <span>{{ listLabel(list) }}</span>
+          <span class="panel-count">{{ list.items.length }}</span>
+        </mat-panel-title>
+      </mat-expansion-panel-header>
+
+      <div class="lookup-box-head">
+        <div>
+          <h2>{{ listLabel(list) }}</h2>
+          <p>{{ list.items.length }} {{ isArabic ? 'عنصر' : 'items' }}</p>
+        </div>
+        <button mat-flat-button type="button" (click)="openAddClassification(list)">
+          <mat-icon>add</mat-icon>
+          {{ 'ACTIONS.ADD' | translate }}
+        </button>
+      </div>
+
+      <app-table-export-toolbar
+        permissionKey="lookups"
+        [title]="listLabel(list)"
+        [fileName]="list.type"
+        [columns]="lookupExportColumns"
+        [rows]="list.items">
+      </app-table-export-toolbar>
+      <div class="loading-center" *ngIf="list.loading"><mat-spinner diameter="32"></mat-spinner></div>
+      <div class="app-table-wrap" *ngIf="!list.loading && list.items.length; else noItemsTpl">
+        <table class="app-data-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>{{ isArabic ? 'الاسم' : 'Name' }}</th>
+              <th>{{ 'LOOKUPS.CODE' | translate }}</th>
+              <th>{{ 'COMMON.STATUS' | translate }}</th>
+              <th>{{ 'COMMON.ACTIONS' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of pagedListItems(list); let i = index">
+              <td>{{ list.pageIndex * pageSize + i + 1 }}</td>
+              <td>{{ nameOf(item) }}</td>
+              <td><code class="code-tag">{{ item.code }}</code></td>
+              <td>
+                <span class="status-badge" [attr.data-status]="item.active ? 'ACTIVE' : 'INACTIVE'">
+                  {{ (item.active ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') | translate }}
+                </span>
+              </td>
+              <td>
+                <div class="app-row-actions">
+                  <button type="button" class="app-icon-btn" (click)="openEditClassification(list, item)"><mat-icon>edit</mat-icon></button>
+                  <button type="button" class="app-icon-btn danger" [disabled]="item.locked || deletingLookupId === item.id" (click)="deleteClassification(list, item)">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                  <mat-icon class="lock-icon" *ngIf="item.locked">lock</mat-icon>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <app-table-pager [length]="list.items.length" [pageSize]="pageSize" [pageIndex]="list.pageIndex" (pageIndexChange)="list.pageIndex = $event"></app-table-pager>
+    </mat-expansion-panel>
+  </mat-accordion>
 </ng-template>
 
-<ng-template #noCitiesTpl>
-  <p class="app-empty-state-inline">{{ 'COMMON.NO_DATA' | translate }}</p>
-</ng-template>
+<ng-template #noGovernoratesTpl><p class="app-empty-state-inline">{{ 'COMMON.NO_DATA' | translate }}</p></ng-template>
+<ng-template #noCitiesTpl><p class="app-empty-state-inline">{{ 'COMMON.NO_DATA' | translate }}</p></ng-template>
+<ng-template #noItemsTpl><p class="app-empty-state-inline">{{ 'COMMON.NO_DATA' | translate }}</p></ng-template>

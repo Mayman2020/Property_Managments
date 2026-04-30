@@ -1,6 +1,6 @@
 <div class="app-page profile-page">
   <app-page-header
-    [eyebrow]="i18n.currentLang === 'ar' ? 'أنت' : 'You'"
+    [eyebrow]="'PROFILE.YOU' | translate"
     [title]="'PROFILE.TITLE' | translate"
     [subtitle]="'PROFILE.SUBTITLE' | translate">
   </app-page-header>
@@ -36,8 +36,8 @@
       <section class="app-card profile-editor-card">
         <div class="section-head">
           <div>
-            <div class="section-eyebrow">{{ i18n.currentLang === 'ar' ? 'الملف الشخصي' : 'Profile' }}</div>
-            <h3>{{ i18n.currentLang === 'ar' ? 'معلوماتك' : 'Your details' }}</h3>
+            <div class="section-eyebrow">{{ 'PROFILE.SECTION_PROFILE' | translate }}</div>
+            <h3>{{ 'PROFILE.YOUR_DETAILS' | translate }}</h3>
           </div>
         </div>
 
@@ -84,7 +84,7 @@
       <section class="app-card password-card">
         <div class="section-head">
           <div>
-            <div class="section-eyebrow">{{ i18n.currentLang === 'ar' ? 'الأمان' : 'Security' }}</div>
+            <div class="section-eyebrow">{{ 'PROFILE.SECTION_SECURITY' | translate }}</div>
             <h3>{{ 'PROFILE.CHANGE_PASSWORD' | translate }}</h3>
           </div>
         </div>

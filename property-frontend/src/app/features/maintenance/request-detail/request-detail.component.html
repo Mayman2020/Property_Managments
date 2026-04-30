@@ -5,8 +5,13 @@
 
   <ng-container *ngIf="!loading && request">
     <div class="detail-breadcrumb">
+      <button type="button" class="breadcrumb-back-btn" (click)="goBack()">
+        <span class="material-icons">arrow_back</span>
+        {{ 'COMMON.BACK' | translate }}
+      </button>
+      <span class="breadcrumb-sep">/</span>
       <a [routerLink]="auth.getDashboardRoute()">{{ 'NAV.MAINTENANCE' | translate }}</a>
-      <span>/</span>
+      <span class="breadcrumb-sep">/</span>
       <span>{{ request.requestNumber }}</span>
     </div>
 
@@ -57,7 +62,7 @@
               </div>
               <div class="detail-meta-item">
                 <label>{{ 'MAINTENANCE.CATEGORY' | translate }}</label>
-                <span>{{ request.categoryNameAr || request.categoryNameEn || '-' }}</span>
+                <span>{{ i18n.currentLang === 'ar' ? (request.categoryNameAr || request.categoryNameEn || '-') : (request.categoryNameEn || request.categoryNameAr || '-') }}</span>
               </div>
               <div class="detail-meta-item">
                 <label>{{ 'REQUEST_DETAIL.PROPERTY_UNIT' | translate }}</label>
@@ -71,7 +76,7 @@
 
             <div class="detail-photos">
               <div class="detail-photo-placeholder" *ngFor="let slot of [1, 2, 3]">
-                {{ i18n.currentLang === 'ar' ? 'صورة' : 'Photo' }} {{ slot }}
+                {{ 'REQUEST_DETAIL.PHOTO' | translate }} {{ slot }}
               </div>
             </div>
           </div>
@@ -79,20 +84,30 @@
 
         <section class="app-card detail-panel">
           <div class="app-card-header">
-            <span class="app-card-title">{{ i18n.currentLang === 'ar' ? 'المراحل' : 'Timeline' }}</span>
+            <span class="app-card-title">{{ 'REQUEST_DETAIL.TIMELINE' | translate }}</span>
           </div>
           <div class="app-card-body">
-            <div class="timeline-list">
-              <div class="timeline-item" *ngFor="let step of timelineSteps; let i = index; let last = last">
-                <div class="timeline-dot" [class.done]="step.done" [class.active]="step.active">
-                  <span class="material-icons" *ngIf="step.done">check</span>
-                  <span *ngIf="!step.done" class="timeline-index">{{ i + 1 }}</span>
+            <div class="timeline-shell">
+              <div class="timeline-rail" aria-hidden="true">
+                <div class="timeline-rail-fill" [style.height.%]="timelineRailPercent"></div>
+              </div>
+              <div class="timeline-list">
+                <div
+                  class="timeline-item"
+                  *ngFor="let step of timelineSteps; let i = index"
+                  [class.is-complete]="step.visual === 'complete'"
+                  [class.is-current]="step.visual === 'current'"
+                  [class.is-upcoming]="step.visual === 'upcoming'">
+                  <div class="timeline-dot" [attr.data-visual]="step.visual">
+                    <span class="material-icons timeline-check" *ngIf="step.visual === 'complete'">check</span>
+                    <span class="timeline-spinner" *ngIf="step.visual === 'current'"></span>
+                    <span *ngIf="step.visual === 'upcoming'" class="timeline-index">{{ i + 1 }}</span>
+                  </div>
+                  <div class="timeline-content">
+                    <strong>{{ step.label }}</strong>
+                    <span>{{ step.date }}</span>
+                  </div>
                 </div>
-                <div class="timeline-content">
-                  <strong>{{ step.label }}</strong>
-                  <span>{{ step.date }}</span>
-                </div>
-                <div class="timeline-line" *ngIf="!last" [class.is-done]="step.done"></div>
               </div>
             </div>
           </div>
@@ -102,7 +117,7 @@
       <aside class="detail-side">
         <section class="app-card action-stack-card" *ngIf="canAssign || canSchedule || canAcceptReject || canRate || canStart || canSubmitReport">
           <div class="app-card-header">
-            <span class="app-card-title">{{ i18n.currentLang === 'ar' ? 'إجراءات الطلب' : 'Request actions' }}</span>
+            <span class="app-card-title">{{ 'REQUEST_DETAIL.ACTIONS_TITLE' | translate }}</span>
           </div>
           <div class="app-card-body action-stack">
             <div class="action-panel" *ngIf="canAssign">
@@ -160,7 +175,7 @@
               <div class="schedule-preview">
                 <span class="material-icons">calendar_today</span>
                 <div>
-                  <strong>{{ request.scheduledDate | date:'fullDate' }}</strong>
+                  <strong>{{ request.scheduledDate | date:'dd/MM/yyyy' }}</strong>
                   <span *ngIf="request.scheduledTimeFrom">{{ request.scheduledTimeFrom }} - {{ request.scheduledTimeTo }}</span>
                 </div>
               </div>
@@ -210,7 +225,7 @@
 
         <section class="app-card detail-panel">
           <div class="app-card-header">
-            <span class="app-card-title">{{ i18n.currentLang === 'ar' ? 'موعد الزيارة' : 'Scheduled for' }}</span>
+            <span class="app-card-title">{{ 'REQUEST_DETAIL.SCHEDULED_FOR' | translate }}</span>
           </div>
           <div class="app-card-body">
             <div *ngIf="!request.scheduledDate" class="card-empty">
@@ -227,14 +242,33 @@
               <div class="officer-card">
                 <div class="officer-avatar">{{ (request.assignedOfficerName || 'ST').slice(0, 2).toUpperCase() }}</div>
                 <div>
-                  <div class="officer-name">{{ request.assignedOfficerName || (i18n.currentLang === 'ar' ? 'سيتم التعيين' : 'To be assigned') }}</div>
-                  <div class="officer-role">{{ i18n.currentLang === 'ar' ? 'الصيانة' : 'Maintenance' }}</div>
+                  <div class="officer-name">{{ request.assignedOfficerName || ('REQUEST_DETAIL.TO_BE_ASSIGNED' | translate) }}</div>
+                  <div class="officer-role">{{ 'REQUEST_DETAIL.MAINTENANCE_ROLE' | translate }}</div>
+                  <div class="officer-phone" *ngIf="request.assignedOfficerPhone">
+                    <span class="material-icons">phone</span>
+                    <span>{{ request.assignedOfficerPhone }}</span>
+                  </div>
                 </div>
               </div>
-              <button mat-stroked-button type="button" class="full-width">
+              <button mat-stroked-button type="button" class="full-width contact-officer-btn" [matMenuTriggerFor]="contactOfficerMenu" [disabled]="!request.assignedOfficerPhone">
                 <span class="material-icons">phone</span>
-                {{ i18n.currentLang === 'ar' ? 'التواصل مع الفني' : 'Contact officer' }}
+                {{ 'REQUEST_DETAIL.CONTACT_OFFICER' | translate }}
               </button>
+              <mat-menu #contactOfficerMenu="matMenu" class="contact-officer-menu">
+                <div class="contact-menu-phone" *ngIf="request.assignedOfficerPhone">
+                  <span class="material-icons">badge</span>
+                  <strong>{{ request.assignedOfficerName || ('REQUEST_DETAIL.OFFICER' | translate) }}</strong>
+                  <small>{{ request.assignedOfficerPhone }}</small>
+                </div>
+                <button mat-menu-item type="button" (click)="openWhatsApp(request.assignedOfficerPhone)">
+                  <span class="material-icons">chat</span>
+                  <span>{{ 'REQUEST_DETAIL.WHATSAPP' | translate }}</span>
+                </button>
+                <button mat-menu-item type="button" (click)="callOfficer(request.assignedOfficerPhone)">
+                  <span class="material-icons">call</span>
+                  <span>{{ 'REQUEST_DETAIL.CALL' | translate }}</span>
+                </button>
+              </mat-menu>
             </div>
           </div>
         </section>
@@ -249,13 +283,13 @@
               <p class="visit-report-copy">{{ visitReport.workDone || visitReport.visitOutcome }}</p>
               <div class="visit-report-meta" *ngIf="visitReport.officerNotes">{{ visitReport.officerNotes }}</div>
               <div class="visit-report-purchase" *ngIf="visitReport.hasPurchase">
-                <span>{{ i18n.currentLang === 'ar' ? 'شراء:' : 'Purchase:' }}</span>
+                <span>{{ 'REQUEST_DETAIL.PURCHASE_LABEL' | translate }}</span>
                 <strong>{{ visitReport.purchaseAmount || 0 }}</strong>
               </div>
             </ng-container>
             <ng-template #noReport>
               <div class="visit-report-empty">
-                {{ i18n.currentLang === 'ar' ? 'سيظهر التقرير بعد تنفيذ الزيارة.' : 'The report will appear after the officer completes the visit.' }}
+                {{ 'REQUEST_DETAIL.REPORT_PENDING' | translate }}
               </div>
             </ng-template>
           </div>

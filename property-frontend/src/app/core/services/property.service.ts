@@ -7,6 +7,10 @@ export interface Property {
   id: number;
   ownerId: number;
   ownerName?: string;
+  ownerNameAr?: string;
+  ownerNameEn?: string;
+  ownerEmail?: string;
+  ownerCivilId?: string;
   propertyName: string;
   propertyNameAr?: string;
   propertyNameEn?: string;
@@ -21,12 +25,18 @@ export interface Property {
   description?: string;
   coverImageUrl?: string;
   ownerDocumentFiles?: string[];
+  maintenanceInternalOfficerUserId?: number;
+  maintenanceContractorCompanyId?: number;
   isActive: boolean;
   createdAt: string;
 }
 
 export interface PropertyForm {
   ownerId: number;
+  ownerNameAr?: string;
+  ownerNameEn?: string;
+  ownerEmail?: string;
+  ownerCivilId?: string;
   propertyName: string;
   propertyNameAr?: string;
   propertyNameEn?: string;
@@ -40,6 +50,8 @@ export interface PropertyForm {
   description?: string;
   coverImageUrl?: string;
   ownerDocumentFiles: string[];
+  maintenanceInternalOfficerUserId?: number;
+  maintenanceContractorCompanyId?: number;
 }
 
 @Injectable({ providedIn: 'root' })

@@ -3,6 +3,8 @@ package com.propertymanagement.modules.auth;
 import com.propertymanagement.modules.auth.dto.LoginRequest;
 import com.propertymanagement.modules.auth.dto.LoginResponse;
 import com.propertymanagement.modules.auth.dto.RefreshTokenRequest;
+import com.propertymanagement.modules.owner.OwnerRepository;
+import com.propertymanagement.modules.moduleconfig.PropertyModuleSettingService;
 import com.propertymanagement.modules.permission.RolePermissionService;
 import com.propertymanagement.modules.tenant.TenantRepository;
 import com.propertymanagement.modules.user.User;
@@ -32,7 +34,9 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
     private final TenantRepository tenantRepository;
+    private final OwnerRepository ownerRepository;
     private final RolePermissionService rolePermissionService;
+    private final PropertyModuleSettingService propertyModuleSettingService;
 
     @Value("${jwt.expiration}")
     private long jwtExpiration;
@@ -77,9 +81,14 @@ public class AuthService {
         String refreshToken = jwtUtil.generateRefreshToken(user.getEmail());
 
         Long tenantId = null;
+        Long ownerId = null;
         if (user.getRole() == UserRole.TENANT) {
             tenantId = tenantRepository.findByUserId(user.getId())
                     .map(t -> t.getId())
+                    .orElse(null);
+        } else if (user.getRole() == UserRole.OWNER) {
+            ownerId = ownerRepository.findByUserId(user.getId())
+                    .map(o -> o.getId())
                     .orElse(null);
         }
 
@@ -99,9 +108,25 @@ public class AuthService {
                         .propertyId(user.getPropertyId())
                         .maintenanceOfficerType(user.getMaintenanceOfficerType() != null ? user.getMaintenanceOfficerType().name() : null)
                         .maintenanceCompanyName(user.getMaintenanceCompanyName())
+                        .contractorCompanyId(user.getContractorCompanyId())
                         .tenantId(tenantId)
+                        .ownerId(ownerId)
                         .permissions(rolePermissionService.getPermissionMap(user.getRole()))
+                        .clientModules(resolveClientModules(user))
                         .build())
                 .build();
+    }
+
+    private Map<String, Boolean> resolveClientModules(User user) {
+        if (user.getPropertyId() == null || user.getRole() == UserRole.SUPER_ADMIN) {
+            return java.util.Collections.emptyMap();
+        }
+        return propertyModuleSettingService.getSettingsSnapshot(user.getPropertyId()).stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        com.propertymanagement.modules.moduleconfig.dto.PropertyModuleSettingResponse::getModuleKey,
+                        com.propertymanagement.modules.moduleconfig.dto.PropertyModuleSettingResponse::isEnabled,
+                        (a, b) -> b,
+                        java.util.LinkedHashMap::new
+                ));
     }
 }

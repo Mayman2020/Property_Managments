@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { DatePipe, DecimalPipe, NgFor, NgIf } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
@@ -11,6 +12,7 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
 import { DashboardService, DashboardStats } from '../../core/services/dashboard.service';
 import { MaintenanceService, MaintenanceRequest } from '../../core/services/maintenance.service';
 import { InventoryService, InventoryItem } from '../../core/services/inventory.service';
+import { PropertyService, Property } from '../../core/services/property.service';
 import { AuthService } from '../../core/services/auth.service';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { PermissionService } from '../../core/services/permission.service';
@@ -29,6 +31,7 @@ interface StatusTile {
     NgIf,
     DecimalPipe,
     DatePipe,
+    FormsModule,
     RouterLink,
     TranslateModule,
     MatButtonModule,
@@ -45,32 +48,63 @@ export class DashboardComponent implements OnInit {
   lowStockItems: InventoryItem[] = [];
   trendValues: number[] = [];
   loading = true;
+  properties: Property[] = [];
+  selectedPropertyId: number | null = null;
 
   constructor(
     private readonly dashSvc: DashboardService,
     private readonly maintSvc: MaintenanceService,
     private readonly invSvc: InventoryService,
+    private readonly propertySvc: PropertyService,
     readonly i18n: I18nService,
     readonly permissions: PermissionService,
     readonly auth: AuthService
   ) {}
 
   ngOnInit(): void {
+    this.propertySvc.getAll(0, 100).subscribe({
+      next: (res) => {
+        this.properties = res.data?.content ?? [];
+      },
+      error: () => {}
+    });
+    this.loadData();
+  }
+
+  onPropertyChange(): void {
     this.loadData();
   }
 
   loadData(): void {
     this.loading = true;
+    const maintenanceEnabled = this.permissions.can('maintenance', 'view');
+    const inventoryEnabled = this.permissions.can('inventory', 'view');
+    const pid = this.selectedPropertyId;
+
+    const statsObs$ = pid
+      ? this.dashSvc.getStatsByProperty(pid).pipe(catchError(() => of({ data: null })))
+      : this.dashSvc.getStats().pipe(catchError(() => of({ data: null })));
+
+    const requestsParams: Record<string, string | number | boolean> = { page: 0, size: 6 };
+    if (pid) requestsParams['propertyId'] = pid;
+
+    const stockObs$ = inventoryEnabled
+      ? this.invSvc.getItems(pid ?? undefined, 0, 5).pipe(catchError(() => of({ data: { content: [] } })))
+      : of({ data: { content: [] } });
 
     forkJoin({
-      stats: this.dashSvc.getStats().pipe(catchError(() => of({ data: null }))),
-      requests: this.maintSvc.getRequests({ page: 0, size: 6 }).pipe(catchError(() => of({ data: { content: [] } }))),
-      stock: this.invSvc.getLowStock().pipe(catchError(() => of({ data: [] }))),
-      trend: this.dashSvc.getMonthlyTrend().pipe(catchError(() => of({ data: [] })))
+      stats: statsObs$,
+      requests: maintenanceEnabled
+        ? this.maintSvc.getRequests(requestsParams).pipe(catchError(() => of({ data: { content: [] } })))
+        : of({ data: { content: [] } }),
+      stock: stockObs$,
+      trend: maintenanceEnabled
+        ? this.dashSvc.getMonthlyTrend(pid ?? undefined).pipe(catchError(() => of({ data: [] })))
+        : of({ data: [] })
     }).subscribe(({ stats, requests, stock, trend }) => {
       this.stats = stats.data ?? null;
       this.recentRequests = requests.data?.content ?? [];
-      this.lowStockItems = (stock.data ?? []).slice(0, 5);
+      this.lowStockItems = ((stock.data as { content?: InventoryItem[] })?.content ?? []).slice(0, 5);
       this.trendValues = (trend.data ?? []).map((item) => item.value);
 
       if (this.trendValues.length < 6) {
@@ -114,6 +148,14 @@ export class DashboardComponent implements OnInit {
     return Math.round((this.stats.rentedUnits / this.stats.totalUnits) * 100);
   }
 
+  get showMaintenanceInsights(): boolean {
+    return this.permissions.can('maintenance', 'view');
+  }
+
+  get showInventoryInsights(): boolean {
+    return this.permissions.can('inventory', 'view');
+  }
+
   get donutCircumference(): number {
     return 2 * Math.PI * 78;
   }
@@ -144,6 +186,10 @@ export class DashboardComponent implements OnInit {
   stockLevel(item: InventoryItem): number {
     if (item.minQuantity <= 0) return 100;
     return Math.min(100, Math.round((item.quantity / item.minQuantity) * 100));
+  }
+
+  inventoryItemName(item: InventoryItem): string {
+    return this.i18n.currentLang === 'ar' ? item.itemNameAr : (item.itemNameEn || item.itemNameAr);
   }
 
   statusLabel(status: string): string {

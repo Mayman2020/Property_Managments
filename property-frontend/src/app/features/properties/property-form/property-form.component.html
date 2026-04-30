@@ -1,127 +1,452 @@
-﻿<div class="app-page">
+<ng-template #propertyFields>
+  <div class="prop-form-sections" [formGroup]="form">
+    <section class="app-card form-section-card">
+      <div class="app-card-header">
+        <span class="app-card-title">{{ 'PROPERTY_FORM.SECTION_BASIC' | translate }}</span>
+      </div>
+      <div class="app-card-body">
+        <div class="form-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'LOOKUPS.NAME_AR' | translate }}</mat-label>
+            <input matInput formControlName="propertyNameAr">
+            <mat-error *ngIf="form.get('propertyNameAr')?.invalid">{{ 'COMMON.REQUIRED' | translate }}</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'LOOKUPS.NAME_EN' | translate }}</mat-label>
+            <input matInput formControlName="propertyNameEn">
+            <mat-error *ngIf="form.get('propertyNameEn')?.invalid">{{ 'COMMON.REQUIRED' | translate }}</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" *ngIf="mode !== 'create'">
+            <mat-label>{{ 'PROPERTY_FORM.PROPERTY_CODE' | translate }}</mat-label>
+            <input matInput formControlName="propertyCode">
+            <mat-error *ngIf="form.get('propertyCode')?.invalid">{{ 'COMMON.REQUIRED' | translate }}</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'PROPERTY_FORM.PROPERTY_TYPE' | translate }}</mat-label>
+            <mat-select formControlName="propertyType">
+              <mat-option *ngFor="let type of types" [value]="type.value">{{ ('PROPERTY_TYPE.' + type.value) | translate }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'PROPERTY_FORM.TOTAL_FLOORS' | translate }}</mat-label>
+            <input matInput formControlName="totalFloors" type="number" min="1">
+          </mat-form-field>
+        </div>
+      </div>
+    </section>
+
+    <section class="app-card form-section-card">
+      <div class="app-card-header">
+        <span class="app-card-title">{{ 'PROPERTY_FORM.SECTION_LOCATION' | translate }}</span>
+      </div>
+      <div class="app-card-body">
+        <div class="form-grid">
+          <mat-form-field appearance="outline" class="full-col">
+            <mat-label>{{ 'PROPERTY_FORM.ADDRESS' | translate }}</mat-label>
+            <input matInput formControlName="address">
+            <mat-error *ngIf="form.get('address')?.invalid">{{ 'COMMON.REQUIRED' | translate }}</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'PROPERTY_FORM.COUNTRY' | translate }}</mat-label>
+            <input matInput formControlName="country" readonly>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'PROPERTY_FORM.CITY' | translate }}</mat-label>
+            <mat-select formControlName="cityId" [disabled]="loadingLookups || isViewMode">
+              <mat-option [value]="null" disabled>{{ 'PROPERTY_FORM.SELECT_CITY' | translate }}</mat-option>
+              <mat-option *ngFor="let city of cities" [value]="city.id">{{ cityLabel(city) }}</mat-option>
+            </mat-select>
+            <mat-error *ngIf="form.get('cityId')?.invalid">{{ 'COMMON.REQUIRED' | translate }}</mat-error>
+          </mat-form-field>
+
+          <div class="map-picker-row full-col">
+            <mat-form-field appearance="outline" class="map-url-field">
+              <mat-label>{{ 'PROPERTY_FORM.GOOGLE_MAP_URL' | translate }}</mat-label>
+              <input matInput formControlName="googleMapUrl" [placeholder]="'PROPERTY_FORM.GOOGLE_MAP_HINT' | translate">
+            </mat-form-field>
+            <button mat-stroked-button type="button" class="map-pick-btn" (click)="openGoogleMaps()">
+              <span class="material-icons">map</span>
+              {{ 'PROPERTY_FORM.GOOGLE_MAP_PICKER' | translate }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="app-card form-section-card">
+      <div class="app-card-header">
+        <span class="app-card-title">{{ 'PROPERTY_FORM.SECTION_OWNER' | translate }}</span>
+      </div>
+      <div class="app-card-body">
+        <div class="form-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'PROPERTY_FORM.OWNER_ID' | translate }}</mat-label>
+            <input matInput formControlName="ownerId" type="number">
+            <mat-error *ngIf="form.get('ownerId')?.invalid">{{ 'COMMON.REQUIRED' | translate }}</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'PROPERTY_FORM.OWNER_CIVIL_ID' | translate }}</mat-label>
+            <input matInput formControlName="ownerCivilId">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'PROPERTY_FORM.OWNER_NAME_AR' | translate }}</mat-label>
+            <input matInput formControlName="ownerNameAr">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'PROPERTY_FORM.OWNER_NAME_EN' | translate }}</mat-label>
+            <input matInput formControlName="ownerNameEn">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-col">
+            <mat-label>{{ 'PROPERTY_FORM.OWNER_EMAIL' | translate }}</mat-label>
+            <input matInput formControlName="ownerEmail" type="email">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-col">
+            <mat-label>{{ 'PROPERTY_FORM.DESCRIPTION' | translate }}</mat-label>
+            <textarea matInput formControlName="description" rows="4"></textarea>
+          </mat-form-field>
+        </div>
+      </div>
+    </section>
+
+    <section class="app-card form-section-card" *ngIf="!isViewMode || form.get('maintenanceInternalOfficerUserId')?.value || form.get('maintenanceContractorCompanyId')?.value">
+      <div class="app-card-header">
+        <span class="app-card-title">{{ 'PROPERTY_FORM.SECTION_ROUTING' | translate }}</span>
+      </div>
+      <div class="app-card-body">
+        <p class="section-hint">{{ 'PROPERTY_FORM.MAINTENANCE_ROUTING_HINT' | translate }}</p>
+        <div class="form-grid">
+          <mat-form-field appearance="outline" class="full-col" *ngIf="propertyId">
+            <mat-label>{{ 'PROPERTY_FORM.INTERNAL_MAINTENANCE_OFFICER' | translate }}</mat-label>
+            <mat-select formControlName="maintenanceInternalOfficerUserId">
+              <mat-option [value]="null">{{ 'PROPERTY_FORM.NO_INTERNAL_OFFICER' | translate }}</mat-option>
+              <mat-option *ngFor="let user of internalOfficerOptions" [value]="user.id">{{ user.fullName }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-col">
+            <mat-label>{{ 'PROPERTY_FORM.CONTRACTOR_COMPANY' | translate }}</mat-label>
+            <mat-select formControlName="maintenanceContractorCompanyId">
+              <mat-option [value]="null">{{ 'PROPERTY_FORM.NO_CONTRACTOR' | translate }}</mat-option>
+              <mat-option *ngFor="let company of contractorCompanies" [value]="company.id">{{ contractorCompanyLabel(company) }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </div>
+    </section>
+
+    <section class="app-card form-section-card">
+      <div class="app-card-header">
+        <span class="app-card-title">{{ 'PROPERTY_FORM.SECTION_MEDIA' | translate }}</span>
+      </div>
+      <div class="app-card-body media-section-body">
+        <div class="media-stack">
+          <div class="media-block">
+            <div class="media-label">{{ 'PROPERTY_FORM.COVER_IMAGE' | translate }}</div>
+            <app-upload-zone
+              [multiple]="false"
+              [accept]="'image/*'"
+              [label]="'PROPERTY_FORM.COVER_UPLOAD_LABEL' | translate"
+              (filesUploaded)="onCoverUploaded($event)">
+            </app-upload-zone>
+            <div class="cover-frame" *ngIf="coverImageUrl">
+              <img [src]="coverImageUrl" [alt]="propertyDisplayName || ('PROPERTY_FORM.COVER_IMAGE' | translate)">
+            </div>
+          </div>
+
+          <div class="media-block">
+            <div class="media-label">{{ 'PROPERTY_FORM.OWNER_DOCS' | translate }}</div>
+            <app-upload-zone
+              *ngIf="!isViewMode"
+              [multiple]="true"
+              [accept]="'image/*,.pdf,.doc,.docx'"
+              [label]="'PROPERTY_FORM.OWNER_DOCS_UPLOAD_LABEL' | translate"
+              (filesUploaded)="onOwnerDocumentsUploaded($event)">
+            </app-upload-zone>
+
+            <div class="doc-list" *ngIf="ownerDocumentUrls.length > 0">
+              <div class="doc-item" *ngFor="let url of ownerDocumentUrls">
+                <a [href]="url" target="_blank" rel="noopener">{{ documentName(url) }}</a>
+                <button mat-stroked-button type="button" *ngIf="!isViewMode" (click)="removeOwnerDocument(url)">
+                  {{ 'ACTIONS.DELETE' | translate }}
+                </button>
+              </div>
+            </div>
+
+            <div class="helper-text" *ngIf="ownerDocumentUrls.length === 0">
+              {{ 'PROPERTY_FORM.OWNER_DOCS_REQUIRED' | translate }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</ng-template>
+
+<div class="app-page property-form-page" *ngIf="!isDialogMode">
   <app-page-header
+    [eyebrow]="'NAV.PROPERTIES' | translate"
     [title]="pageTitleKey | translate"
-    [breadcrumbs]="[{label:('NAV.DASHBOARD' | translate), route:'/admin/dashboard'}, {label:('NAV.PROPERTIES' | translate), route:'/admin/properties'}, {label:((mode === 'create' ? 'ACTIONS.ADD' : (mode === 'edit' ? 'ACTIONS.EDIT' : 'ACTIONS.VIEW')) | translate)}]">
+    [subtitle]="pageSubtitleKey | translate"
+    [breadcrumbs]="[
+      { label: ('NAV.DASHBOARD' | translate), route: '/admin/dashboard' },
+      { label: ('NAV.PROPERTIES' | translate), route: '/admin/properties' },
+      { label: pageTitleKey | translate }
+    ]"
+    [showBack]="true"
+    (backClick)="close()">
     <button mat-stroked-button type="button" *ngIf="isViewMode" (click)="editCurrent()">
       <span class="material-icons">edit</span>
       {{ 'ACTIONS.EDIT' | translate }}
     </button>
   </app-page-header>
 
-  <div class="form-card" *ngIf="!loading">
-    <form [formGroup]="form" (ngSubmit)="submit()">
-      <div class="form-grid">
-        <mat-form-field appearance="outline">
-          <mat-label>{{ 'LOOKUPS.NAME_AR' | translate }}</mat-label>
-          <input matInput formControlName="propertyNameAr">
-          <mat-error *ngIf="form.get('propertyNameAr')?.invalid">{{ 'COMMON.REQUIRED' | translate }}</mat-error>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>{{ 'LOOKUPS.NAME_EN' | translate }}</mat-label>
-          <input matInput formControlName="propertyNameEn">
-          <mat-error *ngIf="form.get('propertyNameEn')?.invalid">{{ 'COMMON.REQUIRED' | translate }}</mat-error>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>{{ 'PROPERTY_FORM.PROPERTY_CODE' | translate }}</mat-label>
-          <input matInput formControlName="propertyCode" placeholder="PROP-001">
-          <mat-error *ngIf="form.get('propertyCode')?.invalid">{{ 'COMMON.REQUIRED' | translate }}</mat-error>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>{{ 'PROPERTY_FORM.PROPERTY_TYPE' | translate }}</mat-label>
-          <mat-select formControlName="propertyType">
-            <mat-option *ngFor="let t of types" [value]="t.value">{{ ('PROPERTY_TYPE.' + t.value) | translate }}</mat-option>
-          </mat-select>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>{{ 'PROPERTY_FORM.TOTAL_FLOORS' | translate }}</mat-label>
-          <input matInput formControlName="totalFloors" type="number" min="1">
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="full-col">
-          <mat-label>{{ 'PROPERTY_FORM.ADDRESS' | translate }}</mat-label>
-          <input matInput formControlName="address">
-          <mat-error *ngIf="form.get('address')?.invalid">{{ 'COMMON.REQUIRED' | translate }}</mat-error>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>{{ 'PROPERTY_FORM.COUNTRY' | translate }}</mat-label>
-          <mat-select formControlName="country" [disabled]="true">
-            <mat-option [value]="form.get('country')?.value">{{ form.get('country')?.value }}</mat-option>
-          </mat-select>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>{{ 'PROPERTY_FORM.CITY' | translate }}</mat-label>
-          <mat-select formControlName="cityId" [disabled]="loadingLookups || isViewMode">
-            <mat-option [value]="null" disabled>{{ 'PROPERTY_FORM.SELECT_CITY' | translate }}</mat-option>
-            <mat-option *ngFor="let city of cities" [value]="city.id">{{ cityLabel(city) }}</mat-option>
-          </mat-select>
-          <mat-error *ngIf="form.get('cityId')?.invalid">{{ 'COMMON.REQUIRED' | translate }}</mat-error>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="full-col">
-          <mat-label>{{ 'PROPERTY_FORM.GOOGLE_MAP_URL' | translate }}</mat-label>
-          <input matInput formControlName="googleMapUrl" placeholder="https://maps.google.com/...">
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>{{ 'PROPERTY_FORM.OWNER_ID' | translate }}</mat-label>
-          <input matInput formControlName="ownerId" type="number">
-          <mat-error *ngIf="form.get('ownerId')?.invalid">{{ 'COMMON.REQUIRED' | translate }}</mat-error>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="full-col">
-          <mat-label>{{ 'PROPERTY_FORM.DESCRIPTION' | translate }}</mat-label>
-          <textarea matInput formControlName="description" rows="3"></textarea>
-        </mat-form-field>
-
-        <div class="full-col">
-          <h3 class="upload-title">{{ 'PROPERTY_FORM.COVER_IMAGE' | translate }}</h3>
-          <app-upload-zone
-            [multiple]="false"
-            [accept]="'image/*'"
-            [label]="'PROPERTY_FORM.COVER_UPLOAD_LABEL' | translate"
-            (filesUploaded)="onCoverUploaded($event)">
-          </app-upload-zone>
-          <img *ngIf="form.get('coverImageUrl')?.value" [src]="form.get('coverImageUrl')?.value" class="cover-preview" alt="cover">
-        </div>
-
-        <div class="full-col">
-          <h3 class="upload-title">{{ 'PROPERTY_FORM.OWNER_DOCS' | translate }}</h3>
-          <app-upload-zone
-            *ngIf="!isViewMode"
-            [multiple]="true"
-            [accept]="'image/*,.pdf,.doc,.docx'"
-            [label]="'PROPERTY_FORM.OWNER_DOCS_UPLOAD_LABEL' | translate"
-            (filesUploaded)="onOwnerDocumentsUploaded($event)">
-          </app-upload-zone>
-          <div class="doc-list" *ngIf="ownerDocumentUrls.length > 0">
-            <div class="doc-item" *ngFor="let url of ownerDocumentUrls">
-              <a [href]="url" target="_blank" rel="noopener">{{ url }}</a>
-              <button mat-stroked-button type="button" *ngIf="!isViewMode" (click)="removeOwnerDocument(url)">
-                {{ 'ACTIONS.DELETE' | translate }}
-              </button>
-            </div>
-          </div>
-          <small class="muted" *ngIf="ownerDocumentUrls.length === 0">{{ 'PROPERTY_FORM.OWNER_DOCS_REQUIRED' | translate }}</small>
-        </div>
-      </div>
-
-      <div class="form-actions">
-        <button mat-stroked-button type="button" routerLink="/admin/properties">{{ 'ACTIONS.CANCEL' | translate }}</button>
-        <button mat-flat-button type="submit" [disabled]="form.invalid || submitting || loadingLookups || isViewMode">
-          <mat-spinner *ngIf="submitting" diameter="18"></mat-spinner>
-          <span *ngIf="!submitting">{{ 'PROPERTY_FORM.SAVE_BUTTON' | translate }}</span>
-        </button>
-      </div>
-    </form>
-  </div>
-
   <div class="loading-center" *ngIf="loading">
     <mat-spinner diameter="40"></mat-spinner>
   </div>
+
+  <ng-container *ngIf="!loading">
+    <ng-container *ngIf="isViewMode; else editableForm">
+      <section class="property-hero app-card" *ngIf="propertyRecord">
+        <div
+          class="property-hero-visual"
+          [class.has-image]="!!coverImageUrl"
+          [style.background-image]="coverImageUrl ? 'url(' + coverImageUrl + ')' : ''">
+          <div class="hero-placeholder" *ngIf="!coverImageUrl">
+            <span class="material-icons">apartment</span>
+          </div>
+          <div class="hero-overlay">
+            <span class="status-badge" [attr.data-status]="propertyRecord.isActive ? 'ACTIVE' : 'INACTIVE'">
+              {{ (propertyRecord.isActive ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') | translate }}
+            </span>
+            <span class="status-badge" [attr.data-status]="propertyRecord.propertyType === 'RESIDENTIAL' ? 'INFO' : propertyRecord.propertyType === 'COMMERCIAL' ? 'HIGH' : 'NORMAL'">
+              {{ ('PROPERTY_TYPE.' + propertyRecord.propertyType) | translate }}
+            </span>
+          </div>
+        </div>
+
+        <div class="property-hero-body">
+          <div class="property-hero-copy">
+            <div class="hero-kicker">{{ 'PROPERTY_FORM.VIEW_TITLE' | translate }}</div>
+            <h1>{{ propertyDisplayName }}</h1>
+            <p>{{ propertyRecord.address || '-' }}</p>
+          </div>
+
+          <div class="hero-meta-chips">
+            <span class="hero-code">{{ propertyRecord.propertyCode || '-' }}</span>
+            <a mat-stroked-button *ngIf="propertyRecord.googleMapUrl" [href]="propertyRecord.googleMapUrl" target="_blank" rel="noopener">
+              <span class="material-icons">map</span>
+              {{ 'PROPERTY_LIST.OPEN_MAP' | translate }}
+            </a>
+          </div>
+        </div>
+
+        <div class="hero-stats">
+          <div class="hero-stat">
+            <span>{{ 'PROPERTY_LIST.UNITS' | translate }}</span>
+            <strong>{{ propertyRecord.totalUnits || 0 }}</strong>
+          </div>
+          <div class="hero-stat">
+            <span>{{ 'PROPERTY_LIST.FLOORS' | translate }}</span>
+            <strong>{{ propertyRecord.totalFloors || 0 }}</strong>
+          </div>
+          <div class="hero-stat">
+            <span>{{ 'PROPERTY_FORM.OWNER_DOCS' | translate }}</span>
+            <strong>{{ ownerDocumentUrls.length }}</strong>
+          </div>
+          <div class="hero-stat">
+            <span>{{ 'REQUEST_DETAIL.CREATED_AT' | translate }}</span>
+            <strong>{{ createdAtLabel }}</strong>
+          </div>
+        </div>
+      </section>
+
+      <div class="property-detail-grid" *ngIf="propertyRecord">
+        <section class="app-card detail-panel">
+          <div class="app-card-header">
+            <span class="app-card-title">{{ 'PROPERTY_FORM.SECTION_BASIC' | translate }}</span>
+          </div>
+          <div class="app-card-body detail-grid">
+            <div class="detail-item">
+              <label>{{ 'PROPERTY_FORM.PROPERTY_NAME' | translate }}</label>
+              <span>{{ propertyDisplayName || '-' }}</span>
+            </div>
+            <div class="detail-item">
+              <label>{{ 'PROPERTY_FORM.PROPERTY_CODE' | translate }}</label>
+              <span>{{ propertyRecord.propertyCode || '-' }}</span>
+            </div>
+            <div class="detail-item">
+              <label>{{ 'PROPERTY_FORM.PROPERTY_TYPE' | translate }}</label>
+              <span>{{ ('PROPERTY_TYPE.' + propertyRecord.propertyType) | translate }}</span>
+            </div>
+            <div class="detail-item">
+              <label>{{ 'PROPERTY_FORM.TOTAL_FLOORS' | translate }}</label>
+              <span>{{ propertyRecord.totalFloors || 0 }}</span>
+            </div>
+            <div class="detail-item full">
+              <label>{{ 'PROPERTY_FORM.DESCRIPTION' | translate }}</label>
+              <span>{{ propertyRecord.description || '-' }}</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="app-card detail-panel">
+          <div class="app-card-header">
+            <span class="app-card-title">{{ 'PROPERTY_FORM.SECTION_LOCATION' | translate }}</span>
+          </div>
+          <div class="app-card-body detail-grid">
+            <div class="detail-item full">
+              <label>{{ 'PROPERTY_FORM.ADDRESS' | translate }}</label>
+              <span>{{ propertyRecord.address || '-' }}</span>
+            </div>
+            <div class="detail-item">
+              <label>{{ 'PROPERTY_FORM.CITY' | translate }}</label>
+              <span>{{ cityName }}</span>
+            </div>
+            <div class="detail-item">
+              <label>{{ 'PROPERTY_FORM.COUNTRY' | translate }}</label>
+              <span>{{ countryName }}</span>
+            </div>
+            <div class="detail-item full" *ngIf="propertyRecord.googleMapUrl">
+              <label>{{ 'PROPERTY_FORM.GOOGLE_MAP_URL' | translate }}</label>
+              <a [href]="propertyRecord.googleMapUrl" target="_blank" rel="noopener">{{ propertyRecord.googleMapUrl }}</a>
+            </div>
+            <div class="detail-item full" *ngIf="mapEmbedUrl">
+              <label>{{ 'PROPERTY_FORM.MAP_LOCATION' | translate }}</label>
+              <div class="map-embed-wrapper">
+                <iframe [src]="mapEmbedUrl" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="app-card detail-panel">
+          <div class="app-card-header">
+            <span class="app-card-title">{{ 'PROPERTY_FORM.SECTION_OWNER' | translate }}</span>
+          </div>
+          <div class="app-card-body detail-grid">
+            <div class="detail-item">
+              <label>{{ 'PROPERTY_FORM.OWNER_NAME_AR' | translate }}</label>
+              <span>{{ propertyRecord.ownerNameAr || '-' }}</span>
+            </div>
+            <div class="detail-item">
+              <label>{{ 'PROPERTY_FORM.OWNER_NAME_EN' | translate }}</label>
+              <span>{{ propertyRecord.ownerNameEn || '-' }}</span>
+            </div>
+            <div class="detail-item">
+              <label>{{ 'PROPERTY_FORM.OWNER_CIVIL_ID' | translate }}</label>
+              <span>{{ propertyRecord.ownerCivilId || '-' }}</span>
+            </div>
+            <div class="detail-item">
+              <label>{{ 'PROPERTY_FORM.OWNER_EMAIL' | translate }}</label>
+              <span>{{ propertyRecord.ownerEmail || '-' }}</span>
+            </div>
+            <div class="detail-item">
+              <label>{{ 'PROPERTY_FORM.OWNER_ID' | translate }}</label>
+              <span>{{ propertyRecord.ownerId }}</span>
+            </div>
+            <div class="detail-item">
+              <label>{{ 'PROPERTY_LIST.UNITS' | translate }}</label>
+              <span>{{ propertyRecord.totalUnits || 0 }}</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="app-card detail-panel">
+          <div class="app-card-header">
+            <span class="app-card-title">{{ 'PROPERTY_FORM.SECTION_ROUTING' | translate }}</span>
+          </div>
+          <div class="app-card-body detail-grid">
+            <div class="detail-item">
+              <label>{{ 'PROPERTY_FORM.INTERNAL_MAINTENANCE_OFFICER' | translate }}</label>
+              <span>{{ internalOfficerName }}</span>
+            </div>
+            <div class="detail-item">
+              <label>{{ 'PROPERTY_FORM.CONTRACTOR_COMPANY' | translate }}</label>
+              <span>{{ contractorCompanyName }}</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="app-card detail-panel full-span">
+          <div class="app-card-header">
+            <span class="app-card-title">{{ 'PROPERTY_FORM.SECTION_MEDIA' | translate }}</span>
+          </div>
+          <div class="app-card-body media-detail-grid">
+            <div class="cover-frame detail-cover-frame" *ngIf="coverImageUrl; else noCover">
+              <img [src]="coverImageUrl" [alt]="propertyDisplayName">
+            </div>
+            <ng-template #noCover>
+              <div class="detail-empty-card">
+                <span class="material-icons">image_not_supported</span>
+                <span>{{ 'PROPERTY_FORM.COVER_IMAGE' | translate }}</span>
+              </div>
+            </ng-template>
+
+            <div class="detail-documents">
+              <div class="detail-documents-title">{{ 'PROPERTY_FORM.OWNER_DOCS' | translate }}</div>
+              <div class="doc-list" *ngIf="ownerDocumentUrls.length > 0; else noDocs">
+                <div class="doc-item" *ngFor="let url of ownerDocumentUrls">
+                  <a [href]="url" target="_blank" rel="noopener">{{ documentName(url) }}</a>
+                </div>
+              </div>
+              <ng-template #noDocs>
+                <div class="helper-text">{{ 'PROPERTY_FORM.OWNER_DOCS_REQUIRED' | translate }}</div>
+              </ng-template>
+            </div>
+          </div>
+        </section>
+      </div>
+    </ng-container>
+
+    <ng-template #editableForm>
+      <div class="request-form-shell property-edit-shell">
+        <div class="request-form-card">
+          <form [formGroup]="form" (ngSubmit)="submit()" class="request-form-body">
+            <ng-container *ngTemplateOutlet="propertyFields"></ng-container>
+
+            <div class="request-form-actions">
+              <button mat-stroked-button type="button" (click)="close()">{{ 'ACTIONS.CANCEL' | translate }}</button>
+              <button mat-flat-button type="submit" [disabled]="form.invalid || submitting || loadingLookups || isViewMode">
+                <mat-spinner *ngIf="submitting" diameter="18"></mat-spinner>
+                <span *ngIf="!submitting">{{ 'PROPERTY_FORM.SAVE_BUTTON' | translate }}</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </ng-template>
+  </ng-container>
 </div>
+
+<ng-container *ngIf="isDialogMode">
+  <h2 mat-dialog-title>{{ pageTitleKey | translate }}</h2>
+
+  <mat-dialog-content class="dialog-body">
+    <div class="loading-center" *ngIf="loading">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
+
+    <form [formGroup]="form" *ngIf="!loading" class="property-dialog-form">
+      <ng-container *ngTemplateOutlet="propertyFields"></ng-container>
+    </form>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end" class="dialog-actions">
+    <button mat-stroked-button type="button" (click)="close()">{{ 'ACTIONS.CANCEL' | translate }}</button>
+    <button mat-flat-button type="button" (click)="submit()" [disabled]="form.invalid || submitting || loadingLookups || isViewMode">
+      <mat-spinner *ngIf="submitting" diameter="18"></mat-spinner>
+      <span *ngIf="!submitting">{{ 'PROPERTY_FORM.SAVE_BUTTON' | translate }}</span>
+    </button>
+  </mat-dialog-actions>
+</ng-container>

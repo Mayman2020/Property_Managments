@@ -16,6 +16,15 @@ public class DashboardStatsResponse {
     private long inProgressRequests;
     private long completedThisMonth;
     private long lowStockItems;
+    private long openMaintenanceRequests;
+    private long totalInventoryItems;
     private Map<String, Long> requestsByStatus;
     private Map<String, Long> requestsByCategory;
+
+    // Contract stats
+    private long activeContracts;
+    private long expiringIn30Days;
+    private long overduePayments;
+    private long openViolations;
+    private long openComplaints;
 }
