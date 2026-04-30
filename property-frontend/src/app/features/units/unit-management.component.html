@@ -1,86 +1,96 @@
-<div class="app-page unit-page">
+<div class="app-page units-page">
   <app-page-header
     [eyebrow]="'NAV_SECTION.DIRECTORY' | translate"
-    [title]="'UNITS.TITLE' | translate"
+    [title]="'NAV.UNITS' | translate"
     [subtitle]="'UNITS.SUBTITLE' | translate"
-    [breadcrumbs]="[{ label: ('NAV.DASHBOARD' | translate), route: '/admin/dashboard' }, { label: ('NAV.UNITS' | translate) }]">
+    [breadcrumbs]="[{label:('NAV.DASHBOARD' | translate), route:'/admin/dashboard'}, {label:('NAV.UNITS' | translate)}]"
+    [showBack]="true"
+    (backClick)="goBack()">
     <button mat-flat-button type="button" (click)="openAddDialog()">
-      <span class="material-icons">add</span>
-      {{ 'UNITS.ADD' | translate }}
+      <mat-icon>add</mat-icon>
+      {{ 'UNITS.ADD_UNIT' | translate }}
     </button>
   </app-page-header>
 
-  <div class="unit-filters">
-    <mat-form-field appearance="outline">
-      <mat-label>{{ 'REQUEST_FORM.PROPERTY' | translate }}</mat-label>
-      <mat-select [(value)]="selectedPropertyId" (selectionChange)="onPropertyFilterChange()">
-        <mat-option [value]="null">{{ 'ACTIONS.VIEW_ALL' | translate }}</mat-option>
-        <mat-option *ngFor="let p of properties" [value]="p.id">{{ (i18n.currentLang === 'ar' ? p.propertyNameAr : p.propertyNameEn) || p.propertyName }}</mat-option>
-      </mat-select>
-    </mat-form-field>
-
-    <div class="unit-search">
-      <span class="material-icons">search</span>
-      <input [value]="searchTerm" (input)="onSearch($any($event.target).value)" [placeholder]="'UNITS.SEARCH' | translate">
-    </div>
-
-    <button mat-stroked-button type="button" (click)="clearFilters()">{{ 'ACTIONS.CANCEL' | translate }}</button>
+  <div class="loading-wrap" *ngIf="loading">
+    <mat-spinner diameter="40"></mat-spinner>
   </div>
 
-  <app-empty-state
-    *ngIf="!loading && filteredUnits.length === 0"
-    icon="meeting_room"
-    [title]="'COMMON.NO_DATA' | translate"
-    [message]="'UNITS.SUBTITLE' | translate">
-  </app-empty-state>
+  <section class="app-card" *ngIf="!loading">
+    <div class="search-bar-shell">
+      <div class="search-input-box">
+        <mat-icon>search</mat-icon>
+        <input [value]="searchTerm" (input)="onSearch($any($event.target).value)" [placeholder]="'ACTIONS.SEARCH' | translate">
+      </div>
+      
+      <mat-form-field appearance="outline" class="property-filter">
+        <mat-select [(ngModel)]="selectedPropertyId" (selectionChange)="onPropertyFilterChange()">
+          <mat-option [value]="null">{{ 'PROPERTY_FORM.ALL_PROPERTIES' | translate }}</mat-option>
+          <mat-option *ngFor="let p of properties" [value]="p.id">{{ p.propertyName }}</mat-option>
+        </mat-select>
+      </mat-form-field>
 
-  <div class="app-card units-table-card" *ngIf="!loading && filteredUnits.length > 0">
-    <app-table-export-toolbar
-      permissionKey="units"
-      [title]="'UNITS.TITLE' | translate"
-      fileName="units"
-      [columns]="exportColumns"
-      [rows]="filteredUnits">
-    </app-table-export-toolbar>
+      <app-table-export-toolbar
+        permissionKey="units"
+        [title]="'NAV.UNITS' | translate"
+        fileName="units"
+        [columns]="exportColumns"
+        [rows]="filteredUnits">
+      </app-table-export-toolbar>
+    </div>
+
     <div class="app-table-wrap">
-      <table class="app-data-table">
+      <table class="app-data-table source-table">
         <thead>
           <tr>
             <th>{{ 'UNITS.UNIT_NUMBER' | translate }}</th>
             <th>{{ 'REQUEST_FORM.PROPERTY' | translate }}</th>
-            <th>{{ 'UNITS.FLOOR' | translate }}</th>
-            <th>{{ 'REQUEST_LIST.TENANT' | translate }}</th>
-            <th>{{ 'UNITS.UNIT_TYPE' | translate }}</th>
-            <th>{{ 'UNITS.AREA' | translate }}</th>
-            <th>{{ 'MAINTENANCE.STATUS' | translate }}</th>
-            <th>{{ 'REQUEST_LIST.ACTIONS' | translate }}</th>
+            <th class="center-col">{{ 'UNITS.FLOOR' | translate }}</th>
+            <th class="center-col">{{ 'UNITS.UNIT_TYPE' | translate }}</th>
+            <th class="center-col">{{ 'UNITS.AREA' | translate }}</th>
+            <th class="center-col">{{ 'MAINTENANCE.STATUS' | translate }}</th>
+            <th class="actions-col"></th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let u of pagedUnits">
-            <td><span class="mono-cell">{{ u.unitNumber }}</span></td>
-            <td>{{ propertyName(u) }}</td>
-            <td>{{ u.floorId || '—' }}</td>
-            <td>{{ tenantName(u) }}</td>
-            <td>{{ u.unitType || '—' }}</td>
-            <td>{{ u.areaSqm || '—' }}</td>
+          <tr *ngFor="let unit of pagedUnits">
             <td>
-              <span class="status-badge" [attr.data-status]="u.rented ? 'COMPLETED' : 'PENDING'">
-                {{ (u.rented ? 'UNITS.RENTED' : 'DASHBOARD.VACANT_UNITS') | translate }}
-              </span>
-            </td>
-            <td>
-              <div class="table-actions">
-                <button class="app-icon-btn" type="button" (click)="openEditDialog(u)">
-                  <span class="material-icons">edit</span>
-                </button>
-                <mat-slide-toggle [checked]="u.rented" (change)="toggleRented(u)"></mat-slide-toggle>
+              <div class="unit-code-cell">
+                <mat-icon class="unit-icon">door_front</mat-icon>
+                <span class="unit-number">{{ unit.unitNumber }}</span>
               </div>
             </td>
+            <td>
+              <div class="property-cell">
+                <mat-icon>apartment</mat-icon>
+                <span>{{ propertyName(unit) }}</span>
+              </div>
+            </td>
+            <td class="center-col"><span class="floor-badge">{{ unit.floorId != null ? unit.floorId : '-' }}</span></td>
+            <td class="center-col"><span class="type-badge">{{ unit.unitType || '-' }}</span></td>
+            <td class="center-col"><span class="area-text">{{ unit.areaSqm ? unit.areaSqm + ' m²' : '-' }}</span></td>
+            <td class="center-col">
+              <span class="status-chip" [ngClass]="unit.rented ? 'chip-danger' : 'chip-success'">
+                {{ (unit.rented ? 'UNITS.RENTED' : 'DASHBOARD.VACANT_UNITS') | translate }}
+              </span>
+            </td>
+            <td class="actions-col">
+              <div class="table-actions">
+                <button class="app-icon-btn info" type="button" (click)="openEditDialog(unit)" [matTooltip]="'ACTIONS.EDIT' | translate">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button class="app-icon-btn" [ngClass]="unit.rented ? 'warning' : 'success'" type="button" (click)="toggleRented(unit)" [matTooltip]="(unit.rented ? 'UNITS.MARK_VACANT' : 'UNITS.MARK_RENTED') | translate">
+                  <mat-icon>{{ unit.rented ? 'event_busy' : 'event_available' }}</mat-icon>
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="pagedUnits.length === 0">
+            <td colspan="7" class="empty-row">{{ 'COMMON.NO_DATA' | translate }}</td>
           </tr>
         </tbody>
       </table>
     </div>
     <app-table-pager [length]="filteredUnits.length" [pageSize]="pageSize" [pageIndex]="pageIndex" (pageIndexChange)="pageIndex = $event"></app-table-pager>
-  </div>
+  </section>
 </div>

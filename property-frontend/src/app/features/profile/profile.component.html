@@ -1,120 +1,178 @@
 <div class="app-page profile-page">
-  <app-page-header
-    [eyebrow]="'PROFILE.YOU' | translate"
-    [title]="'PROFILE.TITLE' | translate"
-    [subtitle]="'PROFILE.SUBTITLE' | translate">
-  </app-page-header>
+
+  <!-- ═══════════ HERO ═══════════ -->
+  <section class="profile-hero app-card">
+    <div class="hero-banner"></div>
+    <div class="hero-body">
+
+      <div class="hero-avatar-ring">
+        <div class="hero-avatar">
+          <img *ngIf="form.get('profileImageUrl')?.value"
+               [src]="form.get('profileImageUrl')?.value"
+               [attr.alt]="'PROFILE.AVATAR_ALT' | translate">
+          <span *ngIf="!form.get('profileImageUrl')?.value">{{ avatarText }}</span>
+        </div>
+      </div>
+
+      <div class="hero-info">
+        <div class="hero-name-row">
+          <h2 class="hero-name">{{ form.get('fullName')?.value || ('PROFILE.DEFAULT_USER' | translate) }}</h2>
+          <span class="role-badge">
+            <span class="material-icons">verified_user</span>
+            {{ ('ROLE.' + roleKey) | translate }}
+          </span>
+        </div>
+
+        <div class="hero-chips">
+          <div class="hero-chip">
+            <span class="material-icons">mail_outline</span>
+            <span>{{ auth.getCurrentUser()?.email || '—' }}</span>
+          </div>
+          <div class="hero-chip" *ngIf="form.get('phone')?.value">
+            <span class="material-icons">phone_iphone</span>
+            <span>{{ form.get('phone')?.value }}</span>
+          </div>
+          <div class="hero-chip bio-chip" *ngIf="form.get('bio')?.value">
+            <span class="material-icons">notes</span>
+            <span>{{ form.get('bio')?.value }}</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+  <!-- ═══════════════════════════ -->
 
   <div class="loading-center" *ngIf="loading">
     <mat-spinner diameter="40"></mat-spinner>
   </div>
 
-  <ng-container *ngIf="!loading">
-    <section class="profile-hero app-card">
-      <div class="profile-hero-avatar">
-        <img *ngIf="form.get('profileImageUrl')?.value" [src]="form.get('profileImageUrl')?.value" [attr.alt]="'PROFILE.AVATAR_ALT' | translate">
-        <span *ngIf="!form.get('profileImageUrl')?.value">{{ avatarText }}</span>
-      </div>
+  <div class="profile-grid" *ngIf="!loading">
 
-      <div class="profile-hero-copy">
-        <div class="profile-name">{{ form.get('fullName')?.value || ('PROFILE.DEFAULT_USER' | translate) }}</div>
-        <div class="profile-role">{{ ('ROLE.' + roleKey) | translate }}</div>
-        <div class="profile-contact-row">
-          <span>
-            <span class="material-icons">mail</span>
-            {{ auth.getCurrentUser()?.email || '—' }}
-          </span>
-          <span>
-            <span class="material-icons">phone</span>
-            {{ form.get('phone')?.value || '—' }}
-          </span>
+    <!-- ── PERSONAL INFO CARD ── -->
+    <section class="app-card profile-card">
+      <div class="card-head">
+        <div class="card-head-icon-wrap">
+          <span class="material-icons">manage_accounts</span>
+        </div>
+        <div>
+          <div class="card-eyebrow">{{ 'PROFILE.SECTION_PROFILE' | translate }}</div>
+          <h3 class="card-title">{{ 'PROFILE.YOUR_DETAILS' | translate }}</h3>
         </div>
       </div>
-    </section>
 
-    <div class="profile-grid">
-      <section class="app-card profile-editor-card">
-        <div class="section-head">
-          <div>
-            <div class="section-eyebrow">{{ 'PROFILE.SECTION_PROFILE' | translate }}</div>
-            <h3>{{ 'PROFILE.YOUR_DETAILS' | translate }}</h3>
-          </div>
-        </div>
+      <form [formGroup]="form" (ngSubmit)="save()" class="pf-form">
 
-        <form [formGroup]="form" (ngSubmit)="save()" class="profile-form">
-          <div class="profile-fields">
-            <label class="field-shell">
-              <span>{{ 'PROFILE.FULL_NAME' | translate }}</span>
-              <input type="text" formControlName="fullName">
-            </label>
-
-            <label class="field-shell">
-              <span>{{ 'PROFILE.PHONE' | translate }}</span>
-              <input type="text" formControlName="phone">
-            </label>
-
-            <label class="field-shell full-width">
-              <span>{{ 'PROFILE.BIO' | translate }}</span>
-              <textarea rows="4" formControlName="bio"></textarea>
-            </label>
-
-            <div class="full-width upload-field">
-              <span class="field-label">{{ 'PROFILE.IMAGE_UPLOAD' | translate }}</span>
-              <div class="upload-frame">
-                <app-upload-zone
-                  [multiple]="false"
-                  [accept]="'image/*'"
-                  [label]="'PROFILE.UPLOAD_LABEL' | translate"
-                  (filesUploaded)="onImageUploaded($event)">
-                </app-upload-zone>
-              </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label class="field-label">{{ 'PROFILE.FULL_NAME' | translate }}</label>
+            <div class="input-wrap">
+              <span class="material-icons input-ico">person_outline</span>
+              <input class="pf-input" type="text" formControlName="fullName"
+                     [placeholder]="'PROFILE.FULL_NAME' | translate">
             </div>
           </div>
 
-          <div class="profile-actions">
-            <button mat-stroked-button type="button" routerLink="/">{{ 'ACTIONS.CANCEL' | translate }}</button>
-            <button mat-flat-button type="submit" [disabled]="form.invalid || saving">
-              <mat-spinner *ngIf="saving" diameter="18"></mat-spinner>
-              <span *ngIf="!saving">{{ 'PROFILE.SAVE_BUTTON' | translate }}</span>
-            </button>
-          </div>
-        </form>
-      </section>
-
-      <section class="app-card password-card">
-        <div class="section-head">
-          <div>
-            <div class="section-eyebrow">{{ 'PROFILE.SECTION_SECURITY' | translate }}</div>
-            <h3>{{ 'PROFILE.CHANGE_PASSWORD' | translate }}</h3>
+          <div class="field-group">
+            <label class="field-label">{{ 'PROFILE.PHONE' | translate }}</label>
+            <div class="input-wrap">
+              <span class="material-icons input-ico">phone_iphone</span>
+              <input class="pf-input" type="text" formControlName="phone"
+                     [placeholder]="'PROFILE.PHONE' | translate">
+            </div>
           </div>
         </div>
 
-        <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" class="profile-form">
-          <div class="profile-fields single-column">
-            <label class="field-shell">
-              <span>{{ 'PROFILE.CURRENT_PASSWORD' | translate }}</span>
-              <input type="password" formControlName="currentPassword">
-            </label>
+        <div class="field-group">
+          <label class="field-label">{{ 'PROFILE.BIO' | translate }}</label>
+          <textarea class="pf-input pf-textarea" rows="4" formControlName="bio"
+                    [placeholder]="'PROFILE.BIO' | translate"></textarea>
+        </div>
 
-            <label class="field-shell">
-              <span>{{ 'PROFILE.NEW_PASSWORD' | translate }}</span>
-              <input type="password" formControlName="newPassword">
-            </label>
-
-            <label class="field-shell">
-              <span>{{ 'PROFILE.CONFIRM_PASSWORD' | translate }}</span>
-              <input type="password" formControlName="confirmPassword">
-            </label>
+        <div class="field-group">
+          <label class="field-label">{{ 'PROFILE.IMAGE_UPLOAD' | translate }}</label>
+          <div class="upload-frame">
+            <app-upload-zone
+              [multiple]="false"
+              [accept]="'image/*'"
+              [label]="'PROFILE.UPLOAD_LABEL' | translate"
+              (filesUploaded)="onImageUploaded($event)">
+            </app-upload-zone>
           </div>
+        </div>
 
-          <div class="profile-actions">
-            <button mat-flat-button type="submit" [disabled]="passwordForm.invalid || changingPassword">
-              <mat-spinner *ngIf="changingPassword" diameter="18"></mat-spinner>
-              <span *ngIf="!changingPassword">{{ 'PROFILE.CHANGE_PASSWORD_BUTTON' | translate }}</span>
-            </button>
+        <div class="form-actions">
+          <button mat-stroked-button type="button" routerLink="/">{{ 'ACTIONS.CANCEL' | translate }}</button>
+          <button mat-flat-button type="submit" class="btn-save" [disabled]="form.invalid || saving">
+            <mat-spinner *ngIf="saving" diameter="18"></mat-spinner>
+            <ng-container *ngIf="!saving">
+              <span class="material-icons btn-ico">save</span>
+              {{ 'PROFILE.SAVE_BUTTON' | translate }}
+            </ng-container>
+          </button>
+        </div>
+
+      </form>
+    </section>
+    <!-- ─────────────────────── -->
+
+    <!-- ── SECURITY CARD ── -->
+    <section class="app-card security-card">
+      <div class="card-head">
+        <div class="card-head-icon-wrap security-ico-wrap">
+          <span class="material-icons">lock_outline</span>
+        </div>
+        <div>
+          <div class="card-eyebrow">{{ 'PROFILE.SECTION_SECURITY' | translate }}</div>
+          <h3 class="card-title">{{ 'PROFILE.CHANGE_PASSWORD' | translate }}</h3>
+        </div>
+      </div>
+
+      <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" class="pf-form">
+
+        <div class="field-group">
+          <label class="field-label">{{ 'PROFILE.CURRENT_PASSWORD' | translate }}</label>
+          <div class="input-wrap">
+            <span class="material-icons input-ico">lock</span>
+            <input class="pf-input" type="password" formControlName="currentPassword">
           </div>
-        </form>
-      </section>
-    </div>
-  </ng-container>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">{{ 'PROFILE.NEW_PASSWORD' | translate }}</label>
+          <div class="input-wrap">
+            <span class="material-icons input-ico">lock_open</span>
+            <input class="pf-input" type="password" formControlName="newPassword">
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">{{ 'PROFILE.CONFIRM_PASSWORD' | translate }}</label>
+          <div class="input-wrap">
+            <span class="material-icons input-ico">verified</span>
+            <input class="pf-input" type="password" formControlName="confirmPassword">
+          </div>
+        </div>
+
+        <div class="pw-hint">
+          <span class="material-icons">info_outline</span>
+          {{ 'PROFILE.PASSWORD_HINT' | translate }}
+        </div>
+
+        <div class="form-actions">
+          <button mat-flat-button type="submit" class="btn-security"
+                  [disabled]="passwordForm.invalid || changingPassword">
+            <mat-spinner *ngIf="changingPassword" diameter="18"></mat-spinner>
+            <ng-container *ngIf="!changingPassword">
+              <span class="material-icons btn-ico">key</span>
+              {{ 'PROFILE.CHANGE_PASSWORD_BUTTON' | translate }}
+            </ng-container>
+          </button>
+        </div>
+
+      </form>
+    </section>
+    <!-- ────────────────── -->
+
+  </div>
 </div>

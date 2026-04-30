@@ -202,6 +202,15 @@
   color: var(--text-main);
 }
 
+.actions-col {
+  width: 100px;
+  text-align: center;
+}
+
+.center-col {
+  text-align: center;
+}
+
 @media (max-width: 720px) {
   .tenant-active-footer {
     flex-direction: column;

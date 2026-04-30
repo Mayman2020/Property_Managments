@@ -7,7 +7,9 @@
       { label: ('NAV.DASHBOARD' | translate), route: '/admin/dashboard' },
       { label: ('NAV.CONTRACTS_DASHBOARD' | translate), route: '/admin/contracts/dashboard' },
       { label: ('CONTRACTS.INSPECTIONS_TITLE' | translate) }
-    ]">
+    ]"
+    [showBack]="true"
+    (backClick)="goBack()">
   </app-page-header>
 
   <div class="toolbar">

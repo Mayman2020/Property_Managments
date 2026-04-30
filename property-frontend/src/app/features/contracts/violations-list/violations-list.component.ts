@@ -6,7 +6,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
+import { Location } from '@angular/common';
 import { catchError, of } from 'rxjs';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
@@ -25,7 +27,7 @@ import { I18nService } from '../../../core/i18n/i18n.service';
     NgIf, NgFor, DatePipe, DecimalPipe, NgClass, FormsModule,
     MatButtonModule, MatIconModule,
     MatInputModule, MatSelectModule,
-    MatProgressSpinnerModule,
+    MatProgressSpinnerModule, MatTooltipModule,
     TranslateModule, PageHeaderComponent, TablePagerComponent
   ],
   templateUrl: './violations-list.component.html',
@@ -46,9 +48,12 @@ export class ViolationsListComponent implements OnInit {
   constructor(
     private readonly violationSvc: ViolationService,
     private readonly propertySvc: PropertyService,
+    private readonly location: Location,
     readonly lookupCache: LookupCacheService,
     readonly i18n: I18nService
   ) {}
+
+  goBack(): void { this.location.back(); }
 
   ngOnInit(): void {
     this.loadProperties();

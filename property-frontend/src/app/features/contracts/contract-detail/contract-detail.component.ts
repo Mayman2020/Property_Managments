@@ -10,6 +10,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { TranslateModule } from '@ngx-translate/core';
 import { catchError, forkJoin, of } from 'rxjs';
+import { RecordPaymentFormComponent } from '../record-payment-form/record-payment-form.component';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { ContractService } from '../../../core/services/contract.service';
@@ -63,7 +64,8 @@ export class ContractDetailComponent implements OnInit {
     private violationSvc: ViolationService,
     private complaintSvc: ComplaintService,
     private inspectionSvc: InspectionService,
-    private location: Location
+    private location: Location,
+    private dialog: MatDialog
   ) {}
 
   goBack(): void { this.location.back(); }
@@ -80,7 +82,7 @@ export class ContractDetailComponent implements OnInit {
       schedule: this.contractSvc.getPaymentSchedule(this.contractId).pipe(catchError(() => of(null))),
       payments: this.paymentSvc.getByContract(this.contractId).pipe(catchError(() => of(null))),
       violations: this.violationSvc.getAll({ contractId: this.contractId }).pipe(catchError(() => of(null))),
-      complaints: this.complaintSvc.getAll().pipe(catchError(() => of(null))),
+      complaints: this.complaintSvc.getAll({ contractId: this.contractId }).pipe(catchError(() => of(null))),
       inspections: this.inspectionSvc.getByContract(this.contractId).pipe(catchError(() => of(null)))
     }).subscribe(({ contract, schedule, payments, violations, complaints, inspections }) => {
       this.contract = contract?.data ?? null;
@@ -116,5 +118,20 @@ export class ContractDetailComponent implements OnInit {
       IN_REVIEW: 'chip-info', CLOSED: 'chip-default'
     };
     return map[status] ?? 'chip-default';
+  }
+
+  openRecordPaymentDialog(row?: RentPaymentSchedule): void {
+    this.dialog.open(RecordPaymentFormComponent, {
+      width: '600px',
+      maxWidth: '95vw',
+      panelClass: 'app-dialog-panel',
+      data: {
+        contractId: this.contractId,
+        scheduleId: row?.id,
+        amountDue: row?.amount
+      }
+    }).afterClosed().subscribe(saved => {
+      if (saved) this.loadAll();
+    });
   }
 }

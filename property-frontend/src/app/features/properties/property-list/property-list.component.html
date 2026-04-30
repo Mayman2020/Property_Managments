@@ -189,20 +189,20 @@
             <td>{{ ownerName(property) || ('PROPERTY_FORM.OWNER_ID' | translate) + ': ' + property.ownerId }}</td>
             <td>
               <div class="row-actions">
-                <a
+                <button
+                  type="button"
                   class="app-icon-btn accent"
-                  [routerLink]="['/admin/properties', propertyId(property)]"
-                  (click)="$event.stopPropagation()"
-                  [attr.aria-label]="'ACTIONS.VIEW' | translate">
-                  <span class="material-icons">visibility</span>
-                </a>
-                <a
+                  (click)="openViewDialog(property); $event.stopPropagation()"
+                  [matTooltip]="'ACTIONS.VIEW' | translate">
+                  <mat-icon>visibility</mat-icon>
+                </button>
+                <button
+                  type="button"
                   class="app-icon-btn"
-                  [routerLink]="['/admin/properties', propertyId(property), 'edit']"
-                  (click)="$event.stopPropagation()"
-                  [attr.aria-label]="'ACTIONS.EDIT' | translate">
-                  <span class="material-icons">edit</span>
-                </a>
+                  (click)="openEditDialog(property); $event.stopPropagation()"
+                  [matTooltip]="'ACTIONS.EDIT' | translate">
+                  <mat-icon>edit</mat-icon>
+                </button>
                 <a
                   class="app-icon-btn"
                   *ngIf="property.googleMapUrl"

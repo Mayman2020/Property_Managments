@@ -1,9 +1,13 @@
 import { Component, OnInit } from '@angular/core';
-import { DatePipe, NgFor, NgIf } from '@angular/common';
+import { DatePipe, NgFor, NgIf, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
 import { forkJoin, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
@@ -26,7 +30,8 @@ import { TenantDialogComponent } from './tenant-dialog.component';
   standalone: true,
   imports: [
     NgFor, NgIf, DatePipe, FormsModule, TranslateModule,
-    MatButtonModule, MatProgressSpinnerModule,
+    MatButtonModule, MatProgressSpinnerModule, MatIconModule, MatTooltipModule,
+    MatFormFieldModule, MatSelectModule,
     PageHeaderComponent, EmptyStateComponent, TablePagerComponent
   ],
   templateUrl: './tenant-management.component.html',
@@ -42,6 +47,7 @@ export class TenantManagementComponent implements OnInit {
   unitById: Record<number, Unit> = {};
   tenantUsers: User[] = [];
   filterPropertyId: number | null = null;
+  searchTerm = '';
   pageIndex = 0;
 
   get isAr(): boolean { return this.i18n.currentLang === 'ar'; }
@@ -53,8 +59,11 @@ export class TenantManagementComponent implements OnInit {
     private readonly userSvc: UserService,
     private readonly snack: SnackService,
     private readonly i18n: I18nService,
+    private readonly location: Location,
     private readonly dialog: MatDialog
   ) {}
+
+  goBack(): void { this.location.back(); }
 
   ngOnInit(): void {
     this.loadData();
@@ -70,11 +79,22 @@ export class TenantManagementComponent implements OnInit {
 
   onPropertyFilterChange(): void {
     this.pageIndex = 0;
-    if (this.filterPropertyId) {
-      this.filteredTenants = this.tenants.filter((t) => t.propertyId === this.filterPropertyId);
-    } else {
-      this.filteredTenants = [...this.tenants];
-    }
+    this.applyFilters();
+  }
+
+  onSearch(term: string): void {
+    this.searchTerm = term;
+    this.pageIndex = 0;
+    this.applyFilters();
+  }
+
+  private applyFilters(): void {
+    const q = this.searchTerm.trim().toLowerCase();
+    this.filteredTenants = this.tenants.filter((t) => {
+      if (this.filterPropertyId && t.propertyId !== this.filterPropertyId) return false;
+      if (!q) return true;
+      return t.fullName.toLowerCase().includes(q) || (t.email ?? '').toLowerCase().includes(q) || (t.phone ?? '').toLowerCase().includes(q);
+    });
   }
 
   get pagedTenants(): Tenant[] {

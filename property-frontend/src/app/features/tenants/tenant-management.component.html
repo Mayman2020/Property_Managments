@@ -1,59 +1,82 @@
-<div class="app-page tenant-page">
+<div class="app-page tenants-page">
   <app-page-header
     [eyebrow]="'NAV_SECTION.DIRECTORY' | translate"
-    [title]="'TENANTS.TITLE' | translate"
+    [title]="'NAV.TENANTS' | translate"
     [subtitle]="'TENANTS.SUBTITLE' | translate"
-    [breadcrumbs]="[{ label: ('NAV.DASHBOARD' | translate), route: '/admin/dashboard' }, { label: ('NAV.TENANTS' | translate) }]">
+    [breadcrumbs]="[{label:('NAV.DASHBOARD' | translate), route:'/admin/dashboard'}, {label:('NAV.TENANTS' | translate)}]"
+    [showBack]="true"
+    (backClick)="goBack()">
     <button mat-flat-button type="button" (click)="openAddDialog()">
-      <span class="material-icons">add</span>
-      {{ 'TENANTS.ADD' | translate }}
+      <mat-icon>person_add</mat-icon>
+      {{ 'TENANTS.ADD_TENANT' | translate }}
     </button>
   </app-page-header>
 
-  <div class="tenant-filter-bar" *ngIf="properties.length > 1">
-    <select [(ngModel)]="filterPropertyId" (change)="onPropertyFilterChange()" class="estate-property-select">
-      <option [ngValue]="null">{{ 'COMMON.ALL_PROPERTIES' | translate }}</option>
-      <option *ngFor="let p of properties" [ngValue]="p.id">
-        {{ isAr ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName) }}
-      </option>
-    </select>
+  <div class="loading-wrap" *ngIf="loading">
+    <mat-spinner diameter="40"></mat-spinner>
   </div>
 
-  <div class="app-loading" *ngIf="loading">
-    <mat-spinner diameter="48"></mat-spinner>
-  </div>
-
-  <div class="tenant-grid" *ngIf="!loading && filteredTenants.length > 0">
-    <article class="tenant-card" *ngFor="let t of pagedTenants">
-      <div class="tenant-card-top">
-        <div class="tenant-avatar">{{ t.fullName.slice(0, 2).toUpperCase() }}</div>
-        <div>
-          <h3>{{ t.fullName }}</h3>
-          <p>{{ propertyLabel(t.propertyId) }} · {{ unitLabel(t.unitId) }}</p>
-        </div>
+  <section class="app-card" *ngIf="!loading">
+    <div class="search-bar-shell">
+      <div class="search-input-box">
+        <mat-icon>search</mat-icon>
+        <input [value]="searchTerm" (input)="onSearch($any($event.target).value)" [placeholder]="'ACTIONS.SEARCH' | translate">
       </div>
+      
+      <mat-form-field appearance="outline" class="property-filter">
+        <mat-select [(ngModel)]="filterPropertyId" (selectionChange)="onPropertyFilterChange()">
+          <mat-option [value]="null">{{ 'PROPERTY_FORM.ALL_PROPERTIES' | translate }}</mat-option>
+          <mat-option *ngFor="let p of properties" [value]="p.id">{{ p.propertyName }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
 
-      <div class="tenant-divider"></div>
-
-      <div class="tenant-lines">
-        <div class="tenant-line"><span class="material-icons">mail</span>{{ t.email || '-' }}</div>
-        <div class="tenant-line"><span class="material-icons">phone</span>{{ t.phone || '-' }}</div>
-        <div class="tenant-line"><span class="material-icons">calendar_month</span>{{ t.leaseStart | date:'dd/MM/yyyy' }} → {{ t.leaseEnd | date:'dd/MM/yyyy' }}</div>
-      </div>
-
-      <div class="tenant-card-actions">
-        <span class="tenant-contracts">{{ 'TENANTS.LEASE_CONTRACT_FILES' | translate }}: {{ t.leaseContractFiles?.length || 0 }}</span>
-        <button mat-stroked-button color="warn" type="button" (click)="remove(t)">{{ 'ACTIONS.DELETE' | translate }}</button>
-      </div>
-    </article>
-  </div>
-
-  <app-table-pager *ngIf="!loading" [length]="filteredTenants.length" [pageSize]="pageSize" [pageIndex]="pageIndex" (pageIndexChange)="pageIndex = $event"></app-table-pager>
-
-  <app-empty-state
-    *ngIf="!loading && filteredTenants.length === 0"
-    icon="groups"
-    [title]="'COMMON.NO_DATA' | translate"
-    [message]="'TENANTS.SUBTITLE' | translate">
-  </app-empty-state>
+    <div class="app-table-wrap">
+      <table class="app-data-table source-table">
+        <thead>
+          <tr>
+            <th>{{ 'PROFILE.FULL_NAME' | translate }}</th>
+            <th>{{ 'REQUEST_FORM.PROPERTY' | translate }}</th>
+            <th class="center-col">{{ 'UNITS.UNIT_NUMBER' | translate }}</th>
+            <th class="center-col">{{ 'AUTH.EMAIL' | translate }}</th>
+            <th class="center-col">{{ 'PROFILE.PHONE' | translate }}</th>
+            <th class="actions-col"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let t of pagedTenants">
+            <td>
+              <div class="user-cell">
+                <div class="user-avatar">{{ t.fullName.charAt(0) }}</div>
+                <div class="user-info">
+                  <div class="user-name">{{ t.fullName }}</div>
+                  <div class="user-email" *ngIf="t.nationalId">ID: {{ t.nationalId }}</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="property-cell">
+                <mat-icon>apartment</mat-icon>
+                <span>{{ propertyLabel(t.propertyId) }}</span>
+              </div>
+            </td>
+            <td class="center-col"><span class="unit-badge">{{ unitLabel(t.unitId) }}</span></td>
+            <td class="center-col"><span class="email-text">{{ t.email || '—' }}</span></td>
+            <td class="center-col"><span class="phone-text">{{ t.phone || '—' }}</span></td>
+            <td class="actions-col">
+              <div class="table-actions">
+                <button class="app-icon-btn danger" type="button" (click)="remove(t)" [matTooltip]="'ACTIONS.DELETE' | translate">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="pagedTenants.length === 0">
+            <td colspan="6" class="empty-row">{{ 'COMMON.NO_DATA' | translate }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <app-table-pager [length]="filteredTenants.length" [pageSize]="pageSize" [pageIndex]="pageIndex" (pageIndexChange)="pageIndex = $event"></app-table-pager>
+  </section>
 </div>

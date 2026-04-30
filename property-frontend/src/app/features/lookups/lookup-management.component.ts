@@ -82,6 +82,10 @@ export class LookupManagementComponent implements OnInit {
     { type: 'JOB_TITLE', labelAr: 'المسميات الوظيفية', labelEn: 'Job Titles', icon: 'badge', items: [], pageIndex: 0, loading: false }
   ];
 
+  readonly inventoryLists: ClassificationList[] = [
+    { type: 'UNIT_OF_MEASURE', labelAr: 'وحدات القياس', labelEn: 'Units of Measure', icon: 'straighten', items: [], pageIndex: 0, loading: false }
+  ];
+
   constructor(
     private readonly dialog: MatDialog,
     private readonly lookups: LookupService,
@@ -91,7 +95,7 @@ export class LookupManagementComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadLocationData();
-    [...this.propertyLists, ...this.contractLists, ...this.jobLists].forEach((list) => this.loadClassification(list));
+    [...this.propertyLists, ...this.contractLists, ...this.jobLists, ...this.inventoryLists].forEach((list) => this.loadClassification(list));
   }
 
   get isArabic(): boolean {

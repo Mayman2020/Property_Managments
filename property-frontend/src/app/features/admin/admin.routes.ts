@@ -1,4 +1,4 @@
-﻿import { Routes } from '@angular/router';
+import { Routes } from '@angular/router';
 import { MainLayoutComponent } from '../../layout/main-layout/main-layout.component';
 import { adminGuard, permissionGuard, superAdminGuard, contractsGuard, moduleGuard, ownerGuard } from '../../core/guards/auth.guard';
 
@@ -25,24 +25,7 @@ export const ADMIN_ROUTES: Routes = [
         path: 'properties',
         loadComponent: () => import('../properties/property-list/property-list.component').then((m) => m.PropertyListComponent)
       },
-      {
-        canActivate: [permissionGuard],
-        data: { permission: 'properties', permissionAction: 'create' },
-        path: 'properties/new',
-        loadComponent: () => import('../properties/property-form/property-form.component').then((m) => m.PropertyFormComponent)
-      },
-      {
-        canActivate: [permissionGuard],
-        data: { permission: 'properties', permissionAction: 'edit' },
-        path: 'properties/:id/edit',
-        loadComponent: () => import('../properties/property-form/property-form.component').then((m) => m.PropertyFormComponent)
-      },
-      {
-        canActivate: [permissionGuard],
-        data: { permission: 'properties', permissionAction: 'view' },
-        path: 'properties/:id',
-        loadComponent: () => import('../properties/property-form/property-form.component').then((m) => m.PropertyFormComponent)
-      },
+
       {
         canActivate: [permissionGuard],
         data: { permission: 'units', permissionAction: 'view' },
@@ -334,18 +317,12 @@ export const ADMIN_ROUTES: Routes = [
             path: 'list',
             loadComponent: () => import('../contracts/contract-list/contract-list.component').then((m) => m.ContractListComponent)
           },
-          {
-            path: 'new',
-            loadComponent: () => import('../contracts/contract-form/contract-form.component').then((m) => m.ContractFormComponent)
-          },
+
           {
             path: 'payments',
             loadComponent: () => import('../contracts/payment-list/payment-list.component').then((m) => m.PaymentListComponent)
           },
-          {
-            path: 'payments/record',
-            loadComponent: () => import('../contracts/record-payment-form/record-payment-form.component').then((m) => m.RecordPaymentFormComponent)
-          },
+
           {
             path: 'templates',
             loadComponent: () => import('../contracts/contract-templates/contract-templates.component').then((m) => m.ContractTemplatesComponent)

@@ -4,12 +4,14 @@
       [eyebrow]="i18n.currentLang === 'ar' ? 'العمليات' : 'Operations'"
       [title]="'REQUEST_LIST.TITLE' | translate"
       [subtitle]="'REQUEST_LIST.SUBTITLE' | translate"
+      [showBack]="true"
+      (backClick)="goBack()"
       [breadcrumbs]="[
         { label: ('NAV.DASHBOARD' | translate), route: '/admin/dashboard' },
         { label: ('NAV.MAINTENANCE' | translate) }
       ]">
       <button mat-flat-button routerLink="/admin/maintenance/new">
-        <span class="material-icons">add</span>
+        <mat-icon>add</mat-icon>
         {{ 'NAV.NEW_REQUEST' | translate }}
       </button>
     </app-page-header>
@@ -20,12 +22,14 @@
       [eyebrow]="i18n.currentLang === 'ar' ? 'نظرة عامة' : 'Overview'"
       [title]="'REQUEST_LIST.TENANT_TITLE' | translate"
       [subtitle]="'REQUEST_LIST.TENANT_SUBTITLE' | translate"
+      [showBack]="true"
+      (backClick)="goBack()"
       [breadcrumbs]="[
         { label: ('NAV.MY_UNIT' | translate), route: '/tenant/dashboard' },
         { label: ('NAV.MY_REQUESTS' | translate) }
       ]">
       <button mat-flat-button routerLink="/tenant/new-request">
-        <span class="material-icons">add</span>
+        <mat-icon>add</mat-icon>
         {{ 'NAV.NEW_REQUEST' | translate }}
       </button>
     </app-page-header>
@@ -36,6 +40,8 @@
       [eyebrow]="i18n.currentLang === 'ar' ? 'العمليات' : 'Operations'"
       [title]="'REQUEST_LIST.OFFICER_TITLE' | translate"
       [subtitle]="'REQUEST_LIST.OFFICER_SUBTITLE' | translate"
+      [showBack]="true"
+      (backClick)="goBack()"
       [breadcrumbs]="[{ label: ('NAV.MY_REQUESTS' | translate) }]">
     </app-page-header>
   </ng-container>
@@ -238,10 +244,12 @@
             <td><span class="status-badge" [attr.data-status]="req.status">{{ statusLabel(req.status) }}</span></td>
             <td><span class="priority-badge" [class]="req.priority">{{ priorityLabel(req.priority) }}</span></td>
             <td>{{ req.createdAt | date:'dd/MM/yyyy' }}</td>
-            <td>
-              <a class="table-arrow" [routerLink]="detailLink(req.id)">
-                <span class="material-icons">{{ i18n.currentLang === 'ar' ? 'arrow_back' : 'arrow_forward' }}</span>
-              </a>
+            <td class="actions-col">
+              <div class="table-actions">
+                <a class="app-icon-btn info" [routerLink]="detailLink(req.id)" [matTooltip]="'ACTIONS.VIEW' | translate">
+                  <mat-icon>{{ i18n.currentLang === 'ar' ? 'arrow_back' : 'arrow_forward' }}</mat-icon>
+                </a>
+              </div>
             </td>
           </tr>
         </tbody>

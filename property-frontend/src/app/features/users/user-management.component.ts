@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core';
-import { DatePipe, NgFor, NgIf } from '@angular/common';
+import { DatePipe, NgClass, NgFor, NgIf, Location } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { I18nService } from '../../core/i18n/i18n.service';
@@ -24,11 +25,13 @@ import { UserDialogComponent, UserDialogData } from './user-dialog.component';
   imports: [
     NgFor,
     NgIf,
+    NgClass,
     DatePipe,
     TranslateModule,
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    MatTooltipModule,
     PageHeaderComponent,
     TablePagerComponent,
     TableExportToolbarComponent
@@ -53,10 +56,13 @@ export class UserManagementComponent implements OnInit {
     private readonly userService: UserService,
     private readonly propertyService: PropertyService,
     private readonly contractorCompanyService: ContractorCompanyService,
+    private readonly location: Location,
     readonly permissions: PermissionService,
     private readonly snack: SnackService,
     readonly i18n: I18nService
   ) {}
+
+  goBack(): void { this.location.back(); }
 
   ngOnInit(): void {
     this.loadData();

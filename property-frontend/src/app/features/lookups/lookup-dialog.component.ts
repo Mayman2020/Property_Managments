@@ -59,7 +59,8 @@ export interface LookupDialogData {
 
         <mat-form-field appearance="outline" *ngIf="data.item">
           <mat-label>{{ 'LOOKUPS.CODE' | translate }}</mat-label>
-          <input matInput formControlName="code">
+          <input matInput formControlName="code" dir="ltr" [readonly]="true">
+          <mat-hint>{{ 'CLASSIFICATIONS.CODE_AUTO_HINT' | translate }}</mat-hint>
         </mat-form-field>
 
         <mat-form-field appearance="outline">

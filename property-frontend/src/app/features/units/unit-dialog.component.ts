@@ -4,6 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
@@ -31,22 +32,18 @@ export interface UnitDialogData {
     MatDialogModule,
     MatButtonModule,
     MatFormFieldModule,
+    MatIconModule,
     MatInputModule,
     MatProgressSpinnerModule,
     MatSelectModule
   ],
   template: `
-    <h2 mat-dialog-title>{{ data.unit ? ('UNITS.EDIT' | translate) : ('UNITS.ADD' | translate) }}</h2>
-    <mat-dialog-content class="dialog-body">
+    <h2 mat-dialog-title class="dialog-title">
+      <mat-icon class="dialog-title-icon">door_front</mat-icon>
+      {{ data.unit ? ('UNITS.EDIT' | translate) : ('UNITS.ADD' | translate) }}
+    </h2>
+    <mat-dialog-content>
       <form [formGroup]="form" class="unit-dialog-form">
-        <div class="dialog-intro">
-          <span class="material-icons">home_work</span>
-          <div>
-            <strong>{{ data.unit ? ('UNITS.EDIT' | translate) : ('UNITS.ADD' | translate) }}</strong>
-            <p>{{ 'UNITS.SUBTITLE' | translate }}</p>
-          </div>
-        </div>
-
         <mat-form-field appearance="outline" class="full">
           <mat-label>{{ 'REQUEST_FORM.PROPERTY' | translate }}</mat-label>
           <mat-select formControlName="propertyId">
@@ -89,45 +86,19 @@ export interface UnitDialogData {
         </mat-form-field>
       </form>
     </mat-dialog-content>
-    <mat-dialog-actions align="end" class="dialog-actions">
+    <div mat-dialog-actions align="end" class="dialog-actions-row">
       <button mat-stroked-button type="button" (click)="ref.close(false)">{{ 'ACTIONS.CANCEL' | translate }}</button>
-      <button mat-flat-button type="button" (click)="save()" [disabled]="saving">
+      <button mat-flat-button class="navy-btn" type="button" (click)="save()" [disabled]="saving">
         <mat-spinner *ngIf="saving" diameter="18"></mat-spinner>
         <span *ngIf="!saving">{{ 'ACTIONS.SAVE' | translate }}</span>
       </button>
-    </mat-dialog-actions>
+    </div>
   `,
   styles: [`
-    .dialog-body { min-width: min(620px, 94vw); padding-top: 8px; }
-    .unit-dialog-form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .dialog-intro {
-      grid-column: 1 / -1;
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      padding: 14px 16px;
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      background: linear-gradient(180deg, var(--surface-2), rgba(255,255,255,0.65));
-    }
-    .dialog-intro .material-icons {
-      color: var(--amber-600);
-      background: rgba(214, 147, 41, 0.12);
-      border-radius: 12px;
-      padding: 10px;
-    }
-    .dialog-intro strong {
-      display: block;
-      color: var(--text-main);
-      font-size: 0.95rem;
-    }
-    .dialog-intro p {
-      margin: 4px 0 0;
-      color: var(--text-muted);
-      font-size: 0.82rem;
-    }
+    .unit-dialog-form { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding-top: 10px; }
     .full { grid-column: 1 / -1; }
-    .dialog-actions { gap: 10px; padding: 8px 16px 16px; }
+    .dialog-actions-row { padding: 16px 24px; border-top: 1px solid var(--line); display: flex; gap: 12px; justify-content: flex-end; background: var(--surface-2); }
+    .navy-btn { background: var(--navy-800) !important; color: white !important; }
     @media (max-width: 620px) { .unit-dialog-form { grid-template-columns: 1fr; } }
   `]
 })

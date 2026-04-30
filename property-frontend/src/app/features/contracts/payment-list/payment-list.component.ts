@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { NgIf, NgFor, DatePipe, DecimalPipe, NgClass } from '@angular/common';
+import { NgIf, NgFor, DatePipe, DecimalPipe, NgClass, Location } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -9,6 +9,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TranslateModule } from '@ngx-translate/core';
 import { catchError, of } from 'rxjs';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { RecordPaymentFormComponent } from '../record-payment-form/record-payment-form.component';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
@@ -26,6 +28,7 @@ import { I18nService } from '../../../core/i18n/i18n.service';
     MatButtonModule, MatIconModule,
     MatInputModule, MatSelectModule,
     MatProgressSpinnerModule,
+    MatDialogModule,
     TranslateModule, PageHeaderComponent, TablePagerComponent
   ],
   templateUrl: './payment-list.component.html',
@@ -46,9 +49,13 @@ export class PaymentListComponent implements OnInit {
   constructor(
     private readonly paymentSvc: PaymentService,
     private readonly propertySvc: PropertyService,
+    private readonly dialog: MatDialog,
+    private readonly location: Location,
     readonly lookupCache: LookupCacheService,
     readonly i18n: I18nService
   ) {}
+
+  goBack(): void { this.location.back(); }
 
   ngOnInit(): void {
     this.loadProperties();
@@ -110,5 +117,15 @@ export class PaymentListComponent implements OnInit {
     if (balance < 0) return 'chip-danger';
     if (balance > 0) return 'chip-success';
     return 'chip-default';
+  }
+
+  openRecordPaymentDialog(): void {
+    this.dialog.open(RecordPaymentFormComponent, {
+      width: '600px',
+      maxWidth: '95vw',
+      panelClass: 'app-dialog-panel'
+    }).afterClosed().subscribe(saved => {
+      if (saved) this.load();
+    });
   }
 }

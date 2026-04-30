@@ -1,4 +1,5 @@
-<div class="app-page contract-form-page">
+<!-- Page mode (standalone route) -->
+<div class="app-page contract-form-page" *ngIf="!isDialog">
   <app-page-header
     [eyebrow]="'NAV_SECTION.CONTRACTS' | translate"
     [title]="'CONTRACTS.NEW_CONTRACT' | translate"
@@ -12,6 +13,23 @@
     (backClick)="cancel()">
   </app-page-header>
 
+  <ng-container *ngTemplateOutlet="formContent"></ng-container>
+</div>
+
+<!-- Dialog mode -->
+<ng-container *ngIf="isDialog">
+  <h2 mat-dialog-title class="dialog-title">
+    <mat-icon class="dialog-title-icon">description</mat-icon>
+    {{ 'CONTRACTS.NEW_CONTRACT' | translate }}
+  </h2>
+
+  <mat-dialog-content>
+    <ng-container *ngTemplateOutlet="formContent"></ng-container>
+  </mat-dialog-content>
+</ng-container>
+
+<!-- Shared form template -->
+<ng-template #formContent>
   <div class="form-shell">
     <mat-stepper [linear]="true" orientation="horizontal" class="contract-stepper">
 
@@ -218,4 +236,4 @@
 
     </mat-stepper>
   </div>
-</div>
+</ng-template>

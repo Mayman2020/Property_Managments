@@ -1,10 +1,10 @@
 <ng-template #propertyFields>
   <div class="prop-form-sections" [formGroup]="form">
-    <section class="app-card form-section-card">
-      <div class="app-card-header">
-        <span class="app-card-title">{{ 'PROPERTY_FORM.SECTION_BASIC' | translate }}</span>
+    <section [class.app-card]="!isDialogMode" [class.dialog-form-section]="isDialogMode">
+      <div class="section-header" *ngIf="!isDialogMode || true">
+        <span class="section-title">{{ 'PROPERTY_FORM.SECTION_BASIC' | translate }}</span>
       </div>
-      <div class="app-card-body">
+      <div class="section-body">
         <div class="form-grid">
           <mat-form-field appearance="outline">
             <mat-label>{{ 'LOOKUPS.NAME_AR' | translate }}</mat-label>
@@ -20,8 +20,8 @@
 
           <mat-form-field appearance="outline" *ngIf="mode !== 'create'">
             <mat-label>{{ 'PROPERTY_FORM.PROPERTY_CODE' | translate }}</mat-label>
-            <input matInput formControlName="propertyCode">
-            <mat-error *ngIf="form.get('propertyCode')?.invalid">{{ 'COMMON.REQUIRED' | translate }}</mat-error>
+            <input matInput formControlName="propertyCode" [readonly]="true">
+            <mat-hint>{{ 'CLASSIFICATIONS.CODE_AUTO_HINT' | translate }}</mat-hint>
           </mat-form-field>
 
           <mat-form-field appearance="outline">
@@ -39,11 +39,11 @@
       </div>
     </section>
 
-    <section class="app-card form-section-card">
-      <div class="app-card-header">
-        <span class="app-card-title">{{ 'PROPERTY_FORM.SECTION_LOCATION' | translate }}</span>
+    <section [class.app-card]="!isDialogMode" [class.dialog-form-section]="isDialogMode">
+      <div class="section-header">
+        <span class="section-title">{{ 'PROPERTY_FORM.SECTION_LOCATION' | translate }}</span>
       </div>
-      <div class="app-card-body">
+      <div class="section-body">
         <div class="form-grid">
           <mat-form-field appearance="outline" class="full-col">
             <mat-label>{{ 'PROPERTY_FORM.ADDRESS' | translate }}</mat-label>
@@ -79,11 +79,11 @@
       </div>
     </section>
 
-    <section class="app-card form-section-card">
-      <div class="app-card-header">
-        <span class="app-card-title">{{ 'PROPERTY_FORM.SECTION_OWNER' | translate }}</span>
+    <section [class.app-card]="!isDialogMode" [class.dialog-form-section]="isDialogMode">
+      <div class="section-header">
+        <span class="section-title">{{ 'PROPERTY_FORM.SECTION_OWNER' | translate }}</span>
       </div>
-      <div class="app-card-body">
+      <div class="section-body">
         <div class="form-grid">
           <mat-form-field appearance="outline">
             <mat-label>{{ 'PROPERTY_FORM.OWNER_ID' | translate }}</mat-label>
@@ -119,11 +119,11 @@
       </div>
     </section>
 
-    <section class="app-card form-section-card" *ngIf="!isViewMode || form.get('maintenanceInternalOfficerUserId')?.value || form.get('maintenanceContractorCompanyId')?.value">
-      <div class="app-card-header">
-        <span class="app-card-title">{{ 'PROPERTY_FORM.SECTION_ROUTING' | translate }}</span>
+    <section [class.app-card]="!isDialogMode" [class.dialog-form-section]="isDialogMode" *ngIf="!isViewMode || form.get('maintenanceInternalOfficerUserId')?.value || form.get('maintenanceContractorCompanyId')?.value">
+      <div class="section-header">
+        <span class="section-title">{{ 'PROPERTY_FORM.SECTION_ROUTING' | translate }}</span>
       </div>
-      <div class="app-card-body">
+      <div class="section-body">
         <p class="section-hint">{{ 'PROPERTY_FORM.MAINTENANCE_ROUTING_HINT' | translate }}</p>
         <div class="form-grid">
           <mat-form-field appearance="outline" class="full-col" *ngIf="propertyId">
@@ -145,11 +145,11 @@
       </div>
     </section>
 
-    <section class="app-card form-section-card">
-      <div class="app-card-header">
-        <span class="app-card-title">{{ 'PROPERTY_FORM.SECTION_MEDIA' | translate }}</span>
+    <section [class.app-card]="!isDialogMode" [class.dialog-form-section]="isDialogMode">
+      <div class="section-header">
+        <span class="section-title">{{ 'PROPERTY_FORM.SECTION_MEDIA' | translate }}</span>
       </div>
-      <div class="app-card-body media-section-body">
+      <div class="section-body media-section-body">
         <div class="media-stack">
           <div class="media-block">
             <div class="media-label">{{ 'PROPERTY_FORM.COVER_IMAGE' | translate }}</div>
@@ -430,9 +430,12 @@
 </div>
 
 <ng-container *ngIf="isDialogMode">
-  <h2 mat-dialog-title>{{ pageTitleKey | translate }}</h2>
+  <h2 mat-dialog-title class="dialog-title">
+    <mat-icon class="dialog-title-icon">apartment</mat-icon>
+    {{ pageTitleKey | translate }}
+  </h2>
 
-  <mat-dialog-content class="dialog-body">
+  <mat-dialog-content>
     <div class="loading-center" *ngIf="loading">
       <mat-spinner diameter="40"></mat-spinner>
     </div>
@@ -442,11 +445,11 @@
     </form>
   </mat-dialog-content>
 
-  <mat-dialog-actions align="end" class="dialog-actions">
+  <div mat-dialog-actions align="end" class="dialog-actions-row">
     <button mat-stroked-button type="button" (click)="close()">{{ 'ACTIONS.CANCEL' | translate }}</button>
-    <button mat-flat-button type="button" (click)="submit()" [disabled]="form.invalid || submitting || loadingLookups || isViewMode">
+    <button mat-flat-button class="navy-btn" type="button" (click)="submit()" [disabled]="form.invalid || submitting || loadingLookups || isViewMode">
       <mat-spinner *ngIf="submitting" diameter="18"></mat-spinner>
       <span *ngIf="!submitting">{{ 'PROPERTY_FORM.SAVE_BUTTON' | translate }}</span>
     </button>
-  </mat-dialog-actions>
+  </div>
 </ng-container>

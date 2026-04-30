@@ -29,19 +29,19 @@ export interface ExpenseDialogData {
     MatInputModule, MatProgressSpinnerModule, MatSelectModule
   ],
   template: `
-    <h2 mat-dialog-title>{{ isAr ? 'إضافة مصروف' : 'Add Expense' }}</h2>
+    <h2 mat-dialog-title>{{ 'FINANCE.ADD_EXPENSE' | translate }}</h2>
     <mat-dialog-content class="dialog-body">
       <form [formGroup]="form" class="finance-dialog-form">
         <div class="dialog-intro full">
           <span class="material-icons">receipt_long</span>
           <div>
-            <strong>{{ isAr ? 'إضافة مصروف' : 'Add Expense' }}</strong>
-            <p>{{ isAr ? 'سجل مصروفًا جديدًا مع القيمة والتاريخ وربطه بالعقار.' : 'Record a new expense entry with its amount, date, and property.' }}</p>
+            <strong>{{ 'FINANCE.ADD_EXPENSE' | translate }}</strong>
+            <p>{{ 'FINANCE.ADD_EXPENSE_HINT' | translate }}</p>
           </div>
         </div>
 
         <mat-form-field appearance="outline" class="full">
-          <mat-label>{{ isAr ? 'العقار' : 'Property' }}</mat-label>
+          <mat-label>{{ 'INVENTORY.PROPERTY' | translate }}</mat-label>
           <mat-select formControlName="propertyId">
             <mat-option *ngFor="let p of data.properties" [value]="p.id">
               {{ isAr ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName) }}
@@ -50,17 +50,17 @@ export interface ExpenseDialogData {
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="full">
-          <mat-label>{{ isAr ? 'الوصف' : 'Description' }}</mat-label>
+          <mat-label>{{ 'FINANCE.DESCRIPTION_COL' | translate }}</mat-label>
           <input matInput formControlName="description" />
         </mat-form-field>
 
         <mat-form-field appearance="outline">
-          <mat-label>{{ isAr ? 'المبلغ' : 'Amount' }}</mat-label>
+          <mat-label>{{ 'FINANCE.AMOUNT_COL' | translate }}</mat-label>
           <input matInput type="number" min="0.01" step="0.01" formControlName="amount" />
         </mat-form-field>
 
         <mat-form-field appearance="outline">
-          <mat-label>{{ isAr ? 'العملة' : 'Currency' }}</mat-label>
+          <mat-label>{{ 'FINANCE.CURRENCY' | translate }}</mat-label>
           <mat-select formControlName="currency">
             <mat-option value="OMR">OMR</mat-option>
             <mat-option value="SAR">SAR</mat-option>
@@ -70,7 +70,7 @@ export interface ExpenseDialogData {
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="full">
-          <mat-label>{{ isAr ? 'تاريخ المصروف' : 'Expense Date' }}</mat-label>
+          <mat-label>{{ 'FINANCE.EXPENSE_DATE' | translate }}</mat-label>
           <input matInput [matDatepicker]="expensePicker" formControlName="expenseDate" />
           <mat-datepicker-toggle matIconSuffix [for]="expensePicker"></mat-datepicker-toggle>
           <mat-datepicker #expensePicker></mat-datepicker>
@@ -78,16 +78,16 @@ export interface ExpenseDialogData {
       </form>
     </mat-dialog-content>
     <mat-dialog-actions align="end" class="dialog-actions">
-      <button mat-stroked-button class="btn-dialog-cancel" (click)="ref.close(false)">{{ isAr ? 'إلغاء' : 'Cancel' }}</button>
+      <button mat-stroked-button class="btn-dialog-cancel" (click)="ref.close(false)">{{ 'ACTIONS.CANCEL' | translate }}</button>
       <button mat-flat-button class="btn-dialog-confirm" (click)="save()" [disabled]="saving">
         <mat-spinner *ngIf="saving" diameter="18"></mat-spinner>
-        <span *ngIf="!saving">{{ isAr ? 'حفظ' : 'Save' }}</span>
+        <span *ngIf="!saving">{{ 'ACTIONS.SAVE' | translate }}</span>
       </button>
     </mat-dialog-actions>
   `,
   styles: [`
     .dialog-body { min-width: min(480px, 92vw); padding-top: 8px; }
-    .finance-dialog-form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .finance-dialog-form { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     .full { grid-column: 1 / -1; }
     @media (max-width: 560px) { .finance-dialog-form { grid-template-columns: 1fr; } }
   `]

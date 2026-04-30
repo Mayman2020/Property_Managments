@@ -12,7 +12,9 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatStepperModule } from '@angular/material/stepper';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { TranslateModule } from '@ngx-translate/core';
+import { Optional, Inject } from '@angular/core';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { ContractService } from '../../../core/services/contract.service';
@@ -32,7 +34,7 @@ import { LookupItem } from '../../../core/services/lookup.service';
     MatInputModule, MatSelectModule,
     MatDatepickerModule, MatNativeDateModule,
     MatCheckboxModule, MatStepperModule,
-    MatProgressSpinnerModule,
+    MatProgressSpinnerModule, MatDialogModule,
     TranslateModule, PageHeaderComponent
   ],
   templateUrl: './contract-form.component.html',
@@ -66,7 +68,9 @@ export class ContractFormComponent implements OnInit {
     private tenantSvc: TenantService,
     private router: Router,
     readonly i18n: I18nService,
-    readonly lookupCache: LookupCacheService
+    readonly lookupCache: LookupCacheService,
+    @Optional() private dialogRef: MatDialogRef<ContractFormComponent>,
+    @Optional() @Inject(MAT_DIALOG_DATA) public data: any
   ) {}
 
   get frequencyOptions(): LookupItem[] {
@@ -106,6 +110,14 @@ export class ContractFormComponent implements OnInit {
     this.partyForm.get('propertyId')?.valueChanges.subscribe((propId: number | null) => {
       this.onPropertyChange(propId);
     });
+
+    if (this.data?.propertyId) {
+      this.partyForm.patchValue({ propertyId: this.data.propertyId });
+    }
+  }
+
+  get isDialog(): boolean {
+    return !!this.dialogRef;
   }
 
   get propertyLabel(): string {
@@ -161,7 +173,11 @@ export class ContractFormComponent implements OnInit {
 
     this.contractSvc.create(body).subscribe({
       next: (res) => {
-        this.router.navigate(['/admin/contracts', res.data?.id ?? '']);
+        if (this.isDialog) {
+          this.dialogRef.close(true);
+        } else {
+          this.router.navigate(['/admin/contracts', res.data?.id ?? '']);
+        }
       },
       error: (err) => {
         this.errorMsg = err?.error?.message ?? 'Error saving contract';
@@ -171,7 +187,11 @@ export class ContractFormComponent implements OnInit {
   }
 
   cancel(): void {
-    this.router.navigate(['/admin/contracts/list']);
+    if (this.isDialog) {
+      this.dialogRef.close(false);
+    } else {
+      this.router.navigate(['/admin/contracts/list']);
+    }
   }
 
   private loadProperties(): void {

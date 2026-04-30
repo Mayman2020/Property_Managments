@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
@@ -27,14 +28,19 @@ export interface UserDialogData {
   standalone: true,
   imports: [
     NgIf, NgFor, ReactiveFormsModule,
-    MatDialogModule, MatButtonModule,
+    MatDialogModule,
+    MatIconModule,
+    MatButtonModule,
     MatFormFieldModule, MatInputModule,
     MatProgressSpinnerModule, MatSelectModule,
     TranslateModule
   ],
   template: `
-    <h2 mat-dialog-title>{{ (data.user ? 'USER_MGMT.EDIT_USER' : 'USER_MGMT.NEW_USER') | translate }}</h2>
-    <mat-dialog-content class="dialog-body">
+    <h2 mat-dialog-title class="dialog-title">
+      <mat-icon class="dialog-title-icon">{{ data.user ? 'person' : 'person_add' }}</mat-icon>
+      {{ (data.user ? 'USER_MGMT.EDIT_USER' : 'USER_MGMT.NEW_USER') | translate }}
+    </h2>
+    <mat-dialog-content>
       <form [formGroup]="form" class="user-dialog-form">
         <mat-form-field appearance="outline" class="full">
           <mat-label>{{ 'USER_MGMT.USERNAME' | translate }}</mat-label>
@@ -96,19 +102,19 @@ export interface UserDialogData {
         </mat-form-field>
       </form>
     </mat-dialog-content>
-    <mat-dialog-actions align="end" class="dialog-actions">
+    <div mat-dialog-actions align="end" class="dialog-actions-row">
       <button mat-stroked-button type="button" (click)="ref.close(false)">{{ 'ACTIONS.CANCEL' | translate }}</button>
-      <button mat-flat-button type="button" (click)="save()" [disabled]="form.invalid || saving">
+      <button mat-flat-button class="navy-btn" type="button" (click)="save()" [disabled]="form.invalid || saving">
         <mat-spinner *ngIf="saving" diameter="18"></mat-spinner>
         <span *ngIf="!saving">{{ 'ACTIONS.SAVE' | translate }}</span>
       </button>
-    </mat-dialog-actions>
+    </div>
   `,
   styles: [`
-    .dialog-body { min-width: min(640px, 94vw); padding-top: 8px; }
-    .user-dialog-form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .user-dialog-form { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding-top: 10px; }
     .full { grid-column: 1 / -1; }
-    .dialog-actions { gap: 10px; padding: 8px 16px 16px; }
+    .dialog-actions-row { padding: 16px 24px; border-top: 1px solid var(--line); display: flex; gap: 12px; justify-content: flex-end; }
+    .navy-btn { background: var(--navy-800) !important; color: white !important; }
     @media (max-width: 640px) { .user-dialog-form { grid-template-columns: 1fr; } }
   `]
 })

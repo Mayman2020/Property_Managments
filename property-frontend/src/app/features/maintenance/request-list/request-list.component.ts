@@ -1,6 +1,6 @@
-﻿import { Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { forkJoin } from 'rxjs';
-import { NgFor, NgIf, DatePipe } from '@angular/common';
+import { NgFor, NgIf, DatePipe, Location } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -80,8 +80,11 @@ export class RequestListComponent implements OnInit {
     private readonly route: ActivatedRoute,
     readonly auth: AuthService,
     private readonly propertySvc: PropertyService,
+    private readonly location: Location,
     private readonly dialog: MatDialog
   ) {}
+
+  goBack(): void { this.location.back(); }
 
   ngOnInit(): void {
     const d = this.route.snapshot.data['listContext'];

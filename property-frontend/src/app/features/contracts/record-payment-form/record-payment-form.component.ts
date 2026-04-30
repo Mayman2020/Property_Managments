@@ -10,7 +10,9 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { TranslateModule } from '@ngx-translate/core';
+import { Optional, Inject } from '@angular/core';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { PaymentService } from '../../../core/services/payment.service';
@@ -24,7 +26,7 @@ import { PaymentMethod } from '../../../core/models/contract.model';
     MatCardModule, MatButtonModule, MatIconModule,
     MatInputModule, MatSelectModule,
     MatDatepickerModule, MatNativeDateModule,
-    MatProgressSpinnerModule,
+    MatProgressSpinnerModule, MatDialogModule,
     TranslateModule, PageHeaderComponent
   ],
   templateUrl: './record-payment-form.component.html',
@@ -44,14 +46,16 @@ export class RecordPaymentFormComponent implements OnInit {
     private router: Router,
     private fb: FormBuilder,
     private paymentSvc: PaymentService,
-    private location: Location
+    private location: Location,
+    @Optional() private dialogRef: MatDialogRef<RecordPaymentFormComponent>,
+    @Optional() @Inject(MAT_DIALOG_DATA) public data: any
   ) {}
 
   goBack(): void { this.location.back(); }
 
   ngOnInit(): void {
-    this.contractId = Number(this.route.snapshot.queryParamMap.get('contractId')) || null;
-    this.scheduleId = Number(this.route.snapshot.queryParamMap.get('scheduleId')) || null;
+    this.contractId = this.data?.contractId || Number(this.route.snapshot.queryParamMap.get('contractId')) || null;
+    this.scheduleId = this.data?.scheduleId || Number(this.route.snapshot.queryParamMap.get('scheduleId')) || null;
 
     this.form = this.fb.group({
       contractId: [this.contractId, Validators.required],
@@ -65,6 +69,14 @@ export class RecordPaymentFormComponent implements OnInit {
       discount: [0],
       notes: ['']
     });
+
+    if (this.data?.amountDue) {
+      this.form.patchValue({ amountDue: this.data.amountDue, amountPaid: this.data.amountDue });
+    }
+  }
+
+  get isDialog(): boolean {
+    return !!this.dialogRef;
   }
 
   submit(): void {
@@ -76,7 +88,9 @@ export class RecordPaymentFormComponent implements OnInit {
     };
     this.paymentSvc.recordPayment(body).subscribe({
       next: () => {
-        if (this.contractId) {
+        if (this.isDialog) {
+          this.dialogRef.close(true);
+        } else if (this.contractId) {
           this.router.navigate(['/admin/contracts', this.contractId]);
         } else {
           this.router.navigate(['/admin/contracts/payments']);
@@ -95,6 +109,10 @@ export class RecordPaymentFormComponent implements OnInit {
   }
 
   cancel(): void {
-    this.router.navigate(['/admin/contracts/payments']);
+    if (this.isDialog) {
+      this.dialogRef.close(false);
+    } else {
+      this.router.navigate(['/admin/contracts/payments']);
+    }
   }
 }

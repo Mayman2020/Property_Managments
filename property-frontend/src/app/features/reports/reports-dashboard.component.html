@@ -6,7 +6,7 @@
     [breadcrumbs]="[{label:('NAV.DASHBOARD' | translate), route:'/admin/dashboard'}, {label:('NAV.REPORTS' | translate)}]">
 
     <select [(ngModel)]="selectedPropertyId" (change)="onPropertyChange()" class="estate-property-select">
-      <option [ngValue]="null">{{ isArabic ? 'كل العقارات' : 'All Properties' }}</option>
+      <option [ngValue]="null">{{ 'COMMON.ALL_PROPERTIES' | translate }}</option>
       <option *ngFor="let p of properties" [ngValue]="p.id">
         {{ isArabic ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName) }}
       </option>
@@ -40,7 +40,7 @@
     <section class="report-grid">
       <article class="app-card report-chart-card">
         <div class="app-card-header">
-          <span class="app-card-title">{{ isArabic ? 'الإنجازات / شهر' : 'Completions / month' }}</span>
+          <span class="app-card-title">{{ 'REPORTS.COMPLETIONS_PER_MONTH' | translate }}</span>
         </div>
         <div class="app-card-body">
           <div class="bar-chart">
@@ -57,14 +57,14 @@
 
       <article class="app-card leaderboard-card">
         <div class="app-card-header">
-          <span class="app-card-title">{{ isArabic ? 'قائمة الفنيين' : 'Officer leaderboard' }}</span>
+          <span class="app-card-title">{{ 'REPORTS.OFFICER_LEADERBOARD' | translate }}</span>
         </div>
         <div class="app-card-body leaderboard-body">
           <div class="leader-row" *ngFor="let row of leaderboard; let i = index">
             <div class="leader-rank">{{ i + 1 }}</div>
             <div class="leader-copy">
               <div class="leader-name">{{ row.name }}</div>
-              <div class="leader-meta">{{ row.resolved }} {{ isArabic ? 'منجزة' : 'resolved' }}</div>
+              <div class="leader-meta">{{ row.resolved }} {{ 'REPORTS.RESOLVED_LABEL' | translate }}</div>
               <div class="leader-progress">
                 <div class="leader-progress-fill" [style.width.%]="row.percent"></div>
               </div>
@@ -72,7 +72,7 @@
             <div class="leader-score">{{ row.percent }}%</div>
           </div>
           <div *ngIf="!leaderboard.length" class="leader-empty">
-            {{ isArabic ? 'لا توجد بيانات' : 'No data' }}
+            {{ 'REPORTS.NO_DATA' | translate }}
           </div>
         </div>
       </article>
@@ -80,11 +80,11 @@
 
     <article class="app-card" style="margin-top:20px" *ngIf="rows.length">
       <div class="app-card-header">
-        <span class="app-card-title">{{ isArabic ? 'ملخص العقارات' : 'Property Summary' }}</span>
+        <span class="app-card-title">{{ 'REPORTS.PROPERTY_SUMMARY' | translate }}</span>
       </div>
       <app-table-export-toolbar
         permissionKey="reports"
-        [title]="isArabic ? 'تقرير الصيانة' : 'Maintenance Report'"
+        [title]="exportTitle"
         fileName="maintenance-report"
         [columns]="exportColumns"
         [rows]="rows">
@@ -93,12 +93,12 @@
         <table class="app-data-table">
           <thead>
             <tr>
-              <th>{{ isArabic ? 'العقار' : 'Property' }}</th>
-              <th>{{ isArabic ? 'الإجمالي' : 'Total' }}</th>
-              <th>{{ isArabic ? 'قيد الانتظار' : 'Pending' }}</th>
-              <th>{{ isArabic ? 'جاري التنفيذ' : 'In Progress' }}</th>
-              <th>{{ isArabic ? 'مكتمل' : 'Completed' }}</th>
-              <th>{{ isArabic ? 'نسبة الإنجاز' : 'Completion %' }}</th>
+              <th>{{ 'REPORTS.PROPERTY_COL' | translate }}</th>
+              <th>{{ 'REPORTS.TOTAL_COL' | translate }}</th>
+              <th>{{ 'REPORTS.PENDING_COL' | translate }}</th>
+              <th>{{ 'REPORTS.IN_PROGRESS_COL' | translate }}</th>
+              <th>{{ 'REPORTS.COMPLETED_COL' | translate }}</th>
+              <th>{{ 'REPORTS.COMPLETION_PCT' | translate }}</th>
             </tr>
           </thead>
           <tbody>

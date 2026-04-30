@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, OnInit } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -11,6 +11,8 @@ import { TranslateModule } from '@ngx-translate/core';
 
 import { InventoryItem, InventoryService } from '../../core/services/inventory.service';
 import { Property } from '../../core/services/property.service';
+import { LookupItem } from '../../core/services/lookup.service';
+import { LookupCacheService } from '../../core/services/lookup-cache.service';
 import { SnackService } from '../../core/services/snack.service';
 import { I18nService } from '../../core/i18n/i18n.service';
 
@@ -38,7 +40,7 @@ export interface InventoryItemDialogData {
           <span class="material-icons">inventory_2</span>
           <div>
             <strong>{{ (data.item ? 'INVENTORY.EDIT_ITEM' : 'INVENTORY.ADD_ITEM') | translate }}</strong>
-            <p>{{ isAr ? 'أدخل بيانات الصنف والمخزون والموقع التشغيلي.' : 'Capture the item, stock, and storage location details.' }}</p>
+            <p>{{ 'INVENTORY.DIALOG_HINT' | translate }}</p>
           </div>
         </div>
 
@@ -51,14 +53,20 @@ export interface InventoryItemDialogData {
           </mat-select>
         </mat-form-field>
 
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" *ngIf="data.item">
           <mat-label>{{ 'INVENTORY.ITEM_CODE' | translate }}</mat-label>
-          <input matInput formControlName="itemCode" />
+          <input matInput formControlName="itemCode" [readonly]="true" />
+          <mat-hint>{{ 'INVENTORY.CODE_AUTO_HINT' | translate }}</mat-hint>
         </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>{{ 'INVENTORY.UNIT_OF_MEASURE' | translate }}</mat-label>
-          <input matInput formControlName="unitOfMeasure" />
+          <mat-select formControlName="unitOfMeasure">
+            <mat-option value="">—</mat-option>
+            <mat-option *ngFor="let u of uomItems" [value]="u.code">
+              {{ isAr ? u.nameAr : u.nameEn }}
+            </mat-option>
+          </mat-select>
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="full">
@@ -101,19 +109,22 @@ export interface InventoryItemDialogData {
     .dialog-body { min-width: min(520px, 92vw); padding-top: 8px; }
     .inv-dialog-form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .full { grid-column: 1 / -1; }
+    input[readonly] { color: var(--text-secondary, #888); cursor: default; }
     @media (max-width: 560px) { .inv-dialog-form { grid-template-columns: 1fr; } }
   `]
 })
-export class InventoryItemDialogComponent {
+export class InventoryItemDialogComponent implements OnInit {
   saving = false;
+  uomItems: LookupItem[] = [];
+
   get isAr(): boolean { return this.i18n.currentLang === 'ar'; }
 
   readonly form = this.fb.nonNullable.group({
     propertyId: [null as number | null, Validators.required],
-    itemCode: ['', [Validators.required, Validators.maxLength(50)]],
+    itemCode: [''],
     itemNameAr: ['', [Validators.required, Validators.maxLength(200)]],
     itemNameEn: ['', [Validators.maxLength(200)]],
-    unitOfMeasure: ['', [Validators.maxLength(30)]],
+    unitOfMeasure: [''],
     quantity: [0, [Validators.required, Validators.min(0)]],
     minQuantity: [0, [Validators.required, Validators.min(0)]],
     location: ['', [Validators.maxLength(200)]]
@@ -124,6 +135,7 @@ export class InventoryItemDialogComponent {
     @Inject(MAT_DIALOG_DATA) readonly data: InventoryItemDialogData,
     private readonly fb: FormBuilder,
     private readonly svc: InventoryService,
+    private readonly lookupCache: LookupCacheService,
     private readonly snack: SnackService,
     private readonly i18n: I18nService
   ) {
@@ -144,13 +156,18 @@ export class InventoryItemDialogComponent {
     }
   }
 
+  ngOnInit(): void {
+    this.lookupCache.preload('UNIT_OF_MEASURE').subscribe(() => {
+      this.uomItems = this.lookupCache.items('UNIT_OF_MEASURE');
+    });
+  }
+
   save(): void {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.saving = true;
     const v = this.form.getRawValue();
     const body = {
       propertyId: v.propertyId!,
-      itemCode: v.itemCode.trim(),
       itemNameAr: v.itemNameAr.trim(),
       itemNameEn: v.itemNameEn?.trim() || undefined,
       unitOfMeasure: v.unitOfMeasure?.trim() || undefined,

@@ -34,158 +34,197 @@
       {{ 'CONTRACTS.RENEW' | translate }}
     </button>
 
-    <button mat-icon-button [routerLink]="['/admin/contracts/payments/record']"
-            [queryParams]="{contractId: contract.id}"
+    <button mat-icon-button (click)="openRecordPaymentDialog()"
             *ngIf="contract.status === 'ACTIVE'">
       <mat-icon>payments</mat-icon>
     </button>
   </div>
 
   <!-- Tabs -->
-  <mat-card class="tabs-card">
-    <mat-card-content>
-      <mat-tab-group>
+  <mat-tab-group class="lookup-tabs" animationDuration="180ms">
 
-        <!-- Tab 1: Info -->
-        <mat-tab [label]="'CONTRACTS.TAB_INFO' | translate">
-          <div class="info-grid">
-            <div class="info-row"><span class="label">{{ 'CONTRACTS.CONTRACT_NUMBER' | translate }}</span><span class="value">{{ contract.contractNumber }}</span></div>
-            <div class="info-row"><span class="label">{{ 'CONTRACTS.TENANT' | translate }}</span><span class="value">{{ contract.tenantName }}</span></div>
-            <div class="info-row"><span class="label">{{ 'CONTRACTS.UNIT' | translate }}</span><span class="value">{{ contract.unitNumber }}</span></div>
-            <div class="info-row"><span class="label">{{ 'CONTRACTS.PROPERTY' | translate }}</span><span class="value">{{ contract.propertyName }}</span></div>
-            <div class="info-row"><span class="label">{{ 'CONTRACTS.START_DATE' | translate }}</span><span class="value">{{ contract.startDate | date:'dd/MM/yyyy' }}</span></div>
-            <div class="info-row"><span class="label">{{ 'CONTRACTS.END_DATE' | translate }}</span><span class="value">{{ contract.endDate | date:'dd/MM/yyyy' }}</span></div>
-            <div class="info-row"><span class="label">{{ 'CONTRACTS.MONTHLY_RENT' | translate }}</span><span class="value">{{ contract.monthlyRent | number }} {{ contract.currency }}</span></div>
-            <div class="info-row"><span class="label">{{ 'CONTRACTS.ANNUAL_RENT' | translate }}</span><span class="value">{{ contract.annualRent | number }} {{ contract.currency }}</span></div>
-            <div class="info-row"><span class="label">{{ 'CONTRACTS.SECURITY_DEPOSIT' | translate }}</span><span class="value">{{ contract.securityDeposit | number }} {{ contract.currency }}</span></div>
-            <div class="info-row"><span class="label">{{ 'CONTRACTS.PAYMENT_FREQUENCY' | translate }}</span><span class="value">{{ 'CONTRACTS.FREQ_' + contract.paymentFrequency | translate }}</span></div>
-            <div class="info-row full-span" *ngIf="contract.notes"><span class="label">{{ 'CONTRACTS.NOTES' | translate }}</span><span class="value">{{ contract.notes }}</span></div>
-          </div>
-        </mat-tab>
+    <!-- Tab 1: Info -->
+    <mat-tab [label]="'CONTRACTS.TAB_INFO' | translate">
+      <div class="app-card tab-card-body">
+        <div class="info-grid">
+          <div class="info-row"><span class="label">{{ 'CONTRACTS.CONTRACT_NUMBER' | translate }}</span><span class="value">{{ contract.contractNumber }}</span></div>
+          <div class="info-row"><span class="label">{{ 'CONTRACTS.TENANT' | translate }}</span><span class="value">{{ contract.tenantName }}</span></div>
+          <div class="info-row"><span class="label">{{ 'CONTRACTS.UNIT' | translate }}</span><span class="value">{{ contract.unitNumber }}</span></div>
+          <div class="info-row"><span class="label">{{ 'CONTRACTS.PROPERTY' | translate }}</span><span class="value">{{ contract.propertyName }}</span></div>
+          <div class="info-row"><span class="label">{{ 'CONTRACTS.START_DATE' | translate }}</span><span class="value">{{ contract.startDate | date:'dd/MM/yyyy' }}</span></div>
+          <div class="info-row"><span class="label">{{ 'CONTRACTS.END_DATE' | translate }}</span><span class="value">{{ contract.endDate | date:'dd/MM/yyyy' }}</span></div>
+          <div class="info-row"><span class="label">{{ 'CONTRACTS.MONTHLY_RENT' | translate }}</span><span class="value">{{ contract.monthlyRent | number }} {{ contract.currency }}</span></div>
+          <div class="info-row"><span class="label">{{ 'CONTRACTS.ANNUAL_RENT' | translate }}</span><span class="value">{{ contract.annualRent | number }} {{ contract.currency }}</span></div>
+          <div class="info-row"><span class="label">{{ 'CONTRACTS.SECURITY_DEPOSIT' | translate }}</span><span class="value">{{ contract.securityDeposit | number }} {{ contract.currency }}</span></div>
+          <div class="info-row"><span class="label">{{ 'CONTRACTS.PAYMENT_FREQUENCY' | translate }}</span><span class="value">{{ 'CONTRACTS.FREQ_' + contract.paymentFrequency | translate }}</span></div>
+          <div class="info-row full-span" *ngIf="contract.notes"><span class="label">{{ 'CONTRACTS.NOTES' | translate }}</span><span class="value">{{ contract.notes }}</span></div>
+        </div>
+      </div>
+    </mat-tab>
 
-        <!-- Tab 2: Payment Schedule -->
-        <mat-tab [label]="'CONTRACTS.TAB_SCHEDULE' | translate">
-          <div class="tab-content">
-            <table mat-table [dataSource]="schedule" class="full-table" *ngIf="schedule.length > 0">
-              <ng-container matColumnDef="dueDate">
-                <th mat-header-cell *matHeaderCellDef>{{ 'CONTRACTS.DUE_DATE' | translate }}</th>
-                <td mat-cell *matCellDef="let s">{{ s.dueDate | date:'dd/MM/yyyy' }}</td>
-              </ng-container>
-              <ng-container matColumnDef="period">
-                <th mat-header-cell *matHeaderCellDef>{{ 'CONTRACTS.PERIOD' | translate }}</th>
-                <td mat-cell *matCellDef="let s">{{ s.periodFrom | date:'dd/MM/yyyy' }} — {{ s.periodTo | date:'dd/MM/yyyy' }}</td>
-              </ng-container>
-              <ng-container matColumnDef="amount">
-                <th mat-header-cell *matHeaderCellDef>{{ 'CONTRACTS.AMOUNT' | translate }}</th>
-                <td mat-cell *matCellDef="let s">{{ s.amount | number }}</td>
-              </ng-container>
-              <ng-container matColumnDef="status">
-                <th mat-header-cell *matHeaderCellDef>{{ 'CONTRACTS.STATUS' | translate }}</th>
-                <td mat-cell *matCellDef="let s">
-                  <span class="status-chip" [ngClass]="getStatusClass(s.status)">{{ 'CONTRACTS.SCHED_' + s.status | translate }}</span>
-                </td>
-              </ng-container>
-              <tr mat-header-row *matHeaderRowDef="scheduleColumns"></tr>
-              <tr mat-row *matRowDef="let row; columns: scheduleColumns;"></tr>
+    <!-- Tab 2: Payment Schedule -->
+    <mat-tab [label]="'CONTRACTS.TAB_SCHEDULE' | translate">
+      <div class="app-card tab-card-body">
+        <div class="tab-content">
+          <div class="app-table-wrap">
+            <table class="app-data-table" *ngIf="schedule.length > 0">
+              <thead>
+                <tr>
+                  <th>{{ 'CONTRACTS.DUE_DATE' | translate }}</th>
+                  <th>{{ 'CONTRACTS.PERIOD' | translate }}</th>
+                  <th>{{ 'CONTRACTS.AMOUNT' | translate }}</th>
+                  <th>{{ 'CONTRACTS.STATUS' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let s of schedule">
+                  <td>{{ s.dueDate | date:'dd/MM/yyyy' }}</td>
+                  <td>{{ s.periodFrom | date:'dd/MM/yyyy' }} — {{ s.periodTo | date:'dd/MM/yyyy' }}</td>
+                  <td><strong>{{ s.amount | number }}</strong></td>
+                  <td>
+                    <span class="status-badge" [attr.data-status]="s.status">
+                      {{ 'CONTRACTS.SCHED_' + s.status | translate }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
             </table>
-            <div class="empty-msg" *ngIf="schedule.length === 0">{{ 'CONTRACTS.NO_SCHEDULE' | translate }}</div>
           </div>
-        </mat-tab>
+          <div class="empty-msg" *ngIf="schedule.length === 0">{{ 'CONTRACTS.NO_SCHEDULE' | translate }}</div>
+        </div>
+      </div>
+    </mat-tab>
 
-        <!-- Tab 3: Payment History -->
-        <mat-tab [label]="'CONTRACTS.TAB_PAYMENTS' | translate">
-          <div class="tab-content">
-            <div class="tab-actions">
-              <button mat-flat-button color="primary" size="small"
-                      [routerLink]="['/admin/contracts/payments/record']"
-                      [queryParams]="{contractId: contract.id}">
-                <mat-icon>add</mat-icon>
-                {{ 'CONTRACTS.RECORD_PAYMENT' | translate }}
-              </button>
-            </div>
-            <table mat-table [dataSource]="payments" class="full-table" *ngIf="payments.length > 0">
-              <ng-container matColumnDef="paymentDate">
-                <th mat-header-cell *matHeaderCellDef>{{ 'CONTRACTS.PAYMENT_DATE' | translate }}</th>
-                <td mat-cell *matCellDef="let p">{{ p.paymentDate | date:'dd/MM/yyyy' }}</td>
-              </ng-container>
-              <ng-container matColumnDef="amount">
-                <th mat-header-cell *matHeaderCellDef>{{ 'CONTRACTS.AMOUNT' | translate }}</th>
-                <td mat-cell *matCellDef="let p">{{ p.amountPaid | number }}</td>
-              </ng-container>
-              <ng-container matColumnDef="method">
-                <th mat-header-cell *matHeaderCellDef>{{ 'CONTRACTS.METHOD' | translate }}</th>
-                <td mat-cell *matCellDef="let p">{{ p.paymentMethod }}</td>
-              </ng-container>
-              <ng-container matColumnDef="reference">
-                <th mat-header-cell *matHeaderCellDef>{{ 'CONTRACTS.REFERENCE' | translate }}</th>
-                <td mat-cell *matCellDef="let p">{{ p.referenceNumber }}</td>
-              </ng-container>
-              <tr mat-header-row *matHeaderRowDef="paymentColumns"></tr>
-              <tr mat-row *matRowDef="let row; columns: paymentColumns;"></tr>
+    <!-- Tab 3: Payment History -->
+    <mat-tab [label]="'CONTRACTS.TAB_PAYMENTS' | translate">
+      <div class="app-card tab-card-body">
+        <div class="tab-content">
+          <div class="tab-actions">
+            <button mat-flat-button color="primary"
+                    (click)="openRecordPaymentDialog()">
+              <mat-icon>add</mat-icon>
+              {{ 'CONTRACTS.RECORD_PAYMENT' | translate }}
+            </button>
+          </div>
+          <div class="app-table-wrap">
+            <table class="app-data-table" *ngIf="payments.length > 0">
+              <thead>
+                <tr>
+                  <th>{{ 'CONTRACTS.PAYMENT_DATE' | translate }}</th>
+                  <th>{{ 'CONTRACTS.AMOUNT' | translate }}</th>
+                  <th>{{ 'CONTRACTS.METHOD' | translate }}</th>
+                  <th>{{ 'CONTRACTS.REFERENCE' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let p of payments">
+                  <td>{{ p.paymentDate | date:'dd/MM/yyyy' }}</td>
+                  <td><strong>{{ p.amountPaid | number }}</strong></td>
+                  <td>{{ p.paymentMethod }}</td>
+                  <td><code>{{ p.referenceNumber }}</code></td>
+                </tr>
+              </tbody>
             </table>
-            <div class="empty-msg" *ngIf="payments.length === 0">{{ 'CONTRACTS.NO_PAYMENTS' | translate }}</div>
           </div>
-        </mat-tab>
+          <div class="empty-msg" *ngIf="payments.length === 0">{{ 'CONTRACTS.NO_PAYMENTS' | translate }}</div>
+        </div>
+      </div>
+    </mat-tab>
 
-        <!-- Tab 4: Violations -->
-        <mat-tab [label]="'CONTRACTS.TAB_VIOLATIONS' | translate">
-          <div class="tab-content">
-            <table mat-table [dataSource]="violations" class="full-table" *ngIf="violations.length > 0">
-              <ng-container matColumnDef="type">
-                <th mat-header-cell *matHeaderCellDef>{{ 'CONTRACTS.VIOLATION_TYPE' | translate }}</th>
-                <td mat-cell *matCellDef="let v">{{ v.violationType }}</td>
-              </ng-container>
-              <ng-container matColumnDef="severity">
-                <th mat-header-cell *matHeaderCellDef>{{ 'CONTRACTS.SEVERITY' | translate }}</th>
-                <td mat-cell *matCellDef="let v">
-                  <span class="status-chip" [ngClass]="v.severity === 'CRITICAL' || v.severity === 'HIGH' ? 'chip-danger' : 'chip-warn'">{{ v.severity }}</span>
-                </td>
-              </ng-container>
-              <ng-container matColumnDef="status">
-                <th mat-header-cell *matHeaderCellDef>{{ 'CONTRACTS.STATUS' | translate }}</th>
-                <td mat-cell *matCellDef="let v">
-                  <span class="status-chip" [ngClass]="getStatusClass(v.status)">{{ v.status }}</span>
-                </td>
-              </ng-container>
-              <ng-container matColumnDef="fine">
-                <th mat-header-cell *matHeaderCellDef>{{ 'CONTRACTS.FINE' | translate }}</th>
-                <td mat-cell *matCellDef="let v">{{ v.fineAmount | number }}</td>
-              </ng-container>
-              <tr mat-header-row *matHeaderRowDef="violationColumns"></tr>
-              <tr mat-row *matRowDef="let row; columns: violationColumns;"></tr>
+    <!-- Tab 4: Violations -->
+    <mat-tab [label]="'CONTRACTS.TAB_VIOLATIONS' | translate">
+      <div class="app-card tab-card-body">
+        <div class="tab-content">
+          <div class="app-table-wrap">
+            <table class="app-data-table" *ngIf="violations.length > 0">
+              <thead>
+                <tr>
+                  <th>{{ 'CONTRACTS.VIOLATION_TYPE' | translate }}</th>
+                  <th>{{ 'CONTRACTS.SEVERITY' | translate }}</th>
+                  <th>{{ 'CONTRACTS.STATUS' | translate }}</th>
+                  <th>{{ 'CONTRACTS.FINE' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let v of violations">
+                  <td>{{ v.violationType }}</td>
+                  <td>
+                    <span class="status-badge" [attr.data-status]="v.severity">
+                      {{ v.severity }}
+                    </span>
+                  </td>
+                  <td>{{ v.status }}</td>
+                  <td><strong>{{ v.fineAmount | number }}</strong></td>
+                </tr>
+              </tbody>
             </table>
-            <div class="empty-msg" *ngIf="violations.length === 0">{{ 'CONTRACTS.NO_VIOLATIONS' | translate }}</div>
           </div>
-        </mat-tab>
+          <div class="empty-msg" *ngIf="violations.length === 0">{{ 'CONTRACTS.NO_VIOLATIONS' | translate }}</div>
+        </div>
+      </div>
+    </mat-tab>
 
-        <!-- Tab 5: Inspections -->
-        <mat-tab [label]="'CONTRACTS.TAB_INSPECTIONS' | translate">
-          <div class="tab-content">
-            <table mat-table [dataSource]="inspections" class="full-table" *ngIf="inspections.length > 0">
-              <ng-container matColumnDef="date">
-                <th mat-header-cell *matHeaderCellDef>{{ 'CONTRACTS.INSPECTION_DATE' | translate }}</th>
-                <td mat-cell *matCellDef="let i">{{ i.inspectionDate | date:'dd/MM/yyyy' }}</td>
-              </ng-container>
-              <ng-container matColumnDef="type">
-                <th mat-header-cell *matHeaderCellDef>{{ 'CONTRACTS.TYPE' | translate }}</th>
-                <td mat-cell *matCellDef="let i">{{ i.inspectionType }}</td>
-              </ng-container>
-              <ng-container matColumnDef="overall">
-                <th mat-header-cell *matHeaderCellDef>{{ 'CONTRACTS.OVERALL' | translate }}</th>
-                <td mat-cell *matCellDef="let i">{{ i.overallCondition }}</td>
-              </ng-container>
-              <ng-container matColumnDef="officer">
-                <th mat-header-cell *matHeaderCellDef>{{ 'CONTRACTS.OFFICER' | translate }}</th>
-                <td mat-cell *matCellDef="let i">{{ i.officerId }}</td>
-              </ng-container>
-              <tr mat-header-row *matHeaderRowDef="inspectionColumns"></tr>
-              <tr mat-row *matRowDef="let row; columns: inspectionColumns;"></tr>
+    <!-- Tab 5: Inspections -->
+    <mat-tab [label]="'CONTRACTS.TAB_INSPECTIONS' | translate">
+      <div class="app-card tab-card-body">
+        <div class="tab-content">
+          <div class="app-table-wrap">
+            <table class="app-data-table" *ngIf="inspections.length > 0">
+              <thead>
+                <tr>
+                  <th>{{ 'CONTRACTS.INSPECTION_DATE' | translate }}</th>
+                  <th>{{ 'CONTRACTS.TYPE' | translate }}</th>
+                  <th>{{ 'CONTRACTS.OVERALL' | translate }}</th>
+                  <th>{{ 'CONTRACTS.OFFICER' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let i of inspections">
+                  <td>{{ i.inspectionDate | date:'dd/MM/yyyy' }}</td>
+                  <td>{{ i.inspectionType }}</td>
+                  <td>{{ i.overallCondition }}</td>
+                  <td>{{ i.officerId }}</td>
+                </tr>
+              </tbody>
             </table>
-            <div class="empty-msg" *ngIf="inspections.length === 0">{{ 'CONTRACTS.NO_INSPECTIONS' | translate }}</div>
           </div>
-        </mat-tab>
+          <div class="empty-msg" *ngIf="inspections.length === 0">{{ 'CONTRACTS.NO_INSPECTIONS' | translate }}</div>
+        </div>
+      </div>
+    </mat-tab>
 
-      </mat-tab-group>
-    </mat-card-content>
-  </mat-card>
+    <!-- Tab 6: Complaints -->
+    <mat-tab [label]="'CONTRACTS.COMPLAINTS_TITLE' | translate">
+      <div class="app-card tab-card-body">
+        <div class="tab-content">
+          <div class="app-table-wrap">
+            <table class="app-data-table" *ngIf="complaints.length > 0">
+              <thead>
+                <tr>
+                  <th>{{ 'CONTRACTS.TITLE' | translate }}</th>
+                  <th>{{ 'CONTRACTS.TYPE' | translate }}</th>
+                  <th>{{ 'CONTRACTS.PRIORITY' | translate }}</th>
+                  <th>{{ 'CONTRACTS.STATUS' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let c of complaints">
+                  <td>{{ c.title }}</td>
+                  <td>{{ c.complaintType }}</td>
+                  <td>
+                    <span class="status-badge" [attr.data-status]="c.priority">
+                      {{ c.priority }}
+                    </span>
+                  </td>
+                  <td>{{ c.status }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="empty-msg" *ngIf="complaints.length === 0">{{ 'CONTRACTS.NO_COMPLAINTS' | translate }}</div>
+        </div>
+      </div>
+    </mat-tab>
+
+  </mat-tab-group>
 </ng-container>

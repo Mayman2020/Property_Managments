@@ -7,6 +7,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { PropertyService, Property } from '../../../core/services/property.service';
@@ -30,6 +31,7 @@ import { PropertyFormComponent } from '../property-form/property-form.component'
     MatIconModule,
     MatProgressSpinnerModule,
     MatPaginatorModule,
+    MatTooltipModule,
     PageHeaderComponent,
     EmptyStateComponent,
     TableExportToolbarComponent
@@ -243,6 +245,16 @@ export class PropertyListComponent implements OnInit {
       data: { mode: 'create' }
     }).afterClosed().subscribe((saved) => {
       if (saved) this.load();
+    });
+  }
+
+  openViewDialog(property: Property): void {
+    this.dialog.open(PropertyFormComponent, {
+      width: '980px',
+      maxWidth: '94vw',
+      maxHeight: '92vh',
+      panelClass: 'app-dialog-panel',
+      data: { propertyId: property.id, mode: 'view' }
     });
   }
 

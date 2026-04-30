@@ -1,16 +1,17 @@
-<app-page-header
-  [eyebrow]="'NAV_SECTION.CONTRACTS' | translate"
-  [title]="'CONTRACTS.DASHBOARD_TITLE' | translate"
-  [subtitle]="'CONTRACTS.DASHBOARD_SUBTITLE' | translate"
-  [breadcrumbs]="[
-    { label: ('NAV.DASHBOARD' | translate), route: '/admin/dashboard' },
-    { label: ('NAV.CONTRACTS_DASHBOARD' | translate) }
-  ]">
-  <button mat-flat-button routerLink="/admin/contracts/new">
-    <mat-icon>add</mat-icon>
-    {{ 'CONTRACTS.NEW_CONTRACT' | translate }}
-  </button>
-</app-page-header>
+<div class="app-page contracts-dashboard-page-wrap">
+  <app-page-header
+    [eyebrow]="'NAV_SECTION.CONTRACTS' | translate"
+    [title]="'CONTRACTS.DASHBOARD_TITLE' | translate"
+    [subtitle]="'CONTRACTS.DASHBOARD_SUBTITLE' | translate"
+    [breadcrumbs]="[
+      { label: ('NAV.DASHBOARD' | translate), route: '/admin/dashboard' },
+      { label: ('NAV.CONTRACTS_DASHBOARD' | translate) }
+    ]">
+    <button mat-flat-button class="new-contract-btn" (click)="openContractDialog()">
+      <mat-icon>add</mat-icon>
+      {{ 'CONTRACTS.NEW_CONTRACT' | translate }}
+    </button>
+  </app-page-header>
 
 <div *ngIf="loading" class="loading-wrap">
   <mat-spinner diameter="48"></mat-spinner>
@@ -20,40 +21,50 @@
 
   <!-- KPI row -->
   <div class="kpi-grid">
-    <article class="app-card kpi-card">
-      <div class="kpi-icon active-icon"><mat-icon>description</mat-icon></div>
+    <article class="kpi-card active-contracts">
+      <div class="kpi-icon-wrap">
+        <mat-icon>description</mat-icon>
+      </div>
       <div class="kpi-body">
         <div class="kpi-value">{{ stats.activeContracts }}</div>
         <div class="kpi-label">{{ 'CONTRACTS.ACTIVE_CONTRACTS' | translate }}</div>
       </div>
     </article>
 
-    <article class="app-card kpi-card" [class.kpi-warn]="stats.expiringIn30Days > 0">
-      <div class="kpi-icon warn-icon"><mat-icon>event_upcoming</mat-icon></div>
+    <article class="kpi-card expiring-soon">
+      <div class="kpi-icon-wrap">
+        <mat-icon>event_upcoming</mat-icon>
+      </div>
       <div class="kpi-body">
         <div class="kpi-value">{{ stats.expiringIn30Days }}</div>
         <div class="kpi-label">{{ 'CONTRACTS.EXPIRING_30_DAYS' | translate }}</div>
       </div>
     </article>
 
-    <article class="app-card kpi-card" [class.kpi-danger]="stats.overduePayments > 0">
-      <div class="kpi-icon danger-icon"><mat-icon>payment</mat-icon></div>
+    <article class="kpi-card overdue-payments">
+      <div class="kpi-icon-wrap">
+        <mat-icon>payment</mat-icon>
+      </div>
       <div class="kpi-body">
         <div class="kpi-value">{{ stats.overduePayments }}</div>
         <div class="kpi-label">{{ 'CONTRACTS.OVERDUE_PAYMENTS' | translate }}</div>
       </div>
     </article>
 
-    <article class="app-card kpi-card" [class.kpi-danger]="stats.openViolations > 0">
-      <div class="kpi-icon violation-icon"><mat-icon>report_problem</mat-icon></div>
+    <article class="kpi-card open-violations">
+      <div class="kpi-icon-wrap">
+        <mat-icon>report_problem</mat-icon>
+      </div>
       <div class="kpi-body">
         <div class="kpi-value">{{ stats.openViolations }}</div>
         <div class="kpi-label">{{ 'CONTRACTS.OPEN_VIOLATIONS' | translate }}</div>
       </div>
     </article>
 
-    <article class="app-card kpi-card" [class.kpi-warn]="stats.openComplaints > 0">
-      <div class="kpi-icon complaint-icon"><mat-icon>chat_bubble_outline</mat-icon></div>
+    <article class="kpi-card open-complaints">
+      <div class="kpi-icon-wrap">
+        <mat-icon>chat_bubble_outline</mat-icon>
+      </div>
       <div class="kpi-body">
         <div class="kpi-value">{{ stats.openComplaints }}</div>
         <div class="kpi-label">{{ 'CONTRACTS.OPEN_COMPLAINTS' | translate }}</div>
@@ -64,7 +75,7 @@
   <!-- Quick actions -->
   <div class="quick-actions">
     <a class="action-tile" routerLink="/admin/contracts/list">
-      <mat-icon>list_alt</mat-icon>
+      <mat-icon>grid_view</mat-icon>
       <span>{{ 'CONTRACTS.VIEW_ALL' | translate }}</span>
     </a>
     <a class="action-tile" routerLink="/admin/contracts/payments">
@@ -72,7 +83,7 @@
       <span>{{ 'CONTRACTS.PAYMENTS' | translate }}</span>
     </a>
     <a class="action-tile" routerLink="/admin/contracts/violations">
-      <mat-icon>report_problem</mat-icon>
+      <mat-icon>warning_amber</mat-icon>
       <span>{{ 'CONTRACTS.VIOLATIONS' | translate }}</span>
     </a>
     <a class="action-tile" routerLink="/admin/contracts/complaints">
@@ -82,49 +93,49 @@
   </div>
 
   <!-- Expiring contracts -->
-  <section class="app-card expiring-section" *ngIf="expiringContracts.length > 0">
-    <div class="app-card-header">
-      <div class="section-head-text">
+  <section class="expiring-section" *ngIf="expiringContracts.length > 0">
+    <div class="section-header">
+      <div class="section-titles">
         <span class="section-eyebrow">{{ i18n.currentLang === 'ar' ? 'تنبيهات' : 'Alerts' }}</span>
-        <span class="app-card-title">{{ 'CONTRACTS.EXPIRING_SOON' | translate }}</span>
+        <h3 class="section-main-title">{{ 'CONTRACTS.EXPIRING_SOON' | translate }}</h3>
       </div>
-      <a mat-stroked-button routerLink="/admin/contracts/list" class="view-all-btn">
+      <button mat-button class="view-all-link" routerLink="/admin/contracts/list">
         {{ 'CONTRACTS.VIEW_ALL' | translate }}
         <mat-icon>open_in_new</mat-icon>
-      </a>
+      </button>
     </div>
 
     <div class="expiring-list">
-      <div class="expiring-row" *ngFor="let c of expiringContracts" [routerLink]="['/admin/contracts', c.id]">
-
-        <div class="expiring-property">
-          <mat-icon class="prop-icon">apartment</mat-icon>
-          <div class="prop-text">
-            <span class="prop-name">{{ c.propertyName || '—' }}</span>
-            <span class="unit-number">{{ c.unitNumber || '—' }}</span>
+      <div class="expiring-item app-card" *ngFor="let c of expiringContracts" [routerLink]="['/admin/contracts', c.id]">
+        <div class="item-main">
+          <div class="expiry-badge" [class.critical]="c.daysUntilExpiry <= 15">
+            <mat-icon>schedule</mat-icon>
+            {{ c.daysUntilExpiry }} {{ 'CONTRACTS.DAYS_LEFT' | translate }}
+          </div>
+          
+          <div class="contract-meta">
+            <span class="cnt-number">{{ c.contractNumber }}</span>
+            <strong class="cnt-price">{{ c.monthlyRent | number }} {{ c.currency }}</strong>
           </div>
         </div>
 
-        <div class="expiring-tenant">
-          <span class="tenant-label">{{ i18n.currentLang === 'ar' ? 'المستأجر' : 'Tenant' }}</span>
-          <span class="tenant-name">{{ c.tenantName || '—' }}</span>
+        <div class="item-tenant">
+          <span class="label">{{ i18n.currentLang === 'ar' ? 'المستأجر' : 'Tenant' }}</span>
+          <span class="value">{{ c.tenantName || '—' }}</span>
         </div>
 
-        <div class="expiring-contract">
-          <span class="contract-number-badge">{{ c.contractNumber }}</span>
-          <span class="rent-amount">{{ c.monthlyRent | number }} {{ c.currency }}</span>
+        <div class="item-property">
+          <div class="prop-info">
+            <span class="p-name">{{ c.propertyName || '—' }}</span>
+            <span class="u-num">{{ c.unitNumber || '—' }}</span>
+          </div>
+          <mat-icon class="prop-icon">apartment</mat-icon>
         </div>
 
-        <div class="expiring-days">
-          <span class="days-badge" [class.days-critical]="c.daysUntilExpiry <= 15" [class.days-warn]="c.daysUntilExpiry > 15">
-            <mat-icon>schedule</mat-icon>
-            {{ c.daysUntilExpiry }} {{ 'CONTRACTS.DAYS_LEFT' | translate }}
-          </span>
-        </div>
-
-        <mat-icon class="row-arrow">{{ i18n.currentLang === 'ar' ? 'arrow_back_ios' : 'arrow_forward_ios' }}</mat-icon>
+        <mat-icon class="arrow-icon">{{ i18n.currentLang === 'ar' ? 'chevron_left' : 'chevron_right' }}</mat-icon>
       </div>
     </div>
   </section>
 
+</div>
 </div>

@@ -7,8 +7,10 @@
       { label: ('NAV.DASHBOARD' | translate), route: '/admin/dashboard' },
       { label: ('NAV.CONTRACTS_DASHBOARD' | translate), route: '/admin/contracts/dashboard' },
       { label: ('CONTRACTS.PAYMENTS_TITLE' | translate) }
-    ]">
-    <button mat-flat-button routerLink="/admin/contracts/payments/record">
+    ]"
+    [showBack]="true"
+    (backClick)="goBack()">
+    <button mat-flat-button (click)="openRecordPaymentDialog()">
       <mat-icon>add</mat-icon>
       {{ 'CONTRACTS.RECORD_PAYMENT' | translate }}
     </button>

@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { NgIf, NgFor, DatePipe, NgClass } from '@angular/common';
+import { NgIf, NgFor, DatePipe, NgClass, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -46,9 +46,12 @@ export class InspectionsListComponent implements OnInit {
   constructor(
     private readonly inspectionSvc: InspectionService,
     private readonly propertySvc: PropertyService,
+    private readonly location: Location,
     readonly lookupCache: LookupCacheService,
     readonly i18n: I18nService
   ) {}
+
+  goBack(): void { this.location.back(); }
 
   ngOnInit(): void {
     this.loadProperties();

@@ -159,6 +159,10 @@
     <mat-tab [label]="isArabic ? 'المسميات الوظيفية' : 'Job Titles'">
       <ng-container *ngTemplateOutlet="classificationGrid; context: { lists: jobLists }"></ng-container>
     </mat-tab>
+
+    <mat-tab [label]="isArabic ? 'وحدات القياس' : 'Units of Measure'">
+      <ng-container *ngTemplateOutlet="classificationGrid; context: { lists: inventoryLists }"></ng-container>
+    </mat-tab>
   </mat-tab-group>
 </div>
 

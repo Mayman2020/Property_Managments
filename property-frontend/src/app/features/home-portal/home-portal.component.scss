@@ -24,7 +24,7 @@
   }
 
   &:focus {
-    outline: 2px solid var(--mat-primary-color, #1A3C5E);
+    outline: 2px solid var(--navy-800);
     outline-offset: 2px;
   }
 
@@ -40,7 +40,7 @@
   width: 64px;
   height: 64px;
   border-radius: 16px;
-  background: rgba(26, 60, 94, 0.1);
+  background: var(--navy-50);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -49,27 +49,27 @@
     font-size: 32px;
     width: 32px;
     height: 32px;
-    color: #1A3C5E;
+    color: var(--navy-800);
   }
 }
 
 .contracts-icon {
-  background: rgba(201, 168, 76, 0.12);
+  background: var(--amber-50);
 
   mat-icon {
-    color: #C9A84C;
+    color: var(--amber-700);
   }
 }
 
 .card-title {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #1A3C5E;
+  color: var(--navy-800);
   margin: 0;
 }
 
 .card-desc {
-  color: #6b7280;
+  color: var(--text-muted);
   margin: 0;
   font-size: 0.95rem;
   line-height: 1.5;
@@ -89,8 +89,8 @@
   border-radius: 20px;
   font-size: 0.8rem;
   font-weight: 500;
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--surface-2);
+  color: var(--text-muted);
 
   mat-icon {
     font-size: 16px;
@@ -99,18 +99,18 @@
   }
 
   &.warn {
-    background: #fef3c7;
-    color: #92400e;
+    background: var(--amber-50);
+    color: var(--amber-800);
   }
 
   &.success {
-    background: #d1fae5;
-    color: #065f46;
+    background: var(--ok-bg);
+    color: var(--ok);
   }
 
   &.danger {
-    background: #fee2e2;
-    color: #991b1b;
+    background: var(--bad-bg);
+    color: var(--bad);
   }
 }
 

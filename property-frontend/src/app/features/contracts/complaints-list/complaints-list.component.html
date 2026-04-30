@@ -7,7 +7,9 @@
       { label: ('NAV.DASHBOARD' | translate), route: '/admin/dashboard' },
       { label: ('NAV.CONTRACTS_DASHBOARD' | translate), route: '/admin/contracts/dashboard' },
       { label: ('CONTRACTS.COMPLAINTS_TITLE' | translate) }
-    ]">
+    ]"
+    [showBack]="true"
+    (backClick)="goBack()">
   </app-page-header>
 
   <div class="toolbar">
@@ -72,11 +74,11 @@
                 {{ lookupCache.label('COMPLAINT_STATUS', c.status) || c.status }}
               </span>
             </td>
-            <td>
-              <button type="button" class="app-icon-btn"
+            <td class="actions-col">
+              <button type="button" class="app-icon-btn success"
                       *ngIf="c.status !== 'RESOLVED' && c.status !== 'CLOSED'"
                       (click)="resolve(c.id)"
-                      [title]="'CONTRACTS.RESOLVE' | translate">
+                      [matTooltip]="'CONTRACTS.RESOLVE' | translate">
                 <mat-icon>check_circle_outline</mat-icon>
               </button>
             </td>

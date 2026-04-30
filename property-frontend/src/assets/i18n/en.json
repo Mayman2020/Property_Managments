@@ -256,7 +256,8 @@
     "CONTRACT_START": "Contract start",
     "CONTRACT_END": "Contract end",
     "CONTRACT_ATTACHMENTS": "Contract attachments",
-    "CONTRACT_REQUIRED": "Contract period and at least one attachment are required"
+    "CONTRACT_REQUIRED": "Contract period and at least one attachment are required",
+    "ADD_HINT": "Capture contractor details, contract dates, and required attachments."
   },
   "REQUEST_FORM": {
     "TITLE": "New Maintenance Request",
@@ -392,7 +393,9 @@
     "MANAGE": "Manage inventory",
     "QTY": "Qty",
     "MIN": "Min",
-    "LOAD_ERROR": "Failed to load inventory"
+    "LOAD_ERROR": "Failed to load inventory",
+    "DIALOG_HINT": "Enter item details, stock, and storage location.",
+    "CODE_AUTO_HINT": "Auto-generated — cannot be edited"
   },
   "PROPERTY_LIST": {
     "TITLE": "Properties",
@@ -499,7 +502,8 @@
     "YOU": "You",
     "SECTION_PROFILE": "Personal Profile",
     "YOUR_DETAILS": "Your details",
-    "SECTION_SECURITY": "Security"
+    "SECTION_SECURITY": "Security",
+    "PASSWORD_HINT": "Minimum 6 characters. Use a strong mix of letters, numbers, and symbols."
   },
   "USER_MGMT": {
     "TITLE": "Users Management",
@@ -985,7 +989,8 @@
   "CLASSIFICATIONS": {
     "TITLE": "Classifications",
     "SUBTITLE": "Manage classification lists used across the system — unit type, property type, and more",
-    "CODE_HINT": "Leave empty for auto-generated code"
+    "CODE_HINT": "Leave empty for auto-generated code",
+    "CODE_AUTO_HINT": "Auto-generated — cannot be edited"
   },
   "TENANT_PORTAL": {
     "MY_CONTRACT": "My Contract",
@@ -1147,7 +1152,12 @@
     "CATEGORY_COL": "Category",
     "BUDGET_COL": "Budget",
     "ADD_EXPENSE": "Add Expense",
+    "ADD_EXPENSE_HINT": "Record a new expense entry with its amount, date, and property.",
     "ADD_REVENUE": "Add Revenue",
+    "ADD_REVENUE_HINT": "Record a new revenue entry with its amount, date, and property.",
+    "EXPENSE_DATE": "Expense Date",
+    "REVENUE_DATE": "Revenue Date",
+    "CURRENCY": "Currency",
     "REPORTS": "Reports",
     "DESCRIPTION_COL": "Description",
     "AMOUNT_COL": "Amount",
@@ -1180,6 +1190,13 @@
     "ATTENDANCE_TITLE": "Attendance",
     "SUBTITLE": "Manage employee records, payroll, and deductions from one workspace.",
     "ADD_EMPLOYEE": "Add Employee",
+    "ADD_EMPLOYEE_HINT": "Create a new employee record and link it to the property.",
+    "FULL_NAME": "Full Name",
+    "JOB_TITLE_LABEL": "Job Title",
+    "BASIC_SALARY": "Basic Salary",
+    "HIRE_DATE": "Hire Date",
+    "PHONE": "Phone",
+    "EMAIL": "Email",
     "CODE_COL": "Code",
     "EMPLOYEE_COL": "Employee",
     "JOB_TITLE_COL": "Title",
@@ -1232,6 +1249,14 @@
     "TITLE": "Vendors",
     "SUBTITLE": "Vendor master data, contracts, and ratings.",
     "ADD": "Add Vendor",
+    "ADD_HINT": "Register a new vendor or contractor and link it to operations.",
+    "VENDOR_NAME": "Vendor Name",
+    "TYPE_LABEL": "Type",
+    "TYPE_PLACEHOLDER": "e.g. Plumbing, Electrical",
+    "CONTACT_LABEL": "Contact Person",
+    "PHONE": "Phone",
+    "EMAIL": "Email",
+    "SHARED": "— Shared —",
     "CODE_COL": "Code",
     "VENDOR_COL": "Vendor",
     "TYPE_COL": "Type",

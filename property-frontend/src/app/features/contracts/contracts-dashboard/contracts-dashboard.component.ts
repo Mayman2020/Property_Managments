@@ -7,6 +7,9 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDialog } from '@angular/material/dialog';
+import { ContractFormComponent } from '../contract-form/contract-form.component';
+import { RecordPaymentFormComponent } from '../record-payment-form/record-payment-form.component';
 import { TranslateModule } from '@ngx-translate/core';
 import { catchError, forkJoin, of } from 'rxjs';
 
@@ -53,6 +56,7 @@ export class ContractsDashboardComponent implements OnInit {
   constructor(
     private readonly dashSvc: DashboardService,
     private readonly contractSvc: ContractService,
+    private readonly dialog: MatDialog,
     readonly i18n: I18nService
   ) {}
 
@@ -74,5 +78,21 @@ export class ContractsDashboardComponent implements OnInit {
       }
       this.loading = false;
     });
+  }
+
+  openContractDialog(): void {
+    this.dialog.open(ContractFormComponent, {
+      width: '980px',
+      maxWidth: '95vw',
+      maxHeight: '95vh',
+      panelClass: 'app-dialog-panel'
+    }).afterClosed().subscribe(saved => {
+      if (saved) this.loadData();
+    });
+  }
+
+  loadData(): void {
+    this.loading = true;
+    this.ngOnInit();
   }
 }

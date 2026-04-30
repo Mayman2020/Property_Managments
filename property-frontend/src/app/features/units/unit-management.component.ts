@@ -1,13 +1,15 @@
 import { Component, OnInit } from '@angular/core';
-import { DatePipe, NgFor, NgIf } from '@angular/common';
+import { DatePipe, NgFor, NgIf, NgClass, Location } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
 import { forkJoin, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
@@ -30,6 +32,7 @@ import { UnitDialogComponent } from '../units/unit-dialog.component';
   imports: [
     NgFor,
     NgIf,
+    NgClass,
     DatePipe,
     FormsModule,
     ReactiveFormsModule,
@@ -38,8 +41,10 @@ import { UnitDialogComponent } from '../units/unit-dialog.component';
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
+    MatProgressSpinnerModule,
     MatSelectModule,
     MatSlideToggleModule,
+    MatTooltipModule,
     PageHeaderComponent,
     EmptyStateComponent,
     TablePagerComponent,
@@ -70,8 +75,11 @@ export class UnitManagementComponent implements OnInit {
     private readonly tenantSvc: TenantService,
     private readonly userSvc: UserService,
     private readonly snack: SnackService,
+    private readonly location: Location,
     readonly i18n: I18nService
   ) {}
+
+  goBack(): void { this.location.back(); }
 
   ngOnInit(): void {
     this.loadUsers();

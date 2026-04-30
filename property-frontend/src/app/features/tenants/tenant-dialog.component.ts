@@ -5,6 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
@@ -29,22 +30,17 @@ export interface TenantDialogData {
   standalone: true,
   imports: [
     NgIf, NgFor, ReactiveFormsModule, TranslateModule,
-    MatDialogModule, MatButtonModule, MatFormFieldModule,
+    MatDialogModule, MatButtonModule, MatFormFieldModule, MatIconModule,
     MatInputModule, MatDatepickerModule, MatProgressSpinnerModule,
     MatSelectModule, UploadZoneComponent
   ],
   template: `
-    <h2 mat-dialog-title>{{ 'TENANTS.ADD' | translate }}</h2>
-    <mat-dialog-content class="dialog-body">
+    <h2 mat-dialog-title class="dialog-title">
+      <mat-icon class="dialog-title-icon">groups</mat-icon>
+      {{ 'TENANTS.ADD' | translate }}
+    </h2>
+    <mat-dialog-content>
       <form [formGroup]="form" class="tenant-dialog-form">
-        <div class="dialog-intro full">
-          <span class="material-icons">groups</span>
-          <div>
-            <strong>{{ 'TENANTS.ADD' | translate }}</strong>
-            <p>{{ isAr ? 'أضف مستأجرًا جديدًا واربطه بالعقار والوحدة وملفات العقد.' : 'Create a new tenant and link them to the property, unit, and contract files.' }}</p>
-          </div>
-        </div>
-
         <mat-form-field appearance="outline" class="full">
           <mat-label>{{ 'PROFILE.FULL_NAME' | translate }}</mat-label>
           <input matInput formControlName="fullName" />
@@ -111,7 +107,7 @@ export interface TenantDialogData {
           <mat-datepicker #pickerEnd></mat-datepicker>
         </mat-form-field>
 
-        <div class="full">
+        <div class="full media-block">
           <app-upload-zone
             [multiple]="true"
             [accept]="'image/*,.pdf,.doc,.docx'"
@@ -126,18 +122,20 @@ export interface TenantDialogData {
         </mat-form-field>
       </form>
     </mat-dialog-content>
-    <mat-dialog-actions align="end" class="dialog-actions">
-      <button mat-stroked-button type="button" class="btn-dialog-cancel" (click)="ref.close(false)">{{ 'ACTIONS.CANCEL' | translate }}</button>
-      <button mat-flat-button type="button" class="btn-dialog-confirm" (click)="save()" [disabled]="saving">
+    <div mat-dialog-actions align="end" class="dialog-actions-row">
+      <button mat-stroked-button type="button" (click)="ref.close(false)">{{ 'ACTIONS.CANCEL' | translate }}</button>
+      <button mat-flat-button class="navy-btn" type="button" (click)="save()" [disabled]="saving">
         <mat-spinner *ngIf="saving" diameter="18"></mat-spinner>
         <span *ngIf="!saving">{{ 'ACTIONS.SAVE' | translate }}</span>
       </button>
-    </mat-dialog-actions>
+    </div>
   `,
   styles: [`
-    .dialog-body { min-width: min(600px, 94vw); padding-top: 8px; max-height: 80vh; }
-    .tenant-dialog-form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .tenant-dialog-form { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding-top: 10px; }
     .full { grid-column: 1 / -1; }
+    .media-block { margin: 8px 0 16px; }
+    .dialog-actions-row { padding: 16px 24px; border-top: 1px solid var(--line); display: flex; gap: 12px; justify-content: flex-end; background: var(--surface-2); }
+    .navy-btn { background: var(--navy-800) !important; color: white !important; }
     @media (max-width: 640px) { .tenant-dialog-form { grid-template-columns: 1fr; } }
   `]
 })

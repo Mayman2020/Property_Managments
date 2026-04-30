@@ -3,40 +3,44 @@
     [eyebrow]="'NAV_SECTION.DIRECTORY' | translate"
     [title]="'USER_MGMT.TITLE' | translate"
     [subtitle]="'USER_MGMT.SUBTITLE' | translate"
-    [breadcrumbs]="[{label:('NAV.DASHBOARD' | translate), route:'/admin/dashboard'}, {label:('NAV.USERS' | translate)}]">
+    [breadcrumbs]="[{label:('NAV.DASHBOARD' | translate), route:'/admin/dashboard'}, {label:('NAV.USERS' | translate)}]"
+    [showBack]="true"
+    (backClick)="goBack()">
     <button mat-flat-button type="button" *ngIf="permissions.can('users', 'create')" (click)="openAdd()">
-      <span class="material-icons">person_add</span>
+      <mat-icon>person_add</mat-icon>
       {{ 'USER_MGMT.ADD_USER' | translate }}
     </button>
   </app-page-header>
 
-  <div class="loading-center" *ngIf="loading">
+  <div class="loading-wrap" *ngIf="loading">
     <mat-spinner diameter="40"></mat-spinner>
   </div>
 
-  <div class="users-search-shell" *ngIf="!loading">
-    <span class="material-icons">search</span>
-    <input [value]="searchTerm" (input)="onSearch($any($event.target).value)" [placeholder]="'ACTIONS.SEARCH' | translate">
-  </div>
+  <section class="app-card" *ngIf="!loading">
+    <div class="search-bar-shell">
+      <div class="search-input-box">
+        <mat-icon>search</mat-icon>
+        <input [value]="searchTerm" (input)="onSearch($any($event.target).value)" [placeholder]="'ACTIONS.SEARCH' | translate">
+      </div>
+      <app-table-export-toolbar
+        permissionKey="users"
+        [title]="'USER_MGMT.TITLE' | translate"
+        fileName="users"
+        [columns]="exportColumns"
+        [rows]="filteredUsers">
+      </app-table-export-toolbar>
+    </div>
 
-  <section class="app-card users-table-card" *ngIf="!loading">
-    <app-table-export-toolbar
-      permissionKey="users"
-      [title]="'USER_MGMT.TITLE' | translate"
-      fileName="users"
-      [columns]="exportColumns"
-      [rows]="filteredUsers">
-    </app-table-export-toolbar>
     <div class="app-table-wrap">
       <table class="app-data-table source-table">
         <thead>
           <tr>
             <th>{{ 'USER_MGMT.USERNAME' | translate }}</th>
-            <th>{{ 'USER_MGMT.ROLE' | translate }}</th>
-            <th>{{ 'REQUEST_FORM.PROPERTY' | translate }}</th>
-            <th>{{ 'MAINTENANCE.STATUS' | translate }}</th>
-            <th>{{ 'REQUEST_LIST.CREATED_AT' | translate }}</th>
-            <th></th>
+            <th class="center-col">{{ 'USER_MGMT.ROLE' | translate }}</th>
+            <th class="center-col">{{ 'REQUEST_FORM.PROPERTY' | translate }}</th>
+            <th class="center-col">{{ 'MAINTENANCE.STATUS' | translate }}</th>
+            <th class="center-col">{{ 'REQUEST_LIST.CREATED_AT' | translate }}</th>
+            <th class="actions-col"></th>
           </tr>
         </thead>
         <tbody>
@@ -44,23 +48,37 @@
             <td>
               <div class="user-cell">
                 <div class="user-avatar">{{ userInitials(user) }}</div>
-                <div>
+                <div class="user-info">
                   <div class="user-name">{{ user.fullName }}</div>
                   <div class="user-email">{{ user.email }}</div>
                 </div>
               </div>
             </td>
-            <td><span class="status-badge" data-status="INFO">{{ roleLabel(user) }}</span></td>
-            <td>{{ propertyName(user.propertyId) }}</td>
-            <td><span class="status-badge" [attr.data-status]="user.isActive ? 'OK' : 'BAD'">{{ (user.isActive ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') | translate }}</span></td>
-            <td>{{ user.createdAt | date:'dd/MM/yyyy' }}</td>
-            <td>
+            <td class="center-col">
+              <span class="role-badge">{{ roleLabel(user) }}</span>
+            </td>
+            <td class="center-col">
+              <span class="property-tag" *ngIf="user.propertyId">
+                <mat-icon>apartment</mat-icon>
+                {{ propertyName(user.propertyId) }}
+              </span>
+              <span class="text-muted" *ngIf="!user.propertyId">—</span>
+            </td>
+            <td class="center-col">
+              <span class="status-chip" [ngClass]="user.isActive ? 'chip-success' : 'chip-danger'">
+                {{ (user.isActive ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') | translate }}
+              </span>
+            </td>
+            <td class="center-col">
+              <span class="date-text">{{ user.createdAt | date:'dd/MM/yyyy' }}</span>
+            </td>
+            <td class="actions-col">
               <div class="table-actions">
-                <button class="table-action-btn" type="button" *ngIf="permissions.can('users', 'edit')" (click)="openEdit(user)">
-                  <span class="material-icons">edit</span>
+                <button class="app-icon-btn info" type="button" *ngIf="permissions.can('users', 'edit')" (click)="openEdit(user)" [matTooltip]="'ACTIONS.EDIT' | translate">
+                  <mat-icon>edit</mat-icon>
                 </button>
-                <button class="table-action-btn" type="button" *ngIf="permissions.can('users', 'toggle')" (click)="toggleActive(user)" [disabled]="togglingIds.has(user.id)">
-                  <span class="material-icons">{{ user.isActive ? 'person_off' : 'person' }}</span>
+                <button class="app-icon-btn" [ngClass]="user.isActive ? 'danger' : 'success'" type="button" *ngIf="permissions.can('users', 'toggle')" (click)="toggleActive(user)" [disabled]="togglingIds.has(user.id)" [matTooltip]="(user.isActive ? 'COMMON.DEACTIVATE' : 'COMMON.ACTIVATE') | translate">
+                  <mat-icon>{{ user.isActive ? 'person_off' : 'person' }}</mat-icon>
                 </button>
               </div>
             </td>

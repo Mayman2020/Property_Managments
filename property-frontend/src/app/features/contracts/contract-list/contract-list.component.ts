@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { DatePipe, DecimalPipe, NgClass, NgFor, NgIf } from '@angular/common';
+import { DatePipe, DecimalPipe, NgClass, NgFor, NgIf, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -13,6 +13,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { TranslateModule } from '@ngx-translate/core';
 import { Subject, catchError, debounceTime, of, switchMap } from 'rxjs';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { ContractFormComponent } from '../contract-form/contract-form.component';
 
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { ContractSummary, ContractStatus } from '../../../core/models/contract.model';
@@ -40,6 +42,7 @@ import { TablePagerComponent } from '../../../shared/components/table-pager/tabl
     MatProgressSpinnerModule,
     MatSelectModule,
     MatTableModule,
+    MatDialogModule,
     TranslateModule,
     PageHeaderComponent,
     TablePagerComponent
@@ -63,8 +66,12 @@ export class ContractListComponent implements OnInit {
 
   constructor(
     private readonly contractSvc: ContractService,
+    private readonly dialog: MatDialog,
+    private readonly location: Location,
     readonly i18n: I18nService
   ) {}
+
+  goBack(): void { this.location.back(); }
 
   ngOnInit(): void {
     this.search$.pipe(
@@ -115,6 +122,17 @@ export class ContractListComponent implements OnInit {
 
   getStatusCount(status: ContractStatus): number {
     return this.contracts.filter((contract) => contract.status === status).length;
+  }
+
+  openAddDialog(): void {
+    this.dialog.open(ContractFormComponent, {
+      width: '980px',
+      maxWidth: '95vw',
+      maxHeight: '95vh',
+      panelClass: 'app-dialog-panel'
+    }).afterClosed().subscribe(saved => {
+      if (saved) this.loadContracts();
+    });
   }
 
   private buildQuery() {
