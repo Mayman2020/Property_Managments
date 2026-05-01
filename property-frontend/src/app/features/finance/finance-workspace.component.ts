@@ -1,6 +1,5 @@
 import { Component, OnInit } from '@angular/core';
 import { CurrencyPipe, DatePipe, DecimalPipe, NgFor, NgIf } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
@@ -8,6 +7,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { TablePagerComponent } from '../../shared/components/table-pager/table-pager.component';
+import { FilterBarComponent, FilterSpec } from '../../shared/components/filter-bar/filter-bar.component';
 import { BudgetItem, ExpenseItem, FinanceDashboardDto, FinanceService, PettyCashFundItem, RevenueItem } from '../../core/services/finance.service';
 import { Property, PropertyService } from '../../core/services/property.service';
 import { I18nService } from '../../core/i18n/i18n.service';
@@ -17,17 +17,10 @@ import { RevenueDialogComponent } from './revenue-dialog.component';
 @Component({
   selector: 'app-finance-workspace',
   standalone: true,
-  imports: [NgIf, NgFor, DecimalPipe, CurrencyPipe, DatePipe, FormsModule, RouterLink, TranslateModule, MatButtonModule, PageHeaderComponent, TablePagerComponent],
+  imports: [NgIf, NgFor, DecimalPipe, CurrencyPipe, DatePipe, RouterLink, TranslateModule, MatButtonModule, PageHeaderComponent, TablePagerComponent, FilterBarComponent],
   template: `
     <div class="app-page">
       <app-page-header [eyebrow]="'NAV.FINANCE_DASHBOARD' | translate" [title]="title" [subtitle]="subtitle">
-
-        <select [(ngModel)]="selectedPropertyId" (change)="onPropertyChange()" class="estate-property-select">
-          <option [ngValue]="null">{{ 'COMMON.ALL_PROPERTIES' | translate }}</option>
-          <option *ngFor="let p of properties" [ngValue]="p.id">
-            {{ i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName) }}
-          </option>
-        </select>
 
         <a mat-stroked-button routerLink="/admin/finance/reports/pnl" *ngIf="section === 'dashboard'">
           <span class="material-icons">summarize</span>
@@ -67,6 +60,10 @@ import { RevenueDialogComponent } from './revenue-dialog.component';
           </button>
         </ng-container>
       </app-page-header>
+
+      <div style="padding: 8px 0 0;" *ngIf="properties.length > 1">
+        <app-filter-bar [filters]="pageFilters" (filtersChange)="onFilterBarChange($event)"></app-filter-bar>
+      </div>
 
       <ng-container *ngIf="section === 'dashboard'">
         <section class="stat-grid">
@@ -190,6 +187,7 @@ export class FinanceWorkspaceComponent implements OnInit {
   budgets: BudgetItem[] = [];
   properties: Property[] = [];
   selectedPropertyId: number | null = null;
+  pageFilters: FilterSpec[] = [];
   readonly pageSize = 5;
   expensesPageIndex = 0;
   revenuesPageIndex = 0;
@@ -317,11 +315,30 @@ export class FinanceWorkspaceComponent implements OnInit {
 
   ngOnInit(): void {
     this.section = this.route.snapshot.data['section'] ?? 'dashboard';
-    this.propertySvc.getAll(0, 100).subscribe({
-      next: (res) => { this.properties = res.data?.content ?? []; },
+    this.propertySvc.getAll(0, 500).subscribe({
+      next: (res) => { this.properties = res.data?.content ?? []; this.setupFilters(); },
       error: () => {}
     });
     this.loadSection();
+  }
+
+  private setupFilters(): void {
+    this.pageFilters = [
+      {
+        key: 'selectedPropertyId',
+        label: 'REQUEST_FORM.PROPERTY',
+        type: 'select',
+        options: this.properties.map(p => ({
+          value: p.id,
+          label: this.i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName)
+        }))
+      }
+    ];
+  }
+
+  onFilterBarChange(values: any): void {
+    if (values?.selectedPropertyId !== undefined) this.selectedPropertyId = values.selectedPropertyId;
+    this.onPropertyChange();
   }
 
   exportExcel(type: string): void {

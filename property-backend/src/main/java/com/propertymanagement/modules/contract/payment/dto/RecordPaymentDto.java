@@ -28,7 +28,6 @@ public class RecordPaymentDto {
     private BigDecimal amountDue;
 
     private String paymentMethod;
-    private String referenceNumber;
     private String receiptUrl;
     private BigDecimal lateFee;
     private BigDecimal discount;

@@ -9,6 +9,35 @@
 
 <div *ngIf="!loading" class="portal-grid">
 
+  <!-- Comprehensive Admin System Card (SUPER_ADMIN only) -->
+  <mat-card class="portal-card comprehensive-card" *ngIf="isSuperAdmin" (click)="goToComprehensive()" tabindex="0" (keydown.enter)="goToComprehensive()">
+    <mat-card-content>
+      <div class="card-icon comprehensive-icon">
+        <mat-icon>admin_panel_settings</mat-icon>
+      </div>
+      <h2 class="card-title">{{ 'HOME_PORTAL.COMPREHENSIVE_SYSTEM' | translate }}</h2>
+      <p class="card-desc">{{ 'HOME_PORTAL.COMPREHENSIVE_DESC' | translate }}</p>
+      <div class="stats-row">
+        <span class="stat-chip success">
+          <mat-icon>apartment</mat-icon>
+          {{ stats.activeContracts }} {{ 'HOME_PORTAL.ACTIVE_CONTRACTS' | translate }}
+        </span>
+        <span class="stat-chip warn">
+          <mat-icon>pending</mat-icon>
+          {{ stats.pendingRequests }} {{ 'HOME_PORTAL.PENDING_REQUESTS' | translate }}
+        </span>
+        <span class="stat-chip" [class.danger]="stats.overduePayments > 0">
+          <mat-icon>payment</mat-icon>
+          {{ stats.overduePayments }} {{ 'HOME_PORTAL.OVERDUE_PAYMENTS' | translate }}
+        </span>
+      </div>
+      <button mat-flat-button color="warn" class="enter-btn">
+        {{ 'HOME_PORTAL.ENTER_SYSTEM' | translate }}
+        <mat-icon>arrow_forward</mat-icon>
+      </button>
+    </mat-card-content>
+  </mat-card>
+
   <!-- Maintenance System Card -->
   <mat-card class="portal-card maintenance-card" *ngIf="showMaintenanceCard" (click)="goToMaintenance()" tabindex="0" (keydown.enter)="goToMaintenance()">
     <mat-card-content>

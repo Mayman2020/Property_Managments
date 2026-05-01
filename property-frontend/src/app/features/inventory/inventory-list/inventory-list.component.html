@@ -14,16 +14,13 @@
     <mat-spinner diameter="40"></mat-spinner>
   </div>
 
-  <div class="inventory-search-shell" *ngIf="!loading">
+  <div class="inventory-search-shell" *ngIf="!loading && (items.length > 0 || searchTerm || hasFiltersBar())">
     <span class="material-icons">search</span>
     <input [value]="searchTerm" (input)="onSearch($any($event.target).value)" [placeholder]="'ACTIONS.SEARCH' | translate">
-
-    <select *ngIf="properties.length > 1" [(ngModel)]="filterPropertyId" (change)="onPropertyChange()" class="estate-property-select">
-      <option [ngValue]="null">{{ isAr ? 'كل العقارات' : 'All Properties' }}</option>
-      <option *ngFor="let p of properties" [ngValue]="p.id">
-        {{ isAr ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName) }}
-      </option>
-    </select>
+    <app-filter-bar [filters]="pageFilters" (filtersChange)="onFilterBarChange($event)"></app-filter-bar>
+    <button mat-icon-button class="clear-filters-btn" (click)="clearFiltersFromBar()" *ngIf="hasFiltersBar()" [matTooltip]="'ACTIONS.CLEAR_FILTERS' | translate">
+      <mat-icon>filter_alt_off</mat-icon>
+    </button>
   </div>
 
   <app-empty-state

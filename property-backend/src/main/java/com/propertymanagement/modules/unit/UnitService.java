@@ -1,6 +1,7 @@
 package com.propertymanagement.modules.unit;
 
 import com.propertymanagement.modules.unit.dto.UnitRequest;
+import com.propertymanagement.codegen.CodeGenerationService;
 import com.propertymanagement.modules.unit.dto.UnitResponse;
 import com.propertymanagement.shared.exception.AppException;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class UnitService {
 
     private final UnitRepository unitRepository;
+    private final CodeGenerationService codeGenerationService;
 
     public Page<UnitResponse> getByProperty(Long propertyId, Pageable pageable, String q) {
         return unitRepository.searchByProperty(propertyId, trimToNull(q), pageable).map(this::toResponse);
@@ -25,13 +27,11 @@ public class UnitService {
 
     @Transactional
     public UnitResponse create(UnitRequest request) {
-        if (unitRepository.existsByPropertyIdAndUnitNumber(request.getPropertyId(), request.getUnitNumber())) {
-            throw AppException.conflict("Unit number already exists in this property: " + request.getUnitNumber());
-        }
+        String generatedUnitNumber = codeGenerationService.generate("UNIT");
         Unit unit = Unit.builder()
                 .propertyId(request.getPropertyId())
                 .floorId(request.getFloorId())
-                .unitNumber(request.getUnitNumber())
+                .unitNumber(generatedUnitNumber)
                 .unitType(request.getUnitType())
                 .areaSqm(request.getAreaSqm())
                 .bedrooms(request.getBedrooms())
@@ -47,11 +47,7 @@ public class UnitService {
     @Transactional
     public UnitResponse update(Long id, UnitRequest request) {
         Unit unit = findActive(id);
-        if (!unit.getUnitNumber().equals(request.getUnitNumber())
-                && unitRepository.existsByPropertyIdAndUnitNumber(unit.getPropertyId(), request.getUnitNumber())) {
-            throw AppException.conflict("Unit number already exists in this property: " + request.getUnitNumber());
-        }
-        unit.setUnitNumber(request.getUnitNumber());
+        // unitNumber is generated on create and must not be changed on update
         unit.setUnitType(request.getUnitType());
         unit.setFloorId(request.getFloorId());
         unit.setAreaSqm(request.getAreaSqm());

@@ -4,12 +4,14 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
 import { Subscription } from 'rxjs';
+import { MatDialog } from '@angular/material/dialog';
 
 import { AuthService } from '../../core/services/auth.service';
 import { UserRole } from '../../core/models/user.model';
 import { PermissionService } from '../../core/services/permission.service';
 import { DashboardService, DashboardStats } from '../../core/services/dashboard.service';
 import { MaintenanceService } from '../../core/services/maintenance.service';
+import { MaintenanceRequestDialogComponent } from '../../features/maintenance/maintenance-request-dialog.component';
 
 interface NavItem {
   icon: string;
@@ -63,7 +65,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
   };
 
   readonly navItems: NavItem[] = [
-    { icon: 'home', labelKey: 'NAV.HOME_PORTAL', route: '/admin/home', roles: ['SUPER_ADMIN', 'PROPERTY_ADMIN'], permissionKey: 'dashboard', sectionKey: 'NAV_SECTION.OVERVIEW' },
+    { icon: 'home', labelKey: 'NAV.HOME_PORTAL', route: '/admin/home', roles: ['SUPER_ADMIN', 'PROPERTY_ADMIN', 'CONTRACTS_OFFICER', 'ACCOUNTANT', 'HR_OFFICER', 'OWNER'], permissionKey: 'dashboard', sectionKey: 'NAV_SECTION.OVERVIEW' },
     { icon: 'dashboard', labelKey: 'NAV.DASHBOARD', route: '/admin/dashboard', roles: ['SUPER_ADMIN', 'PROPERTY_ADMIN'], permissionKey: 'dashboard', sectionKey: 'NAV_SECTION.OVERVIEW' },
     { icon: 'apartment', labelKey: 'NAV.PROPERTIES', route: '/admin/properties', roles: ['SUPER_ADMIN', 'PROPERTY_ADMIN'], permissionKey: 'properties', sectionKey: 'NAV_SECTION.DIRECTORY' },
     { icon: 'meeting_room', labelKey: 'NAV.UNITS', route: '/admin/units', roles: ['SUPER_ADMIN', 'PROPERTY_ADMIN'], permissionKey: 'units', sectionKey: 'NAV_SECTION.DIRECTORY' },
@@ -123,7 +125,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
     readonly auth: AuthService,
     private readonly permissionService: PermissionService,
     private readonly dashboard: DashboardService,
-    private readonly maintenance: MaintenanceService
+    private readonly maintenance: MaintenanceService,
+    private readonly dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
@@ -227,5 +230,27 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
   toggleSection(sectionKey: NavSection['key']): void {
     this.sectionExpanded[sectionKey] = !this.sectionExpanded[sectionKey];
+  }
+
+  onNavClick(item: NavItem, event: Event): void {
+    if (item.route === '/tenant/new-request') {
+      event.preventDefault();
+      const dialogRef = this.dialog.open(MaintenanceRequestDialogComponent, {
+        width: '720px',
+        maxWidth: '95vw',
+        maxHeight: '90vh',
+        panelClass: 'app-dialog-panel',
+        data: { context: 'tenant' }
+      });
+      dialogRef.afterClosed().subscribe((result) => {
+        if (result) {
+          this.subs.add(
+            this.maintenance.getOfficerOpenCount(this.auth.getCurrentUser()?.id ?? 0).subscribe({
+              next: (res) => { this.officerOpenBadge = res.data ?? 0; }
+            })
+          );
+        }
+      });
+    }
   }
 }

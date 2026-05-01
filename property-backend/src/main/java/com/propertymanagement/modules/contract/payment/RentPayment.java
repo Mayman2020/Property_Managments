@@ -43,7 +43,7 @@ public class RentPayment {
     @Column(name = "payment_method", length = 30)
     private String paymentMethod;
 
-    @Column(name = "reference_number", length = 100)
+    @Column(name = "reference_number", length = 100, unique = true)
     private String referenceNumber;
 
     @Column(name = "receipt_url", length = 500)

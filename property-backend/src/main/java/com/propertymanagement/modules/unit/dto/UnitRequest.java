@@ -12,8 +12,6 @@ public class UnitRequest {
     @NotNull
     private Long propertyId;
     private Long floorId;
-    @NotBlank
-    private String unitNumber;
     @NotNull
     private UnitType unitType;
     private BigDecimal areaSqm;

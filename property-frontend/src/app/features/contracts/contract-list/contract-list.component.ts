@@ -21,6 +21,7 @@ import { ContractSummary, ContractStatus } from '../../../core/models/contract.m
 import { ContractService } from '../../../core/services/contract.service';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
+import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 
 @Component({
   selector: 'app-contract-list',
@@ -45,7 +46,8 @@ import { TablePagerComponent } from '../../../shared/components/table-pager/tabl
     MatDialogModule,
     TranslateModule,
     PageHeaderComponent,
-    TablePagerComponent
+    TablePagerComponent,
+    EmptyStateComponent
   ],
   templateUrl: './contract-list.component.html',
   styleUrl: './contract-list.component.scss'

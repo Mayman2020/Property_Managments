@@ -20,7 +20,14 @@
     <mat-spinner diameter="40"></mat-spinner>
   </div>
 
-  <ng-container *ngIf="!loading">
+  <app-empty-state
+    *ngIf="!loading && contracts.length === 0 && !searchQuery && !filterStatus"
+    icon="description"
+    [title]="'CONTRACTS.CONTRACTS_EMPTY_TITLE' | translate"
+    [message]="'CONTRACTS.CONTRACTS_EMPTY_MSG' | translate">
+  </app-empty-state>
+
+  <ng-container *ngIf="!loading && (contracts.length > 0 || searchQuery || filterStatus)">
     <section class="contracts-stats">
       <article class="stat-pill">
         <span class="stat-label">{{ 'COMMON.ALL' | translate }}</span>
@@ -103,6 +110,9 @@
                   <span class="material-icons">{{ i18n.currentLang === 'ar' ? 'arrow_back' : 'arrow_forward' }}</span>
                 </a>
               </td>
+            </tr>
+            <tr *ngIf="contracts.length === 0">
+              <td colspan="7" class="empty-row">{{ 'COMMON.NO_DATA' | translate }}</td>
             </tr>
           </tbody>
         </table>

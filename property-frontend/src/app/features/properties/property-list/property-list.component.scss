@@ -26,32 +26,43 @@
 }
 
 .property-toolbar {
-  gap: 16px;
+  gap: 0;
+  padding: 16px;
+  border-bottom: 1px solid var(--line);
 }
 
 .property-toolbar-top {
   display: flex;
   align-items: center;
-  gap: 16px;
-  justify-content: space-between;
-  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-start;
+  flex-wrap: nowrap;
 }
 
 .property-search {
+  flex: 0 1 260px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  min-width: min(420px, 100%);
-  flex: 1;
-  padding: 12px 14px;
+  gap: 6px;
+  min-width: 180px;
+  height: 40px;
+  padding: 0 10px;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: 6px;
+  background: var(--surface-2);
+  transition: all 0.2s;
+}
+
+.property-search:focus-within {
+  border-color: var(--navy-400);
   background: var(--surface);
 }
 
 .property-search .material-icons {
-  font-size: 18px;
-  color: var(--ink-400);
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted);
 }
 
 .property-search input {
@@ -60,65 +71,98 @@
   outline: 0;
   background: transparent;
   color: var(--text-main);
-  font: inherit;
+  font-size: 0.82rem;
 }
 
-.property-toolbar-actions {
+.property-list-page app-filter-bar {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+::ng-deep .property-list-page app-filter-bar .estate-filter-bar {
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 0 !important;
+  width: auto;
+}
+
+::ng-deep .property-list-page app-filter-bar .filter-field {
+  flex: 0 1 auto;
+  width: 165px;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+::ng-deep .property-list-page app-filter-bar .filter-field--filterType {
+  width: 190px;
+}
+
+::ng-deep .property-list-page app-filter-bar .filter-field--filterStatus {
+  width: 165px;
+}
+
+::ng-deep .property-list-page app-filter-bar .filter-field .mat-mdc-form-field-wrapper {
+  padding-bottom: 0;
+}
+
+::ng-deep .property-list-page app-filter-bar .filter-field .mat-mdc-text-field-wrapper {
+  height: 40px !important;
+  background: var(--surface-2) !important;
+  border-radius: 6px;
+}
+
+::ng-deep .property-list-page app-filter-bar .filter-field .mat-mdc-form-field-flex {
+  height: 40px !important;
+  align-items: center !important;
+}
+
+::ng-deep .property-list-page app-filter-bar .filter-field .mat-mdc-form-field-infix {
   display: flex;
   align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
+  min-height: 40px !important;
+  padding: 10px 0 6px !important;
+  font-size: 0.82rem;
 }
 
-.property-filters {
-  display: grid;
-  gap: 16px;
-  padding: 4px 0 0;
-  border-top: 1px solid var(--line-2);
+::ng-deep .property-list-page app-filter-bar .filter-field .mat-mdc-form-field-subscript-wrapper {
+  display: none;
 }
 
-.filter-group {
-  display: grid;
-  gap: 10px;
-}
-
-.filter-label {
-  color: var(--text-muted);
+::ng-deep .property-list-page app-filter-bar .filter-field .mat-mdc-floating-label {
   font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
 }
 
-.estate-filter-row {
+::ng-deep .property-list-page app-filter-bar .filter-field .mat-mdc-select-trigger {
+  height: 22px;
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  align-items: center;
 }
 
-.estate-filter-btn {
-  border: 1px solid var(--line);
-  background: var(--surface);
+::ng-deep .property-list-page app-filter-bar .filter-field .mat-mdc-select-value {
+  font-size: 0.82rem;
+  line-height: 20px;
+}
+
+.clear-filters-btn {
   color: var(--text-muted);
-  border-radius: 999px;
-  padding: 8px 14px;
-  font: inherit;
-  font-size: 0.83rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: border-color var(--t-fast), background var(--t-fast), color var(--t-fast), transform var(--t-fast);
+  transition: color 0.2s;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
 }
 
-.estate-filter-btn:hover {
-  border-color: var(--amber-400);
-  background: var(--paper-2);
-  color: var(--text-main);
+.clear-filters-btn:hover {
+  color: var(--bad);
 }
 
-.estate-filter-btn.active {
-  background: rgba(200, 154, 61, 0.1);
-  border-color: var(--amber-500);
-  color: var(--amber-700);
+::ng-deep .property-list-page .export-toolbar {
+  padding: 0 !important;
+}
+
+::ng-deep .property-list-page .export-toolbar button {
+  height: 40px;
+  font-size: 0.82rem;
 }
 
 .property-primary-cell {
@@ -309,8 +353,27 @@
     align-items: stretch;
   }
 
+  .property-toolbar-top {
+    flex-direction: column;
+  }
+
   .property-search {
     min-width: 100%;
+    flex-basis: auto;
+  }
+
+  .property-list-page app-filter-bar {
+    width: 100%;
+  }
+
+  ::ng-deep .property-list-page app-filter-bar .estate-filter-bar {
+    flex-wrap: wrap !important;
+    width: 100%;
+  }
+
+  ::ng-deep .property-list-page app-filter-bar .filter-field {
+    width: 100%;
+    flex: 1 1 100%;
   }
 
   .srs-pager__controls {

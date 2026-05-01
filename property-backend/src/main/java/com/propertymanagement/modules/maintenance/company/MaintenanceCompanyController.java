@@ -1,0 +1,61 @@
+package com.propertymanagement.modules.maintenance.company;
+
+import com.propertymanagement.modules.contractor.ContractorCompanyService;
+import com.propertymanagement.modules.contractor.dto.ContractorCompanyRequest;
+import com.propertymanagement.modules.contractor.dto.ContractorCompanyResponse;
+import com.propertymanagement.shared.response.ApiResponse;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+/**
+ * Exposes contractor companies as maintenance companies.
+ * Reuses ContractorCompanyService to avoid data duplication —
+ * contractor companies ARE the external maintenance providers.
+ */
+@RestController
+@RequestMapping("/maintenance-companies")
+@RequiredArgsConstructor
+public class MaintenanceCompanyController {
+
+    private final ContractorCompanyService service;
+
+    /** GET /maintenance-companies */
+    @GetMapping
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','MAINTENANCE_OFFICER')")
+    public ResponseEntity<ApiResponse<List<ContractorCompanyResponse>>> list(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false, defaultValue = "false") boolean all) {
+        List<ContractorCompanyResponse> data = all ? service.listAll(q) : service.listActive(q);
+        return ResponseEntity.ok(ApiResponse.ok(data));
+    }
+
+    /** GET /maintenance-companies/{id} */
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','MAINTENANCE_OFFICER')")
+    public ResponseEntity<ApiResponse<ContractorCompanyResponse>> get(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.ok(service.get(id)));
+    }
+
+    /** POST /maintenance-companies */
+    @PostMapping
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN')")
+    public ResponseEntity<ApiResponse<ContractorCompanyResponse>> create(
+            @Valid @RequestBody ContractorCompanyRequest dto) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok(service.create(dto)));
+    }
+
+    /** PUT /maintenance-companies/{id} */
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN')")
+    public ResponseEntity<ApiResponse<ContractorCompanyResponse>> update(
+            @PathVariable Long id, @Valid @RequestBody ContractorCompanyRequest dto) {
+        return ResponseEntity.ok(ApiResponse.ok(service.update(id, dto)));
+    }
+}

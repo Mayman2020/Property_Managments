@@ -15,16 +15,19 @@
   <div class="loading-center" *ngIf="loading"><mat-spinner diameter="40"></mat-spinner></div>
 
   <app-empty-state
-    *ngIf="!loading && filteredCompanies.length === 0"
+    *ngIf="!loading && companies.length === 0"
     icon="engineering"
     [title]="'CONTRACTORS.EMPTY_TITLE' | translate"
     [message]="'CONTRACTORS.EMPTY_MSG' | translate">
-    <button mat-flat-button type="button" (click)="openDialog(null)" style="margin-top: 12px">
-      <span class="material-icons">add</span> {{ 'CONTRACTORS.ADD' | translate }}
-    </button>
   </app-empty-state>
 
-  <div class="app-card table-card" *ngIf="!loading && filteredCompanies.length > 0">
+  <div class="app-card table-card" *ngIf="!loading && companies.length > 0">
+    <div class="search-bar-shell" style="padding: 8px 0;">
+      <app-filter-bar [filters]="pageFilters" (filtersChange)="onFilterBarChange($event)"></app-filter-bar>
+      <button mat-icon-button class="clear-filters-btn" (click)="clearFiltersFromBar()" *ngIf="hasFiltersBar()" [matTooltip]="'ACTIONS.CLEAR_FILTERS' | translate">
+        <mat-icon>filter_alt_off</mat-icon>
+      </button>
+    </div>
     <app-table-export-toolbar
       permissionKey="contractors"
       [title]="'CONTRACTORS.TITLE' | translate"
@@ -61,6 +64,9 @@
                 <span class="material-icons">delete</span>
               </button>
             </td>
+          </tr>
+          <tr *ngIf="filteredCompanies.length === 0">
+            <td colspan="7" class="empty-row">{{ 'COMMON.NO_DATA' | translate }}</td>
           </tr>
         </tbody>
       </table>

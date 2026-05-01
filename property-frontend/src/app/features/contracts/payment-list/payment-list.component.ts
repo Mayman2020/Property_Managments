@@ -4,8 +4,7 @@ import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TranslateModule } from '@ngx-translate/core';
 import { catchError, of } from 'rxjs';
@@ -14,6 +13,7 @@ import { RecordPaymentFormComponent } from '../record-payment-form/record-paymen
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
+import { FilterBarComponent, FilterSpec } from '../../../shared/components/filter-bar/filter-bar.component';
 import { PaymentService } from '../../../core/services/payment.service';
 import { RentPayment } from '../../../core/models/contract.model';
 import { PropertyService, Property } from '../../../core/services/property.service';
@@ -25,11 +25,8 @@ import { I18nService } from '../../../core/i18n/i18n.service';
   standalone: true,
   imports: [
     NgIf, NgFor, DatePipe, DecimalPipe, NgClass, FormsModule, RouterLink,
-    MatButtonModule, MatIconModule,
-    MatInputModule, MatSelectModule,
-    MatProgressSpinnerModule,
-    MatDialogModule,
-    TranslateModule, PageHeaderComponent, TablePagerComponent
+    MatButtonModule, MatIconModule, MatTooltipModule, MatProgressSpinnerModule, MatDialogModule,
+    TranslateModule, PageHeaderComponent, TablePagerComponent, FilterBarComponent
   ],
   templateUrl: './payment-list.component.html',
   styleUrl: './payment-list.component.scss'
@@ -45,6 +42,7 @@ export class PaymentListComponent implements OnInit {
 
   properties: Property[] = [];
   loadingProperties = false;
+  pageFilters: FilterSpec[] = [];
 
   constructor(
     private readonly paymentSvc: PaymentService,
@@ -86,9 +84,53 @@ export class PaymentListComponent implements OnInit {
   private loadProperties(): void {
     this.loadingProperties = true;
     this.propertySvc.getAll(0, 200).subscribe({
-      next: (res) => { this.properties = (res.data?.content ?? []).filter(p => p.isActive); this.loadingProperties = false; },
+      next: (res) => {
+        this.properties = (res.data?.content ?? []).filter(p => p.isActive);
+        this.loadingProperties = false;
+        this.setupFilters();
+      },
       error: () => { this.loadingProperties = false; }
     });
+  }
+
+  private setupFilters(): void {
+    this.pageFilters = [
+      {
+        key: 'filterPropertyId',
+        label: 'REQUEST_FORM.PROPERTY',
+        type: 'select',
+        options: this.properties.map(p => ({
+          value: p.id,
+          label: this.i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName)
+        }))
+      },
+      {
+        key: 'showOverdueOnly',
+        label: 'CONTRACTS.OVERDUE_ONLY',
+        type: 'select',
+        options: [
+          { value: true, label: this.i18n.instant('CONTRACTS.OVERDUE_ONLY') }
+        ]
+      }
+    ];
+  }
+
+  onFilterBarChange(values: any): void {
+    if (values?.filterPropertyId !== undefined) this.filterPropertyId = values.filterPropertyId;
+    if (values?.showOverdueOnly !== undefined) this.showOverdueOnly = !!values.showOverdueOnly;
+    this.pageIndex = 0;
+    this.load();
+  }
+
+  clearFiltersFromBar(): void {
+    this.filterPropertyId = null;
+    this.showOverdueOnly = false;
+    this.pageIndex = 0;
+    this.load();
+  }
+
+  hasFiltersBar(): boolean {
+    return !!(this.filterPropertyId || this.showOverdueOnly);
   }
 
   onFilterChange(): void {

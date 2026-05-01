@@ -9,6 +9,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { FilterBarComponent, FilterSpec } from '../../shared/components/filter-bar/filter-bar.component';
 import {
   EmployeeItem,
   HrService,
@@ -37,7 +38,8 @@ import { EmployeeDialogComponent } from './employee-dialog.component';
     MatFormFieldModule,
     MatInputModule,
     TranslateModule,
-    PageHeaderComponent
+    PageHeaderComponent,
+    FilterBarComponent
   ],
   template: `
     <div class="app-page">
@@ -48,12 +50,7 @@ import { EmployeeDialogComponent } from './employee-dialog.component';
       </app-page-header>
 
       <div class="workspace-filter-bar" *ngIf="section === 'employees-list' && properties.length > 1">
-        <select [(ngModel)]="filterPropertyId" (change)="onPropertyChange()" class="estate-property-select">
-          <option [ngValue]="null">{{ 'COMMON.ALL_PROPERTIES' | translate }}</option>
-          <option *ngFor="let p of properties" [ngValue]="p.id">
-            {{ i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName) }}
-          </option>
-        </select>
+        <app-filter-bar [filters]="pageFilters" (filtersChange)="onFilterBarChange($event)"></app-filter-bar>
       </div>
 
       <div class="app-card" *ngIf="section === 'employees-list' || section === 'employee-detail'">
@@ -335,6 +332,7 @@ export class HrWorkspaceComponent implements OnInit {
   employees: EmployeeItem[] = [];
   properties: Property[] = [];
   filterPropertyId: number | null = null;
+  pageFilters: FilterSpec[] = [];
   payrollRuns: PayrollRunItem[] = [];
   payrollDetail?: PayrollRunDetail;
   selectedPayslip?: PayslipItem;
@@ -402,7 +400,7 @@ export class HrWorkspaceComponent implements OnInit {
     this.section = this.route.snapshot.data['section'] ?? 'employees-list';
 
     if (this.section.startsWith('employee')) {
-      this.propertySvc.getAll(0, 500).subscribe({ next: (res) => { this.properties = res.data?.content ?? []; }, error: () => {} });
+      this.propertySvc.getAll(0, 500).subscribe({ next: (res) => { this.properties = res.data?.content ?? []; this.setupFilters(); }, error: () => {} });
       this.loadEmployees();
     }
     if (this.section === 'payroll-list') {
@@ -425,6 +423,25 @@ export class HrWorkspaceComponent implements OnInit {
       width: '580px',
       panelClass: 'app-dialog-panel'
     }).afterClosed().subscribe((ok) => { if (ok) this.loadEmployees(); });
+  }
+
+  private setupFilters(): void {
+    this.pageFilters = [
+      {
+        key: 'filterPropertyId',
+        label: 'REQUEST_FORM.PROPERTY',
+        type: 'select',
+        options: this.properties.map(p => ({
+          value: p.id,
+          label: this.i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName)
+        }))
+      }
+    ];
+  }
+
+  onFilterBarChange(values: any): void {
+    if (values?.filterPropertyId !== undefined) this.filterPropertyId = values.filterPropertyId;
+    this.loadEmployees();
   }
 
   onPropertyChange(): void {

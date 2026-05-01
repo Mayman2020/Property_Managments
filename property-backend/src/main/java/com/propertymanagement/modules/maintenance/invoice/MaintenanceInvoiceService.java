@@ -10,6 +10,7 @@ import com.propertymanagement.modules.property.PropertyRepository;
 import com.propertymanagement.modules.unit.UnitRepository;
 import com.propertymanagement.shared.exception.AppException;
 import lombok.RequiredArgsConstructor;
+import com.propertymanagement.codegen.CodeGenerationService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,14 +28,13 @@ public class MaintenanceInvoiceService {
     private final ContractorCompanyRepository companyRepository;
     private final PropertyRepository propertyRepository;
     private final UnitRepository unitRepository;
+    private final CodeGenerationService codeGenerationService;
 
     // ── Contractor company officer submits invoice ──────────────────────────
 
     @Transactional
     public MaintenanceInvoiceResponse submit(Long companyId, Long submittedBy, SubmitInvoiceDto dto) {
-        String year = String.valueOf(LocalDate.now().getYear());
-        long count = invoiceRepository.countByInvoiceNumberStartingWith("INV-" + year);
-        String invoiceNumber = String.format("INV-%s-%05d", year, count + 1);
+        String invoiceNumber = codeGenerationService.generate("INV");
 
         MaintenanceInvoice invoice = MaintenanceInvoice.builder()
                 .invoiceNumber(invoiceNumber)

@@ -5,7 +5,7 @@ import { ApiResponse } from '../models/api-response.model';
 
 export type LookupType =
   | 'COUNTRY' | 'CITY'
-  | 'UNIT_TYPE' | 'PROPERTY_TYPE' | 'FLOOR_TYPE'
+  | 'UNIT_TYPE' | 'PROPERTY_TYPE' | 'PROPERTY_STATUS' | 'FLOOR_TYPE'
   | 'PAYMENT_METHOD' | 'PAYMENT_FREQUENCY'
   | 'CONTRACT_TYPE' | 'CONTRACT_STATUS' | 'TERMINATION_REASON'
   | 'JOB_TITLE' | 'UNIT_OF_MEASURE'

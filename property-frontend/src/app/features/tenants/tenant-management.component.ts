@@ -13,6 +13,7 @@ import { forkJoin, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { FilterBarComponent, FilterSpec } from '../../shared/components/filter-bar/filter-bar.component';
 import { Property, PropertyService } from '../../core/services/property.service';
 import { SnackService } from '../../core/services/snack.service';
 import { Tenant, TenantService } from '../../core/services/tenant.service';
@@ -31,8 +32,7 @@ import { TenantDialogComponent } from './tenant-dialog.component';
   imports: [
     NgFor, NgIf, DatePipe, FormsModule, TranslateModule,
     MatButtonModule, MatProgressSpinnerModule, MatIconModule, MatTooltipModule,
-    MatFormFieldModule, MatSelectModule,
-    PageHeaderComponent, EmptyStateComponent, TablePagerComponent
+    PageHeaderComponent, EmptyStateComponent, TablePagerComponent, FilterBarComponent
   ],
   templateUrl: './tenant-management.component.html',
   styleUrl: './tenant-management.component.scss'
@@ -49,6 +49,7 @@ export class TenantManagementComponent implements OnInit {
   filterPropertyId: number | null = null;
   searchTerm = '';
   pageIndex = 0;
+  pageFilters: FilterSpec[] = [];
 
   get isAr(): boolean { return this.i18n.currentLang === 'ar'; }
 
@@ -58,7 +59,7 @@ export class TenantManagementComponent implements OnInit {
     private readonly unitSvc: UnitService,
     private readonly userSvc: UserService,
     private readonly snack: SnackService,
-    private readonly i18n: I18nService,
+    readonly i18n: I18nService,
     private readonly location: Location,
     private readonly dialog: MatDialog
   ) {}
@@ -75,6 +76,36 @@ export class TenantManagementComponent implements OnInit {
       width: '640px',
       panelClass: 'app-dialog-panel'
     }).afterClosed().subscribe((ok) => { if (ok) this.loadTenants(); });
+  }
+
+  private setupFilters(): void {
+    this.pageFilters = [
+      {
+        key: 'filterPropertyId',
+        label: 'REQUEST_FORM.PROPERTY',
+        type: 'select',
+        options: this.properties.map(p => ({
+          value: p.id,
+          label: this.i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName)
+        }))
+      }
+    ];
+  }
+
+  onFilterBarChange(values: any): void {
+    if (values?.filterPropertyId !== undefined) this.filterPropertyId = values.filterPropertyId;
+    this.pageIndex = 0;
+    this.applyFilters();
+  }
+
+  clearFiltersFromBar(): void {
+    this.filterPropertyId = null;
+    this.pageIndex = 0;
+    this.applyFilters();
+  }
+
+  hasFiltersBar(): boolean {
+    return !!this.filterPropertyId;
   }
 
   onPropertyFilterChange(): void {
@@ -148,6 +179,7 @@ export class TenantManagementComponent implements OnInit {
     }).subscribe(({ properties, users }) => {
       this.properties = properties.data?.content ?? [];
       this.propertyById = this.properties.reduce((acc, p) => { acc[p.id] = p; return acc; }, {} as Record<number, Property>);
+      this.setupFilters();
       this.tenantUsers = (users.data?.content ?? []).filter((u) => u.role === 'TENANT' && u.isActive);
       this.loadAllUnits();
       this.loadTenants();

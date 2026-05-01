@@ -10,7 +10,7 @@
         { label: ('NAV.DASHBOARD' | translate), route: '/admin/dashboard' },
         { label: ('NAV.MAINTENANCE' | translate) }
       ]">
-      <button mat-flat-button routerLink="/admin/maintenance/new">
+      <button mat-flat-button (click)="openNewRequest()">
         <mat-icon>add</mat-icon>
         {{ 'NAV.NEW_REQUEST' | translate }}
       </button>
@@ -28,7 +28,7 @@
         { label: ('NAV.MY_UNIT' | translate), route: '/tenant/dashboard' },
         { label: ('NAV.MY_REQUESTS' | translate) }
       ]">
-      <button mat-flat-button routerLink="/tenant/new-request">
+      <button mat-flat-button (click)="openNewRequest()">
         <mat-icon>add</mat-icon>
         {{ 'NAV.NEW_REQUEST' | translate }}
       </button>
@@ -188,30 +188,11 @@
       <div class="estate-search-inline">
         <span class="material-icons" style="font-size: 18px; color: var(--ink-400)">search</span>
         <input [value]="searchTerm" (input)="onSearch($any($event.target).value)" [placeholder]="'ACTIONS.SEARCH' | translate">
-        <select *ngIf="listContext === 'admin' && properties.length > 0" [(ngModel)]="filterPropertyId" (change)="applyFilter()" class="estate-property-select">
-          <option [ngValue]="null">{{ i18n.currentLang === 'ar' ? 'كل العقارات' : 'All Properties' }}</option>
-          <option *ngFor="let p of properties" [ngValue]="p.id">{{ i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName) }}</option>
-        </select>
       </div>
-      <div class="estate-filter-row">
-        <button
-          type="button"
-          class="estate-filter-btn"
-          *ngFor="let s of statuses"
-          [class.active]="filterStatus === s.value"
-          (click)="filterStatus = s.value; applyFilter()">
-          {{ s.labelKey | translate }}
-        </button>
-        <span class="filter-divider"></span>
-        <button
-          type="button"
-          class="estate-filter-btn"
-          *ngFor="let p of priorities"
-          [class.active]="filterPriority === p.value"
-          (click)="filterPriority = p.value; applyFilter()">
-          {{ p.labelKey | translate }}
-        </button>
-      </div>
+      <app-filter-bar *ngIf="listContext === 'admin'" [filters]="pageFilters" (filtersChange)="onFilterBarChange($event)"></app-filter-bar>
+      <button mat-icon-button class="clear-filters-btn" (click)="clearFiltersFromBar()" *ngIf="listContext === 'admin' && hasFiltersBar()" [matTooltip]="'ACTIONS.CLEAR_FILTERS' | translate">
+        <mat-icon>filter_alt_off</mat-icon>
+      </button>
     </div>
     <div class="app-table-wrap">
       <table class="app-data-table source-table">

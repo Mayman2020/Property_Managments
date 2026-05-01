@@ -12,33 +12,25 @@
     (backClick)="goBack()">
   </app-page-header>
 
-  <div class="toolbar">
-    <!-- Property filter -->
-    <mat-form-field appearance="outline" class="filter-field">
-      <mat-label>{{ 'CONTRACTS.FILTER_PROPERTY' | translate }}</mat-label>
-      <mat-select [(ngModel)]="filterPropertyId" (ngModelChange)="onFilterChange()">
-        <mat-option [value]="null">{{ 'CONTRACTS.ALL_PROPERTIES' | translate }}</mat-option>
-        <mat-option *ngFor="let p of properties" [value]="p.id">{{ propertyLabel(p) }}</mat-option>
-      </mat-select>
-    </mat-form-field>
-
-    <!-- Status filter from lookup -->
-    <mat-form-field appearance="outline" class="filter-field">
-      <mat-label>{{ 'CONTRACTS.STATUS' | translate }}</mat-label>
-      <mat-select [(ngModel)]="filterStatus" (ngModelChange)="onFilterChange()">
-        <mat-option value="">{{ 'COMMON.ALL' | translate }}</mat-option>
-        <mat-option *ngFor="let s of statusOptions" [value]="s.code">
-          {{ i18n.currentLang === 'ar' ? s.nameAr : s.nameEn }}
-        </mat-option>
-      </mat-select>
-    </mat-form-field>
+  <div class="toolbar" *ngIf="!loading && (violations.length > 0 || hasFiltersBar())">
+    <app-filter-bar [filters]="pageFilters" (filtersChange)="onFilterBarChange($event)"></app-filter-bar>
+    <button mat-icon-button class="clear-filters-btn" (click)="clearFiltersFromBar()" *ngIf="hasFiltersBar()" [matTooltip]="'ACTIONS.CLEAR_FILTERS' | translate">
+      <mat-icon>filter_alt_off</mat-icon>
+    </button>
   </div>
 
   <div *ngIf="loading" class="loading-wrap">
     <mat-spinner diameter="40"></mat-spinner>
   </div>
 
-  <section *ngIf="!loading" class="app-card table-card">
+  <app-empty-state
+    *ngIf="!loading && violations.length === 0 && !hasFiltersBar()"
+    icon="gavel"
+    [title]="'CONTRACTS.VIOLATIONS_EMPTY_TITLE' | translate"
+    [message]="'CONTRACTS.VIOLATIONS_EMPTY_MSG' | translate">
+  </app-empty-state>
+
+  <section *ngIf="!loading && (violations.length > 0 || hasFiltersBar())" class="app-card table-card">
     <div class="app-table-wrap">
       <table class="app-data-table source-table">
         <thead>
@@ -59,16 +51,13 @@
               <div class="row-main">{{ v.tenantName }}</div>
               <div class="row-sub">{{ v.unitNumber }}</div>
             </td>
-            <!-- Violation type from lookup -->
             <td>{{ lookupCache.label('VIOLATION_TYPE', v.violationType) || v.violationType }}</td>
-            <!-- Severity from lookup -->
             <td>
               <span class="status-chip" [ngClass]="getSeverityClass(v.severity)">
                 {{ lookupCache.label('VIOLATION_SEVERITY', v.severity) || v.severity }}
               </span>
             </td>
             <td>{{ v.fineAmount | number }}</td>
-            <!-- Status from lookup -->
             <td>
               <span class="status-chip" [ngClass]="getStatusClass(v.status)">
                 {{ lookupCache.label('VIOLATION_STATUS', v.status) || v.status }}
@@ -82,7 +71,7 @@
             </td>
           </tr>
           <tr *ngIf="violations.length === 0">
-            <td colspan="7" class="empty-row">{{ 'CONTRACTS.NO_VIOLATIONS' | translate }}</td>
+            <td colspan="7" class="empty-row">{{ 'COMMON.NO_DATA' | translate }}</td>
           </tr>
         </tbody>
       </table>

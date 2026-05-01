@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, OnInit } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -14,6 +14,7 @@ import { Unit, UnitRequest, UnitService } from '../../core/services/unit.service
 import { Property } from '../../core/services/property.service';
 import { SnackService } from '../../core/services/snack.service';
 import { I18nService } from '../../core/i18n/i18n.service';
+import { LookupItem, LookupService } from '../../core/services/lookup.service';
 
 export interface UnitDialogData {
   properties: Property[];
@@ -53,15 +54,12 @@ export interface UnitDialogData {
           </mat-select>
         </mat-form-field>
 
-        <mat-form-field appearance="outline">
-          <mat-label>{{ 'UNITS.UNIT_NUMBER' | translate }}</mat-label>
-          <input matInput formControlName="unitNumber" />
-        </mat-form-field>
+        <!-- Unit number is generated on the backend; not shown in create form -->
 
         <mat-form-field appearance="outline">
           <mat-label>{{ 'UNITS.UNIT_TYPE' | translate }}</mat-label>
           <mat-select formControlName="unitType">
-            <mat-option *ngFor="let t of unitTypes" [value]="t">{{ t }}</mat-option>
+            <mat-option *ngFor="let t of unitTypes" [value]="t.code">{{ lookupLabel(t) }}</mat-option>
           </mat-select>
         </mat-form-field>
 
@@ -102,9 +100,9 @@ export interface UnitDialogData {
     @media (max-width: 620px) { .unit-dialog-form { grid-template-columns: 1fr; } }
   `]
 })
-export class UnitDialogComponent {
+export class UnitDialogComponent implements OnInit {
   saving = false;
-  readonly unitTypes: Array<UnitRequest['unitType']> = ['APARTMENT', 'SHOP', 'OFFICE', 'VILLA', 'WAREHOUSE', 'OTHER'];
+  unitTypes: LookupItem[] = [];
 
   get isAr(): boolean {
     return this.i18n.currentLang === 'ar';
@@ -115,8 +113,7 @@ export class UnitDialogComponent {
       this.data.unit?.propertyId ?? this.data.defaultPropertyId ?? (this.data.properties[0]?.id ?? null) as number | null,
       Validators.required
     ],
-    unitNumber: [this.data.unit?.unitNumber ?? '', Validators.required],
-    unitType: [this.data.unit?.unitType ?? 'APARTMENT', Validators.required],
+    unitType: [this.data.unit?.unitType ?? '', Validators.required],
     floorId: [this.data.unit?.floorId ?? null as number | null],
     areaSqm: [this.data.unit?.areaSqm ?? null as number | null],
     rentAmount: [this.data.unit?.rentAmount ?? null as number | null],
@@ -129,9 +126,28 @@ export class UnitDialogComponent {
     @Inject(MAT_DIALOG_DATA) readonly data: UnitDialogData,
     private readonly fb: FormBuilder,
     private readonly unitSvc: UnitService,
+    private readonly lookupSvc: LookupService,
     private readonly snack: SnackService,
     private readonly i18n: I18nService
   ) {}
+
+  ngOnInit(): void {
+    this.lookupSvc.getByType('UNIT_TYPE').subscribe({
+      next: (res) => {
+        this.unitTypes = res.data ?? [];
+        if (!this.form.get('unitType')?.value && this.unitTypes.length) {
+          this.form.patchValue({ unitType: this.unitTypes[0].code }, { emitEvent: false });
+        }
+      },
+      error: () => {
+        this.unitTypes = [];
+      }
+    });
+  }
+
+  lookupLabel(item: LookupItem): string {
+    return this.i18n.currentLang === 'ar' ? item.nameAr : item.nameEn;
+  }
 
   save(): void {
     if (this.form.invalid) {

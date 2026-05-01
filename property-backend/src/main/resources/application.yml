@@ -40,7 +40,7 @@ jwt:
   refresh-expiration: 604800000  # 7 days
 
 file:
-  upload-dir: ${UPLOAD_DIR:./uploads}
+  upload-dir: ${UPLOAD_DIR:D:/files}
   base-url: ${FILE_BASE_URL:http://localhost:8080}
 
 server:

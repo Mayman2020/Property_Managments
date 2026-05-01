@@ -18,10 +18,10 @@
 
   <section class="app-card" *ngIf="!loading">
     <div class="search-bar-shell">
-      <div class="search-input-box">
-        <mat-icon>search</mat-icon>
-        <input [value]="searchTerm" (input)="onSearch($any($event.target).value)" [placeholder]="'ACTIONS.SEARCH' | translate">
-      </div>
+      <app-filter-bar [filters]="pageFilters" (filtersChange)="onFilterBarChange($event)"></app-filter-bar>
+      <button mat-icon-button class="clear-filters-btn" (click)="clearFiltersFromBar()" *ngIf="hasFiltersBar()" [matTooltip]="'ACTIONS.CLEAR_FILTERS' | translate">
+        <mat-icon>filter_alt_off</mat-icon>
+      </button>
       <app-table-export-toolbar
         permissionKey="users"
         [title]="'USER_MGMT.TITLE' | translate"

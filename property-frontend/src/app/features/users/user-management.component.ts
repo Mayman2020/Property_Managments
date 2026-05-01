@@ -17,6 +17,7 @@ import { UserService } from '../../core/services/user.service';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { TablePagerComponent } from '../../shared/components/table-pager/table-pager.component';
 import { ExportColumn, TableExportToolbarComponent } from '../../shared/components/table-export-toolbar/table-export-toolbar.component';
+import { FilterBarComponent, FilterSpec } from '../../shared/components/filter-bar/filter-bar.component';
 import { UserDialogComponent, UserDialogData } from './user-dialog.component';
 
 @Component({
@@ -34,7 +35,8 @@ import { UserDialogComponent, UserDialogData } from './user-dialog.component';
     MatTooltipModule,
     PageHeaderComponent,
     TablePagerComponent,
-    TableExportToolbarComponent
+    TableExportToolbarComponent,
+    FilterBarComponent
   ],
   templateUrl: './user-management.component.html',
   styleUrl: './user-management.component.scss'
@@ -44,6 +46,9 @@ export class UserManagementComponent implements OnInit {
   properties: Property[] = [];
   contractorCompanies: ContractorCompany[] = [];
   searchTerm = '';
+  filterRole: string | null = null;
+  filterStatus: boolean | null = null;
+  pageFilters: FilterSpec[] = [];
 
   loading = true;
   togglingIds = new Set<number>();
@@ -65,17 +70,66 @@ export class UserManagementComponent implements OnInit {
   goBack(): void { this.location.back(); }
 
   ngOnInit(): void {
+    this.setupFilters();
     this.loadData();
   }
 
+  private setupFilters(): void {
+    this.pageFilters = [
+      { key: 'searchTerm', label: 'ACTIONS.SEARCH', type: 'text' },
+      {
+        key: 'filterRole',
+        label: 'USER_MGMT.ROLE',
+        type: 'select',
+        options: [
+          { value: 'SUPER_ADMIN', label: this.i18n.instant('ROLE.SUPER_ADMIN') },
+          { value: 'PROPERTY_ADMIN', label: this.i18n.instant('ROLE.PROPERTY_ADMIN') },
+          { value: 'MAINTENANCE_OFFICER', label: this.i18n.instant('ROLE.MAINTENANCE_OFFICER') },
+          { value: 'TENANT', label: this.i18n.instant('ROLE.TENANT') }
+        ]
+      },
+      {
+        key: 'filterStatus',
+        label: 'MAINTENANCE.STATUS',
+        type: 'select',
+        options: [
+          { value: true, label: this.i18n.instant('COMMON.ACTIVE') },
+          { value: false, label: this.i18n.instant('COMMON.INACTIVE') }
+        ]
+      }
+    ];
+  }
+
+  onFilterBarChange(values: any): void {
+    if (values?.searchTerm !== undefined) this.searchTerm = values.searchTerm ?? '';
+    if (values?.filterRole !== undefined) this.filterRole = values.filterRole;
+    if (values?.filterStatus !== undefined) this.filterStatus = values.filterStatus;
+    this.pageIndex = 0;
+  }
+
+  clearFiltersFromBar(): void {
+    this.searchTerm = '';
+    this.filterRole = null;
+    this.filterStatus = null;
+    this.pageIndex = 0;
+  }
+
+  hasFiltersBar(): boolean {
+    return !!(this.searchTerm || this.filterRole || this.filterStatus !== null);
+  }
+
   get filteredUsers(): User[] {
-    if (!this.searchTerm.trim()) return this.users;
-    const q = this.searchTerm.toLowerCase();
-    return this.users.filter(u =>
-      (u.fullName ?? '').toLowerCase().includes(q) ||
-      (u.username ?? '').toLowerCase().includes(q) ||
-      (u.email ?? '').toLowerCase().includes(q)
-    );
+    return this.users.filter(u => {
+      if (this.filterRole && u.role !== this.filterRole) return false;
+      if (this.filterStatus !== null && u.isActive !== this.filterStatus) return false;
+      const q = this.searchTerm.trim().toLowerCase();
+      if (q) {
+        return (u.fullName ?? '').toLowerCase().includes(q) ||
+          (u.username ?? '').toLowerCase().includes(q) ||
+          (u.email ?? '').toLowerCase().includes(q);
+      }
+      return true;
+    });
   }
 
   get pagedUsers(): User[] {
@@ -115,7 +169,7 @@ export class UserManagementComponent implements OnInit {
 
   private loadUsers(): void {
     this.loading = true;
-    this.userService.getAll(0, 200, this.searchTerm).subscribe({
+    this.userService.getAll(0, 200).subscribe({
       next: res => {
         this.users = res.data?.content ?? [];
         this.loading = false;
@@ -174,11 +228,6 @@ export class UserManagementComponent implements OnInit {
     return words.slice(0, 2).map(w => w[0]?.toUpperCase() ?? '').join('');
   }
 
-  onSearch(value: string): void {
-    this.searchTerm = value;
-    this.pageIndex = 0;
-    this.loadUsers();
-  }
 
   private formatDate(value: string): string {
     const date = new Date(value);

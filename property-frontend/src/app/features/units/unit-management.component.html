@@ -16,19 +16,28 @@
     <mat-spinner diameter="40"></mat-spinner>
   </div>
 
-  <section class="app-card" *ngIf="!loading">
+  <!-- Empty state: no data and no active search/filter -->
+  <app-empty-state
+    *ngIf="!loading && filteredUnits.length === 0 && !searchTerm && !hasFiltersBar()"
+    icon="door_front"
+    [title]="'UNITS.EMPTY_TITLE' | translate"
+    [message]="'UNITS.EMPTY_MESSAGE' | translate">
+  </app-empty-state>
+
+  <!-- Table: show when data exists OR search/filter is active -->
+  <section class="app-card" *ngIf="!loading && (filteredUnits.length > 0 || searchTerm || hasFiltersBar())">
     <div class="search-bar-shell">
       <div class="search-input-box">
         <mat-icon>search</mat-icon>
         <input [value]="searchTerm" (input)="onSearch($any($event.target).value)" [placeholder]="'ACTIONS.SEARCH' | translate">
       </div>
-      
-      <mat-form-field appearance="outline" class="property-filter">
-        <mat-select [(ngModel)]="selectedPropertyId" (selectionChange)="onPropertyFilterChange()">
-          <mat-option [value]="null">{{ 'PROPERTY_FORM.ALL_PROPERTIES' | translate }}</mat-option>
-          <mat-option *ngFor="let p of properties" [value]="p.id">{{ p.propertyName }}</mat-option>
-        </mat-select>
-      </mat-form-field>
+
+      <app-filter-bar
+        [filters]="unitFilters"
+        (filtersChange)="onFilterBarChange($event)"> </app-filter-bar>
+      <button mat-icon-button class="clear-filters-btn" (click)="clearFiltersFromBar()" *ngIf="hasFiltersBar()" [matTooltip]="'ACTIONS.CLEAR_FILTERS' | translate">
+        <mat-icon>filter_alt_off</mat-icon>
+      </button>
 
       <app-table-export-toolbar
         permissionKey="units"
@@ -67,7 +76,7 @@
               </div>
             </td>
             <td class="center-col"><span class="floor-badge">{{ unit.floorId != null ? unit.floorId : '-' }}</span></td>
-            <td class="center-col"><span class="type-badge">{{ unit.unitType || '-' }}</span></td>
+            <td class="center-col"><span class="type-badge">{{ unitTypeLabel(unit.unitType) }}</span></td>
             <td class="center-col"><span class="area-text">{{ unit.areaSqm ? unit.areaSqm + ' m²' : '-' }}</span></td>
             <td class="center-col">
               <span class="status-chip" [ngClass]="unit.rented ? 'chip-danger' : 'chip-success'">

@@ -1,6 +1,7 @@
 package com.propertymanagement.modules.contract.lease;
 
 import com.propertymanagement.modules.contract.lease.dto.*;
+import com.propertymanagement.codegen.CodeGenerationService;
 import com.propertymanagement.modules.contract.payment.PaymentScheduleStatus;
 import com.propertymanagement.modules.contract.payment.RentPaymentSchedule;
 import com.propertymanagement.modules.contract.payment.RentPaymentScheduleRepository;
@@ -32,6 +33,7 @@ public class LeaseContractService {
     private final UnitRepository unitRepository;
     private final PropertyRepository propertyRepository;
     private final OwnerRepository ownerRepository;
+    private final CodeGenerationService codeGenerationService;
 
     public Page<ContractResponse> getAll(Pageable pageable) {
         return contractRepository.findAll(pageable).map(this::toResponse);
@@ -60,9 +62,7 @@ public class LeaseContractService {
 
     @Transactional
     public ContractResponse create(CreateContractDto dto) {
-        String year = String.valueOf(LocalDate.now().getYear());
-        long count = contractRepository.countByContractNumberStartingWith("CNT-" + year);
-        String contractNumber = String.format("CNT-%s-%05d", year, count + 1);
+        String contractNumber = codeGenerationService.generate("CNT");
 
         LeaseContract contract = LeaseContract.builder()
                 .contractNumber(contractNumber)

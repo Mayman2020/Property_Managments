@@ -4,15 +4,12 @@
     [title]="'DASHBOARD.TITLE' | translate"
     [subtitle]="'DASHBOARD.SUBTITLE' | translate">
     <select *ngIf="properties.length > 1" [(ngModel)]="selectedPropertyId" (change)="onPropertyChange()" class="estate-property-select">
-      <option [ngValue]="null">{{ i18n.currentLang === 'ar' ? 'كل العقارات' : 'All Properties' }}</option>
+      <option [ngValue]="null">{{ 'COMMON.ALL_PROPERTIES' | translate }}</option>
       <option *ngFor="let p of properties" [ngValue]="p.id">
-        {{ i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName) }}
+        {{ getPropertyLabel(p) }}
       </option>
     </select>
-    <button mat-flat-button routerLink="/admin/maintenance/new" *ngIf="permissions.can('maintenance', 'create')">
-      <span class="material-icons">add</span>
-      {{ 'MAINTENANCE.NEW_REQUEST' | translate }}
-    </button>
+    
   </app-page-header>
 
   <div class="loading-center" *ngIf="loading">

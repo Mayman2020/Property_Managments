@@ -5,6 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { FilterBarComponent, FilterSpec } from '../../shared/components/filter-bar/filter-bar.component';
 import { VendorItem, VendorService } from '../../core/services/vendor.service';
 import { Property, PropertyService } from '../../core/services/property.service';
 import { I18nService } from '../../core/i18n/i18n.service';
@@ -13,7 +14,7 @@ import { VendorDialogComponent } from './vendor-dialog.component';
 @Component({
   selector: 'app-vendor-workspace',
   standalone: true,
-  imports: [NgIf, NgFor, FormsModule, MatButtonModule, TranslateModule, PageHeaderComponent],
+  imports: [NgIf, NgFor, FormsModule, MatButtonModule, TranslateModule, PageHeaderComponent, FilterBarComponent],
   template: `
     <div class="app-page">
       <app-page-header [eyebrow]="'VENDOR.EYEBROW' | translate" [title]="'VENDOR.TITLE' | translate" [subtitle]="'VENDOR.SUBTITLE' | translate">
@@ -22,13 +23,8 @@ import { VendorDialogComponent } from './vendor-dialog.component';
         </button>
       </app-page-header>
 
-      <div class="workspace-filter-bar" *ngIf="properties.length > 1">
-        <select [(ngModel)]="filterPropertyId" (change)="onPropertyChange()" class="estate-property-select">
-          <option [ngValue]="null">{{ 'COMMON.ALL_PROPERTIES' | translate }}</option>
-          <option *ngFor="let p of properties" [ngValue]="p.id">
-            {{ i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName) }}
-          </option>
-        </select>
+      <div class="workspace-filter-bar" *ngIf="properties.length > 1" style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+        <app-filter-bar [filters]="pageFilters" (filtersChange)="onFilterBarChange($event)"></app-filter-bar>
       </div>
 
       <div class="app-card">
@@ -73,6 +69,7 @@ export class VendorWorkspaceComponent implements OnInit {
   vendors: VendorItem[] = [];
   properties: Property[] = [];
   filterPropertyId: number | null = null;
+  pageFilters: FilterSpec[] = [];
 
   constructor(
     private readonly service: VendorService,
@@ -83,7 +80,32 @@ export class VendorWorkspaceComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.propertySvc.getAll(0, 500).subscribe({ next: (res) => { this.properties = res.data?.content ?? []; }, error: () => {} });
+    this.propertySvc.getAll(0, 500).subscribe({
+      next: (res) => {
+        this.properties = res.data?.content ?? [];
+        this.setupFilters();
+      },
+      error: () => {}
+    });
+    this.loadVendors();
+  }
+
+  private setupFilters(): void {
+    this.pageFilters = [
+      {
+        key: 'filterPropertyId',
+        label: 'REQUEST_FORM.PROPERTY',
+        type: 'select',
+        options: this.properties.map(p => ({
+          value: p.id,
+          label: this.i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName)
+        }))
+      }
+    ];
+  }
+
+  onFilterBarChange(values: any): void {
+    if (values?.filterPropertyId !== undefined) this.filterPropertyId = values.filterPropertyId;
     this.loadVendors();
   }
 

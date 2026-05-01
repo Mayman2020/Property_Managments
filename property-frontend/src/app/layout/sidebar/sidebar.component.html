@@ -25,6 +25,7 @@
           *ngFor="let item of section.items; trackBy: trackByRoute"
           [routerLink]="item.route"
           routerLinkActive="active"
+          (click)="onNavClick(item, $event)"
           [matTooltip]="collapsed ? (item.labelKey | translate) : ''"
           matTooltipPosition="after"
         >

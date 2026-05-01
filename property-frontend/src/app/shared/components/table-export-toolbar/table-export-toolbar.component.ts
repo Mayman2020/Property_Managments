@@ -21,7 +21,7 @@ export interface ExportColumn<T = unknown> {
         <span class="material-icons">table_view</span>
         Excel
       </button>
-      <button mat-stroked-button type="button" (click)="exportPdf()" [disabled]="disabled || !hasRows" [matTooltip]="pdfLabel">
+      <button mat-stroked-button *ngIf="showPdf" mat-stroked-button type="button" (click)="exportPdf()" [disabled]="disabled || !hasRows" [matTooltip]="pdfLabel">
         <span class="material-icons">picture_as_pdf</span>
         PDF
       </button>
@@ -55,6 +55,8 @@ export class TableExportToolbarComponent<T = unknown> {
   @Input() rows: T[] = [];
   @Input() loadRows?: () => Promise<T[]>;
   @Input() disabled = false;
+  // PDF export is disabled by default to align with the new standard (privacy/size considerations).
+  @Input() showPdf = false;
 
   constructor(
     private readonly permissions: PermissionService,

@@ -7,6 +7,7 @@ import com.propertymanagement.modules.contract.payment.dto.ScheduleItemResponse;
 import com.propertymanagement.modules.tenant.TenantRepository;
 import com.propertymanagement.shared.exception.AppException;
 import lombok.RequiredArgsConstructor;
+import com.propertymanagement.codegen.CodeGenerationService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ public class RentPaymentService {
     private final RentPaymentScheduleRepository scheduleRepository;
     private final LeaseContractRepository contractRepository;
     private final TenantRepository tenantRepository;
+    private final CodeGenerationService codeGenerationService;
 
     public Page<PaymentResponse> getAll(Pageable pageable) {
         return paymentRepository.findAll(pageable).map(this::toResponse);
@@ -45,6 +47,7 @@ public class RentPaymentService {
 
     @Transactional
     public PaymentResponse recordPayment(RecordPaymentDto dto) {
+        String referenceNumber = codeGenerationService.generate("REF");
         RentPayment payment = RentPayment.builder()
                 .contractId(dto.getContractId())
                 .scheduleId(dto.getScheduleId())
@@ -53,7 +56,7 @@ public class RentPaymentService {
                 .amountPaid(dto.getAmountPaid())
                 .amountDue(dto.getAmountDue())
                 .paymentMethod(dto.getPaymentMethod())
-                .referenceNumber(dto.getReferenceNumber())
+                .referenceNumber(referenceNumber)
                 .receiptUrl(dto.getReceiptUrl())
                 .lateFee(dto.getLateFee() != null ? dto.getLateFee() : BigDecimal.ZERO)
                 .discount(dto.getDiscount() != null ? dto.getDiscount() : BigDecimal.ZERO)

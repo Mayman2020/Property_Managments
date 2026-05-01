@@ -1,5 +1,8 @@
 package com.propertymanagement.modules.maintenance.request;
 
+import com.propertymanagement.modules.maintenance.assignment.MaintenanceProvider;
+import com.propertymanagement.modules.maintenance.assignment.MaintenanceProviderRepository;
+import com.propertymanagement.modules.maintenance.assignment.PropertyMaintenanceAssignmentRepository;
 import com.propertymanagement.modules.maintenance.category.MaintenanceCategoryRepository;
 import com.propertymanagement.modules.maintenance.request.dto.*;
 import com.propertymanagement.modules.maintenance.visit.VisitReport;
@@ -22,6 +25,7 @@ import com.propertymanagement.modules.user.UserRole;
 import com.propertymanagement.shared.exception.AppException;
 import com.propertymanagement.shared.i18n.LocalizedNameResolver;
 import lombok.RequiredArgsConstructor;
+import com.propertymanagement.codegen.CodeGenerationService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
@@ -51,6 +55,9 @@ public class MaintenanceRequestService {
     private final PropertyRepository propertyRepository;
     private final UnitRepository unitRepository;
     private final MaintenanceCategoryRepository categoryRepository;
+    private final PropertyMaintenanceAssignmentRepository assignmentRepository;
+    private final CodeGenerationService codeGenerationService;
+    private final MaintenanceProviderRepository providerRepository;
 
     public Page<MaintenanceRequestResponse> getAll(Pageable pageable) {
         return requestRepository.findAll(pageable).map(this::toResponse);
@@ -159,7 +166,7 @@ public class MaintenanceRequestService {
                 .filter(Property::isActive)
                 .orElseThrow(() -> AppException.notFound("Property not found: " + dto.getPropertyId()));
 
-        String requestNumber = generateRequestNumber();
+        String requestNumber = codeGenerationService.generate("MR");
         MaintenanceRequest.MaintenanceRequestBuilder builder = MaintenanceRequest.builder()
                 .requestNumber(requestNumber)
                 .propertyId(dto.getPropertyId())
@@ -171,27 +178,52 @@ public class MaintenanceRequestService {
                 .priority(dto.getPriority() != null ? dto.getPriority() : RequestPriority.NORMAL)
                 .tenantNotes(dto.getTenantNotes());
 
-        Long internalOfficerId = property.getMaintenanceInternalOfficerUserId();
-        Long propCompanyId = property.getMaintenanceContractorCompanyId();
+        // ── Routing: new assignment table takes priority over legacy property columns ──
+        boolean routed = false;
+        var activeAssignment = assignmentRepository.findActivePrimaryByPropertyId(property.getId());
+        if (activeAssignment.isPresent()) {
+            MaintenanceProvider provider = providerRepository
+                    .findById(activeAssignment.get().getMaintenanceProviderId()).orElse(null);
+            if (provider != null) {
+                if ("USER".equals(provider.getProviderType()) && provider.getUserId() != null) {
+                    builder.assignedTo(provider.getUserId())
+                            .status(RequestStatus.ASSIGNED)
+                            .contractorCompanyId(null);
+                    routed = true;
+                } else if ("COMPANY".equals(provider.getProviderType()) && provider.getCompanyId() != null) {
+                    builder.status(RequestStatus.PENDING)
+                            .assignedTo(null)
+                            .contractorCompanyId(provider.getCompanyId());
+                    routed = true;
+                }
+            }
+        }
 
-        if (internalOfficerId != null) {
-            assertInternalOfficerForProperty(internalOfficerId, property.getId());
-            builder.assignedTo(internalOfficerId)
-                    .status(RequestStatus.ASSIGNED)
-                    .contractorCompanyId(null);
-        } else if (propCompanyId != null) {
-            builder.status(RequestStatus.PENDING)
-                    .assignedTo(null)
-                    .contractorCompanyId(propCompanyId);
-        } else {
-            builder.status(RequestStatus.PENDING)
-                    .assignedTo(null)
-                    .contractorCompanyId(null);
+        // ── Fallback: legacy direct FK columns on the property ──
+        Long resolvedOfficerId = null;
+        if (!routed) {
+            Long internalOfficerId = property.getMaintenanceInternalOfficerUserId();
+            Long propCompanyId = property.getMaintenanceContractorCompanyId();
+            if (internalOfficerId != null) {
+                assertInternalOfficerForProperty(internalOfficerId, property.getId());
+                builder.assignedTo(internalOfficerId)
+                        .status(RequestStatus.ASSIGNED)
+                        .contractorCompanyId(null);
+                resolvedOfficerId = internalOfficerId;
+            } else if (propCompanyId != null) {
+                builder.status(RequestStatus.PENDING)
+                        .assignedTo(null)
+                        .contractorCompanyId(propCompanyId);
+            } else {
+                builder.status(RequestStatus.PENDING)
+                        .assignedTo(null)
+                        .contractorCompanyId(null);
+            }
         }
 
         MaintenanceRequest saved = requestRepository.save(builder.build());
         notifyRequestCreated(saved);
-        if (internalOfficerId != null) {
+        if (resolvedOfficerId != null) {
             notifyRequestAssigned(saved);
         }
         return toResponse(saved);
@@ -378,9 +410,7 @@ public class MaintenanceRequestService {
     }
 
     private String generateRequestNumber() {
-        String year = String.valueOf(Year.now().getValue());
-        long count = requestRepository.countByRequestNumberStartingWith("MR-" + year) + 1;
-        return String.format("MR-%s-%05d", year, count);
+        return codeGenerationService.generate("MR");
     }
 
     private Long currentUserId() {

@@ -12,6 +12,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { FilterBarComponent, FilterSpec } from '../../../shared/components/filter-bar/filter-bar.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
 import { ExportColumn, TableExportToolbarComponent } from '../../../shared/components/table-export-toolbar/table-export-toolbar.component';
@@ -27,9 +28,8 @@ import { InventoryItemDialogComponent } from '../inventory-item-dialog.component
   standalone: true,
   imports: [
     NgFor, NgIf, DecimalPipe, FormsModule, TranslateModule,
-    MatButtonModule, MatFormFieldModule, MatIconModule, MatInputModule,
-    MatProgressSpinnerModule, MatTooltipModule, MatSelectModule,
-    PageHeaderComponent, EmptyStateComponent, TablePagerComponent, TableExportToolbarComponent
+    MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule,
+    PageHeaderComponent, EmptyStateComponent, TablePagerComponent, TableExportToolbarComponent, FilterBarComponent
   ],
   templateUrl: './inventory-list.component.html',
   styleUrl: './inventory-list.component.scss'
@@ -42,6 +42,7 @@ export class InventoryListComponent implements OnInit {
   loading = true;
   searchTerm = '';
   filterPropertyId: number | null = null;
+  pageFilters: FilterSpec[] = [];
 
   get isAr(): boolean { return this.i18n.currentLang === 'ar'; }
 
@@ -60,6 +61,7 @@ export class InventoryListComponent implements OnInit {
         if (this.properties.length === 1) {
           this.filterPropertyId = this.properties[0].id;
         }
+        this.setupFilters();
         this.load();
       },
       error: () => this.load()
@@ -114,6 +116,36 @@ export class InventoryListComponent implements OnInit {
         error: () => {}
       });
     });
+  }
+
+  private setupFilters(): void {
+    this.pageFilters = [
+      {
+        key: 'filterPropertyId',
+        label: 'REQUEST_FORM.PROPERTY',
+        type: 'select',
+        options: this.properties.map(p => ({
+          value: p.id,
+          label: this.i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName)
+        }))
+      }
+    ];
+  }
+
+  onFilterBarChange(values: any): void {
+    if (values?.filterPropertyId !== undefined) this.filterPropertyId = values.filterPropertyId;
+    this.pageIndex = 0;
+    this.load();
+  }
+
+  clearFiltersFromBar(): void {
+    this.filterPropertyId = null;
+    this.pageIndex = 0;
+    this.load();
+  }
+
+  hasFiltersBar(): boolean {
+    return !!this.filterPropertyId;
   }
 
   onPropertyChange(): void {

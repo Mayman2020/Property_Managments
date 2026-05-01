@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { catchError, firstValueFrom, forkJoin, map, of } from 'rxjs';
@@ -13,10 +13,13 @@ import { TranslateModule } from '@ngx-translate/core';
 import { PropertyService, Property } from '../../../core/services/property.service';
 import { SnackService } from '../../../core/services/snack.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
+import { LookupCacheService } from '../../../core/services/lookup-cache.service';
+import { LookupItem } from '../../../core/services/lookup.service';
 import { UnitService } from '../../../core/services/unit.service';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { ExportColumn, TableExportToolbarComponent } from '../../../shared/components/table-export-toolbar/table-export-toolbar.component';
+import { FilterBarComponent, FilterSpec } from '../../../shared/components/filter-bar/filter-bar.component';
 import { PropertyFormComponent } from '../property-form/property-form.component';
 
 @Component({
@@ -34,12 +37,15 @@ import { PropertyFormComponent } from '../property-form/property-form.component'
     MatTooltipModule,
     PageHeaderComponent,
     EmptyStateComponent,
-    TableExportToolbarComponent
+    TableExportToolbarComponent,
+    FilterBarComponent
   ],
   templateUrl: './property-list.component.html',
   styleUrl: './property-list.component.scss'
 })
 export class PropertyListComponent implements OnInit {
+  @ViewChild(FilterBarComponent) private readonly filterBar?: FilterBarComponent;
+
   properties: Property[] = [];
   loading = true;
   totalElements = 0;
@@ -51,19 +57,73 @@ export class PropertyListComponent implements OnInit {
   filterType: string | null = null;
   filterStatus: boolean | null = null;
   showFilters = false;
-
-  readonly propertyTypes = ['RESIDENTIAL', 'COMMERCIAL', 'MIXED'];
+  pageFilters: FilterSpec[] = [];
+  propertyTypes: LookupItem[] = [];
+  propertyStatuses: LookupItem[] = [];
 
   constructor(
     private readonly dialog: MatDialog,
     private readonly propertySvc: PropertyService,
     private readonly unitSvc: UnitService,
     private readonly snack: SnackService,
+    private readonly lookupCache: LookupCacheService,
     readonly i18n: I18nService
   ) {}
 
   ngOnInit(): void {
+    this.loadFilterLookups();
     this.load();
+  }
+
+  private setupFilters(): void {
+    this.pageFilters = [
+      {
+        key: 'filterType',
+        label: 'PROPERTY_FORM.PROPERTY_TYPE',
+        type: 'select',
+        options: this.propertyTypes.map(type => ({
+          value: type.code,
+          label: this.lookupLabel(type)
+        }))
+      },
+      {
+        key: 'filterStatus',
+        label: 'MAINTENANCE.STATUS',
+        type: 'select',
+        options: this.propertyStatuses
+          .map(status => ({
+            value: this.statusCodeToBoolean(status.code),
+            label: this.lookupLabel(status)
+          }))
+          .filter((option): option is { value: boolean; label: string } => option.value !== null)
+      }
+    ];
+  }
+
+  private loadFilterLookups(): void {
+    this.lookupCache.preload('PROPERTY_TYPE', 'PROPERTY_STATUS').subscribe({
+      next: () => {
+        this.propertyTypes = this.lookupCache.items('PROPERTY_TYPE');
+        this.propertyStatuses = this.lookupCache.items('PROPERTY_STATUS');
+        this.setupFilters();
+      },
+      error: () => this.setupFilters()
+    });
+  }
+
+  onFilterBarChange(values: any): void {
+    if (values?.filterType !== undefined) this.filterType = values.filterType;
+    if (values?.filterStatus !== undefined) this.filterStatus = values.filterStatus;
+  }
+
+  clearFiltersFromBar(): void {
+    this.filterBar?.clear();
+    this.filterType = null;
+    this.filterStatus = null;
+  }
+
+  hasFiltersBar(): boolean {
+    return this.filterType !== null || this.filterStatus !== null;
   }
 
   get filteredProperties(): Property[] {
@@ -108,7 +168,7 @@ export class PropertyListComponent implements OnInit {
       { header: this.i18n.instant('PROPERTY_FORM.CITY'), value: (row) => row.city || '-' },
       { header: this.i18n.instant('PROPERTY_FORM.PROPERTY_TYPE'), value: (row) => this.typeLabel(row.propertyType) },
       { header: this.i18n.instant('PROPERTY_LIST.UNITS'), value: (row) => row.totalUnits || 0 },
-      { header: this.i18n.instant('MAINTENANCE.STATUS'), value: (row) => this.i18n.instant(row.isActive ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') },
+      { header: this.i18n.instant('MAINTENANCE.STATUS'), value: (row) => this.statusLabel(row.isActive) },
       { header: this.i18n.instant('PROPERTY_LIST.OWNER'), value: (row) => this.ownerName(row) }
     ];
   }
@@ -271,7 +331,22 @@ export class PropertyListComponent implements OnInit {
   }
 
   typeLabel(type: string): string {
-    return this.i18n.instant(`PROPERTY_TYPE.${type}`);
+    return this.lookupCache.label('PROPERTY_TYPE', type) || type;
+  }
+
+  statusLabel(active: boolean): string {
+    const status = this.propertyStatuses.find((item) => this.statusCodeToBoolean(item.code) === active);
+    return status ? this.lookupLabel(status) : this.i18n.instant(active ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE');
+  }
+
+  private lookupLabel(item: LookupItem): string {
+    return this.i18n.currentLang === 'ar' ? item.nameAr : item.nameEn;
+  }
+
+  private statusCodeToBoolean(code: string): boolean | null {
+    if (code === 'ACTIVE') return true;
+    if (code === 'INACTIVE') return false;
+    return null;
   }
 
   occupancy(property: Property): number {

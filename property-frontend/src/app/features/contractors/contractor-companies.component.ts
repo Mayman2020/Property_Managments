@@ -3,10 +3,12 @@ import { NgFor, NgIf } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
 import { MatDialog } from '@angular/material/dialog';
 
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { FilterBarComponent, FilterSpec } from '../../shared/components/filter-bar/filter-bar.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { TablePagerComponent } from '../../shared/components/table-pager/table-pager.component';
 import { ExportColumn, TableExportToolbarComponent } from '../../shared/components/table-export-toolbar/table-export-toolbar.component';
@@ -28,10 +30,12 @@ import {
     MatButtonModule,
     MatProgressSpinnerModule,
     MatIconModule,
+    MatTooltipModule,
     PageHeaderComponent,
     EmptyStateComponent,
     TablePagerComponent,
-    TableExportToolbarComponent
+    TableExportToolbarComponent,
+    FilterBarComponent
   ],
   templateUrl: './contractor-companies.component.html',
   styleUrl: './contractor-companies.component.scss'
@@ -42,6 +46,9 @@ export class ContractorCompaniesComponent implements OnInit {
   readonly pageSize = 5;
   pageIndex = 0;
   loading = true;
+  searchTerm = '';
+  filterActive: boolean | null = null;
+  pageFilters: FilterSpec[] = [];
 
   constructor(
     private readonly svc: ContractorCompanyService,
@@ -70,7 +77,57 @@ export class ContractorCompaniesComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.setupFilters();
     this.load();
+  }
+
+  private setupFilters(): void {
+    this.pageFilters = [
+      {
+        key: 'searchTerm',
+        label: 'ACTIONS.SEARCH',
+        type: 'text'
+      },
+      {
+        key: 'filterActive',
+        label: 'MAINTENANCE.STATUS',
+        type: 'select',
+        options: [
+          { value: true, label: this.i18n.instant('COMMON.ACTIVE') },
+          { value: false, label: this.i18n.instant('COMMON.INACTIVE') }
+        ]
+      }
+    ];
+  }
+
+  onFilterBarChange(values: any): void {
+    if (values?.searchTerm !== undefined) this.searchTerm = values.searchTerm ?? '';
+    if (values?.filterActive !== undefined) this.filterActive = values.filterActive;
+    this.pageIndex = 0;
+    this.applyFilters();
+  }
+
+  clearFiltersFromBar(): void {
+    this.searchTerm = '';
+    this.filterActive = null;
+    this.pageIndex = 0;
+    this.applyFilters();
+  }
+
+  hasFiltersBar(): boolean {
+    return !!(this.searchTerm || this.filterActive !== null);
+  }
+
+  private applyFilters(): void {
+    const q = this.searchTerm.trim().toLowerCase();
+    this.filteredCompanies = this.companies.filter(c => {
+      if (this.filterActive !== null && c.active !== this.filterActive) return false;
+      if (q) {
+        const name = this.companyName(c).toLowerCase();
+        return name.includes(q) || (c.email ?? '').toLowerCase().includes(q) || (c.phone ?? '').toLowerCase().includes(q);
+      }
+      return true;
+    });
   }
 
   load(): void {
@@ -78,7 +135,7 @@ export class ContractorCompaniesComponent implements OnInit {
     this.svc.list(true).subscribe({
       next: (res) => {
         this.companies = res.data ?? [];
-        this.filteredCompanies = [...this.companies];
+        this.applyFilters();
         this.pageIndex = 0;
         this.loading = false;
       },

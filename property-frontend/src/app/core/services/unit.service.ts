@@ -8,7 +8,7 @@ export interface Unit {
   propertyId: number;
   floorId?: number;
   unitNumber: string;
-  unitType?: 'APARTMENT' | 'SHOP' | 'OFFICE' | 'VILLA' | 'WAREHOUSE' | 'OTHER';
+  unitType?: string;
   areaSqm?: number;
   bedrooms?: number;
   bathrooms?: number;
@@ -25,7 +25,7 @@ export interface UnitRequest {
   propertyId: number;
   floorId?: number;
   unitNumber: string;
-  unitType: 'APARTMENT' | 'SHOP' | 'OFFICE' | 'VILLA' | 'WAREHOUSE' | 'OTHER';
+  unitType: string;
   areaSqm?: number;
   bedrooms?: number;
   bathrooms?: number;

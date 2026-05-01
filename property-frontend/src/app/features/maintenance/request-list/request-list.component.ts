@@ -16,11 +16,14 @@ import { MatDialog } from '@angular/material/dialog';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
+import { FilterBarComponent, FilterSpec } from '../../../shared/components/filter-bar/filter-bar.component';
 import { MaintenanceService, MaintenanceRequest } from '../../../core/services/maintenance.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { PropertyService, Property } from '../../../core/services/property.service';
 import { RequestTimelineDialogComponent } from '../request-timeline-dialog.component';
+
+import { MaintenanceRequestDialogComponent } from '../maintenance-request-dialog.component';
 
 export type RequestListContext = 'admin' | 'tenant' | 'officer';
 
@@ -31,9 +34,8 @@ const ACTIVE_STATUSES = new Set(['PENDING', 'ASSIGNED', 'SCHEDULED', 'IN_PROGRES
   standalone: true,
   imports: [
     NgFor, NgIf, DatePipe, FormsModule, RouterLink, TranslateModule,
-    MatButtonModule, MatIconModule, MatSelectModule, MatFormFieldModule,
-    MatProgressSpinnerModule, MatTooltipModule, MatTabsModule,
-    PageHeaderComponent, EmptyStateComponent, TablePagerComponent
+    MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule, MatTabsModule,
+    PageHeaderComponent, EmptyStateComponent, TablePagerComponent, FilterBarComponent
   ],
   templateUrl: './request-list.component.html',
   styleUrl: './request-list.component.scss'
@@ -53,6 +55,7 @@ export class RequestListComponent implements OnInit {
   tenantCurrentPageIndex = 0;
   tenantPreviousPageIndex = 0;
   properties: Property[] = [];
+  pageFilters: FilterSpec[] = [];
 
   readonly statuses: { value: string; labelKey: string }[] = [
     { value: '', labelKey: 'REQUEST_LIST.ALL_STATUS' },
@@ -92,8 +95,11 @@ export class RequestListComponent implements OnInit {
       this.listContext = d;
     }
     if (this.listContext === 'admin') {
-      this.propertySvc.getAll(0, 100).subscribe({
-        next: (res) => { this.properties = res.data?.content ?? []; }
+      this.propertySvc.getAll(0, 500).subscribe({
+        next: (res) => {
+          this.properties = res.data?.content ?? [];
+          this.setupFilters();
+        }
       });
     }
     this.load();
@@ -203,6 +209,57 @@ export class RequestListComponent implements OnInit {
     });
   }
 
+  private setupFilters(): void {
+    this.pageFilters = [
+      {
+        key: 'filterPropertyId',
+        label: 'REQUEST_FORM.PROPERTY',
+        type: 'select',
+        options: this.properties.map(p => ({
+          value: p.id,
+          label: this.i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName)
+        }))
+      },
+      {
+        key: 'filterStatus',
+        label: 'MAINTENANCE.STATUS',
+        type: 'select',
+        options: this.statuses.filter(s => s.value).map(s => ({
+          value: s.value,
+          label: this.i18n.instant(s.labelKey)
+        }))
+      },
+      {
+        key: 'filterPriority',
+        label: 'MAINTENANCE.PRIORITY',
+        type: 'select',
+        options: this.priorities.filter(p => p.value).map(p => ({
+          value: p.value,
+          label: this.i18n.instant(p.labelKey)
+        }))
+      }
+    ];
+  }
+
+  onFilterBarChange(values: any): void {
+    if (values?.filterPropertyId !== undefined) this.filterPropertyId = values.filterPropertyId;
+    if (values?.filterStatus !== undefined) this.filterStatus = values.filterStatus ?? '';
+    if (values?.filterPriority !== undefined) this.filterPriority = values.filterPriority ?? '';
+    this.applyFilter();
+  }
+
+  clearFiltersFromBar(): void {
+    this.filterPropertyId = null;
+    this.filterStatus = '';
+    this.filterPriority = '';
+    this.searchTerm = '';
+    this.applyFilter();
+  }
+
+  hasFiltersBar(): boolean {
+    return !!(this.filterPropertyId || this.filterStatus || this.filterPriority || this.searchTerm);
+  }
+
   applyFilter(): void {
     this.totalElements = this.filteredRequests.length;
     this.resetPagerIndexes();
@@ -251,6 +308,19 @@ export class RequestListComponent implements OnInit {
 
   openTimeline(req: MaintenanceRequest): void {
     this.dialog.open(RequestTimelineDialogComponent, { data: req, width: '560px', panelClass: 'app-dialog-panel' });
+  }
+
+  openNewRequest(): void {
+    const dialogRef = this.dialog.open(MaintenanceRequestDialogComponent, {
+      width: '720px',
+      maxWidth: '95vw',
+      maxHeight: '90vh',
+      panelClass: 'app-dialog-panel',
+      data: { context: this.listContext }
+    });
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result) this.load();
+    });
   }
 
   private pageSlice(list: MaintenanceRequest[], pageIndex: number): MaintenanceRequest[] {

@@ -72,6 +72,7 @@ function resolveFallbackRoute(auth: AuthService, permissions: PermissionService)
   const role = auth.getRole();
   const candidates = role === 'SUPER_ADMIN' || role === 'PROPERTY_ADMIN'
     ? [
+        { route: '/admin/home', permission: 'dashboard', action: 'view' as PermissionAction },
         { route: '/admin/dashboard', permission: 'dashboard', action: 'view' as PermissionAction },
         { route: '/admin/maintenance', permission: 'maintenance', action: 'view' as PermissionAction },
         { route: '/admin/properties', permission: 'properties', action: 'view' as PermissionAction },
@@ -85,24 +86,28 @@ function resolveFallbackRoute(auth: AuthService, permissions: PermissionService)
         ]
       : role === 'CONTRACTS_OFFICER'
         ? [
+            { route: '/admin/home', permission: 'contracts', action: 'view' as PermissionAction },
             { route: '/admin/contracts/dashboard', permission: 'contracts', action: 'view' as PermissionAction },
             { route: '/admin/contracts/list', permission: 'contracts', action: 'view' as PermissionAction },
             { route: '/admin/profile', permission: 'profile', action: 'view' as PermissionAction }
           ]
         : role === 'ACCOUNTANT'
           ? [
+              { route: '/admin/home', permission: 'finance', action: 'view' as PermissionAction },
               { route: '/admin/finance/dashboard', permission: 'finance', action: 'view' as PermissionAction },
               { route: '/admin/contracts/payments', permission: 'contracts', action: 'view' as PermissionAction },
               { route: '/admin/profile', permission: 'profile', action: 'view' as PermissionAction }
             ]
           : role === 'HR_OFFICER'
             ? [
+                { route: '/admin/home', permission: 'hr', action: 'view' as PermissionAction },
                 { route: '/admin/hr/employees', permission: 'hr', action: 'view' as PermissionAction },
                 { route: '/admin/hr/payroll', permission: 'hr', action: 'view' as PermissionAction },
                 { route: '/admin/profile', permission: 'profile', action: 'view' as PermissionAction }
               ]
             : role === 'OWNER'
               ? [
+                  { route: '/admin/home', permission: 'owner_portal', action: 'view' as PermissionAction },
                   { route: '/admin/owner-portal/dashboard', permission: 'owner_portal', action: 'view' as PermissionAction },
                   { route: '/admin/owner-portal/statements', permission: 'owner_portal', action: 'view' as PermissionAction },
                   { route: '/admin/profile', permission: 'profile', action: 'view' as PermissionAction }

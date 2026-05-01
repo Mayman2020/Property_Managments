@@ -15,7 +15,7 @@ export interface Property {
   propertyNameAr?: string;
   propertyNameEn?: string;
   propertyCode: string;
-  propertyType: 'RESIDENTIAL' | 'COMMERCIAL' | 'MIXED';
+  propertyType: string;
   address: string;
   city?: string;
   country?: string;
@@ -40,7 +40,6 @@ export interface PropertyForm {
   propertyName: string;
   propertyNameAr?: string;
   propertyNameEn?: string;
-  propertyCode: string;
   propertyType: string;
   address: string;
   city?: string;

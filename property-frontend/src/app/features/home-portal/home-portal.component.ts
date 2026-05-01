@@ -12,6 +12,7 @@ import { DashboardService } from '../../core/services/dashboard.service';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { PermissionService } from '../../core/services/permission.service';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-home-portal',
@@ -42,7 +43,8 @@ export class HomePortalComponent implements OnInit {
     private router: Router,
     private dashSvc: DashboardService,
     private i18n: I18nService,
-    readonly permissions: PermissionService
+    readonly permissions: PermissionService,
+    readonly authService: AuthService
   ) {}
 
   ngOnInit(): void {
@@ -64,11 +66,19 @@ export class HomePortalComponent implements OnInit {
   }
 
   goToMaintenance(): void {
-    this.router.navigate(['/admin/dashboard']);
+    this.router.navigate(['/admin/maintenance']);
   }
 
   goToContracts(): void {
     this.router.navigate(['/admin/contracts/dashboard']);
+  }
+
+  goToComprehensive(): void {
+    this.router.navigate(['/admin/dashboard']);
+  }
+
+  get isSuperAdmin(): boolean {
+    return this.authService.isSuperAdmin();
   }
 
   get showMaintenanceCard(): boolean {

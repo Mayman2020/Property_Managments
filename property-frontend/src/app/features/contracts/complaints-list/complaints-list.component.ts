@@ -13,6 +13,7 @@ import { catchError, of } from 'rxjs';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
+import { FilterBarComponent, FilterSpec } from '../../../shared/components/filter-bar/filter-bar.component';
 import { ComplaintService } from '../../../core/services/complaint.service';
 import { TenantComplaint } from '../../../core/models/contract.model';
 import { PropertyService, Property } from '../../../core/services/property.service';
@@ -25,10 +26,8 @@ import { I18nService } from '../../../core/i18n/i18n.service';
   standalone: true,
   imports: [
     NgIf, NgFor, DatePipe, NgClass, FormsModule,
-    MatButtonModule, MatIconModule,
-    MatInputModule, MatSelectModule,
-    MatProgressSpinnerModule, MatTooltipModule,
-    TranslateModule, PageHeaderComponent, TablePagerComponent
+    MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule,
+    TranslateModule, PageHeaderComponent, TablePagerComponent, FilterBarComponent
   ],
   templateUrl: './complaints-list.component.html',
   styleUrl: './complaints-list.component.scss'
@@ -44,6 +43,7 @@ export class ComplaintsListComponent implements OnInit {
 
   properties: Property[] = [];
   loadingProperties = false;
+  pageFilters: FilterSpec[] = [];
 
   constructor(
     private readonly complaintSvc: ComplaintService,
@@ -58,6 +58,7 @@ export class ComplaintsListComponent implements OnInit {
   ngOnInit(): void {
     this.loadProperties();
     this.lookupCache.preload('COMPLAINT_STATUS', 'COMPLAINT_PRIORITY', 'COMPLAINT_TYPE').subscribe(() => {
+      this.setupFilters();
       this.load();
     });
   }
@@ -85,9 +86,54 @@ export class ComplaintsListComponent implements OnInit {
   private loadProperties(): void {
     this.loadingProperties = true;
     this.propertySvc.getAll(0, 200).subscribe({
-      next: (res) => { this.properties = (res.data?.content ?? []).filter(p => p.isActive); this.loadingProperties = false; },
+      next: (res) => {
+        this.properties = (res.data?.content ?? []).filter(p => p.isActive);
+        this.loadingProperties = false;
+        this.setupFilters();
+      },
       error: () => { this.loadingProperties = false; }
     });
+  }
+
+  private setupFilters(): void {
+    this.pageFilters = [
+      {
+        key: 'filterPropertyId',
+        label: 'REQUEST_FORM.PROPERTY',
+        type: 'select',
+        options: this.properties.map(p => ({
+          value: p.id,
+          label: this.i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName)
+        }))
+      },
+      {
+        key: 'filterStatus',
+        label: 'CONTRACTS.STATUS',
+        type: 'select',
+        options: this.lookupCache.items('COMPLAINT_STATUS').map(s => ({
+          value: s.code,
+          label: this.i18n.currentLang === 'ar' ? s.nameAr : s.nameEn
+        }))
+      }
+    ];
+  }
+
+  onFilterBarChange(values: any): void {
+    if (values?.filterPropertyId !== undefined) this.filterPropertyId = values.filterPropertyId;
+    if (values?.filterStatus !== undefined) this.filterStatus = values.filterStatus ?? '';
+    this.pageIndex = 0;
+    this.load();
+  }
+
+  clearFiltersFromBar(): void {
+    this.filterPropertyId = null;
+    this.filterStatus = '';
+    this.pageIndex = 0;
+    this.load();
+  }
+
+  hasFiltersBar(): boolean {
+    return !!(this.filterPropertyId || this.filterStatus);
   }
 
   onFilterChange(): void {

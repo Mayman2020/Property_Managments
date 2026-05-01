@@ -5,6 +5,7 @@ public enum LookupType {
     CITY,
     UNIT_TYPE,
     PROPERTY_TYPE,
+    PROPERTY_STATUS,
     FLOOR_TYPE,
     PAYMENT_METHOD,
     PAYMENT_FREQUENCY,

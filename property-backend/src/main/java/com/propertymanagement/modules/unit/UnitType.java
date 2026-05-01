@@ -1,5 +1,5 @@
 package com.propertymanagement.modules.unit;
 
 public enum UnitType {
-    APARTMENT, SHOP, OFFICE, WAREHOUSE, OTHER
+    APARTMENT, SHOP, OFFICE, WAREHOUSE, VILLA, STUDIO, OTHER
 }

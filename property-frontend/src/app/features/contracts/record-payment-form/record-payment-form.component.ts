@@ -64,7 +64,6 @@ export class RecordPaymentFormComponent implements OnInit {
       amountPaid: [null, [Validators.required, Validators.min(0.01)]],
       amountDue: [null, Validators.required],
       paymentMethod: ['CASH'],
-      referenceNumber: [''],
       lateFee: [0],
       discount: [0],
       notes: ['']

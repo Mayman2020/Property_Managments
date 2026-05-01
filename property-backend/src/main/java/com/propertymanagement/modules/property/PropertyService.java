@@ -8,6 +8,7 @@ import com.propertymanagement.modules.user.UserRepository;
 import com.propertymanagement.modules.user.UserRole;
 import com.propertymanagement.modules.contractor.ContractorCompanyRepository;
 import com.propertymanagement.shared.exception.AppException;
+import com.propertymanagement.codegen.CodeGenerationService;
 import com.propertymanagement.shared.i18n.LocalizedNameResolver;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -24,6 +25,7 @@ public class PropertyService {
     private final PropertyRepository propertyRepository;
     private final UserRepository userRepository;
     private final ContractorCompanyRepository contractorCompanyRepository;
+    private final CodeGenerationService codeGenerationService;
 
     public Page<PropertyResponse> getAll(Pageable pageable, String q) {
         return propertyRepository.searchActive(trimToNull(q), pageable).map(this::toResponse);
@@ -43,10 +45,7 @@ public class PropertyService {
             throw AppException.badRequest("Property name is required in Arabic and English");
         }
 
-        String propertyCode = resolvePropertyCode(request.getPropertyCode());
-        if (propertyRepository.existsByPropertyCode(propertyCode)) {
-            throw AppException.conflict("Property code already exists: " + propertyCode);
-        }
+        String propertyCode = codeGenerationService.generate("PROPERTY");
         Property property = Property.builder()
                 .propertyName(legacyName)
                 .propertyNameAr(normalizedNameAr)
@@ -85,16 +84,11 @@ public class PropertyService {
             throw AppException.badRequest("Property name is required in Arabic and English");
         }
 
-        String incomingCode = trimToNull(request.getPropertyCode());
-        String effectiveCode = incomingCode != null ? incomingCode : property.getPropertyCode();
-        if (!property.getPropertyCode().equals(effectiveCode)
-                && propertyRepository.existsByPropertyCode(effectiveCode)) {
-            throw AppException.conflict("Property code already exists: " + effectiveCode);
-        }
+        // Property code is generated on create; preserve it unchanged on update
         property.setPropertyName(legacyName);
         property.setPropertyNameAr(normalizedNameAr);
         property.setPropertyNameEn(normalizedNameEn);
-        property.setPropertyCode(effectiveCode);
+        // property.setPropertyCode stays as-is
         property.setPropertyType(request.getPropertyType());
         property.setAddress(request.getAddress());
         property.setCity(request.getCity());
@@ -201,18 +195,7 @@ public class PropertyService {
         return t.isEmpty() ? null : t;
     }
 
-    private String resolvePropertyCode(String requested) {
-        String trimmed = trimToNull(requested);
-        if (trimmed != null) {
-            return trimmed;
-        }
-        long seq = propertyRepository.count() + 1;
-        String candidate;
-        do {
-            candidate = "PROP-" + String.format("%05d", seq++);
-        } while (propertyRepository.existsByPropertyCode(candidate));
-        return candidate;
-    }
+    // Removed legacy resolvePropertyCode in favor of backend-generated PROPERTY codes via CodeGenerationService
 
     private void applyMaintenanceRouting(Property property, Long internalOfficerUserId, Long contractorCompanyId) {
         if (internalOfficerUserId != null && contractorCompanyId != null) {

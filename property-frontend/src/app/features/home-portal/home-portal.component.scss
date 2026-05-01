@@ -6,10 +6,18 @@
 
 .portal-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 32px;
-  padding: 24px 0;
-  max-width: 960px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  padding: 40px 24px;
+  max-width: 1200px;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
 }
 
 .portal-card {
@@ -17,6 +25,7 @@
   border-radius: 16px !important;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   border: 2px solid transparent;
+  min-height: 280px;
 
   &:hover {
     transform: translateY(-4px);
@@ -29,10 +38,12 @@
   }
 
   mat-card-content {
-    padding: 32px 28px;
+    padding: 28px 24px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 14px;
+    height: 100%;
+    box-sizing: border-box;
   }
 }
 
@@ -58,6 +69,14 @@
 
   mat-icon {
     color: var(--amber-700);
+  }
+}
+
+.comprehensive-icon {
+  background: var(--emerald-50, #ecfdf5);
+
+  mat-icon {
+    color: var(--emerald-700, #047857);
   }
 }
 
@@ -120,4 +139,14 @@
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.comprehensive-card {
+  border: 2px solid var(--emerald-200, #a7f3d0);
+  background: linear-gradient(135deg, rgba(236, 253, 245, 0.5) 0%, rgba(255, 255, 255, 1) 100%);
+
+  &:hover {
+    border-color: var(--emerald-400, #34d399);
+    box-shadow: 0 12px 40px rgba(4, 120, 87, 0.15) !important;
+  }
 }

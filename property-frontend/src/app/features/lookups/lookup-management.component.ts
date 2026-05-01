@@ -69,6 +69,7 @@ export class LookupManagementComponent implements OnInit {
 
   readonly propertyLists: ClassificationList[] = [
     { type: 'PROPERTY_TYPE', labelAr: 'نوع العقار', labelEn: 'Property Type', icon: 'apartment', items: [], pageIndex: 0, loading: false },
+    { type: 'PROPERTY_STATUS', labelAr: 'حالة العقار', labelEn: 'Property Status', icon: 'toggle_on', items: [], pageIndex: 0, loading: false },
     { type: 'UNIT_TYPE', labelAr: 'نوع الوحدة', labelEn: 'Unit Type', icon: 'meeting_room', items: [], pageIndex: 0, loading: false },
     { type: 'FLOOR_TYPE', labelAr: 'نوع الطابق', labelEn: 'Floor Type', icon: 'layers', items: [], pageIndex: 0, loading: false }
   ];

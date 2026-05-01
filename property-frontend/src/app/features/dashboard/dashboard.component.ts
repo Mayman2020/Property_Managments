@@ -62,7 +62,7 @@ export class DashboardComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.propertySvc.getAll(0, 100).subscribe({
+    this.propertySvc.getAll(0, 500).subscribe({
       next: (res) => {
         this.properties = res.data?.content ?? [];
       },
@@ -73,6 +73,13 @@ export class DashboardComponent implements OnInit {
 
   onPropertyChange(): void {
     this.loadData();
+  }
+
+  getPropertyLabel(property: Property): string {
+    const name = this.i18n.currentLang === 'ar'
+      ? (property.propertyNameAr || property.propertyName)
+      : (property.propertyNameEn || property.propertyName);
+    return name || this.i18n.instant('COMMON.UNKNOWN');
   }
 
   loadData(): void {

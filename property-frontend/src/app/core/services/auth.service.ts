@@ -114,10 +114,10 @@ export class AuthService {
       case 'SUPER_ADMIN':
       case 'PROPERTY_ADMIN': return '/admin/home';
       case 'MAINTENANCE_OFFICER': return '/officer/schedule';
-      case 'CONTRACTS_OFFICER': return '/admin/contracts/dashboard';
-      case 'ACCOUNTANT': return '/admin/finance/dashboard';
-      case 'HR_OFFICER': return '/admin/hr/employees';
-      case 'OWNER': return '/admin/owner-portal/dashboard';
+      case 'CONTRACTS_OFFICER': return '/admin/home';
+      case 'ACCOUNTANT': return '/admin/home';
+      case 'HR_OFFICER': return '/admin/home';
+      case 'OWNER': return '/admin/home';
       case 'TENANT': return '/tenant/my-unit';
       default: return '/auth/login';
     }
@@ -163,6 +163,7 @@ export class AuthService {
       case 'SUPER_ADMIN':
       case 'PROPERTY_ADMIN':
         return [
+          { route: '/admin/home', permission: 'dashboard', action: 'view' },
           { route: '/admin/dashboard', permission: 'dashboard', action: 'view' },
           { route: '/admin/maintenance', permission: 'maintenance', action: 'view' },
           { route: '/admin/properties', permission: 'properties', action: 'view' },
@@ -176,24 +177,28 @@ export class AuthService {
         ];
       case 'CONTRACTS_OFFICER':
         return [
+          { route: '/admin/home', permission: 'contracts', action: 'view' },
           { route: '/admin/contracts/dashboard', permission: 'contracts', action: 'view' },
           { route: '/admin/contracts/list', permission: 'contracts', action: 'view' },
           { route: '/admin/profile', permission: 'profile', action: 'view' }
         ];
       case 'ACCOUNTANT':
         return [
+          { route: '/admin/home', permission: 'finance', action: 'view' },
           { route: '/admin/finance/dashboard', permission: 'finance', action: 'view' },
           { route: '/admin/contracts/payments', permission: 'contracts', action: 'view' },
           { route: '/admin/profile', permission: 'profile', action: 'view' }
         ];
       case 'HR_OFFICER':
         return [
+          { route: '/admin/home', permission: 'hr', action: 'view' },
           { route: '/admin/hr/employees', permission: 'hr', action: 'view' },
           { route: '/admin/hr/payroll', permission: 'hr', action: 'view' },
           { route: '/admin/profile', permission: 'profile', action: 'view' }
         ];
       case 'OWNER':
         return [
+          { route: '/admin/home', permission: 'owner_portal', action: 'view' },
           { route: '/admin/owner-portal/dashboard', permission: 'owner_portal', action: 'view' },
           { route: '/admin/owner-portal/statements', permission: 'owner_portal', action: 'view' },
           { route: '/admin/profile', permission: 'profile', action: 'view' }

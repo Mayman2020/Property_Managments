@@ -12,8 +12,7 @@
     (backClick)="goBack()">
   </app-page-header>
 
-  <div class="toolbar">
-    <!-- Property filter -->
+  <div class="toolbar" *ngIf="!loading && (inspections.length > 0 || filterPropertyId || filterType)">
     <mat-form-field appearance="outline" class="filter-field">
       <mat-label>{{ 'CONTRACTS.FILTER_PROPERTY' | translate }}</mat-label>
       <mat-select [(ngModel)]="filterPropertyId" (ngModelChange)="onFilterChange()">
@@ -22,7 +21,6 @@
       </mat-select>
     </mat-form-field>
 
-    <!-- Type filter from lookup -->
     <mat-form-field appearance="outline" class="filter-field">
       <mat-label>{{ 'CONTRACTS.TYPE' | translate }}</mat-label>
       <mat-select [(ngModel)]="filterType" (ngModelChange)="onFilterChange()">
@@ -38,7 +36,14 @@
     <mat-spinner diameter="40"></mat-spinner>
   </div>
 
-  <section *ngIf="!loading" class="app-card table-card">
+  <app-empty-state
+    *ngIf="!loading && inspections.length === 0 && !filterPropertyId && !filterType"
+    icon="fact_check"
+    [title]="'CONTRACTS.INSPECTIONS_EMPTY_TITLE' | translate"
+    [message]="'CONTRACTS.INSPECTIONS_EMPTY_MSG' | translate">
+  </app-empty-state>
+
+  <section *ngIf="!loading && (inspections.length > 0 || filterPropertyId || filterType)" class="app-card table-card">
     <div class="app-table-wrap">
       <table class="app-data-table source-table">
         <thead>
@@ -58,9 +63,7 @@
           <tr *ngFor="let i of inspections">
             <td>{{ i.inspectionDate | date:'dd/MM/yyyy' }}</td>
             <td>{{ i.unitId }}</td>
-            <!-- Type from lookup -->
             <td>{{ lookupCache.label('INSPECTION_TYPE', i.inspectionType) || i.inspectionType }}</td>
-            <!-- Overall condition from lookup -->
             <td>
               <span class="status-chip" [ngClass]="getOverallClass(i.overallCondition)">
                 {{ lookupCache.label('INSPECTION_CONDITION', i.overallCondition) || i.overallCondition }}
@@ -77,7 +80,7 @@
             </td>
           </tr>
           <tr *ngIf="inspections.length === 0">
-            <td colspan="9" class="empty-row">{{ 'CONTRACTS.NO_INSPECTIONS' | translate }}</td>
+            <td colspan="9" class="empty-row">{{ 'COMMON.NO_DATA' | translate }}</td>
           </tr>
         </tbody>
       </table>

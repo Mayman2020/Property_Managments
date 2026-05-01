@@ -19,7 +19,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AppException.class)
     public ResponseEntity<ApiResponse<Void>> handleAppException(AppException ex) {
-        log.warn("AppException: {} [{}]", ex.getMessage(), ex.getStatus());
+        // Log with ASCII-safe format to avoid Windows console encoding issues
+        log.warn("AppException [{}] code={} msg-length={}", ex.getStatus(), ex.getErrorCode(), ex.getMessage().length());
         return ResponseEntity.status(ex.getStatus())
                 .body(ApiResponse.error(ex.getMessage(), ex.getErrorCode()));
     }
