@@ -2,6 +2,8 @@ package com.propertymanagement.modules.contractor;
 
 import com.propertymanagement.modules.contractor.dto.ContractorCompanyRequest;
 import com.propertymanagement.modules.contractor.dto.ContractorCompanyResponse;
+import com.propertymanagement.modules.maintenance.assignment.MaintenanceContractRepository;
+import com.propertymanagement.modules.user.UserRepository;
 import com.propertymanagement.shared.exception.AppException;
 import com.propertymanagement.shared.i18n.LocalizedNameResolver;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +19,8 @@ import java.util.List;
 public class ContractorCompanyService {
 
     private final ContractorCompanyRepository repository;
+    private final MaintenanceContractRepository maintenanceContractRepository;
+    private final UserRepository userRepository;
 
     public List<ContractorCompanyResponse> listActive(String q) {
         return repository.searchActive(trimToNull(q)).stream().map(this::toResponse).toList();
@@ -45,6 +49,8 @@ public class ContractorCompanyService {
                 .nameEn(nameEn)
                 .phone(blankToNull(dto.getPhone()))
                 .email(blankToNull(dto.getEmail()))
+                .profileImageUrl(blankToNull(dto.getProfileImageUrl()))
+                .civilIdImageUrl(blankToNull(dto.getCivilIdImageUrl()))
                 .notes(blankToNull(dto.getNotes()))
                 .contractStart(dto.getContractStart())
                 .contractEnd(dto.getContractEnd())
@@ -80,6 +86,8 @@ public class ContractorCompanyService {
         e.setNameEn(nameEn);
         e.setPhone(blankToNull(dto.getPhone()));
         e.setEmail(blankToNull(dto.getEmail()));
+        e.setProfileImageUrl(blankToNull(dto.getProfileImageUrl()));
+        e.setCivilIdImageUrl(blankToNull(dto.getCivilIdImageUrl()));
         e.setNotes(blankToNull(dto.getNotes()));
         if (dto.getActive() != null) {
             e.setActive(dto.getActive());
@@ -89,10 +97,13 @@ public class ContractorCompanyService {
 
     @Transactional
     public void delete(Long id) {
-        if (!repository.existsById(id)) {
-            throw AppException.notFound("Contractor company not found: " + id);
+        ContractorCompany company = find(id);
+        LocalDate today = LocalDate.now();
+        if (maintenanceContractRepository.existsActiveOngoingForContractorOnProperty(id, today)) {
+            throw AppException.badRequest(
+                    "Cannot delete this maintenance contractor company: it has an active maintenance contract with a property that is still in effect.");
         }
-        repository.deleteById(id);
+        repository.delete(company);
     }
 
     private ContractorCompany find(Long id) {
@@ -116,6 +127,8 @@ public class ContractorCompanyService {
                 .nameEn(nameEn)
                 .phone(e.getPhone())
                 .email(e.getEmail())
+                .profileImageUrl(e.getProfileImageUrl())
+                .civilIdImageUrl(e.getCivilIdImageUrl())
                 .notes(e.getNotes())
                 .active(e.isActive())
                 .contractStart(e.getContractStart())
@@ -123,7 +136,18 @@ public class ContractorCompanyService {
                 .attachmentFiles(e.getAttachmentFiles() == null ? List.of() : List.copyOf(e.getAttachmentFiles()))
                 .createdAt(e.getCreatedAt())
                 .updatedAt(e.getUpdatedAt())
+                .createdBy(e.getCreatedBy())
+                .createdByName(resolveUserName(e.getCreatedBy()))
+                .modifiedBy(e.getModifiedBy())
+                .modifiedByName(resolveUserName(e.getModifiedBy()))
                 .build();
+    }
+
+    private String resolveUserName(Long userId) {
+        if (userId == null) {
+            return null;
+        }
+        return userRepository.findById(userId).map(u -> u.getFullName()).orElse(null);
     }
 
     private void validateContractFields(LocalDate start, LocalDate end, List<String> files) {

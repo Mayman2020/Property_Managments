@@ -15,10 +15,32 @@ import java.util.stream.Collectors;
 public class FloorService {
 
     private final FloorRepository floorRepository;
+    private final PropertyRepository propertyRepository;
 
+    @Transactional
     public List<FloorResponse> getByProperty(Long propertyId) {
-        return floorRepository.findByPropertyIdOrderByFloorNumberAsc(propertyId)
-                .stream().map(this::toResponse).collect(Collectors.toList());
+        List<Floor> floors = floorRepository.findByPropertyIdOrderByFloorNumberAsc(propertyId);
+        if (floors.isEmpty()) {
+            floors = provisionFloors(propertyId);
+        }
+        return floors.stream().map(this::toResponse).collect(Collectors.toList());
+    }
+
+    private List<Floor> provisionFloors(Long propertyId) {
+        return propertyRepository.findById(propertyId).map(property -> {
+            int total = property.getTotalFloors() != null ? property.getTotalFloors() : 0;
+            List<Floor> created = new java.util.ArrayList<>();
+            for (int n = 1; n <= total; n++) {
+                if (!floorRepository.existsByPropertyIdAndFloorNumber(propertyId, n)) {
+                    created.add(floorRepository.save(Floor.builder()
+                            .propertyId(propertyId)
+                            .floorNumber(n)
+                            .floorLabel("الطابق " + n)
+                            .build()));
+                }
+            }
+            return created;
+        }).orElse(java.util.List.of());
     }
 
     @Transactional

@@ -1,5 +1,6 @@
 package com.propertymanagement.modules.property;
 
+import com.propertymanagement.shared.persistence.IntMapJsonConverter;
 import com.propertymanagement.shared.persistence.StringListJsonConverter;
 import jakarta.persistence.*;
 import lombok.*;
@@ -11,7 +12,9 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Entity
 @Table(name = "properties")
@@ -62,11 +65,21 @@ public class Property {
     @Column(name = "total_units")
     private Integer totalUnits = 0;
 
+    @Builder.Default
+    @Convert(converter = IntMapJsonConverter.class)
+    @Column(name = "floor_units_config", columnDefinition = "TEXT")
+    private Map<Integer, Integer> floorUnitsConfig = new HashMap<>();
+
     @Column(columnDefinition = "TEXT")
     private String description;
 
     @Column(name = "cover_image_url", length = 500)
     private String coverImageUrl;
+
+    @Builder.Default
+    @Convert(converter = StringListJsonConverter.class)
+    @Column(name = "cover_image_urls", columnDefinition = "TEXT")
+    private List<String> coverImageUrls = new ArrayList<>();
 
     @Builder.Default
     @Convert(converter = StringListJsonConverter.class)

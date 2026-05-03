@@ -68,7 +68,7 @@ export class RentConfirmationComponent implements OnInit {
       title: this.i18n.instant('ACCOUNTANT_PORTAL.REVIEW_RECEIPT'),
       currentStatus: receipt.status
     };
-    const ref = this.dialog.open(ReviewDialogComponent, { width: '420px', data });
+    const ref = this.dialog.open(ReviewDialogComponent, { width: '420px', data, disableClose: true });
     ref.afterClosed().subscribe((result: { status: string; notes: string } | undefined) => {
       if (!result) return;
       this.svc.reviewReceipt(receipt.id, result.status, result.notes).subscribe({

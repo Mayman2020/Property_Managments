@@ -1,6 +1,7 @@
 package com.propertymanagement.modules.dashboard;
 
 import com.propertymanagement.modules.complaint.TenantComplaintRepository;
+import com.propertymanagement.modules.contract.lease.ContractStatus;
 import com.propertymanagement.modules.contract.lease.LeaseContractRepository;
 import com.propertymanagement.modules.contract.lease.dto.ContractSummaryDto;
 import com.propertymanagement.modules.contract.payment.PaymentScheduleStatus;
@@ -164,6 +165,7 @@ public class DashboardService {
                 .requestsByStatus(requestsByStatus)
                 .requestsByCategory(requestsByCategory)
                 .activeContracts(contractRepository.countActiveByProperty(propertyId))
+                .draftContracts(contractRepository.countByStatusAndPropertyId(ContractStatus.DRAFT, propertyId))
                 .expiringIn30Days(contractRepository.countExpiringBeforeByProperty(propertyId, LocalDate.now().plusDays(30)))
                 .overduePayments(scheduleRepository.countOverdueByProperty(propertyId))
                 .openViolations(violationRepository.countOpenByProperty(propertyId))

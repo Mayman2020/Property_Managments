@@ -12,9 +12,13 @@ import java.util.List;
 public class TenantResponse {
     private Long id;
     private Long userId;
+    /** True when a linked system user exists and that user account is active (can sign in). */
+    private boolean linkedUserActive;
     private Long unitId;
     private Long propertyId;
     private String fullName;
+    private String fullNameAr;
+    private String fullNameEn;
     private String nationalId;
     private String phone;
     private String email;
@@ -26,4 +30,8 @@ public class TenantResponse {
     private boolean active;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Long createdBy;
+    private String createdByName;
+    private Long modifiedBy;
+    private String modifiedByName;
 }

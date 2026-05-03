@@ -45,4 +45,7 @@ public class CreateContractDto {
     private Boolean autoRenewable;
     private Integer renewalNoticeDays;
     private String notes;
+    private Boolean hasFreeMonth;
+    private String rentDiscountReason;
+    private String otherReasonText;
 }

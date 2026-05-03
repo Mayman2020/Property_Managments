@@ -40,11 +40,20 @@ export interface LeaseContract {
   terminationReason?: string;
   notes?: string;
   freeMonths?: number;
+  hasFreeMonth?: boolean;
+  rentDiscountReason?: string;
+  otherReasonText?: string;
   ownerApprovalStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
   ownerApprovalNotes?: string;
   daysUntilExpiry: number;
   createdAt: string;
   updatedAt: string;
+  createdBy?: number;
+  createdByName?: string;
+  approvedBy?: number;
+  approvedByName?: string;
+  modifiedBy?: number;
+  modifiedByName?: string;
 }
 
 export interface ContractSummary {
@@ -210,6 +219,9 @@ export interface CreateContractRequest {
   autoRenewable?: boolean;
   renewalNoticeDays?: number;
   notes?: string;
+  hasFreeMonth?: boolean;
+  rentDiscountReason?: string;
+  otherReasonText?: string;
 }
 
 export interface RecordPaymentRequest {

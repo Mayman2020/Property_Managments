@@ -54,7 +54,8 @@ export class ContractApprovalsComponent implements OnInit {
   openDecision(contract: LeaseContract): void {
     const ref = this.dialog.open(OwnerDecisionDialogComponent, {
       width: '440px',
-      data: { contract }
+      data: { contract },
+      disableClose: true
     });
     ref.afterClosed().subscribe((payload: OwnerApprovalDecision | undefined) => {
       if (!payload) return;

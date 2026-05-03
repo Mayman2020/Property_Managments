@@ -1,12 +1,31 @@
 package com.propertymanagement.modules.user;
 
+import com.propertymanagement.modules.user.dto.EmployeeProfileLinkDto;
+import com.propertymanagement.modules.user.dto.OwnerProfileLinkDto;
+import com.propertymanagement.modules.user.dto.TenantProfileLinkDto;
 import com.propertymanagement.modules.user.dto.UserRequest;
 import com.propertymanagement.modules.user.dto.UserProfileUpdateRequest;
 import com.propertymanagement.modules.user.dto.ChangePasswordRequest;
 import com.propertymanagement.modules.user.dto.UserRoleUpdateRequest;
 import com.propertymanagement.modules.user.dto.UserResponse;
+import com.propertymanagement.modules.contract.lease.ContractStatus;
+import com.propertymanagement.modules.contract.lease.LeaseContractRepository;
 import com.propertymanagement.modules.contractor.ContractorCompany;
 import com.propertymanagement.modules.contractor.ContractorCompanyRepository;
+import com.propertymanagement.modules.hr.employee.Employee;
+import com.propertymanagement.modules.hr.employee.EmployeeRepository;
+import com.propertymanagement.modules.owner.Owner;
+import com.propertymanagement.modules.owner.OwnerRepository;
+import com.propertymanagement.modules.maintenance.assignment.MaintenanceProviderRepository;
+import com.propertymanagement.modules.maintenance.request.MaintenanceRequestRepository;
+import com.propertymanagement.modules.complaint.TenantComplaintRepository;
+import com.propertymanagement.modules.contract.payment.RentPaymentRepository;
+import com.propertymanagement.modules.tenantportal.ContractActionRequestRepository;
+import com.propertymanagement.modules.tenantportal.RentReceiptRepository;
+import com.propertymanagement.modules.violation.TenantViolationRepository;
+import com.propertymanagement.modules.tenant.Tenant;
+import com.propertymanagement.modules.tenant.TenantRepository;
+import com.propertymanagement.modules.unit.UnitRepository;
 import com.propertymanagement.shared.exception.AppException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -17,7 +36,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,18 +50,38 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final ContractorCompanyRepository contractorCompanyRepository;
+    private final OwnerRepository ownerRepository;
+    private final TenantRepository tenantRepository;
+    private final EmployeeRepository employeeRepository;
+    private final MaintenanceProviderRepository maintenanceProviderRepository;
+    private final LeaseContractRepository leaseContractRepository;
+    private final MaintenanceRequestRepository maintenanceRequestRepository;
+    private final RentReceiptRepository rentReceiptRepository;
+    private final ContractActionRequestRepository contractActionRequestRepository;
+    private final RentPaymentRepository rentPaymentRepository;
+    private final TenantViolationRepository tenantViolationRepository;
+    private final TenantComplaintRepository tenantComplaintRepository;
+    private final UnitRepository unitRepository;
+    private final PortalProfileBridge portalProfileBridge;
     private final PasswordEncoder passwordEncoder;
+
+    private static final Set<UserRole> EMPLOYEE_ROLES = Set.of(
+            UserRole.ACCOUNTANT, UserRole.HR_OFFICER, UserRole.CONTRACTS_OFFICER,
+            UserRole.MAINTENANCE_OFFICER, UserRole.PROPERTY_ADMIN);
 
     public Page<UserResponse> getAll(Pageable pageable, String q, UserRole role) {
         return userRepository.search(trimToNull(q), role, pageable).map(this::toResponse);
     }
 
     public UserResponse getById(Long id) {
-        return toResponse(find(id));
+        User u = find(id);
+        return portalProfileBridge.mergeRoleRecordIntoResponse(toResponse(u), u);
     }
 
     public UserResponse getMyProfile() {
-        return toResponse(find(currentUserId()));
+        User user = find(currentUserId());
+        UserResponse base = toResponse(user);
+        return portalProfileBridge.mergeRoleRecordIntoResponse(base, user);
     }
 
     @Transactional
@@ -45,13 +89,11 @@ public class UserService {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw AppException.conflict("Email already in use: " + request.getEmail());
         }
-        if (userRepository.existsByUsername(request.getUsername())) {
-            throw AppException.conflict("Username already in use: " + request.getUsername());
-        }
         validateMaintenanceOfficerDetails(request);
-        String rawPassword = request.getPassword() != null ? request.getPassword() : "Change@123";
+        String rawPassword = (request.getPassword() != null && !request.getPassword().isBlank())
+                ? request.getPassword() : "12345";
         User user = User.builder()
-                .username(request.getUsername())
+                .username(request.getEmail())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(rawPassword))
                 .fullName(request.getFullName())
@@ -67,7 +109,79 @@ public class UserService {
                 .build();
         syncContractorDisplayName(user);
         normalizeRoleSpecificFields(user);
-        return toResponse(userRepository.save(user));
+        User saved = userRepository.save(user);
+        autoCreateOwnerRecord(saved);
+        syncLinkedRoleMediaFromUserRequest(saved, request);
+        applyLinkPatchesFromUserRequest(saved, request);
+        return portalProfileBridge.mergeRoleRecordIntoResponse(toResponse(saved), saved);
+    }
+
+    private void autoCreateOwnerRecord(User user) {
+        autoCreateRoleRecord(user);
+    }
+
+    private void autoCreateRoleRecord(User user) {
+        switch (user.getRole()) {
+            case OWNER -> autoCreateOwner(user);
+            case TENANT -> autoCreateTenant(user);
+            default -> {
+                if (EMPLOYEE_ROLES.contains(user.getRole())) autoCreateEmployee(user);
+            }
+        }
+    }
+
+    private void autoCreateOwner(User user) {
+        if (ownerRepository.findByUserId(user.getId()).isPresent()) return;
+        String n = user.getFullName() != null ? user.getFullName().trim() : "";
+        if (n.isEmpty()) {
+            n = "Owner";
+        }
+        ownerRepository.save(Owner.builder()
+                .fullNameAr(n)
+                .fullNameEn(n)
+                .fullName(n)
+                .email(user.getEmail())
+                .phone(user.getPhone())
+                .userId(user.getId())
+                .portalAccess(true)
+                .active(true)
+                .build());
+    }
+
+    private void autoCreateTenant(User user) {
+        if (tenantRepository.findByUserId(user.getId()).isPresent()) return;
+        String email = user.getEmail() != null ? user.getEmail().trim() : null;
+        if (email != null && !email.isBlank() && tenantRepository.existsByEmail(email)) {
+            throw AppException.conflict("Email already registered: " + email);
+        }
+        String n = user.getFullName() != null ? user.getFullName().trim() : "Tenant";
+        if (n.isEmpty()) n = "Tenant";
+        tenantRepository.save(Tenant.builder()
+                .userId(user.getId())
+                .fullName(n)
+                .fullNameAr(n)
+                .fullNameEn(n)
+                .email(user.getEmail())
+                .phone(user.getPhone() != null ? user.getPhone() : "-")
+                .propertyId(user.getPropertyId())
+                .active(true)
+                .build());
+    }
+
+    private void autoCreateEmployee(User user) {
+        if (user.getEmail() != null && employeeRepository.findByEmail(user.getEmail()).isPresent()) return;
+        String code = "EMP-" + LocalDateTime.now().format(
+                java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        employeeRepository.save(Employee.builder()
+                .employeeCode(code)
+                .fullName(user.getFullName())
+                .email(user.getEmail())
+                .phone(user.getPhone())
+                .propertyId(user.getPropertyId())
+                .hireDate(LocalDate.now())
+                .basicSalary(BigDecimal.ZERO)
+                .linkedUserId(user.getId())
+                .build());
     }
 
     @Transactional
@@ -88,7 +202,11 @@ public class UserService {
         }
         syncContractorDisplayName(user);
         normalizeRoleSpecificFields(user);
-        return toResponse(userRepository.save(user));
+        User saved = userRepository.save(user);
+        syncLinkedRoleMediaFromUserRequest(saved, request);
+        syncTenantDisplayNameFromUser(saved);
+        applyLinkPatchesFromUserRequest(saved, request);
+        return portalProfileBridge.mergeRoleRecordIntoResponse(toResponse(saved), saved);
     }
 
     @Transactional
@@ -99,11 +217,107 @@ public class UserService {
     }
 
     @Transactional
+    public void delete(Long id) {
+        Long currentId = currentUserId();
+        if (id.equals(currentId)) {
+            throw AppException.badRequest("Cannot delete your own account.");
+        }
+        User user = find(id);
+        removeLinkedRoleProfilesBeforeUserDelete(user);
+        userRepository.delete(user);
+    }
+
+    /**
+     * Unlinks or removes owner / tenant / employee rows tied to this login so the user row can be deleted.
+     * Tenant: blocked if an ACTIVE lease exists; hard-removed when no lease rows; otherwise soft-deactivated.
+     * Employee: hard-removed only when not assigned to a property ({@code propertyId} is null).
+     */
+    private void removeLinkedRoleProfilesBeforeUserDelete(User user) {
+        Long userId = user.getId();
+        ownerRepository.findByUserId(userId).ifPresent(o -> {
+            o.setActive(false);
+            o.setUserId(null);
+            o.setPortalAccess(false);
+            ownerRepository.save(o);
+        });
+        tenantRepository.findByUserId(userId).ifPresent(t -> removeTenantForUserDeletion(t));
+        maintenanceProviderRepository.findByUserId(userId)
+                .ifPresent(maintenanceProviderRepository::delete);
+        removeEmployeeForUserDeletion(user);
+        employeeRepository.clearLinkedUserId(userId);
+    }
+
+    private void removeTenantForUserDeletion(Tenant tenant) {
+        Long tenantId = tenant.getId();
+        if (leaseContractRepository.existsByTenantIdAndStatus(tenantId, ContractStatus.ACTIVE)) {
+            throw AppException.badRequest("Cannot delete user linked to a tenant with an active lease contract");
+        }
+        Long unitId = tenant.getUnitId();
+        if (canPhysicallyRemoveTenant(tenantId)) {
+            maintenanceRequestRepository.clearTenantIdForTenant(tenantId);
+            markUnitNotRented(unitId);
+            tenantRepository.delete(tenant);
+            return;
+        }
+        tenant.setActive(false);
+        tenant.setUserId(null);
+        tenant.setEmail(null);
+        tenantRepository.save(tenant);
+        markUnitNotRented(unitId);
+    }
+
+    private void removeEmployeeForUserDeletion(User user) {
+        Optional<Employee> linked = employeeRepository.findByLinkedUserId(user.getId());
+        if (linked.isPresent()) {
+            Employee e = linked.get();
+            assertEmployeeRemovable(e);
+            employeeRepository.delete(e);
+            return;
+        }
+        if (EMPLOYEE_ROLES.contains(user.getRole()) && user.getEmail() != null && !user.getEmail().isBlank()) {
+            employeeRepository.findByEmailIgnoreCase(user.getEmail().trim()).ifPresent(e -> {
+                if (e.getLinkedUserId() != null && !e.getLinkedUserId().equals(user.getId())) {
+                    return;
+                }
+                assertEmployeeRemovable(e);
+                employeeRepository.delete(e);
+            });
+        }
+    }
+
+    private static void assertEmployeeRemovable(Employee e) {
+        if (e.getPropertyId() != null) {
+            throw AppException.badRequest("Cannot delete user linked to an employee assigned to a property");
+        }
+    }
+
+    private boolean canPhysicallyRemoveTenant(Long tenantId) {
+        return !leaseContractRepository.existsByTenantId(tenantId)
+                && !rentReceiptRepository.existsByTenantId(tenantId)
+                && !contractActionRequestRepository.existsByTenantId(tenantId)
+                && !rentPaymentRepository.existsByTenantId(tenantId)
+                && !tenantViolationRepository.existsByTenantId(tenantId)
+                && !tenantComplaintRepository.existsByTenantId(tenantId);
+    }
+
+    private void markUnitNotRented(Long unitId) {
+        if (unitId == null) {
+            return;
+        }
+        unitRepository.findById(unitId).ifPresent(u -> {
+            u.setRented(false);
+            unitRepository.save(u);
+        });
+    }
+
+    @Transactional
     public UserResponse updateRole(Long id, UserRoleUpdateRequest request) {
         User user = find(id);
         user.setRole(request.getRole());
         normalizeRoleSpecificFields(user);
-        return toResponse(userRepository.save(user));
+        User saved = userRepository.save(user);
+        autoCreateOwnerRecord(saved);
+        return toResponse(saved);
     }
 
     @Transactional
@@ -115,7 +329,16 @@ public class UserService {
         user.setPhone(request.getPhone());
         user.setProfileImageUrl(request.getProfileImageUrl());
         user.setBio(request.getBio());
-        return toResponse(userRepository.save(user));
+        User saved = userRepository.save(user);
+        UserRequest rolePush = new UserRequest();
+        rolePush.setProfileImageUrl(saved.getProfileImageUrl());
+        rolePush.setPhone(saved.getPhone());
+        syncLinkedRoleMediaFromUserRequest(saved, rolePush);
+        syncTenantDisplayNameFromUser(saved);
+        applyLinkPatchesFromProfileUpdate(saved, request);
+        User reloaded = find(saved.getId());
+        UserResponse base = toResponse(reloaded);
+        return portalProfileBridge.mergeRoleRecordIntoResponse(base, reloaded);
     }
 
     @Transactional
@@ -147,6 +370,8 @@ public class UserService {
                 .fullName(u.getFullName())
                 .phone(u.getPhone())
                 .profileImageUrl(u.getProfileImageUrl())
+                .civilIdImageUrl(null)
+                .leaseContractFiles(null)
                 .bio(u.getBio())
                 .role(u.getRole())
                 .propertyId(u.getPropertyId())
@@ -157,7 +382,214 @@ public class UserService {
                 .lastLogin(u.getLastLogin())
                 .createdAt(u.getCreatedAt())
                 .updatedAt(u.getUpdatedAt())
+                .createdBy(u.getCreatedBy())
+                .createdByName(resolveUserName(u.getCreatedBy()))
+                .modifiedBy(u.getModifiedBy())
+                .modifiedByName(resolveUserName(u.getModifiedBy()))
                 .build();
+    }
+
+    private String resolveUserName(Long userId) {
+        if (userId == null) return null;
+        return userRepository.findById(userId).map(User::getFullName).orElse(null);
+    }
+
+    /**
+     * Pushes profile / civil ID / phone from a user admin request onto the linked owner, tenant, or employee row.
+     * Null fields in the request mean "leave that attribute unchanged" on the role entity.
+     */
+    /**
+     * Keeps the linked tenant row display name aligned with the portal user after profile edits.
+     */
+    private void syncTenantDisplayNameFromUser(User user) {
+        if (user == null || user.getRole() != UserRole.TENANT) {
+            return;
+        }
+        tenantRepository.findByUserId(user.getId()).ifPresent(t -> {
+            t.setFullName(user.getFullName());
+            tenantRepository.save(t);
+        });
+    }
+
+    private void applyLinkPatchesFromProfileUpdate(User user, UserProfileUpdateRequest request) {
+        if (user == null || request == null) {
+            return;
+        }
+        switch (user.getRole()) {
+            case OWNER -> applyOwnerLinkPatch(user, request.getOwnerLink());
+            case TENANT -> applyTenantLinkPatch(user, request.getTenantLink());
+            default -> {
+                if (EMPLOYEE_ROLES.contains(user.getRole())) {
+                    applyEmployeeLinkPatch(user, request.getEmployeeLink());
+                }
+            }
+        }
+    }
+
+    private void applyLinkPatchesFromUserRequest(User user, UserRequest request) {
+        if (user == null || request == null) {
+            return;
+        }
+        switch (user.getRole()) {
+            case OWNER -> applyOwnerLinkPatch(user, request.getOwnerLink());
+            case TENANT -> applyTenantLinkPatch(user, request.getTenantLink());
+            default -> {
+                if (EMPLOYEE_ROLES.contains(user.getRole())) {
+                    applyEmployeeLinkPatch(user, request.getEmployeeLink());
+                }
+            }
+        }
+    }
+
+    private void applyOwnerLinkPatch(User user, OwnerProfileLinkDto dto) {
+        if (dto == null) {
+            return;
+        }
+        ownerRepository.findByUserId(user.getId()).ifPresent(o -> {
+            boolean nameChanged = patchOwnerFields(o, dto);
+            ownerRepository.save(o);
+            if (nameChanged) {
+                User u = find(user.getId());
+                u.setFullName(o.getFullName());
+                userRepository.save(u);
+            }
+        });
+    }
+
+    private boolean patchOwnerFields(Owner o, OwnerProfileLinkDto dto) {
+        boolean recompute = false;
+        if (dto.getFullNameAr() != null && !dto.getFullNameAr().isBlank()) {
+            o.setFullNameAr(dto.getFullNameAr().trim());
+            recompute = true;
+        }
+        if (dto.getFullNameEn() != null && !dto.getFullNameEn().isBlank()) {
+            o.setFullNameEn(dto.getFullNameEn().trim());
+            recompute = true;
+        }
+        if (recompute) {
+            o.setFullName(ownerCompositeLine(o.getFullNameAr(), o.getFullNameEn()));
+        }
+        if (dto.getNationalId() != null) {
+            String nid = trimToNull(dto.getNationalId());
+            if (nid != null && ownerRepository.existsByNationalIdAndIdNot(nid, o.getId())) {
+                throw AppException.conflict("National ID already registered: " + nid);
+            }
+            o.setNationalId(nid); // also clears when payload is blank after trim
+        }
+        if (dto.getAddress() != null) {
+            o.setAddress(trimToNull(dto.getAddress()));
+        }
+        if (dto.getNotes() != null) {
+            o.setNotes(trimToNull(dto.getNotes()));
+        }
+        return recompute;
+    }
+
+    private void applyTenantLinkPatch(User user, TenantProfileLinkDto dto) {
+        if (dto == null) {
+            return;
+        }
+        tenantRepository.findByUserId(user.getId()).ifPresent(t -> {
+            if (dto.getNationalId() != null) {
+                t.setNationalId(trimToNull(dto.getNationalId()));
+            }
+            t.setLeaseStart(dto.getLeaseStart());
+            t.setLeaseEnd(dto.getLeaseEnd());
+            if (dto.getNotes() != null) {
+                t.setNotes(trimToNull(dto.getNotes()));
+            }
+            validateTenantLeaseWindow(t.getLeaseStart(), t.getLeaseEnd());
+            tenantRepository.save(t);
+        });
+    }
+
+    private static void validateTenantLeaseWindow(LocalDate start, LocalDate end) {
+        if (start != null && end != null && start.isAfter(end)) {
+            throw AppException.badRequest("Lease start must be on or before lease end");
+        }
+    }
+
+    private void applyEmployeeLinkPatch(User user, EmployeeProfileLinkDto dto) {
+        if (dto == null || user.getEmail() == null || user.getEmail().isBlank()) {
+            return;
+        }
+        employeeRepository.findByEmailIgnoreCase(user.getEmail().trim()).ifPresent(e -> {
+            if (dto.getNationalId() != null) {
+                e.setNationalId(trimToNull(dto.getNationalId()));
+            }
+            if (dto.getJobTitleAr() != null) {
+                e.setJobTitleAr(trimToNull(dto.getJobTitleAr()));
+            }
+            if (dto.getJobTitleEn() != null) {
+                e.setJobTitleEn(trimToNull(dto.getJobTitleEn()));
+            }
+            employeeRepository.save(e);
+        });
+    }
+
+    private static String ownerCompositeLine(String ar, String en) {
+        String a = ar == null ? "" : ar.trim();
+        String e = en == null ? "" : en.trim();
+        if (a.isEmpty()) {
+            return e;
+        }
+        if (e.isEmpty()) {
+            return a;
+        }
+        if (a.equals(e)) {
+            return a;
+        }
+        return a + " / " + e;
+    }
+
+    private void syncLinkedRoleMediaFromUserRequest(User user, UserRequest request) {
+        if (user == null || request == null) {
+            return;
+        }
+        switch (user.getRole()) {
+            case OWNER -> ownerRepository.findByUserId(user.getId()).ifPresent(o -> {
+                if (request.getProfileImageUrl() != null) {
+                    o.setProfileImageUrl(trimToNull(request.getProfileImageUrl()));
+                }
+                if (request.getCivilIdImageUrl() != null) {
+                    o.setCivilIdImageUrl(trimToNull(request.getCivilIdImageUrl()));
+                }
+                if (request.getPhone() != null) {
+                    o.setPhone(trimToNull(request.getPhone()));
+                }
+                ownerRepository.save(o);
+            });
+            case TENANT -> tenantRepository.findByUserId(user.getId()).ifPresent(t -> {
+                if (request.getProfileImageUrl() != null) {
+                    t.setProfileImage(trimToNull(request.getProfileImageUrl()));
+                }
+                if (request.getPhone() != null) {
+                    String ph = trimToNull(request.getPhone());
+                    if (ph != null) {
+                        t.setPhone(ph);
+                    }
+                }
+                tenantRepository.save(t);
+            });
+            default -> {
+                if (EMPLOYEE_ROLES.contains(user.getRole())
+                        && user.getEmail() != null
+                        && !user.getEmail().isBlank()) {
+                    employeeRepository.findByEmailIgnoreCase(user.getEmail().trim()).ifPresent(e -> {
+                        if (request.getProfileImageUrl() != null) {
+                            e.setProfileImageUrl(trimToNull(request.getProfileImageUrl()));
+                        }
+                        if (request.getCivilIdImageUrl() != null) {
+                            e.setCivilIdImageUrl(trimToNull(request.getCivilIdImageUrl()));
+                        }
+                        if (request.getPhone() != null) {
+                            e.setPhone(trimToNull(request.getPhone()));
+                        }
+                        employeeRepository.save(e);
+                    });
+                }
+            }
+        }
     }
 
     private void validateMaintenanceOfficerDetails(UserRequest request) {

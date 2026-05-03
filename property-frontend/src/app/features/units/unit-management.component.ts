@@ -1,4 +1,5 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { DatePipe, NgFor, NgIf, NgClass, Location } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -20,6 +21,7 @@ import { TablePagerComponent } from '../../shared/components/table-pager/table-p
 import { ExportColumn, TableExportToolbarComponent } from '../../shared/components/table-export-toolbar/table-export-toolbar.component';
 import { Property, PropertyService } from '../../core/services/property.service';
 import { SnackService } from '../../core/services/snack.service';
+import { DeleteConfirmService } from '../../core/services/delete-confirm.service';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { Unit, UnitService } from '../../core/services/unit.service';
 import { TenantService } from '../../core/services/tenant.service';
@@ -93,7 +95,9 @@ export class UnitManagementComponent implements OnInit {
     private readonly tenantSvc: TenantService,
     private readonly userSvc: UserService,
     private readonly snack: SnackService,
+    private readonly deleteConfirm: DeleteConfirmService,
     private readonly location: Location,
+    private readonly route: ActivatedRoute,
     private readonly lookupCache: LookupCacheService,
     readonly i18n: I18nService
   ) {}
@@ -101,6 +105,11 @@ export class UnitManagementComponent implements OnInit {
   goBack(): void { this.location.back(); }
 
   ngOnInit(): void {
+    const qp = this.route.snapshot.queryParamMap.get('propertyId');
+    if (qp) {
+      const n = Number(qp);
+      if (!Number.isNaN(n) && n > 0) this.selectedPropertyId = n;
+    }
     this.loadUsers();
     this.loadLookupFilters();
     this.loadPropertiesAndUnits();
@@ -211,31 +220,79 @@ export class UnitManagementComponent implements OnInit {
 
   openAddDialog(): void {
     this.dialog.open(UnitDialogComponent, {
-      data: { properties: this.properties, unit: null, defaultPropertyId: this.selectedPropertyId ?? undefined },
+      data: { properties: this.properties, unit: null, defaultPropertyId: this.selectedPropertyId ?? undefined, readOnly: false },
       width: '680px',
       maxWidth: '94vw',
-      panelClass: 'app-dialog-panel'
+      panelClass: 'app-dialog-panel',
+      disableClose: true
     }).afterClosed().subscribe((ok) => {
       if (ok) this.loadAllUnits();
+    });
+  }
+
+  openViewDialog(unit: Unit): void {
+    this.dialog.open(UnitDialogComponent, {
+      data: { properties: this.properties, unit, defaultPropertyId: unit.propertyId, readOnly: true },
+      width: '680px',
+      maxWidth: '94vw',
+      panelClass: 'app-dialog-panel',
+      disableClose: true
     });
   }
 
   openEditDialog(unit: Unit): void {
     this.dialog.open(UnitDialogComponent, {
-      data: { properties: this.properties, unit, defaultPropertyId: unit.propertyId },
+      data: { properties: this.properties, unit, defaultPropertyId: unit.propertyId, readOnly: false },
       width: '680px',
       maxWidth: '94vw',
-      panelClass: 'app-dialog-panel'
+      panelClass: 'app-dialog-panel',
+      disableClose: true
     }).afterClosed().subscribe((ok) => {
       if (ok) this.loadAllUnits();
     });
   }
 
+  deleteUnit(unit: Unit): void {
+    if (unit.rented) return;
+    this.deleteConfirm.openDeleteConfirm({
+      messageKey: 'DIALOG.DELETE_NAMED',
+      messageParams: { name: unit.unitNumber }
+    }).subscribe((ok) => {
+      if (!ok) return;
+      this.unitSvc.delete(unit.id).subscribe({
+        next: () => {
+          this.snack.success(this.i18n.instant('UNITS.DELETE_SUCCESS'));
+          this.loadAllUnits();
+        },
+        error: (err: Error) => this.deleteConfirm.handleDeleteError(err, this.snack)
+      });
+    });
+  }
+
   toggleRented(unit: Unit): void {
-    this.unitSvc.setRentalStatus(unit.id, !unit.rented).subscribe({
+    const newStatus = !unit.rented;
+    this.unitSvc.setRentalStatus(unit.id, newStatus).subscribe({
       next: () => {
-        unit.rented = !unit.rented;
-        this.loadAllUnits();
+        unit.rented = newStatus;
+        if (!newStatus) {
+          // Unlink any tenant currently linked to this unit
+          this.tenantSvc.getByUnitId(unit.id).subscribe({
+            next: (res) => {
+              const tenant = res.data;
+              if (tenant?.id) {
+                this.tenantSvc.unlinkUnit(tenant.id).subscribe({
+                  next: () => this.loadAllUnits(),
+                  error: () => this.loadAllUnits()
+                });
+              } else {
+                this.loadAllUnits();
+              }
+            },
+            error: () => this.loadAllUnits()
+          });
+        } else {
+          this.loadAllUnits();
+        }
       },
       error: (err: Error) => this.snack.error(err.message || this.i18n.instant('UNITS.SAVE_ERROR'))
     });

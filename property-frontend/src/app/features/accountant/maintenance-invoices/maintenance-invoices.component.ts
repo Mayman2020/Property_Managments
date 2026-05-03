@@ -65,7 +65,7 @@ export class MaintenanceInvoicesComponent implements OnInit {
       title: this.i18n.instant('MAINTENANCE_INVOICES.REVIEW_INVOICE'),
       currentStatus: inv.status
     };
-    const ref = this.dialog.open(ReviewDialogComponent, { width: '420px', data });
+    const ref = this.dialog.open(ReviewDialogComponent, { width: '420px', data, disableClose: true });
     ref.afterClosed().subscribe((result: { status: string; notes: string } | undefined) => {
       if (!result) return;
       this.svc.reviewInvoice(inv.id, result.status, result.notes).subscribe({

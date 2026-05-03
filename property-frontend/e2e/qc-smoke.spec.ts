@@ -71,8 +71,7 @@ test.describe('QC smoke', () => {
       '/admin/hr/payroll',
       '/admin/hr/leaves',
       '/admin/hr/attendance',
-      '/admin/vendors/list',
-      '/admin/vendors/new',
+      '/admin/contractors',
       '/admin/vacancies/list',
       '/admin/vacancies/1/inquiries',
       '/admin/notifications',
@@ -83,18 +82,6 @@ test.describe('QC smoke', () => {
     for (const route of routes) {
       await assertRouteLoads(page, route);
     }
-
-    await page.goto(`${APP_BASE}/admin/vendors/new`);
-    await page.getByLabel(/vendor name|اسم المورد/i).fill('واجهة مورد اختبار');
-    await page.getByLabel(/type|النوع/i).fill('OTHER');
-    await page.getByLabel(/contact person|مسؤول التواصل/i).fill('QC UI');
-    await page.getByLabel(/phone|الهاتف/i).fill('0501234567');
-    await page.getByLabel(/email|البريد الإلكتروني/i).fill('ui.vendor@test.com');
-    await page.getByRole('button', { name: /save vendor|حفظ المورد/i }).click();
-    await page.waitForTimeout(1000);
-
-    await page.goto(`${APP_BASE}/admin/vendors/list`);
-    await expect(page.locator('body')).toContainText('واجهة مورد اختبار');
 
     await page.goto(`${APP_BASE}/admin/notifications`);
     const markAllButton = page.locator('app-page-header button, .app-page button').first();

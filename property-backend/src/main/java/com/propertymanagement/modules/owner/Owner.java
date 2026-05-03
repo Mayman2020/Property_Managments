@@ -20,8 +20,14 @@ public class Owner {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "full_name", nullable = false, length = 150)
+    @Column(name = "full_name", nullable = false, length = 300)
     private String fullName;
+
+    @Column(name = "full_name_ar", nullable = false, length = 150)
+    private String fullNameAr;
+
+    @Column(name = "full_name_en", nullable = false, length = 150)
+    private String fullNameEn;
 
     @Column(name = "national_id", unique = true, length = 30)
     private String nationalId;
@@ -38,6 +44,12 @@ public class Owner {
     @Builder.Default
     @Column(name = "portal_access")
     private boolean portalAccess = false;
+
+    @Column(name = "profile_image_url", length = 500)
+    private String profileImageUrl;
+
+    @Column(name = "civil_id_image_url", length = 500)
+    private String civilIdImageUrl;
 
     @Column(columnDefinition = "TEXT")
     private String address;

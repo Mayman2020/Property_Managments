@@ -40,6 +40,10 @@ export interface MaintenanceRequest {
   scheduleRejectionNote?: string;
   createdAt: string;
   updatedAt: string;
+  createdBy?: number;
+  createdByName?: string;
+  modifiedBy?: number;
+  modifiedByName?: string;
 }
 
 export interface VisitRating {

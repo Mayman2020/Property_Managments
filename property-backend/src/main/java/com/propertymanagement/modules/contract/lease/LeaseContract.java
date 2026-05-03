@@ -2,7 +2,9 @@ package com.propertymanagement.modules.contract.lease;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -98,15 +100,29 @@ public class LeaseContract {
     @Column(name = "terminated_by")
     private Long terminatedBy;
 
-    @Column(name = "created_by")
+    @CreatedBy
+    @Column(name = "created_by", updatable = false)
     private Long createdByUserId;
 
     @Column(name = "approved_by")
     private Long approvedBy;
 
+    @LastModifiedBy
+    @Column(name = "modified_by")
+    private Long modifiedBy;
+
     @Builder.Default
     @Column(name = "free_months")
     private Integer freeMonths = 0;
+
+    @Column(name = "has_free_month", length = 1)
+    private Boolean hasFreeMonth = false;
+
+    @Column(name = "rent_discount_reason", length = 50)
+    private String rentDiscountReason;
+
+    @Column(name = "other_reason_text", columnDefinition = "TEXT")
+    private String otherReasonText;
 
     @Column(name = "owner_approval_status", length = 20)
     private String ownerApprovalStatus;

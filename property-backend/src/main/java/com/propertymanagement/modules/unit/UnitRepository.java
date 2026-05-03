@@ -39,4 +39,6 @@ public interface UnitRepository extends JpaRepository<Unit, Long> {
     long countByPropertyIdAndActiveTrue(Long propertyId);
 
     long countByPropertyIdAndActiveTrueAndRentedTrue(Long propertyId);
+
+    long countByPropertyIdAndFloorIdAndActiveTrue(Long propertyId, Long floorId);
 }

@@ -3,6 +3,14 @@
   gap: 24px;
 }
 
+.status-toggle-btn {
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.15s, transform 0.15s;
+  &:hover { opacity: 0.82; transform: scale(1.04); }
+}
+
 .loading-center {
   display: flex;
   justify-content: center;
@@ -255,7 +263,15 @@
 .row-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
+  flex-wrap: nowrap;
+}
+
+.actions-col {
+  width: 124px;
+  min-width: 124px;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .srs-pager-shell {

@@ -59,6 +59,17 @@
           <div class="info-row"><span class="label">{{ 'CONTRACTS.PAYMENT_FREQUENCY' | translate }}</span><span class="value">{{ 'CONTRACTS.FREQ_' + contract.paymentFrequency | translate }}</span></div>
           <div class="info-row full-span" *ngIf="contract.notes"><span class="label">{{ 'CONTRACTS.NOTES' | translate }}</span><span class="value">{{ contract.notes }}</span></div>
         </div>
+
+        <app-audit-trail
+          [createdAt]="contract.createdAt"
+          [updatedAt]="contract.updatedAt"
+          [createdBy]="contract.createdBy"
+          [createdByName]="contract.createdByName"
+          [modifiedBy]="contract.modifiedBy"
+          [modifiedByName]="contract.modifiedByName"
+          [approvedBy]="contract.approvedBy"
+          [approvedByName]="contract.approvedByName">
+        </app-audit-trail>
       </div>
     </mat-tab>
 

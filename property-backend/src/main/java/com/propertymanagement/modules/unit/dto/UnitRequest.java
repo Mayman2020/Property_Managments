@@ -14,6 +14,8 @@ public class UnitRequest {
     private Long floorId;
     @NotNull
     private UnitType unitType;
+    @NotBlank
+    private String furnishedStatus;
     private BigDecimal areaSqm;
     private Integer bedrooms;
     private Integer bathrooms;

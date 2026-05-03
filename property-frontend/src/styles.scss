@@ -806,6 +806,14 @@ a:hover {
   pointer-events: none;
 }
 
+.table-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: nowrap;
+  justify-content: center;
+}
+
 .stat-card {
   background: var(--surface);
   border: 1px solid var(--card-border);
@@ -986,7 +994,7 @@ a:hover {
 
 .upload-zone .upload-icon {
   font-size: 28px;
-  color: var(--ink-400);
+  color: var(--accent);
   margin-bottom: 8px;
 }
 
@@ -1041,6 +1049,8 @@ a:hover {
 .app-dialog-panel .mat-mdc-dialog-content {
   padding: 20px 24px !important;
   max-height: 72vh;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .dialog-intro {
@@ -1283,4 +1293,45 @@ a:hover {
   background: linear-gradient(90deg, var(--brass-500), var(--brass-400));
   border-radius: inherit;
   transition: width 1.2s var(--e-out);
+}
+
+/* ── Readonly / View-mode fields (disabled via form.disable() or readonly attr) ── */
+.mat-mdc-form-field.mat-form-field-disabled .mat-mdc-text-field-wrapper,
+.mat-mdc-text-field-wrapper:has(input[readonly]),
+.mat-mdc-text-field-wrapper:has(textarea[readonly]) {
+  background-color: #ebebeb !important;
+}
+
+.mat-mdc-form-field.mat-form-field-disabled input,
+.mat-mdc-form-field.mat-form-field-disabled textarea,
+.mat-mdc-form-field input[readonly],
+.mat-mdc-form-field textarea[readonly] {
+  color: #111 !important;
+  -webkit-text-fill-color: #111 !important;
+  cursor: default;
+  opacity: 1 !important;
+}
+
+.mat-mdc-form-field.mat-form-field-disabled .mdc-notched-outline__leading,
+.mat-mdc-form-field.mat-form-field-disabled .mdc-notched-outline__notch,
+.mat-mdc-form-field.mat-form-field-disabled .mdc-notched-outline__trailing,
+.mat-mdc-form-field:has(input[readonly]) .mdc-notched-outline__leading,
+.mat-mdc-form-field:has(input[readonly]) .mdc-notched-outline__notch,
+.mat-mdc-form-field:has(input[readonly]) .mdc-notched-outline__trailing,
+.mat-mdc-form-field:has(textarea[readonly]) .mdc-notched-outline__leading,
+.mat-mdc-form-field:has(textarea[readonly]) .mdc-notched-outline__notch,
+.mat-mdc-form-field:has(textarea[readonly]) .mdc-notched-outline__trailing {
+  border-color: #ccc !important;
+}
+
+.mat-mdc-form-field.mat-form-field-disabled .mat-mdc-floating-label,
+.mat-mdc-form-field:has(input[readonly]) .mat-mdc-floating-label,
+.mat-mdc-form-field:has(textarea[readonly]) .mat-mdc-floating-label {
+  color: #555 !important;
+}
+
+.mat-mdc-form-field.mat-form-field-disabled .mat-mdc-select-value,
+.mat-mdc-form-field.mat-form-field-disabled .mat-mdc-select-arrow {
+  color: #111 !important;
+  -webkit-text-fill-color: #111 !important;
 }

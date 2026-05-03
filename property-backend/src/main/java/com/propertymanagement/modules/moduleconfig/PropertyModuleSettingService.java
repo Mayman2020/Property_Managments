@@ -27,7 +27,8 @@ public class PropertyModuleSettingService {
         if (user.getRole() == UserRole.SUPER_ADMIN || user.getPropertyId() == null) {
             return defaultResponses(null);
         }
-        return getByProperty(user.getPropertyId());
+        // Any role can read their own property's module settings (no manageability check)
+        return getSettingsForProperty(user.getPropertyId());
     }
 
     public List<PropertyModuleSettingResponse> getByProperty(Long propertyId) {
@@ -76,7 +77,7 @@ public class PropertyModuleSettingService {
             entity.setEnabled(enabled);
             repository.save(entity);
         }
-        return getByProperty(propertyId);
+        return getSettingsForProperty(propertyId);
     }
 
     public boolean isModuleEnabledForProperty(Long propertyId, String moduleKey) {
@@ -111,8 +112,11 @@ public class PropertyModuleSettingService {
         if (user.getRole() == UserRole.SUPER_ADMIN) {
             return;
         }
-        if (user.getRole() == UserRole.PROPERTY_ADMIN && Objects.equals(user.getPropertyId(), propertyId)) {
-            return;
+        if (user.getRole() == UserRole.PROPERTY_ADMIN) {
+            // Allow if user has no assigned property (global admin) or if their property matches
+            if (user.getPropertyId() == null || Objects.equals(user.getPropertyId(), propertyId)) {
+                return;
+            }
         }
         throw AppException.forbidden("You cannot manage module settings for this property");
     }

@@ -42,9 +42,9 @@ export class MyContractComponent implements OnInit {
   get daysLabel(): string {
     if (!this.contract) return '';
     const d = this.contract.daysUntilExpiry;
-    if (d < 0) return this.i18n.currentLang === 'ar' ? 'منتهي' : 'Expired';
-    if (d === 0) return this.i18n.currentLang === 'ar' ? 'ينتهي اليوم' : 'Expires today';
-    return this.i18n.currentLang === 'ar' ? `${d} يوم متبقي` : `${d} days remaining`;
+    if (d < 0) return this.i18n.instant('TENANT.CONTRACT_EXPIRES_EXPIRED');
+    if (d === 0) return this.i18n.instant('TENANT.CONTRACT_EXPIRES_TODAY');
+    return this.i18n.instant('TENANT.CONTRACT_DAYS_REMAINING', { days: d });
   }
 
   get expiryClass(): string {

@@ -117,6 +117,10 @@ export const ADMIN_ROUTES: Routes = [
         loadComponent: () => import('../contractors/contractor-companies.component').then((m) => m.ContractorCompaniesComponent)
       },
       {
+        path: 'owners',
+        loadComponent: () => import('../owners/owners-management.component').then((m) => m.OwnersManagementComponent)
+      },
+      {
         canActivate: [permissionGuard],
         data: { permission: 'profile', permissionAction: 'view' },
         path: 'profile',
@@ -215,28 +219,6 @@ export const ADMIN_ROUTES: Routes = [
             path: 'reports/owner-statement',
             data: { report: 'owner-statement' },
             loadComponent: () => import('../finance/finance-reports.component').then((m) => m.FinanceReportsComponent)
-          }
-        ]
-      },
-      {
-        path: 'vendors',
-        canActivate: [moduleGuard],
-        data: { module: 'vendors' },
-        children: [
-          {
-            path: 'list',
-            data: { section: 'list' },
-            loadComponent: () => import('../vendors/vendor-workspace.component').then((m) => m.VendorWorkspaceComponent)
-          },
-          {
-            path: 'new',
-            data: { section: 'form' },
-            loadComponent: () => import('../vendors/vendor-workspace.component').then((m) => m.VendorWorkspaceComponent)
-          },
-          {
-            path: ':id',
-            data: { section: 'detail' },
-            loadComponent: () => import('../vendors/vendor-workspace.component').then((m) => m.VendorWorkspaceComponent)
           }
         ]
       },

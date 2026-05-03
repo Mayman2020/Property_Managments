@@ -45,6 +45,7 @@ export class ContractsDashboardComponent implements OnInit {
 
   stats = {
     activeContracts: 0,
+    draftContracts: 0,
     expiringIn30Days: 0,
     overduePayments: 0,
     openViolations: 0,
@@ -68,6 +69,7 @@ export class ContractsDashboardComponent implements OnInit {
       if (dash?.data) {
         const data = dash.data;
         this.stats.activeContracts = data.activeContracts ?? 0;
+        this.stats.draftContracts = data.draftContracts ?? 0;
         this.stats.expiringIn30Days = data.expiringIn30Days ?? 0;
         this.stats.overduePayments = data.overduePayments ?? 0;
         this.stats.openViolations = data.openViolations ?? 0;
@@ -85,7 +87,8 @@ export class ContractsDashboardComponent implements OnInit {
       width: '980px',
       maxWidth: '95vw',
       maxHeight: '95vh',
-      panelClass: 'app-dialog-panel'
+      panelClass: 'app-dialog-panel',
+      disableClose: true
     }).afterClosed().subscribe(saved => {
       if (saved) this.loadData();
     });

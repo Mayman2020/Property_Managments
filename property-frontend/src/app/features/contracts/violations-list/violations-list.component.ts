@@ -14,6 +14,7 @@ import { catchError, of } from 'rxjs';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
 import { FilterBarComponent, FilterSpec } from '../../../shared/components/filter-bar/filter-bar.component';
+import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { ViolationService } from '../../../core/services/violation.service';
 import { TenantViolation } from '../../../core/models/contract.model';
 import { PropertyService, Property } from '../../../core/services/property.service';
@@ -27,7 +28,8 @@ import { I18nService } from '../../../core/i18n/i18n.service';
   imports: [
     NgIf, NgFor, DatePipe, DecimalPipe, NgClass, FormsModule,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule,
-    TranslateModule, PageHeaderComponent, TablePagerComponent, FilterBarComponent
+    TranslateModule, PageHeaderComponent, TablePagerComponent, FilterBarComponent,
+    EmptyStateComponent
   ],
   templateUrl: './violations-list.component.html',
   styleUrl: './violations-list.component.scss'

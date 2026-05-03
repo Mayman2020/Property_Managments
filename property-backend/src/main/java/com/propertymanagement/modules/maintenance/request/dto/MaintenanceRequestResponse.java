@@ -43,4 +43,8 @@ public class MaintenanceRequestResponse {
     private String categoryNameEn;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Long createdBy;
+    private String createdByName;
+    private Long modifiedBy;
+    private String modifiedByName;
 }

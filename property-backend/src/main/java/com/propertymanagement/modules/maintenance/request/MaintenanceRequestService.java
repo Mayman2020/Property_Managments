@@ -13,6 +13,7 @@ import com.propertymanagement.modules.maintenance.visit.dto.VisitReportRequest;
 import com.propertymanagement.modules.maintenance.visit.dto.VisitReportResponse;
 import com.propertymanagement.modules.notification.NotificationService;
 import com.propertymanagement.modules.notification.NotificationType;
+import com.propertymanagement.modules.owner.OwnerRepository;
 import com.propertymanagement.modules.property.Property;
 import com.propertymanagement.modules.property.PropertyRepository;
 import com.propertymanagement.modules.tenant.TenantRepository;
@@ -58,6 +59,7 @@ public class MaintenanceRequestService {
     private final PropertyMaintenanceAssignmentRepository assignmentRepository;
     private final CodeGenerationService codeGenerationService;
     private final MaintenanceProviderRepository providerRepository;
+    private final OwnerRepository ownerRepository;
 
     public Page<MaintenanceRequestResponse> getAll(Pageable pageable) {
         return requestRepository.findAll(pageable).map(this::toResponse);
@@ -422,6 +424,7 @@ public class MaintenanceRequestService {
         if (request.getContractorCompanyId() != null && request.getPropertyId() != null) {
             recipientIds.addAll(contractorStaffIds(request.getContractorCompanyId(), request.getPropertyId()));
         }
+        ownerUserId(request.getPropertyId()).ifPresent(recipientIds::add);
         recipientIds = recipientIds.stream().distinct().collect(Collectors.toList());
         if (recipientIds.isEmpty()) return;
         notificationService.createForRecipients(
@@ -462,6 +465,7 @@ public class MaintenanceRequestService {
         List<Long> recipientIds = new ArrayList<>();
         if (request.getAssignedTo() != null) recipientIds.add(request.getAssignedTo());
         recipientIds.addAll(propertyAdminIds(request.getPropertyId()));
+        ownerUserId(request.getPropertyId()).ifPresent(recipientIds::add);
         if (recipientIds.isEmpty()) return;
         notificationService.createForRecipients(
                 recipientIds, currentUserId(), request.getPropertyId(), request.getId(),
@@ -475,6 +479,7 @@ public class MaintenanceRequestService {
         List<Long> recipientIds = new ArrayList<>();
         if (request.getAssignedTo() != null) recipientIds.add(request.getAssignedTo());
         recipientIds.addAll(propertyAdminIds(request.getPropertyId()));
+        ownerUserId(request.getPropertyId()).ifPresent(recipientIds::add);
         if (recipientIds.isEmpty()) return;
         notificationService.createForRecipients(
                 recipientIds, currentUserId(), request.getPropertyId(), request.getId(),
@@ -489,6 +494,7 @@ public class MaintenanceRequestService {
         List<Long> recipientIds = new ArrayList<>();
         tenantUserId(request.getTenantId()).ifPresent(recipientIds::add);
         recipientIds.addAll(propertyAdminIds(request.getPropertyId()));
+        ownerUserId(request.getPropertyId()).ifPresent(recipientIds::add);
         if (recipientIds.isEmpty()) return;
         notificationService.createForRecipients(
                 recipientIds, currentUserId(), request.getPropertyId(), request.getId(),
@@ -501,6 +507,7 @@ public class MaintenanceRequestService {
     private void notifyVisitReported(MaintenanceRequest request) {
         List<Long> recipientIds = new ArrayList<>(propertyAdminIds(request.getPropertyId()));
         tenantUserId(request.getTenantId()).ifPresent(recipientIds::add);
+        ownerUserId(request.getPropertyId()).ifPresent(recipientIds::add);
         if (recipientIds.isEmpty()) return;
         notificationService.createForRecipients(
                 recipientIds, currentUserId(), request.getPropertyId(), request.getId(),
@@ -515,6 +522,7 @@ public class MaintenanceRequestService {
         List<Long> recipientIds = new ArrayList<>(propertyAdminIds(request.getPropertyId()));
         if (request.getAssignedTo() != null) recipientIds.add(request.getAssignedTo());
         tenantUserId(request.getTenantId()).ifPresent(recipientIds::add);
+        ownerUserId(request.getPropertyId()).ifPresent(recipientIds::add);
         if (recipientIds.isEmpty()) return;
         notificationService.createForRecipients(
                 recipientIds, currentUserId(), request.getPropertyId(), request.getId(),
@@ -532,6 +540,16 @@ public class MaintenanceRequestService {
             users.addAll(userRepository.findByRoleAndActiveTrue(UserRole.PROPERTY_ADMIN));
         }
         return users.stream().map(User::getId).distinct().collect(Collectors.toList());
+    }
+
+    private java.util.Optional<Long> ownerUserId(Long propertyId) {
+        if (propertyId == null) return java.util.Optional.empty();
+        return propertyRepository.findById(propertyId)
+                .map(Property::getOwnerId)
+                .filter(ownerId -> ownerId != null)
+                .flatMap(ownerRepository::findById)
+                .filter(o -> o.isPortalAccess() && o.getUserId() != null)
+                .map(o -> o.getUserId());
     }
 
     private java.util.Optional<Long> tenantUserId(Long tenantId) {
@@ -694,7 +712,16 @@ public class MaintenanceRequestService {
                 .categoryNameEn(categoryNameEn)
                 .createdAt(r.getCreatedAt())
                 .updatedAt(r.getUpdatedAt())
+                .createdBy(r.getCreatedBy())
+                .createdByName(resolveUserName(r.getCreatedBy()))
+                .modifiedBy(r.getModifiedBy())
+                .modifiedByName(resolveUserName(r.getModifiedBy()))
                 .build();
+    }
+
+    private String resolveUserName(Long userId) {
+        if (userId == null) return null;
+        return userRepository.findById(userId).map(u -> u.getFullName()).orElse(null);
     }
 
     private VisitReportResponse toVisitResponse(VisitReport v) {

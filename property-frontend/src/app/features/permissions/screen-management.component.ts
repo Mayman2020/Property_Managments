@@ -9,10 +9,12 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
 import { forkJoin } from 'rxjs';
 
-import { PermissionMap, UserRole } from '../../core/models/user.model';
+import { PermissionMap, User, UserRole } from '../../core/models/user.model';
 import { I18nService } from '../../core/i18n/i18n.service';
+import { AuthService } from '../../core/services/auth.service';
 import { PermissionService, RolePermissionDto, ScreenSettingDto } from '../../core/services/permission.service';
 import { SnackService } from '../../core/services/snack.service';
+import { UserService } from '../../core/services/user.service';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { TablePagerComponent } from '../../shared/components/table-pager/table-pager.component';
 import { ExportColumn, TableExportToolbarComponent } from '../../shared/components/table-export-toolbar/table-export-toolbar.component';
@@ -32,6 +34,8 @@ interface ScreenDetailsDialogData {
   screenTitle: (screenKey: string) => string;
   isRoleEnabled: (role: UserRole, screenKey: string) => boolean;
   toggleRole: (screenKey: string, role: UserRole, enabled: boolean) => void;
+  visibleUsersCount: number;
+  hiddenUsersCount: number;
 }
 
 @Component({
@@ -62,12 +66,12 @@ interface ScreenDetailsDialogData {
           </strong>
         </div>
         <div>
-          <span>{{ isAr ? 'عدد من يرونها' : 'Can see' }}</span>
-          <strong>{{ visibleRoles.length }}</strong>
+          <span>{{ isAr ? 'المستخدمين الذين يرونها' : 'Users who can see' }}</span>
+          <strong>{{ data.visibleUsersCount }}</strong>
         </div>
         <div>
-          <span>{{ isAr ? 'عدد من لا يرونها' : 'Cannot see' }}</span>
-          <strong>{{ hiddenRoles.length }}</strong>
+          <span>{{ isAr ? 'المستخدمين الذين لا يرونها' : 'Users who cannot see' }}</span>
+          <strong>{{ data.hiddenUsersCount }}</strong>
         </div>
       </div>
 
@@ -273,8 +277,8 @@ export class ScreenDetailsDialogComponent {
                 <th>#</th>
                 <th>{{ isAr ? 'الشاشة' : 'Screen' }}</th>
                 <th>{{ 'SCREENS.GLOBAL' | translate }}</th>
-                <th>{{ isAr ? 'عدد من يرونها' : 'Can see' }}</th>
-                <th>{{ isAr ? 'عدد من لا يرونها' : 'Cannot see' }}</th>
+                <th>{{ isAr ? 'المستخدمين الذين يرونها' : 'Users who can see' }}</th>
+                <th>{{ isAr ? 'المستخدمين الذين لا يرونها' : 'Users who cannot see' }}</th>
                 <th>{{ isAr ? 'التفاصيل' : 'Details' }}</th>
               </tr>
             </thead>
@@ -413,6 +417,7 @@ export class ScreenManagementComponent implements OnInit {
   loading = true;
   readonly screenPageSize = 6;
   screenPageIndex = 0;
+  private users: User[] = [];
 
   readonly roleOptions: UserRole[] = ['SUPER_ADMIN', 'PROPERTY_ADMIN', 'CONTRACTS_OFFICER', 'ACCOUNTANT', 'HR_OFFICER', 'OWNER', 'MAINTENANCE_OFFICER', 'TENANT'];
   readonly screens: ScreenConfig[] = [
@@ -426,7 +431,6 @@ export class ScreenManagementComponent implements OnInit {
     { key: 'users', icon: 'manage_accounts' },
     { key: 'lookups', icon: 'public' },
     { key: 'contractors', icon: 'engineering' },
-    { key: 'vendors', icon: 'engineering' },
     { key: 'vacancies', icon: 'door_open' },
     { key: 'ratings', icon: 'star_rate' },
     { key: 'finance', icon: 'bar_chart' },
@@ -469,7 +473,9 @@ export class ScreenManagementComponent implements OnInit {
     private readonly permissionService: PermissionService,
     private readonly snack: SnackService,
     private readonly i18n: I18nService,
-    private readonly dialog: MatDialog
+    private readonly dialog: MatDialog,
+    private readonly userService: UserService,
+    private readonly authService: AuthService
   ) {}
 
   get isAr(): boolean {
@@ -486,19 +492,21 @@ export class ScreenManagementComponent implements OnInit {
       { header: this.isAr ? 'الشاشة' : 'Screen', value: (row) => this.i18n.instant(this.screenTitle(row.key)) },
       { header: this.isAr ? 'الكود' : 'Code', value: 'key' },
       { header: this.i18n.instant('SCREENS.GLOBAL'), value: (row) => this.screenSettings[row.key] === false ? this.i18n.instant('COMMON.INACTIVE') : this.i18n.instant('COMMON.ACTIVE') },
-      { header: this.isAr ? 'عدد من يرونها' : 'Can see', value: (row) => this.visibleCount(row.key) },
-      { header: this.isAr ? 'عدد من لا يرونها' : 'Cannot see', value: (row) => this.hiddenCount(row.key) }
+      { header: this.isAr ? 'المستخدمين الذين يرونها' : 'Users who can see', value: (row) => this.visibleCount(row.key) },
+      { header: this.isAr ? 'المستخدمين الذين لا يرونها' : 'Users who cannot see', value: (row) => this.hiddenCount(row.key) }
     ];
   }
 
   ngOnInit(): void {
     forkJoin({
       permissions: this.permissionService.getAll(),
-      screens: this.permissionService.getScreenSettings()
+      screens: this.permissionService.getScreenSettings(),
+      users: this.userService.getAll(0, 1000)
     }).subscribe({
-      next: ({ permissions, screens }) => {
+      next: ({ permissions, screens, users }) => {
         this.applyRoles(permissions.data ?? []);
         this.applyScreens(screens.data ?? []);
+        this.users = users.data?.content ?? [];
         this.loading = false;
       },
       error: () => {
@@ -512,6 +520,7 @@ export class ScreenManagementComponent implements OnInit {
     this.dialog.open(ScreenDetailsDialogComponent, {
       width: '720px',
       panelClass: 'app-dialog-panel',
+      disableClose: true,
       data: {
         screen,
         roleOptions: this.roleOptions,
@@ -521,17 +530,25 @@ export class ScreenManagementComponent implements OnInit {
         roleLabel: this.roleLabel.bind(this),
         screenTitle: this.screenTitle.bind(this),
         isRoleEnabled: this.isRoleEnabled.bind(this),
-        toggleRole: this.toggleRole.bind(this)
+        toggleRole: this.toggleRole.bind(this),
+        visibleUsersCount: this.visibleCount(screen.key),
+        hiddenUsersCount: this.hiddenCount(screen.key)
       } satisfies ScreenDetailsDialogData
     });
   }
 
   visibleCount(screenKey: string): number {
-    return this.roleOptions.filter((role) => this.isRoleEnabled(role, screenKey)).length;
+    return this.users.filter((user) => this.userCanSeeScreen(user, screenKey)).length;
   }
 
   hiddenCount(screenKey: string): number {
-    return this.roleOptions.length - this.visibleCount(screenKey);
+    return this.users.length - this.visibleCount(screenKey);
+  }
+
+  private userCanSeeScreen(user: User, screenKey: string): boolean {
+    const rolePermissions = this.rolePermissions[user.role];
+    if (!rolePermissions) return false;
+    return rolePermissions[screenKey]?.enabled === true;
   }
 
   roleLabel(role: UserRole): string {

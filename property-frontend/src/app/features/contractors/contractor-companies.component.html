@@ -57,7 +57,10 @@
             <td>{{ c.email || '--' }}</td>
             <td>{{ (c.active ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') | translate }}</td>
             <td>
-              <button type="button" class="app-icon-btn" (click)="openDialog(c)" [title]="'ACTIONS.EDIT' | translate">
+              <button type="button" class="app-icon-btn accent" (click)="openView(c)" [matTooltip]="'ACTIONS.VIEW' | translate">
+                <span class="material-icons">visibility</span>
+              </button>
+              <button type="button" class="app-icon-btn" (click)="openDialog(c)" [matTooltip]="'ACTIONS.EDIT' | translate">
                 <span class="material-icons">edit</span>
               </button>
               <button type="button" class="app-icon-btn danger" *ngIf="canHardDelete" (click)="remove(c)" [title]="'ACTIONS.DELETE' | translate">

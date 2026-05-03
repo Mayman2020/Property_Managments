@@ -1,7 +1,9 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnDestroy } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router, Event, NavigationEnd } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
+import { filter } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 
 export interface BreadcrumbItem {
   label: string;
@@ -15,7 +17,7 @@ export interface BreadcrumbItem {
   template: `
     <header class="app-page-header" role="banner">
       <div class="page-heading">
-        <button *ngIf="showBack" type="button" class="back-nav-btn" (click)="backClick.emit()" [attr.aria-label]="'COMMON.BACK' | translate">
+        <button *ngIf="shouldShowBack" type="button" class="back-nav-btn" (click)="onBackClick()" [attr.aria-label]="'COMMON.BACK' | translate">
           <span class="material-icons back-icon">arrow_back</span>
           <span class="back-label">{{ 'COMMON.BACK' | translate }}</span>
         </button>
@@ -46,6 +48,14 @@ export interface BreadcrumbItem {
       }
       .page-heading {
         min-width: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      :host-context([dir='rtl']) .page-heading {
+        align-items: flex-start;
+      }
+      :host-context([dir='ltr']) .page-heading {
+        align-items: flex-start;
       }
       .app-page-eyebrow {
         font-size: 11px;
@@ -79,6 +89,15 @@ export interface BreadcrumbItem {
         padding: 0 0 10px;
         opacity: 0.85;
         transition: opacity 0.15s;
+        margin-right: 8px;
+      }
+      :host-context([dir='ltr']) .back-nav-btn {
+        margin-right: 8px;
+        margin-left: 0;
+      }
+      :host-context([dir='rtl']) .back-nav-btn {
+        margin-left: 8px;
+        margin-right: 0;
       }
       .back-nav-btn:hover { opacity: 1; }
       .back-icon { font-size: 18px; }
@@ -86,11 +105,38 @@ export interface BreadcrumbItem {
     `
   ]
 })
-export class PageHeaderComponent {
+export class PageHeaderComponent implements OnDestroy {
   @Input() eyebrow = '';
   @Input() title = '';
   @Input() subtitle = '';
   @Input() breadcrumbs: BreadcrumbItem[] = [];
   @Input() showBack = false;
   @Output() backClick = new EventEmitter<void>();
+
+  private previousUrl = '';
+  private menuRoutes = ['/admin/home', '/admin/dashboard', '/officer/schedule', '/tenant/my-unit'];
+  private sub: Subscription;
+
+  constructor(private router: Router) {
+    this.sub = this.router.events.pipe(
+      filter((event: Event): event is NavigationEnd => event instanceof NavigationEnd)
+    ).subscribe((event: NavigationEnd) => {
+      this.previousUrl = event.urlAfterRedirects;
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.sub?.unsubscribe();
+  }
+
+  get shouldShowBack(): boolean {
+    if (!this.showBack) return false;
+    if (!this.previousUrl) return false;
+    const isFromMenu = this.menuRoutes.some(route => this.previousUrl.startsWith(route));
+    return !isFromMenu;
+  }
+
+  onBackClick(): void {
+    this.backClick.emit();
+  }
 }

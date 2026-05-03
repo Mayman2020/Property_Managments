@@ -68,7 +68,7 @@ export interface ClassificationDialogData {
 
     <mat-dialog-actions align="end" class="dialog-actions">
       <button mat-stroked-button type="button" (click)="ref.close(false)">{{ 'ACTIONS.CANCEL' | translate }}</button>
-      <button mat-flat-button type="button" (click)="save()" [disabled]="form.invalid || saving">
+      <button mat-flat-button type="button" (click)="save()" [disabled]="saving">
         <mat-spinner *ngIf="saving" diameter="18"></mat-spinner>
         <span *ngIf="!saving">{{ 'ACTIONS.SAVE' | translate }}</span>
       </button>
@@ -107,10 +107,12 @@ export class ClassificationDialogComponent {
   }
 
   save(): void {
-    if (this.form.invalid || this.saving) {
-      this.form.markAllAsTouched();
+    this.form.markAllAsTouched();
+    if (this.form.invalid) {
+      this.snack.error(this.i18n.instant('COMMON.FILL_REQUIRED_FIELDS'));
       return;
     }
+    if (this.saving) return;
     this.saving = true;
     const { nameAr, nameEn, code, sortOrder, active } = this.form.value;
     const item = this.data.item;

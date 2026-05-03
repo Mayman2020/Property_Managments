@@ -20,6 +20,10 @@ public interface LeaseContractRepository extends JpaRepository<LeaseContract, Lo
 
     List<LeaseContract> findByTenantId(Long tenantId);
 
+    boolean existsByTenantId(Long tenantId);
+
+    boolean existsByTenantIdAndStatus(Long tenantId, ContractStatus status);
+
     long countByContractNumberStartingWith(String prefix);
 
     @Query("SELECT lc FROM LeaseContract lc WHERE lc.status = 'ACTIVE' AND lc.endDate <= :cutoff")
@@ -30,6 +34,10 @@ public interface LeaseContractRepository extends JpaRepository<LeaseContract, Lo
 
     @Query("SELECT COUNT(lc) FROM LeaseContract lc WHERE lc.status = 'ACTIVE'")
     long countActive();
+
+    long countByStatus(ContractStatus status);
+
+    long countByStatusAndPropertyId(ContractStatus status, Long propertyId);
 
     @Query("SELECT COUNT(lc) FROM LeaseContract lc WHERE lc.status = 'ACTIVE' AND lc.propertyId = :propertyId")
     long countActiveByProperty(@Param("propertyId") Long propertyId);

@@ -307,7 +307,7 @@ export class RequestListComponent implements OnInit {
   }
 
   openTimeline(req: MaintenanceRequest): void {
-    this.dialog.open(RequestTimelineDialogComponent, { data: req, width: '560px', panelClass: 'app-dialog-panel' });
+    this.dialog.open(RequestTimelineDialogComponent, { data: req, width: '560px', panelClass: 'app-dialog-panel', disableClose: true });
   }
 
   openNewRequest(): void {
@@ -316,7 +316,8 @@ export class RequestListComponent implements OnInit {
       maxWidth: '95vw',
       maxHeight: '90vh',
       panelClass: 'app-dialog-panel',
-      data: { context: this.listContext }
+      data: { context: this.listContext },
+      disableClose: true
     });
     dialogRef.afterClosed().subscribe((result) => {
       if (result) this.load();

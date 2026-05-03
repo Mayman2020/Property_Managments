@@ -14,6 +14,7 @@ import { RecordPaymentFormComponent } from '../record-payment-form/record-paymen
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
 import { FilterBarComponent, FilterSpec } from '../../../shared/components/filter-bar/filter-bar.component';
+import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { PaymentService } from '../../../core/services/payment.service';
 import { RentPayment } from '../../../core/models/contract.model';
 import { PropertyService, Property } from '../../../core/services/property.service';
@@ -26,7 +27,8 @@ import { I18nService } from '../../../core/i18n/i18n.service';
   imports: [
     NgIf, NgFor, DatePipe, DecimalPipe, NgClass, FormsModule, RouterLink,
     MatButtonModule, MatIconModule, MatTooltipModule, MatProgressSpinnerModule, MatDialogModule,
-    TranslateModule, PageHeaderComponent, TablePagerComponent, FilterBarComponent
+    TranslateModule, PageHeaderComponent, TablePagerComponent, FilterBarComponent,
+    EmptyStateComponent
   ],
   templateUrl: './payment-list.component.html',
   styleUrl: './payment-list.component.scss'
@@ -165,7 +167,8 @@ export class PaymentListComponent implements OnInit {
     this.dialog.open(RecordPaymentFormComponent, {
       width: '600px',
       maxWidth: '95vw',
-      panelClass: 'app-dialog-panel'
+      panelClass: 'app-dialog-panel',
+      disableClose: true
     }).afterClosed().subscribe(saved => {
       if (saved) this.load();
     });

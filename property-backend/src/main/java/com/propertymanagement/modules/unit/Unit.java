@@ -51,6 +51,9 @@ public class Unit {
     @Column(length = 10)
     private String currency = "OMR";
 
+    @Column(name = "furnished_status", length = 20)
+    private String furnishedStatus;
+
     @Column(columnDefinition = "TEXT")
     private String notes;
 

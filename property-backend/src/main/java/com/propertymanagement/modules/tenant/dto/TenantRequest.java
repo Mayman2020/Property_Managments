@@ -12,6 +12,10 @@ import java.util.List;
 public class TenantRequest {
     @NotBlank
     private String fullName;
+    @NotBlank
+    private String fullNameAr;
+    @NotBlank
+    private String fullNameEn;
     private Long unitId;
     private Long propertyId;
     private Long userId;

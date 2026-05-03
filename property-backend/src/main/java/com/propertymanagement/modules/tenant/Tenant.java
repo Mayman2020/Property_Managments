@@ -33,8 +33,14 @@ public class Tenant {
     @Column(name = "property_id")
     private Long propertyId;
 
-    @Column(name = "full_name", nullable = false, length = 150)
+    @Column(name = "full_name", nullable = false, length = 300)
     private String fullName;
+
+    @Column(name = "full_name_ar", nullable = false, length = 150)
+    private String fullNameAr;
+
+    @Column(name = "full_name_en", nullable = false, length = 150)
+    private String fullNameEn;
 
     @Column(name = "national_id", length = 30)
     private String nationalId;

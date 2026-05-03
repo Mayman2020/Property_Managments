@@ -9,6 +9,8 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface TenantViolationRepository extends JpaRepository<TenantViolation, Long> {
+    boolean existsByTenantId(Long tenantId);
+
     List<TenantViolation> findByTenantId(Long tenantId);
     List<TenantViolation> findByContractId(Long contractId);
     Page<TenantViolation> findAll(Pageable pageable);

@@ -123,31 +123,31 @@ export class DashboardComponent implements OnInit {
   }
 
   get pageEyebrow(): string {
-    return this.i18n.currentLang === 'ar' ? 'مركز القيادة' : 'Command Center';
+    return this.i18n.instant('DASHBOARD.COMMAND_CENTER');
   }
 
   get operationsPulseLabel(): string {
-    return this.i18n.currentLang === 'ar' ? 'نبض العمليات' : 'Operations pulse';
+    return this.i18n.instant('DASHBOARD.OPERATIONS_PULSE');
   }
 
   get lastThirtyLabel(): string {
-    return this.i18n.currentLang === 'ar' ? 'آخر 30 يوم' : 'Last 30 days';
+    return this.i18n.instant('DASHBOARD.LAST_30_DAYS');
   }
 
   get occupancyCardLabel(): string {
-    return this.i18n.currentLang === 'ar' ? 'الإشغال' : 'Occupancy';
+    return this.i18n.instant('DASHBOARD.OCCUPANCY');
   }
 
   get vacantLabel(): string {
-    return this.i18n.currentLang === 'ar' ? 'الشواغر' : 'Vacant';
+    return this.i18n.instant('DASHBOARD.VACANT');
   }
 
   get requestsStatusLabel(): string {
-    return this.i18n.currentLang === 'ar' ? 'الطلبات حسب الحالة' : 'Requests by status';
+    return this.i18n.instant('DASHBOARD.REQUESTS_BY_STATUS');
   }
 
   get lowStockLabel(): string {
-    return this.i18n.currentLang === 'ar' ? 'تنبيهات المخزون' : 'Low stock alerts';
+    return this.i18n.instant('DASHBOARD.LOW_STOCK_ALERTS');
   }
 
   get occupancyPercent(): number {

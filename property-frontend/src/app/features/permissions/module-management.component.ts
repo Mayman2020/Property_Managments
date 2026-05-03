@@ -1,6 +1,7 @@
 import { Component, Inject, OnInit } from '@angular/core';
 import { CurrencyPipe, NgClass, NgFor, NgIf } from '@angular/common';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { TranslateModule } from '@ngx-translate/core';
 import { forkJoin } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -21,6 +22,7 @@ import {
 import { Property, PropertyService } from '../../core/services/property.service';
 import { AuthService } from '../../core/services/auth.service';
 import { SnackService } from '../../core/services/snack.service';
+import { I18nService } from '../../core/i18n/i18n.service';
 
 interface ModuleDetailsDialogData {
   module: ModuleDefinitionDto;
@@ -34,7 +36,7 @@ interface ModuleDetailsDialogData {
 @Component({
   selector: 'app-module-details-dialog',
   standalone: true,
-  imports: [CurrencyPipe, NgFor, NgIf, MatButtonModule, MatDialogModule, MatIconModule],
+  imports: [CurrencyPipe, NgFor, NgIf, MatButtonModule, MatDialogModule, MatIconModule, TranslateModule],
   template: `
     <h2 mat-dialog-title>
       <span class="material-icons">{{ data.module.icon || 'widgets' }}</span>
@@ -44,27 +46,27 @@ interface ModuleDetailsDialogData {
     <mat-dialog-content class="module-dialog-body">
       <div class="dialog-summary">
         <div>
-          <span>{{ data.isArabic ? 'الحالة' : 'Status' }}</span>
-          <strong [class.off]="!data.enabled">{{ data.enabled ? (data.isArabic ? 'مفعل' : 'Enabled') : (data.isArabic ? 'غير مفعل' : 'Disabled') }}</strong>
+          <span>{{ 'MAINTENANCE.STATUS' | translate }}</span>
+          <strong [class.off]="!data.enabled">{{ data.enabled ? ('MODULES.ENABLED' | translate) : ('MODULES.DISABLED' | translate) }}</strong>
         </div>
         <div>
-          <span>{{ data.isArabic ? 'السعر الشهري' : 'Monthly Price' }}</span>
+          <span>{{ 'MODULES.MONTHLY_PRICE' | translate }}</span>
           <strong>{{ data.module.monthlyPrice || 0 | currency:'OMR':'symbol':'1.0-0' }}</strong>
         </div>
       </div>
 
       <section>
-        <h3>{{ data.isArabic ? 'الوصف' : 'Description' }}</h3>
+        <h3>{{ 'MAINTENANCE.DESCRIPTION' | translate }}</h3>
         <p>{{ description || '-' }}</p>
       </section>
 
       <section *ngIf="data.requiredLabels.length">
-        <h3>{{ data.isArabic ? 'يعتمد على' : 'Requires' }}</h3>
+        <h3>{{ 'MODULES.REQUIRES' | translate }}</h3>
         <div class="chip-row"><span *ngFor="let label of data.requiredLabels">{{ label }}</span></div>
       </section>
 
       <section *ngIf="data.recommendedLabels.length">
-        <h3>{{ data.isArabic ? 'موصى به مع' : 'Recommended With' }}</h3>
+        <h3>{{ 'MODULES.RECOMMENDED_WITH' | translate }}</h3>
         <div class="chip-row"><span *ngFor="let label of data.recommendedLabels">{{ label }}</span></div>
       </section>
 
@@ -72,7 +74,7 @@ interface ModuleDetailsDialogData {
     </mat-dialog-content>
 
     <mat-dialog-actions align="end">
-      <button mat-flat-button type="button" (click)="ref.close()">{{ data.isArabic ? 'إغلاق' : 'Close' }}</button>
+      <button mat-flat-button type="button" (click)="ref.close()">{{ 'ACTIONS.CLOSE' | translate }}</button>
     </mat-dialog-actions>
   `,
   styles: [`
@@ -189,20 +191,21 @@ export class ModuleDetailsDialogComponent {
     MatProgressSpinnerModule,
     PageHeaderComponent,
     TablePagerComponent,
-    TableExportToolbarComponent
+    TableExportToolbarComponent,
+    TranslateModule
   ],
   template: `
     <div class="app-page module-page">
       <app-page-header
-        [eyebrow]="isArabic ? 'مرونة النظام' : 'System Flexibility'"
-        [title]="isArabic ? 'إدارة موديولات العميل' : 'Client Module Settings'"
-        [subtitle]="isArabic ? 'تحكم في الباقة والموديولات والاعتمادات لكل عميل.' : 'Control package presets, module availability, and dependencies per client.'">
+        [eyebrow]="'MODULES.PAGE_EYEBROW' | translate"
+        [title]="'MODULES.PAGE_TITLE' | translate"
+        [subtitle]="'MODULES.PAGE_SUBTITLE' | translate">
       </app-page-header>
 
       <section class="app-card">
         <div class="app-card-body toolbar-grid">
           <mat-form-field appearance="outline" *ngIf="auth.isSuperAdmin()">
-            <mat-label>{{ isArabic ? 'العقار' : 'Property' }}</mat-label>
+            <mat-label>{{ 'REQUEST_FORM.PROPERTY' | translate }}</mat-label>
             <mat-select [formControl]="propertyIdControl">
               <mat-option *ngFor="let property of properties" [value]="property.id">{{ propertyLabel(property) }}</mat-option>
             </mat-select>
@@ -213,9 +216,9 @@ export class ModuleDetailsDialogComponent {
           </div>
 
           <mat-form-field appearance="outline" *ngIf="presets.length">
-            <mat-label>{{ isArabic ? 'الباقة الجاهزة' : 'Preset Package' }}</mat-label>
+            <mat-label>{{ 'MODULES.PRESET_PACKAGE' | translate }}</mat-label>
             <mat-select [formControl]="presetControl">
-              <mat-option [value]="null">{{ isArabic ? 'اختيار يدوي' : 'Manual Selection' }}</mat-option>
+              <mat-option [value]="null">{{ 'MODULES.MANUAL_SELECTION' | translate }}</mat-option>
               <mat-option *ngFor="let preset of presets" [value]="preset.presetCode">
                 {{ isArabic ? preset.presetNameAr : (preset.presetNameEn || preset.presetNameAr) }}
               </mat-option>
@@ -225,13 +228,13 @@ export class ModuleDetailsDialogComponent {
           <div class="toolbar-actions">
             <button mat-stroked-button type="button" (click)="applyPreset()" [disabled]="!presetControl.value || loading">
               <mat-icon>auto_awesome</mat-icon>
-              {{ isArabic ? 'تطبيق الباقة' : 'Apply Preset' }}
+              {{ 'MODULES.APPLY_PRESET' | translate }}
             </button>
             <button mat-flat-button type="button" (click)="save()" [disabled]="!selectedPropertyId || saving || loading">
               <mat-spinner *ngIf="saving" diameter="18"></mat-spinner>
               <ng-container *ngIf="!saving">
                 <mat-icon>save</mat-icon>
-                {{ isArabic ? 'حفظ الإعدادات' : 'Save Settings' }}
+                {{ 'MODULES.SAVE_SETTINGS' | translate }}
               </ng-container>
             </button>
           </div>
@@ -240,11 +243,11 @@ export class ModuleDetailsDialogComponent {
 
       <section class="summary-strip" *ngIf="!loading && modules.length">
         <article class="summary-card">
-          <span>{{ isArabic ? 'الموديولات المفعلة' : 'Enabled Modules' }}</span>
+          <span>{{ 'MODULES.ENABLED_MODULES' | translate }}</span>
           <strong>{{ enabledCount }} / {{ modules.length }}</strong>
         </article>
         <article class="summary-card">
-          <span>{{ isArabic ? 'القيمة الشهرية التقديرية' : 'Estimated Monthly Value' }}</span>
+          <span>{{ 'MODULES.ESTIMATED_VALUE' | translate }}</span>
           <strong>{{ estimatedTotal | currency:'OMR':'symbol':'1.0-0' }}</strong>
         </article>
       </section>
@@ -256,7 +259,7 @@ export class ModuleDetailsDialogComponent {
       <section class="app-card" *ngIf="!loading">
         <app-table-export-toolbar
           permissionKey="permissions"
-          [title]="isArabic ? 'إدارة موديولات العميل' : 'Client Module Settings'"
+          [title]="'MODULES.PAGE_TITLE' | translate"
           fileName="module-settings"
           [columns]="exportColumns"
           [rows]="modules">
@@ -266,11 +269,11 @@ export class ModuleDetailsDialogComponent {
             <thead>
               <tr>
                 <th>#</th>
-                <th>{{ isArabic ? 'الموديول' : 'Module' }}</th>
-                <th>{{ isArabic ? 'الحالة' : 'Status' }}</th>
-                <th>{{ isArabic ? 'السعر الشهري' : 'Monthly Price' }}</th>
-                <th>{{ isArabic ? 'الاعتمادات' : 'Dependencies' }}</th>
-                <th>{{ isArabic ? 'إجراءات' : 'Actions' }}</th>
+                <th>{{ 'MODULES.MODULE' | translate }}</th>
+                <th>{{ 'MAINTENANCE.STATUS' | translate }}</th>
+                <th>{{ 'MODULES.MONTHLY_PRICE' | translate }}</th>
+                <th>{{ 'MODULES.DEPENDENCIES' | translate }}</th>
+                <th>{{ 'MODULES.ACTIONS' | translate }}</th>
               </tr>
             </thead>
             <tbody>
@@ -299,7 +302,7 @@ export class ModuleDetailsDialogComponent {
                 <td>
                   <button mat-stroked-button type="button" (click)="openDetails(module); $event.stopPropagation()">
                     <mat-icon>visibility</mat-icon>
-                    {{ isArabic ? 'التفاصيل' : 'Details' }}
+                    {{ 'ACTIONS.DETAILS' | translate }}
                   </button>
                 </td>
               </tr>
@@ -453,7 +456,8 @@ export class ModuleManagementComponent implements OnInit {
     private readonly permissionService: PermissionService,
     private readonly propertyService: PropertyService,
     private readonly snack: SnackService,
-    private readonly dialog: MatDialog
+    private readonly dialog: MatDialog,
+    private readonly i18n: I18nService
   ) {}
 
   get isArabic(): boolean {
@@ -481,11 +485,11 @@ export class ModuleManagementComponent implements OnInit {
 
   get exportColumns(): ExportColumn<ModuleDefinitionDto>[] {
     return [
-      { header: this.isArabic ? 'الموديول' : 'Module', value: (row) => this.moduleTitle(row) },
-      { header: this.isArabic ? 'الكود' : 'Code', value: 'moduleKey' },
-      { header: this.isArabic ? 'الحالة' : 'Status', value: (row) => this.moduleState[row.moduleKey] !== false ? (this.isArabic ? 'مفعل' : 'Enabled') : (this.isArabic ? 'غير مفعل' : 'Disabled') },
-      { header: this.isArabic ? 'السعر الشهري' : 'Monthly Price', value: (row) => row.monthlyPrice || 0 },
-      { header: this.isArabic ? 'الاعتمادات' : 'Dependencies', value: (row) => this.dependencyCount(row) }
+      { header: this.i18n.instant('MODULES.MODULE'), value: (row) => this.moduleTitle(row) },
+      { header: this.i18n.instant('MODULES.CODE'), value: 'moduleKey' },
+      { header: this.i18n.instant('MAINTENANCE.STATUS'), value: (row) => this.moduleState[row.moduleKey] !== false ? this.i18n.instant('MODULES.ENABLED') : this.i18n.instant('MODULES.DISABLED') },
+      { header: this.i18n.instant('MODULES.MONTHLY_PRICE'), value: (row) => row.monthlyPrice || 0 },
+      { header: this.i18n.instant('MODULES.DEPENDENCIES'), value: (row) => this.dependencyCount(row) }
     ];
   }
 
@@ -501,7 +505,7 @@ export class ModuleManagementComponent implements OnInit {
       },
       error: () => {
         this.loading = false;
-        this.snack.error(this.isArabic ? 'تعذر تحميل كتالوج الموديولات' : 'Unable to load module catalog');
+        this.snack.error(this.i18n.instant('MODULES.LOAD_ERROR'));
       }
     });
   }
@@ -529,6 +533,7 @@ export class ModuleManagementComponent implements OnInit {
     this.dialog.open(ModuleDetailsDialogComponent, {
       width: '680px',
       panelClass: 'app-dialog-panel',
+      disableClose: true,
       data: {
         module,
         enabled: this.moduleState[module.moduleKey] !== false,
@@ -563,11 +568,11 @@ export class ModuleManagementComponent implements OnInit {
       next: (res) => {
         this.saving = false;
         this.applyModules(res.data ?? []);
-        this.snack.success(this.isArabic ? 'تم حفظ إعدادات الموديولات' : 'Module settings saved successfully');
+        this.snack.success(this.i18n.instant('MODULES.SAVE_SUCCESS'));
       },
       error: () => {
         this.saving = false;
-        this.snack.error(this.isArabic ? 'تعذر حفظ الإعدادات' : 'Unable to save module settings');
+        this.snack.error(this.i18n.instant('MODULES.SAVE_ERROR'));
       }
     });
   }

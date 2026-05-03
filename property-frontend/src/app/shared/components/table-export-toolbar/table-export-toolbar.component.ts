@@ -72,11 +72,11 @@ export class TableExportToolbarComponent<T = unknown> {
   }
 
   get excelLabel(): string {
-    return this.i18n.currentLang === 'ar' ? 'تصدير Excel' : 'Export Excel';
+    return this.i18n.instant('COMMON.EXPORT_EXCEL');
   }
 
   get pdfLabel(): string {
-    return this.i18n.currentLang === 'ar' ? 'تصدير PDF' : 'Export PDF';
+    return this.i18n.instant('COMMON.EXPORT_PDF');
   }
 
   async exportExcel(): Promise<void> {

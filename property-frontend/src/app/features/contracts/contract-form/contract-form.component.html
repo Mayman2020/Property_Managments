@@ -38,7 +38,7 @@
         <form [formGroup]="partyForm" class="step-form">
 
           <div class="step-section-label">
-            {{ i18n.currentLang === 'ar' ? 'اختر العقار أولاً' : 'Select Property First' }}
+            {{ 'CONTRACTS.STEP_PARTIES_HINT' | translate }}
           </div>
 
           <!-- Property selector -->
@@ -63,7 +63,7 @@
               <span class="chip-name">{{ propertyLabel }}</span>
               <span class="chip-meta">{{ selectedProperty.city || '' }} · {{ selectedProperty.propertyCode }}</span>
             </div>
-            <span class="chip-units">{{ selectedProperty.totalUnits }} {{ 'PROPERTY_LIST.UNITS' | translate }}</span>
+            <span class="chip-units">{{ units.length }} {{ 'PROPERTY_LIST.UNITS' | translate }}</span>
           </div>
 
           <!-- Unit selector (reactive to property) -->
@@ -106,9 +106,9 @@
             <div class="owner-text">
               <span class="owner-label">{{ 'PROPERTY_LIST.OWNER' | translate }}</span>
               <span class="owner-id">
-                {{ i18n.currentLang === 'ar' ? 'رقم المالك: ' : 'Owner ID: ' }}{{ partyForm.get('ownerId')?.value }}
-                <ng-container *ngIf="selectedProperty?.ownerNameAr || selectedProperty?.ownerNameEn">
-                  · {{ i18n.currentLang === 'ar' ? selectedProperty?.ownerNameAr : selectedProperty?.ownerNameEn }}
+                {{ 'PROPERTY_LIST.OWNER_ID' | translate }}: {{ partyForm.get('ownerId')?.value }}
+                <ng-container *ngIf="selectedProperty?.owners?.[0]?.fullName">
+                  · {{ selectedProperty?.owners?.[0]?.fullName }}
                 </ng-container>
               </span>
             </div>
@@ -174,11 +174,36 @@
       <mat-step [stepControl]="financialForm" [label]="'CONTRACTS.STEP_FINANCIAL' | translate">
         <form [formGroup]="financialForm" class="step-form">
 
+          <!-- Unit Details Display -->
+          <div class="unit-details-card" *ngIf="selectedUnit">
+            <div class="unit-details-header">
+              <mat-icon>apartment</mat-icon>
+              <span>{{ 'UNIT_DETAILS.UNIT_DETAILS' | translate }}</span>
+            </div>
+            <div class="unit-details-grid">
+              <div class="detail-item">
+                <span class="label">{{ 'UNIT_DETAILS.STATUS' | translate }}</span>
+                <span class="value">{{ getFurnishedStatus() }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="label">{{ 'UNIT_DETAILS.ORIGINAL_RENT' | translate }}</span>
+                <span class="value">{{ selectedUnit.rentAmount }} {{ selectedUnit.currency || 'OMR' }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="label">{{ 'UNIT_DETAILS.AREA' | translate }}</span>
+                <span class="value">{{ selectedUnit.areaSqm }} m²</span>
+              </div>
+            </div>
+          </div>
+
           <div class="two-col">
             <mat-form-field appearance="outline">
               <mat-label>{{ 'CONTRACTS.MONTHLY_RENT' | translate }}</mat-label>
               <input matInput type="number" formControlName="monthlyRent" min="1" required>
               <mat-error>{{ 'COMMON.REQUIRED' | translate }}</mat-error>
+              <mat-hint *ngIf="selectedUnit?.rentAmount" class="rent-hint">
+                {{ 'UNIT_DETAILS.RENT_MAX_HINT' | translate }} {{ selectedUnit?.rentAmount }}
+              </mat-hint>
             </mat-form-field>
 
             <mat-form-field appearance="outline">
@@ -215,6 +240,27 @@
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>{{ 'CONTRACTS.NOTES' | translate }}</mat-label>
             <textarea matInput formControlName="notes" rows="3"></textarea>
+          </mat-form-field>
+
+          <mat-checkbox formControlName="hasFreeMonth" class="free-month-check">
+            {{ 'CONTRACTS.FREE_MONTH_LABEL' | translate }}
+          </mat-checkbox>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ 'CONTRACTS.DISCOUNT_REASON_LABEL' | translate }}</mat-label>
+            <mat-select formControlName="rentDiscountReason">
+              <mat-option [value]="null">
+                {{ 'CONTRACTS.SELECT_REASON' | translate }}
+              </mat-option>
+              <mat-option *ngFor="let r of discountReasons" [value]="r.value">
+                {{ r.label | translate }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width" *ngIf="showOtherReason">
+            <mat-label>{{ 'CONTRACTS.WRITE_REASON' | translate }}</mat-label>
+            <textarea matInput formControlName="otherReasonText" rows="2"></textarea>
           </mat-form-field>
 
           <div *ngIf="errorMsg" class="error-msg">{{ errorMsg }}</div>

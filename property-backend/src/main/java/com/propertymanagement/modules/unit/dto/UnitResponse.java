@@ -15,6 +15,7 @@ public class UnitResponse {
     private Long floorId;
     private String unitNumber;
     private UnitType unitType;
+    private String furnishedStatus;
     private BigDecimal areaSqm;
     private Integer bedrooms;
     private Integer bathrooms;
@@ -25,4 +26,8 @@ public class UnitResponse {
     private boolean active;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Long createdBy;
+    private String createdByName;
+    private Long modifiedBy;
+    private String modifiedByName;
 }

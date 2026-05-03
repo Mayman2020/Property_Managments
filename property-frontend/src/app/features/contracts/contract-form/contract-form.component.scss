@@ -135,6 +135,70 @@
   margin-top: 4px;
 }
 
+/* Unit details card */
+.unit-details-card {
+  padding: 16px 20px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.04) 0%, rgba(59, 130, 246, 0.04) 100%);
+  animation: fadeUp 200ms ease both;
+}
+
+.unit-details-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text-main);
+
+  mat-icon {
+    color: var(--accent);
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.unit-details-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  .label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+  }
+
+  .value {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-main);
+  }
+}
+
+/* Free month checkbox */
+.free-month-check {
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+/* Rent hint */
+.rent-hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
 /* Step actions */
 .step-actions {
   display: flex;

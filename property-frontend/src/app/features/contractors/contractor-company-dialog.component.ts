@@ -8,15 +8,19 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatIconModule } from '@angular/material/icon';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { ContractorCompany, ContractorCompanyService } from '../../core/services/contractor-company.service';
 import { SnackService } from '../../core/services/snack.service';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { UploadZoneComponent } from '../../shared/components/upload-zone/upload-zone.component';
+import { IdentityMediaFieldsComponent } from '../../shared/components/identity-media-fields/identity-media-fields.component';
+import { AuditTrailComponent } from '../../shared/components/audit-trail/audit-trail.component';
 
 export interface ContractorCompanyDialogData {
   company: ContractorCompany | null;
+  readOnly?: boolean;
 }
 
 function toYmd(d: Date | null | undefined): string | undefined {
@@ -48,10 +52,13 @@ function parseYmd(s: string | undefined | null): Date | null {
     MatDatepickerModule,
     MatSlideToggleModule,
     MatProgressSpinnerModule,
-    UploadZoneComponent
+    MatIconModule,
+    UploadZoneComponent,
+    IdentityMediaFieldsComponent,
+    AuditTrailComponent
   ],
   template: `
-    <h2 mat-dialog-title>{{ (data.company ? 'CONTRACTORS.EDIT' : 'CONTRACTORS.NEW') | translate }}</h2>
+    <h2 mat-dialog-title>{{ titleKey | translate }}</h2>
     <mat-dialog-content class="dialog-body">
       <form [formGroup]="form" class="contractor-dialog-form">
         <div class="dialog-intro full">
@@ -79,6 +86,14 @@ function parseYmd(s: string | undefined | null): Date | null {
           <input matInput type="email" formControlName="email" />
         </mat-form-field>
 
+        <section class="full identity-wrap" [class.media-readonly]="data.readOnly">
+          <app-identity-media-fields
+            [compact]="true"
+            [(profileImageUrl)]="profileImageUrl"
+            [(civilIdImageUrl)]="civilIdImageUrl">
+          </app-identity-media-fields>
+        </section>
+
         <mat-form-field appearance="outline">
           <mat-label>{{ 'CONTRACTORS.CONTRACT_START' | translate }}</mat-label>
           <input matInput [matDatepicker]="p1" formControlName="contractStart" />
@@ -94,10 +109,12 @@ function parseYmd(s: string | undefined | null): Date | null {
 
         <div class="upload-block full">
           <app-upload-zone
+            [readOnly]="!!data.readOnly"
             [multiple]="true"
             [accept]="'image/*,.pdf,.doc,.docx'"
-            [label]="'CONTRACTORS.CONTRACT_ATTACHMENTS' | translate"
-            (filesUploaded)="onFiles($event)">
+            [urlList]="attachmentUrls"
+            (urlListChange)="attachmentUrls = $event"
+            [label]="'CONTRACTORS.CONTRACT_ATTACHMENTS' | translate">
           </app-upload-zone>
         </div>
 
@@ -106,14 +123,26 @@ function parseYmd(s: string | undefined | null): Date | null {
           <textarea matInput rows="2" formControlName="notes"></textarea>
         </mat-form-field>
 
-        <mat-slide-toggle formControlName="active" class="full">{{ 'COMMON.ACTIVE' | translate }}</mat-slide-toggle>
+        <mat-slide-toggle *ngIf="!data.readOnly" formControlName="active" class="full">{{ 'COMMON.ACTIVE' | translate }}</mat-slide-toggle>
+        <div class="full status-readonly" *ngIf="data.readOnly && data.company">
+          <span class="lbl">{{ 'COMMON.ACTIVE' | translate }}</span>
+          <span class="val">{{ (data.company.active ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') | translate }}</span>
+        </div>
       </form>
+      <app-audit-trail *ngIf="data.company" class="company-audit"
+        [createdAt]="data.company.createdAt"
+        [updatedAt]="data.company.updatedAt"
+        [createdBy]="data.company.createdBy"
+        [createdByName]="data.company.createdByName"
+        [modifiedBy]="data.company.modifiedBy"
+        [modifiedByName]="data.company.modifiedByName">
+      </app-audit-trail>
     </mat-dialog-content>
     <mat-dialog-actions align="end" class="dialog-actions">
       <button mat-stroked-button type="button" class="btn-dialog-cancel" (click)="ref.close(false)">
-        {{ 'ACTIONS.CANCEL' | translate }}
+        {{ (data.readOnly ? 'ACTIONS.CLOSE' : 'ACTIONS.CANCEL') | translate }}
       </button>
-      <button mat-flat-button type="button" class="btn-dialog-confirm" (click)="save()" [disabled]="saving">
+      <button mat-flat-button type="button" class="btn-dialog-confirm" *ngIf="!data.readOnly" (click)="save()" [disabled]="saving">
         <mat-spinner *ngIf="saving" diameter="18"></mat-spinner>
         <span *ngIf="!saving">{{ 'ACTIONS.SAVE' | translate }}</span>
       </button>
@@ -123,12 +152,30 @@ function parseYmd(s: string | undefined | null): Date | null {
     .dialog-body { min-width: min(560px, 94vw); padding-top: 8px; }
     .contractor-dialog-form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .full { grid-column: 1 / -1; }
+    .identity-wrap {
+      padding-bottom: 12px;
+      margin-bottom: 4px;
+      border-bottom: 1px solid var(--line, rgba(0,0,0,.08));
+    }
     @media (max-width: 560px) { .contractor-dialog-form { grid-template-columns: 1fr; } }
+    .company-audit { margin-top: 12px; }
+    .status-readonly { display: flex; flex-direction: column; gap: 4px; padding: 8px 0; }
+    .status-readonly .lbl { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); }
+    .status-readonly .val { font-size: 0.92rem; }
+    .media-readonly { pointer-events: none; opacity: 0.92; }
   `]
 })
 export class ContractorCompanyDialogComponent {
   saving = false;
   attachmentUrls: string[] = [];
+  profileImageUrl = '';
+  civilIdImageUrl = '';
+
+  get titleKey(): string {
+    if (this.data.readOnly && this.data.company) return 'CONTRACTORS.VIEW_DETAILS';
+    return this.data.company ? 'CONTRACTORS.EDIT' : 'CONTRACTORS.NEW';
+  }
+
   readonly form = this.fb.nonNullable.group({
     nameAr: ['', [Validators.required, Validators.maxLength(200)]],
     nameEn: ['', [Validators.required, Validators.maxLength(200)]],
@@ -161,16 +208,18 @@ export class ContractorCompanyDialogComponent {
         contractEnd: parseYmd(c.contractEnd)
       });
       this.attachmentUrls = [...(c.attachmentFiles ?? [])];
+      this.profileImageUrl = c.profileImageUrl ?? '';
+      this.civilIdImageUrl = c.civilIdImageUrl ?? '';
+    }
+    if (data.readOnly) {
+      this.form.disable();
     }
   }
 
-  onFiles(urls: string[]): void {
-    this.attachmentUrls = [...new Set([...this.attachmentUrls, ...urls])];
-  }
-
   save(): void {
+    this.form.markAllAsTouched();
     if (this.form.invalid) {
-      this.form.markAllAsTouched();
+      this.snack.error(this.i18n.instant('COMMON.FILL_REQUIRED_FIELDS'));
       return;
     }
     const v = this.form.getRawValue();
@@ -196,7 +245,9 @@ export class ContractorCompanyDialogComponent {
       active: v.active,
       contractStart: start,
       contractEnd: end,
-      attachmentFiles: [...this.attachmentUrls]
+      attachmentFiles: [...this.attachmentUrls],
+      profileImageUrl: (this.profileImageUrl ?? '').trim(),
+      civilIdImageUrl: (this.civilIdImageUrl ?? '').trim()
     };
 
     const req$ = this.data.company ? this.svc.update(this.data.company.id, body) : this.svc.create(body);

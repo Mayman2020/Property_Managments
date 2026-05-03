@@ -37,10 +37,19 @@ public class ContractResponse {
     private LocalDate terminationDate;
     private String terminationReason;
     private Integer freeMonths;
+    private Boolean hasFreeMonth;
+    private String rentDiscountReason;
+    private String otherReasonText;
     private String ownerApprovalStatus;
     private String ownerApprovalNotes;
     private String notes;
     private long daysUntilExpiry;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Long createdBy;
+    private String createdByName;
+    private Long approvedBy;
+    private String approvedByName;
+    private Long modifiedBy;
+    private String modifiedByName;
 }

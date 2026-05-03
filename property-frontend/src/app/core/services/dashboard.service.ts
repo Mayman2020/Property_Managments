@@ -15,6 +15,7 @@ export interface DashboardStats {
   openMaintenanceRequests: number;
   totalInventoryItems: number;
   activeContracts?: number;
+  draftContracts?: number;
   expiringIn30Days?: number;
   overduePayments?: number;
   openViolations?: number;

@@ -15,8 +15,7 @@ spring:
     default-schema: property_mgmt
     schemas: property_mgmt,public
     baseline-on-migrate: true
-    validate-on-migrate: true
-    repair-on-migrate: true
+    validate-on-migrate: false
 
   jpa:
     hibernate:

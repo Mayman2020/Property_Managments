@@ -2,6 +2,7 @@ package com.propertymanagement.shared.exception;
 
 import com.propertymanagement.shared.response.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -44,6 +45,26 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleAccessDenied(AccessDeniedException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(ApiResponse.error("Access denied", "FORBIDDEN"));
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDataIntegrity(DataIntegrityViolationException ex) {
+        String detail = ex.getMostSpecificCause() != null ? ex.getMostSpecificCause().getMessage() : ex.getMessage();
+        if (detail != null) {
+            if (detail.contains("tenants_email_key")) {
+                log.warn("DataIntegrityViolation (tenant email): {}", detail);
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body(ApiResponse.error("Email already registered for another tenant", "CONFLICT"));
+            }
+            if (detail.contains("users") && detail.contains("email")) {
+                log.warn("DataIntegrityViolation (user email): {}", detail);
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body(ApiResponse.error("Email or username already in use", "CONFLICT"));
+            }
+        }
+        log.error("Data integrity violation", ex);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("Internal server error", "INTERNAL_ERROR"));
     }
 
     @ExceptionHandler(Exception.class)

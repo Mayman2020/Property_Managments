@@ -8,6 +8,9 @@ export interface EmployeeItem {
   propertyId?: number;
   employeeCode: string;
   fullName: string;
+  nationalId?: string;
+  profileImageUrl?: string;
+  civilIdImageUrl?: string;
   phone?: string;
   email?: string;
   jobTitle?: string;
@@ -22,12 +25,16 @@ export interface EmployeeItem {
 export interface EmployeePayload {
   propertyId?: number;
   fullName: string;
+  nationalId?: string;
+  profileImageUrl?: string;
+  civilIdImageUrl?: string;
   phone?: string;
   email?: string;
   jobTitleAr?: string;
   jobTitleEn?: string;
   basicSalary: number;
   hireDate: string;
+  systemRole?: string;
 }
 
 export interface PayrollRunItem {

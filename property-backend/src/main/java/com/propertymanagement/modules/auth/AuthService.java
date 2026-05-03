@@ -7,6 +7,7 @@ import com.propertymanagement.modules.owner.OwnerRepository;
 import com.propertymanagement.modules.moduleconfig.PropertyModuleSettingService;
 import com.propertymanagement.modules.permission.RolePermissionService;
 import com.propertymanagement.modules.tenant.TenantRepository;
+import com.propertymanagement.modules.user.PortalProfileBridge;
 import com.propertymanagement.modules.user.User;
 import com.propertymanagement.modules.user.UserRepository;
 import com.propertymanagement.modules.user.UserRole;
@@ -37,6 +38,7 @@ public class AuthService {
     private final OwnerRepository ownerRepository;
     private final RolePermissionService rolePermissionService;
     private final PropertyModuleSettingService propertyModuleSettingService;
+    private final PortalProfileBridge portalProfileBridge;
 
     @Value("${jwt.expiration}")
     private long jwtExpiration;
@@ -68,6 +70,9 @@ public class AuthService {
         String email = jwtUtil.extractSubject(token);
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> AppException.notFound("User not found"));
+        if (!user.isActive()) {
+            throw AppException.badRequest("Account is deactivated");
+        }
         return buildResponse(user);
     }
 
@@ -92,28 +97,33 @@ public class AuthService {
                     .orElse(null);
         }
 
+        LoginResponse.UserDto userDto = LoginResponse.UserDto.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .username(user.getUsername())
+                .fullName(user.getFullName())
+                .profileImageUrl(user.getProfileImageUrl())
+                .bio(user.getBio())
+                .role(user.getRole().name())
+                .propertyId(user.getPropertyId())
+                .maintenanceOfficerType(user.getMaintenanceOfficerType() != null ? user.getMaintenanceOfficerType().name() : null)
+                .maintenanceCompanyName(user.getMaintenanceCompanyName())
+                .contractorCompanyId(user.getContractorCompanyId())
+                .tenantId(tenantId)
+                .ownerId(ownerId)
+                .civilIdImageUrl(null)
+                .leaseContractFiles(null)
+                .permissions(rolePermissionService.getPermissionMap(user.getRole()))
+                .clientModules(resolveClientModules(user))
+                .build();
+        userDto = portalProfileBridge.mergeRoleRecordIntoLoginUser(userDto, user);
+
         return LoginResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .tokenType("Bearer")
                 .expiresIn(jwtExpiration / 1000)
-                .user(LoginResponse.UserDto.builder()
-                        .id(user.getId())
-                        .email(user.getEmail())
-                        .username(user.getUsername())
-                        .fullName(user.getFullName())
-                        .profileImageUrl(user.getProfileImageUrl())
-                        .bio(user.getBio())
-                        .role(user.getRole().name())
-                        .propertyId(user.getPropertyId())
-                        .maintenanceOfficerType(user.getMaintenanceOfficerType() != null ? user.getMaintenanceOfficerType().name() : null)
-                        .maintenanceCompanyName(user.getMaintenanceCompanyName())
-                        .contractorCompanyId(user.getContractorCompanyId())
-                        .tenantId(tenantId)
-                        .ownerId(ownerId)
-                        .permissions(rolePermissionService.getPermissionMap(user.getRole()))
-                        .clientModules(resolveClientModules(user))
-                        .build())
+                .user(userDto)
                 .build();
     }
 

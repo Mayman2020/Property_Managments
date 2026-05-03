@@ -2,6 +2,7 @@ package com.propertymanagement.modules.user.dto;
 
 import com.propertymanagement.modules.user.UserRole;
 import com.propertymanagement.modules.user.MaintenanceOfficerType;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -9,7 +10,6 @@ import lombok.Data;
 
 @Data
 public class UserRequest {
-    @NotBlank
     private String username;
     @Email @NotBlank
     private String email;
@@ -18,6 +18,8 @@ public class UserRequest {
     private String fullName;
     private String phone;
     private String profileImageUrl;
+    /** Civil ID scan — synced to linked owner / employee when applicable. */
+    private String civilIdImageUrl;
     private String bio;
     @NotNull
     private UserRole role;
@@ -26,4 +28,11 @@ public class UserRequest {
     private String maintenanceCompanyName;
     /** Required when maintenanceOfficerType is CONTRACTOR_COMPANY — links officer to registry company. */
     private Long contractorCompanyId;
+
+    @Valid
+    private OwnerProfileLinkDto ownerLink;
+    @Valid
+    private TenantProfileLinkDto tenantLink;
+    @Valid
+    private EmployeeProfileLinkDto employeeLink;
 }

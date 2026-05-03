@@ -23,6 +23,12 @@ public class ContractorCompanyRequest {
     @Size(max = 150)
     private String email;
 
+    @Size(max = 500)
+    private String profileImageUrl;
+
+    @Size(max = 500)
+    private String civilIdImageUrl;
+
     private String notes;
 
     private Boolean active;

@@ -18,6 +18,7 @@ import { ExportColumn, TableExportToolbarComponent } from '../../shared/componen
 import { I18nService } from '../../core/i18n/i18n.service';
 import { LookupItem, LookupService, LookupType } from '../../core/services/lookup.service';
 import { SnackService } from '../../core/services/snack.service';
+import { DeleteConfirmService } from '../../core/services/delete-confirm.service';
 import { LookupDialogComponent, LookupDialogData } from './lookup-dialog.component';
 import { ClassificationDialogComponent, ClassificationDialogData } from './classification-dialog.component';
 
@@ -91,6 +92,7 @@ export class LookupManagementComponent implements OnInit {
     private readonly dialog: MatDialog,
     private readonly lookups: LookupService,
     private readonly snack: SnackService,
+    private readonly deleteConfirm: DeleteConfirmService,
     readonly i18n: I18nService
   ) {}
 
@@ -160,55 +162,59 @@ export class LookupManagementComponent implements OnInit {
 
   openAddGovernorate(): void {
     const data: LookupDialogData = { mode: 'governorate', item: null };
-    this.dialog.open(LookupDialogComponent, { data, panelClass: 'app-dialog-panel', width: '540px' })
+    this.dialog.open(LookupDialogComponent, { data, panelClass: 'app-dialog-panel', width: '540px', disableClose: true })
       .afterClosed().subscribe((saved) => { if (saved) this.loadLocationData(); });
   }
 
   openEditGovernorate(item: LookupItem): void {
     const data: LookupDialogData = { mode: 'governorate', item };
-    this.dialog.open(LookupDialogComponent, { data, panelClass: 'app-dialog-panel', width: '540px' })
+    this.dialog.open(LookupDialogComponent, { data, panelClass: 'app-dialog-panel', width: '540px', disableClose: true })
       .afterClosed().subscribe((saved) => { if (saved) this.loadLocationData(); });
   }
 
   openAddCity(): void {
     const data: LookupDialogData = { mode: 'city', item: null, governorates: this.governorates };
-    this.dialog.open(LookupDialogComponent, { data, panelClass: 'app-dialog-panel', width: '540px' })
+    this.dialog.open(LookupDialogComponent, { data, panelClass: 'app-dialog-panel', width: '540px', disableClose: true })
       .afterClosed().subscribe((saved) => { if (saved) this.loadLocationData(); });
   }
 
   openEditCity(item: CityRow): void {
     const data: LookupDialogData = { mode: 'city', item, governorates: this.governorates };
-    this.dialog.open(LookupDialogComponent, { data, panelClass: 'app-dialog-panel', width: '540px' })
+    this.dialog.open(LookupDialogComponent, { data, panelClass: 'app-dialog-panel', width: '540px', disableClose: true })
       .afterClosed().subscribe((saved) => { if (saved) this.loadLocationData(); });
   }
 
   openAddClassification(list: ClassificationList): void {
     const data: ClassificationDialogData = { type: list.type, item: null };
-    this.dialog.open(ClassificationDialogComponent, { data, panelClass: 'app-dialog-panel', width: '520px' })
+    this.dialog.open(ClassificationDialogComponent, { data, panelClass: 'app-dialog-panel', width: '520px', disableClose: true })
       .afterClosed().subscribe((saved) => { if (saved) this.loadClassification(list); });
   }
 
   openEditClassification(list: ClassificationList, item: LookupItem): void {
     const data: ClassificationDialogData = { type: list.type, item };
-    this.dialog.open(ClassificationDialogComponent, { data, panelClass: 'app-dialog-panel', width: '520px' })
+    this.dialog.open(ClassificationDialogComponent, { data, panelClass: 'app-dialog-panel', width: '520px', disableClose: true })
       .afterClosed().subscribe((saved) => { if (saved) this.loadClassification(list); });
   }
 
   deleteLookup(item: LookupItem, reload?: () => void): void {
     if (item.locked || this.deletingLookupId) return;
-    if (!window.confirm(this.i18n.instant('ACTIONS.DELETE'))) return;
-
-    this.deletingLookupId = item.id;
-    this.lookups.delete(item.id).subscribe({
-      next: () => {
-        this.deletingLookupId = null;
-        this.snack.success(this.i18n.instant('COMMON.SUCCESS'));
-        reload ? reload() : this.loadLocationData();
-      },
-      error: (err: Error) => {
-        this.deletingLookupId = null;
-        this.snack.error(err.message || this.i18n.instant('COMMON.ERROR'));
-      }
+    this.deleteConfirm.openDeleteConfirm({
+      messageKey: 'DIALOG.DELETE_NAMED',
+      messageParams: { name: this.nameOf(item) }
+    }).subscribe((ok) => {
+      if (!ok) return;
+      this.deletingLookupId = item.id;
+      this.lookups.delete(item.id).subscribe({
+        next: () => {
+          this.deletingLookupId = null;
+          this.snack.success(this.i18n.instant('COMMON.SUCCESS'));
+          reload ? reload() : this.loadLocationData();
+        },
+        error: (err: Error) => {
+          this.deletingLookupId = null;
+          this.deleteConfirm.handleDeleteError(err, this.snack);
+        }
+      });
     });
   }
 

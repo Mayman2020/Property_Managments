@@ -131,7 +131,8 @@ export class ContractListComponent implements OnInit {
       width: '980px',
       maxWidth: '95vw',
       maxHeight: '95vh',
-      panelClass: 'app-dialog-panel'
+      panelClass: 'app-dialog-panel',
+      disableClose: true
     }).afterClosed().subscribe(saved => {
       if (saved) this.loadContracts();
     });

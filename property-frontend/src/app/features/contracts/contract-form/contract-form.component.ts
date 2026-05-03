@@ -56,6 +56,13 @@ export class ContractFormComponent implements OnInit {
   tenants: Tenant[] = [];
 
   selectedProperty: Property | null = null;
+  selectedUnit: Unit | null = null;
+
+  discountReasons = [
+    { value: 'OWNER_AGREEMENT', labelAr: 'موافقة صاحب العقار', labelEn: 'Owner Agreement', label: 'CONTRACTS.DISCOUNT_OWNER_AGREEMENT' },
+    { value: 'OLD_TENANT', labelAr: 'مستأجر قديم', labelEn: 'Old Tenant', label: 'CONTRACTS.DISCOUNT_OLD_TENANT' },
+    { value: 'OTHER', labelAr: 'سبب آخر', labelEn: 'Other Reason', label: 'CONTRACTS.DISCOUNT_OTHER' }
+  ];
 
   currencies = ['OMR', 'SAR', 'USD', 'AED', 'KWD', 'BHD'];
   paymentDays = Array.from({ length: 28 }, (_, i) => i + 1);
@@ -100,7 +107,10 @@ export class ContractFormComponent implements OnInit {
       paymentFrequency: ['MONTHLY', Validators.required],
       paymentDay: [1, Validators.required],
       currency: ['OMR', Validators.required],
-      notes: ['']
+      notes: [''],
+      hasFreeMonth: [false],
+      rentDiscountReason: [null],
+      otherReasonText: ['']
     });
 
     this.lookupCache.preload('PAYMENT_FREQUENCY').subscribe();
@@ -109,6 +119,14 @@ export class ContractFormComponent implements OnInit {
 
     this.partyForm.get('propertyId')?.valueChanges.subscribe((propId: number | null) => {
       this.onPropertyChange(propId);
+    });
+
+    this.partyForm.get('unitId')?.valueChanges.subscribe((unitId: number | null) => {
+      this.onUnitChange(unitId);
+    });
+
+    this.financialForm.get('rentDiscountReason')?.valueChanges.subscribe((reason: string | null) => {
+      this.onDiscountReasonChange(reason);
     });
 
     if (this.data?.propertyId) {
@@ -131,6 +149,7 @@ export class ContractFormComponent implements OnInit {
     this.partyForm.patchValue({ unitId: null, ownerId: null }, { emitEvent: false });
     this.units = [];
     this.selectedProperty = null;
+    this.selectedUnit = null;
 
     if (!propertyId) return;
 
@@ -149,6 +168,40 @@ export class ContractFormComponent implements OnInit {
     });
   }
 
+  onUnitChange(unitId: number | null): void {
+    this.selectedUnit = null;
+    if (!unitId) return;
+    this.selectedUnit = this.units.find(u => u.id === unitId) ?? null;
+    if (this.selectedUnit && this.selectedUnit.rentAmount) {
+      this.financialForm.patchValue({ monthlyRent: this.selectedUnit.rentAmount }, { emitEvent: false });
+    }
+  }
+
+  onDiscountReasonChange(reason: string | null): void {
+    if (reason !== 'OTHER') {
+      this.financialForm.patchValue({ otherReasonText: '' }, { emitEvent: false });
+    }
+  }
+
+  get showOtherReason(): boolean {
+    return this.financialForm.get('rentDiscountReason')?.value === 'OTHER';
+  }
+
+  validateRent(): boolean {
+    if (!this.selectedUnit?.rentAmount) return true;
+    const currentRent = this.financialForm.get('monthlyRent')?.value;
+    return currentRent <= this.selectedUnit.rentAmount;
+  }
+
+  getFurnishedStatus(): string {
+    if (!this.selectedUnit?.furnishedStatus) return '';
+    const status = this.selectedUnit.furnishedStatus;
+    if (status === 'FURNISHED') return this.i18n.instant('UNIT_DETAILS.FURNISHED');
+    if (status === 'UNFURNISHED') return this.i18n.instant('UNIT_DETAILS.UNFURNISHED');
+    if (status === 'SEMI_FURNISHED') return this.i18n.instant('UNIT_DETAILS.SEMI_FURNISHED');
+    return status;
+  }
+
   unitLabel(unit: Unit): string {
     return unit.unitNumber + (unit.unitType ? ` — ${unit.unitType}` : '');
   }
@@ -159,13 +212,27 @@ export class ContractFormComponent implements OnInit {
 
   submit(): void {
     if (this.partyForm.invalid || this.periodForm.invalid || this.financialForm.invalid) return;
+    if (!this.validateRent()) {
+      this.errorMsg = this.i18n.instant('CONTRACTS.RENT_EXCEEDS_MAX');
+      return;
+    }
+
     this.saving = true;
     this.errorMsg = '';
 
+    const financialData = this.financialForm.value;
     const body = {
       ...this.partyForm.value,
       ...this.periodForm.value,
-      ...this.financialForm.value,
+      monthlyRent: financialData.monthlyRent,
+      securityDeposit: financialData.securityDeposit,
+      paymentFrequency: financialData.paymentFrequency,
+      paymentDay: financialData.paymentDay,
+      currency: financialData.currency,
+      notes: financialData.notes,
+      hasFreeMonth: financialData.hasFreeMonth,
+      rentDiscountReason: financialData.rentDiscountReason,
+      otherReasonText: financialData.otherReasonText,
       startDate: this.toIsoDate(this.periodForm.value.startDate),
       endDate: this.toIsoDate(this.periodForm.value.endDate),
       signingDate: this.toIsoDate(this.periodForm.value.signingDate)

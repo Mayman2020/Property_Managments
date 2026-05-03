@@ -2,8 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TranslateModule } from '@ngx-translate/core';
 import { MatDialog } from '@angular/material/dialog';
 
@@ -15,6 +15,8 @@ import { ExportColumn, TableExportToolbarComponent } from '../../shared/componen
 import { ContractorCompany, ContractorCompanyService } from '../../core/services/contractor-company.service';
 import { AuthService } from '../../core/services/auth.service';
 import { I18nService } from '../../core/i18n/i18n.service';
+import { SnackService } from '../../core/services/snack.service';
+import { DeleteConfirmService } from '../../core/services/delete-confirm.service';
 import {
   ContractorCompanyDialogComponent,
   ContractorCompanyDialogData
@@ -53,6 +55,8 @@ export class ContractorCompaniesComponent implements OnInit {
   constructor(
     private readonly svc: ContractorCompanyService,
     private readonly dialog: MatDialog,
+    private readonly snack: SnackService,
+    private readonly deleteConfirm: DeleteConfirmService,
     readonly auth: AuthService,
     readonly i18n: I18nService
   ) {}
@@ -151,7 +155,7 @@ export class ContractorCompaniesComponent implements OnInit {
         width: '560px',
         maxWidth: '95vw',
         panelClass: 'app-dialog-panel',
-        data: { company }
+        data: { company, readOnly: false }
       })
       .afterClosed()
       .subscribe((saved) => {
@@ -159,11 +163,29 @@ export class ContractorCompaniesComponent implements OnInit {
       });
   }
 
+  openView(company: ContractorCompany): void {
+    this.dialog.open<ContractorCompanyDialogComponent, ContractorCompanyDialogData, boolean>(ContractorCompanyDialogComponent, {
+      width: '560px',
+      maxWidth: '95vw',
+      panelClass: 'app-dialog-panel',
+      data: { company, readOnly: true }
+    });
+  }
+
   remove(c: ContractorCompany): void {
-    if (!this.canHardDelete || !confirm(`Delete ${c.name}?`)) return;
-    this.svc.delete(c.id).subscribe({
-      next: () => this.load(),
-      error: () => {}
+    if (!this.canHardDelete) return;
+    this.deleteConfirm.openDeleteConfirm({
+      messageKey: 'DIALOG.DELETE_NAMED',
+      messageParams: { name: this.companyName(c) }
+    }).subscribe((ok) => {
+      if (!ok) return;
+      this.svc.delete(c.id).subscribe({
+        next: () => {
+          this.snack.success(this.i18n.instant('COMMON.SUCCESS'));
+          this.load();
+        },
+        error: (err: Error) => this.deleteConfirm.handleDeleteError(err, this.snack)
+      });
     });
   }
 

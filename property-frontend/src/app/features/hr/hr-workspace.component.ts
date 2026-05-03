@@ -11,7 +11,6 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { FilterBarComponent, FilterSpec } from '../../shared/components/filter-bar/filter-bar.component';
 import {
-  EmployeeItem,
   HrService,
   LeaveRequestItem,
   PayrollRunDetail,
@@ -20,6 +19,8 @@ import {
 } from '../../core/services/hr.service';
 import { Property, PropertyService } from '../../core/services/property.service';
 import { I18nService } from '../../core/i18n/i18n.service';
+import { UserService } from '../../core/services/user.service';
+import { User } from '../../core/models/user.model';
 import { EmployeeDialogComponent } from './employee-dialog.component';
 
 @Component({
@@ -61,17 +62,17 @@ import { EmployeeDialogComponent } from './employee-dialog.component';
                 <th>{{ 'HR.CODE_COL' | translate }}</th>
                 <th>{{ 'HR.EMPLOYEE_COL' | translate }}</th>
                 <th>{{ 'HR.JOB_TITLE_COL' | translate }}</th>
-                <th>{{ 'HR.SALARY_COL' | translate }}</th>
+                <th>{{ 'HR.EMAIL_COL' | translate }}</th>
                 <th>{{ 'HR.STATUS_COL' | translate }}</th>
               </tr>
             </thead>
             <tbody>
               <tr *ngFor="let item of employees">
-                <td>{{ item.employeeCode }}</td>
+                <td>#{{ item.id }}</td>
                 <td>{{ item.fullName }}</td>
                 <td>{{ employeeJobTitle(item) }}</td>
-                <td>{{ item.totalSalary || item.basicSalary || 0 | number:'1.0-2' }}</td>
-                <td><span class="status-badge" [attr.data-status]="item.status || 'ACTIVE'">{{ item.status || 'ACTIVE' }}</span></td>
+                <td>{{ item.email }}</td>
+                <td><span class="status-badge" [attr.data-status]="item.isActive ? 'ACTIVE' : 'INACTIVE'">{{ item.isActive ? ('COMMON.ACTIVE' | translate) : ('COMMON.INACTIVE' | translate) }}</span></td>
               </tr>
             </tbody>
           </table>
@@ -329,7 +330,7 @@ import { EmployeeDialogComponent } from './employee-dialog.component';
 })
 export class HrWorkspaceComponent implements OnInit {
   section = 'employees-list';
-  employees: EmployeeItem[] = [];
+  employees: User[] = [];
   properties: Property[] = [];
   filterPropertyId: number | null = null;
   pageFilters: FilterSpec[] = [];
@@ -373,6 +374,7 @@ export class HrWorkspaceComponent implements OnInit {
     private readonly router: Router,
     private readonly service: HrService,
     private readonly propertySvc: PropertyService,
+    private readonly userSvc: UserService,
     private readonly dialog: MatDialog,
     private readonly fb: FormBuilder,
     private readonly translate: TranslateService,
@@ -392,8 +394,9 @@ export class HrWorkspaceComponent implements OnInit {
     return this.translate.instant(map[this.section] ?? 'HR.EMPLOYEES_TITLE');
   }
 
-  employeeJobTitle(item: EmployeeItem): string {
-    return (this.i18n.currentLang === 'ar' ? item.jobTitleAr : item.jobTitleEn) || item.jobTitle || '-';
+  employeeJobTitle(item: User): string {
+    const roleKey = `ROLE.${item.role}`;
+    return this.i18n.instant(roleKey);
   }
 
   ngOnInit(): void {
@@ -421,7 +424,8 @@ export class HrWorkspaceComponent implements OnInit {
     this.dialog.open(EmployeeDialogComponent, {
       data: { properties: this.properties, defaultPropertyId: this.filterPropertyId ?? undefined },
       width: '580px',
-      panelClass: 'app-dialog-panel'
+      panelClass: 'app-dialog-panel',
+      disableClose: true
     }).afterClosed().subscribe((ok) => { if (ok) this.loadEmployees(); });
   }
 
@@ -547,10 +551,15 @@ export class HrWorkspaceComponent implements OnInit {
   }
 
   private loadEmployees(): void {
-    const params: Record<string, string | number> = { page: 0, size: 100 };
-    if (this.filterPropertyId) params['propertyId'] = this.filterPropertyId;
-    this.service.getEmployees(params).subscribe({
-      next: (res) => { this.employees = res.data?.content ?? []; },
+    const employeeRoles: string[] = ['HR_OFFICER', 'ACCOUNTANT', 'CONTRACTS_OFFICER', 'MAINTENANCE_OFFICER'];
+    this.userSvc.getAll(0, 200).subscribe({
+      next: (res) => {
+        let users = res.data?.content ?? [];
+        if (this.filterPropertyId) {
+          users = users.filter(u => u.propertyId === this.filterPropertyId);
+        }
+        this.employees = users.filter(u => employeeRoles.includes(u.role));
+      },
       error: () => { this.employees = []; }
     });
   }

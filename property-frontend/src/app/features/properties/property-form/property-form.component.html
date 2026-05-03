@@ -35,6 +35,21 @@
       </div>
     </section>
 
+    <section [class.app-card]="!isDialogMode" [class.dialog-form-section]="isDialogMode" *ngIf="!isViewMode">
+      <div class="section-header">
+        <span class="section-title">{{ 'PROPERTY_FORM.FLOOR_CONFIG' | translate }}</span>
+      </div>
+      <div class="section-body">
+        <p class="section-hint">{{ 'PROPERTY_FORM.FLOOR_CONFIG_HINT' | translate }}</p>
+        <div class="form-grid">
+          <mat-form-field appearance="outline" *ngFor="let floor of floorArray">
+            <mat-label>{{ 'PROPERTY_FORM.FLOOR' | translate }} {{ floor }} - {{ 'PROPERTY_FORM.UNITS_COUNT' | translate }}</mat-label>
+            <input matInput type="number" min="0" [value]="getFloorUnitValue(floor)" (input)="updateFloorUnit(floor, $event)">
+          </mat-form-field>
+        </div>
+      </div>
+    </section>
+
     <section [class.app-card]="!isDialogMode" [class.dialog-form-section]="isDialogMode">
       <div class="section-header">
         <span class="section-title">{{ 'PROPERTY_FORM.SECTION_LOCATION' | translate }}</span>
@@ -52,14 +67,13 @@
             <input matInput formControlName="country" readonly>
           </mat-form-field>
 
-          <mat-form-field appearance="outline">
-            <mat-label>{{ 'PROPERTY_FORM.CITY' | translate }}</mat-label>
-            <mat-select formControlName="cityId" [disabled]="loadingLookups || isViewMode">
-              <mat-option [value]="null" disabled>{{ 'PROPERTY_FORM.SELECT_CITY' | translate }}</mat-option>
-              <mat-option *ngFor="let city of cities" [value]="city.id">{{ cityLabel(city) }}</mat-option>
-            </mat-select>
-            <mat-error *ngIf="form.get('cityId')?.invalid">{{ 'COMMON.REQUIRED' | translate }}</mat-error>
-          </mat-form-field>
+          <app-searchable-select
+            formControlName="cityId"
+            [items]="cities"
+            [label]="'PROPERTY_FORM.CITY'"
+            [placeholder]="'PROPERTY_FORM.SELECT_CITY'"
+            [required]="true">
+          </app-searchable-select>
 
           <div class="map-picker-row full-col">
             <mat-form-field appearance="outline" class="map-url-field">
@@ -71,6 +85,8 @@
               {{ 'PROPERTY_FORM.GOOGLE_MAP_PICKER' | translate }}
             </button>
           </div>
+
+          <app-map-preview class="full-col" [url]="form.get('googleMapUrl')?.value"></app-map-preview>
         </div>
       </div>
     </section>
@@ -79,65 +95,146 @@
       <div class="section-header">
         <span class="section-title">{{ 'PROPERTY_FORM.SECTION_OWNER' | translate }}</span>
       </div>
-      <div class="section-body">
-        <div class="form-grid">
-          <mat-form-field appearance="outline">
-            <mat-label>{{ 'PROPERTY_FORM.OWNER_ID' | translate }}</mat-label>
-            <input matInput formControlName="ownerId" type="number">
-            <mat-error *ngIf="form.get('ownerId')?.invalid">{{ 'COMMON.REQUIRED' | translate }}</mat-error>
-          </mat-form-field>
+      <div class="section-body owner-section">
 
-          <mat-form-field appearance="outline">
-            <mat-label>{{ 'PROPERTY_FORM.OWNER_CIVIL_ID' | translate }}</mat-label>
-            <input matInput formControlName="ownerCivilId">
+        <!-- Owner search picker (edit / create only) -->
+        <ng-container *ngIf="!isViewMode">
+          <mat-form-field appearance="outline" class="owner-search-field">
+            <mat-label>{{ 'PROPERTY_FORM.SEARCH_OWNER' | translate }}</mat-label>
+            <input matInput [formControl]="ownerSearchControl" [matAutocomplete]="ownerAuto">
+            <mat-icon matSuffix>person_search</mat-icon>
+            <mat-autocomplete #ownerAuto="matAutocomplete" [displayWith]="ownerDisplayFn"
+                              (optionSelected)="addOwner($event.option.value)">
+              <mat-option *ngFor="let owner of filteredOwners" [value]="owner"
+                          [disabled]="isOwnerSelected(owner)">
+                <span>{{ ownerLabel(owner) }}</span>
+                <span class="owner-option-sub" *ngIf="owner.nationalId">&nbsp;·&nbsp;{{ owner.nationalId }}</span>
+              </mat-option>
+              <mat-option *ngIf="filteredOwners.length === 0" disabled>
+                {{ 'COMMON.NO_RESULTS' | translate }}
+              </mat-option>
+            </mat-autocomplete>
           </mat-form-field>
+          <p class="owner-required-hint" *ngIf="ownerTouched && selectedOwners.length === 0">
+            {{ 'PROPERTY_FORM.OWNER_REQUIRED' | translate }}
+          </p>
+        </ng-container>
 
-          <mat-form-field appearance="outline">
-            <mat-label>{{ 'PROPERTY_FORM.OWNER_NAME_AR' | translate }}</mat-label>
-            <input matInput formControlName="ownerNameAr">
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>{{ 'PROPERTY_FORM.OWNER_NAME_EN' | translate }}</mat-label>
-            <input matInput formControlName="ownerNameEn">
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="full-col">
-            <mat-label>{{ 'PROPERTY_FORM.OWNER_EMAIL' | translate }}</mat-label>
-            <input matInput formControlName="ownerEmail" type="email">
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="full-col">
-            <mat-label>{{ 'PROPERTY_FORM.DESCRIPTION' | translate }}</mat-label>
-            <textarea matInput formControlName="description" rows="4"></textarea>
-          </mat-form-field>
+        <!-- Selected owners table -->
+        <div class="owners-table-wrap" *ngIf="selectedOwners.length > 0">
+          <table class="owners-mini-table">
+            <thead>
+              <tr>
+                <th>{{ 'PROPERTY_FORM.OWNER_NAME_AR' | translate }}</th>
+                <th>{{ 'PROPERTY_FORM.OWNER_NAME_EN' | translate }}</th>
+                <th>{{ 'PROPERTY_FORM.OWNER_CIVIL_ID' | translate }}</th>
+                <th>{{ 'PROPERTY_FORM.OWNER_PHONE' | translate }}</th>
+                <th>{{ 'PROPERTY_FORM.OWNER_EMAIL' | translate }}</th>
+                <th *ngIf="!isViewMode" class="col-action"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let owner of selectedOwners">
+                <td class="owner-name-cell">{{ owner.fullNameAr || '—' }}</td>
+                <td class="owner-name-cell">{{ owner.fullNameEn || '—' }}</td>
+                <td>{{ owner.nationalId || '—' }}</td>
+                <td>{{ owner.phone || '—' }}</td>
+                <td>{{ owner.email || '—' }}</td>
+                <td *ngIf="!isViewMode" class="col-action">
+                  <button mat-icon-button type="button" (click)="removeOwner(owner)" class="remove-owner-btn">
+                    <mat-icon>close</mat-icon>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
+
+        <p class="no-owners-msg" *ngIf="isViewMode && selectedOwners.length === 0">
+          {{ 'PROPERTY_FORM.NO_OWNERS' | translate }}
+        </p>
+
+        <!-- Description -->
+        <mat-form-field appearance="outline" class="desc-field">
+          <mat-label>{{ 'PROPERTY_FORM.DESCRIPTION' | translate }}</mat-label>
+          <textarea matInput formControlName="description" rows="4"></textarea>
+        </mat-form-field>
       </div>
     </section>
 
-    <section [class.app-card]="!isDialogMode" [class.dialog-form-section]="isDialogMode" *ngIf="!isViewMode || form.get('maintenanceInternalOfficerUserId')?.value || form.get('maintenanceContractorCompanyId')?.value">
+    <section [class.app-card]="!isDialogMode" [class.dialog-form-section]="isDialogMode">
       <div class="section-header">
         <span class="section-title">{{ 'PROPERTY_FORM.SECTION_ROUTING' | translate }}</span>
       </div>
-      <div class="section-body">
+      <div class="section-body owner-section">
         <p class="section-hint">{{ 'PROPERTY_FORM.MAINTENANCE_ROUTING_HINT' | translate }}</p>
-        <div class="form-grid">
-          <mat-form-field appearance="outline" class="full-col" *ngIf="propertyId">
-            <mat-label>{{ 'PROPERTY_FORM.INTERNAL_MAINTENANCE_OFFICER' | translate }}</mat-label>
-            <mat-select formControlName="maintenanceInternalOfficerUserId">
-              <mat-option [value]="null">{{ 'PROPERTY_FORM.NO_INTERNAL_OFFICER' | translate }}</mat-option>
-              <mat-option *ngFor="let user of internalOfficerOptions" [value]="user.id">{{ user.fullName }}</mat-option>
-            </mat-select>
-          </mat-form-field>
 
-          <mat-form-field appearance="outline" class="full-col">
-            <mat-label>{{ 'PROPERTY_FORM.CONTRACTOR_COMPANY' | translate }}</mat-label>
-            <mat-select formControlName="maintenanceContractorCompanyId">
-              <mat-option [value]="null">{{ 'PROPERTY_FORM.NO_CONTRACTOR' | translate }}</mat-option>
-              <mat-option *ngFor="let company of contractorCompanies" [value]="company.id">{{ contractorCompanyLabel(company) }}</mat-option>
-            </mat-select>
+        <!-- Provider type radio (edit / create only) -->
+        <ng-container *ngIf="!isViewMode">
+          <div class="radio-group maint-type-radio">
+            <label class="radio-opt">
+              <input type="radio" name="maintenanceProviderType" value="USER"
+                     [(ngModel)]="maintenanceProviderType" (change)="onMaintenanceProviderTypeChange()">
+              {{ 'PROPERTY_FORM.MAINTENANCE_PROVIDER_USER' | translate }}
+            </label>
+            <label class="radio-opt">
+              <input type="radio" name="maintenanceProviderType" value="COMPANY"
+                     [(ngModel)]="maintenanceProviderType" (change)="onMaintenanceProviderTypeChange()">
+              {{ 'PROPERTY_FORM.MAINTENANCE_PROVIDER_COMPANY' | translate }}
+            </label>
+          </div>
+
+          <mat-form-field appearance="outline" class="owner-search-field">
+            <mat-label>
+              {{ maintenanceProviderType === 'USER'
+                  ? ('PROPERTY_FORM.SEARCH_OFFICER' | translate)
+                  : ('PROPERTY_FORM.SEARCH_COMPANY' | translate) }}
+            </mat-label>
+            <input matInput [formControl]="maintenanceProviderSearchControl" [matAutocomplete]="maintAuto">
+            <mat-icon matSuffix>{{ maintenanceProviderType === 'USER' ? 'person_search' : 'business' }}</mat-icon>
+            <mat-autocomplete #maintAuto="matAutocomplete" [displayWith]="maintenanceProviderDisplayFn"
+                              (optionSelected)="addMaintenanceProvider($event.option.value)">
+              <mat-option *ngFor="let item of filteredMaintenanceProviderOptions" [value]="item">
+                {{ item.name }}
+              </mat-option>
+              <mat-option *ngIf="filteredMaintenanceProviderOptions.length === 0" disabled>
+                {{ 'COMMON.NO_RESULTS' | translate }}
+              </mat-option>
+            </mat-autocomplete>
           </mat-form-field>
+        </ng-container>
+
+        <!-- Selected providers table -->
+        <div class="owners-table-wrap" *ngIf="selectedMaintenanceProviders.length > 0">
+          <table class="owners-mini-table">
+            <thead>
+              <tr>
+                <th>{{ 'PROPERTY_FORM.PROVIDER_NAME' | translate }}</th>
+                <th>{{ 'PROPERTY_FORM.PROVIDER_TYPE_LABEL' | translate }}</th>
+                <th *ngIf="!isViewMode" class="col-action"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let provider of selectedMaintenanceProviders">
+                <td class="owner-name-cell">{{ provider.name }}</td>
+                <td>
+                  {{ provider.providerType === 'USER'
+                      ? ('MAINTENANCE_ASSIGNMENT.PROVIDER_USER' | translate)
+                      : ('MAINTENANCE_ASSIGNMENT.PROVIDER_COMPANY' | translate) }}
+                </td>
+                <td *ngIf="!isViewMode" class="col-action">
+                  <button mat-icon-button type="button" (click)="removeMaintenanceProvider(provider)" class="remove-owner-btn">
+                    <mat-icon>close</mat-icon>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
+
+        <p class="no-owners-msg" *ngIf="isViewMode && selectedMaintenanceProviders.length === 0">
+          {{ 'PROPERTY_FORM.NO_MAINTENANCE_PROVIDERS' | translate }}
+        </p>
       </div>
     </section>
 
@@ -150,13 +247,21 @@
           <div class="media-block">
             <div class="media-label">{{ 'PROPERTY_FORM.COVER_IMAGE' | translate }}</div>
             <app-upload-zone
-              [multiple]="false"
+              *ngIf="!isViewMode"
+              layout="identity"
+              [tileRound]="false"
+              [readOnly]="isViewMode"
+              [multiple]="true"
               [accept]="'image/*'"
-              [label]="'PROPERTY_FORM.COVER_UPLOAD_LABEL' | translate"
-              (filesUploaded)="onCoverUploaded($event)">
+              [urlList]="coverUploadUrls"
+              (urlListChange)="onCoverUrlListChange($event)"
+              [label]="'PROPERTY_FORM.COVER_UPLOAD_LABEL' | translate">
             </app-upload-zone>
-            <div class="cover-frame" *ngIf="coverImageUrl">
-              <img [src]="coverImageUrl" [alt]="propertyDisplayName || ('PROPERTY_FORM.COVER_IMAGE' | translate)">
+
+            <div class="doc-list" *ngIf="isViewMode && coverUploadUrls.length > 0">
+              <div class="doc-item" *ngFor="let url of coverUploadUrls">
+                <a [href]="url" target="_blank" rel="noopener">{{ documentName(url) }}</a>
+              </div>
             </div>
           </div>
 
@@ -164,24 +269,21 @@
             <div class="media-label">{{ 'PROPERTY_FORM.OWNER_DOCS' | translate }}</div>
             <app-upload-zone
               *ngIf="!isViewMode"
+              layout="identity"
+              [tileRound]="false"
               [multiple]="true"
               [accept]="'image/*,.pdf,.doc,.docx'"
-              [label]="'PROPERTY_FORM.OWNER_DOCS_UPLOAD_LABEL' | translate"
-              (filesUploaded)="onOwnerDocumentsUploaded($event)">
+              [urlList]="ownerDocumentUrls"
+              (urlListChange)="onOwnerDocumentUrlsChange($event)"
+              [label]="'PROPERTY_FORM.OWNER_DOCS_UPLOAD_LABEL' | translate">
             </app-upload-zone>
 
-            <div class="doc-list" *ngIf="ownerDocumentUrls.length > 0">
+            <div class="doc-list" *ngIf="isViewMode && ownerDocumentUrls.length > 0">
               <div class="doc-item" *ngFor="let url of ownerDocumentUrls">
                 <a [href]="url" target="_blank" rel="noopener">{{ documentName(url) }}</a>
-                <button mat-stroked-button type="button" *ngIf="!isViewMode" (click)="removeOwnerDocument(url)">
-                  {{ 'ACTIONS.DELETE' | translate }}
-                </button>
               </div>
             </div>
 
-            <div class="helper-text" *ngIf="ownerDocumentUrls.length === 0">
-              {{ 'PROPERTY_FORM.OWNER_DOCS_REQUIRED' | translate }}
-            </div>
           </div>
         </div>
       </div>
@@ -299,7 +401,12 @@
         <div class="hero-stats">
           <div class="hero-stat">
             <span>{{ 'PROPERTY_LIST.UNITS' | translate }}</span>
-            <strong>{{ propertyRecord.totalUnits || 0 }}</strong>
+            <strong>{{ (liveUnitCount ?? propertyRecord.totalUnits) || 0 }}</strong>
+          </div>
+          <div class="hero-stat">
+            <span>{{ 'NAV.TENANTS' | translate }}</span>
+            <strong *ngIf="!unitsTenantsLoading">{{ propertyTenants.length }}</strong>
+            <strong *ngIf="unitsTenantsLoading">…</strong>
           </div>
           <div class="hero-stat">
             <span>{{ 'PROPERTY_LIST.FLOORS' | translate }}</span>
@@ -309,11 +416,16 @@
             <span>{{ 'PROPERTY_FORM.OWNER_DOCS' | translate }}</span>
             <strong>{{ ownerDocumentUrls.length }}</strong>
           </div>
-          <div class="hero-stat">
-            <span>{{ 'REQUEST_DETAIL.CREATED_AT' | translate }}</span>
-            <strong>{{ createdAtLabel }}</strong>
-          </div>
         </div>
+        <app-audit-trail
+          class="property-hero-audit"
+          [createdAt]="propertyRecord.createdAt"
+          [updatedAt]="propertyRecord.updatedAt"
+          [createdBy]="propertyRecord.createdBy"
+          [createdByName]="propertyRecord.createdByName"
+          [modifiedBy]="propertyRecord.modifiedBy"
+          [modifiedByName]="propertyRecord.modifiedByName">
+        </app-audit-trail>
       </section>
 
       <div class="property-detail-grid" *ngIf="propertyRecord">
@@ -363,14 +475,8 @@
               <span>{{ countryName }}</span>
             </div>
             <div class="detail-item full" *ngIf="propertyRecord.googleMapUrl">
-              <label>{{ 'PROPERTY_FORM.GOOGLE_MAP_URL' | translate }}</label>
-              <a [href]="propertyRecord.googleMapUrl" target="_blank" rel="noopener">{{ propertyRecord.googleMapUrl }}</a>
-            </div>
-            <div class="detail-item full" *ngIf="mapEmbedUrl">
               <label>{{ 'PROPERTY_FORM.MAP_LOCATION' | translate }}</label>
-              <div class="map-embed-wrapper">
-                <iframe [src]="mapEmbedUrl" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-              </div>
+              <app-map-preview [url]="propertyRecord.googleMapUrl"></app-map-preview>
             </div>
           </div>
         </section>
@@ -379,31 +485,116 @@
           <div class="app-card-header">
             <span class="app-card-title">{{ 'PROPERTY_FORM.SECTION_OWNER' | translate }}</span>
           </div>
-          <div class="app-card-body detail-grid">
-            <div class="detail-item">
-              <label>{{ 'PROPERTY_FORM.OWNER_NAME_AR' | translate }}</label>
-              <span>{{ propertyRecord.ownerNameAr || '-' }}</span>
+          <div class="app-card-body">
+            <div class="owners-table-wrap" *ngIf="selectedOwners.length > 0; else noOwnersDetail">
+              <table class="owners-mini-table">
+                <thead>
+                  <tr>
+                    <th>{{ 'PROPERTY_FORM.OWNER_NAME_AR' | translate }}</th>
+                    <th>{{ 'PROPERTY_FORM.OWNER_NAME_EN' | translate }}</th>
+                    <th>{{ 'PROPERTY_FORM.OWNER_CIVIL_ID' | translate }}</th>
+                    <th>{{ 'PROPERTY_FORM.OWNER_PHONE' | translate }}</th>
+                    <th>{{ 'PROPERTY_FORM.OWNER_EMAIL' | translate }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let owner of selectedOwners">
+                    <td class="owner-name-cell">{{ owner.fullNameAr || '—' }}</td>
+                    <td class="owner-name-cell">{{ owner.fullNameEn || '—' }}</td>
+                    <td>{{ owner.nationalId || '—' }}</td>
+                    <td>{{ owner.phone || '—' }}</td>
+                    <td>{{ owner.email || '—' }}</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-            <div class="detail-item">
-              <label>{{ 'PROPERTY_FORM.OWNER_NAME_EN' | translate }}</label>
-              <span>{{ propertyRecord.ownerNameEn || '-' }}</span>
+            <ng-template #noOwnersDetail>
+              <p class="no-owners-msg">{{ 'PROPERTY_FORM.NO_OWNERS' | translate }}</p>
+            </ng-template>
+          </div>
+        </section>
+
+        <section class="app-card detail-panel full-span" *ngIf="propertyId">
+          <div class="app-card-header att-section-header">
+            <span class="app-card-title">{{ 'PROPERTY_FORM.SECTION_UNITS_ON_PROPERTY' | translate }}</span>
+            <a mat-stroked-button [routerLink]="['/admin/units']" [queryParams]="{ propertyId: propertyId }">
+              <span class="material-icons">open_in_new</span>
+              {{ 'PROPERTY_FORM.MANAGE_UNITS' | translate }}
+            </a>
+          </div>
+          <div class="app-card-body">
+            <div class="units-tenants-loading" *ngIf="unitsTenantsLoading">
+              <mat-spinner diameter="28"></mat-spinner>
             </div>
-            <div class="detail-item">
-              <label>{{ 'PROPERTY_FORM.OWNER_CIVIL_ID' | translate }}</label>
-              <span>{{ propertyRecord.ownerCivilId || '-' }}</span>
+            <ng-container *ngIf="!unitsTenantsLoading">
+              <div class="owners-table-wrap" *ngIf="propertyUnits.length > 0; else noUnitsOnProperty">
+                <table class="owners-mini-table">
+                  <thead>
+                    <tr>
+                      <th>{{ 'UNITS.UNIT_NUMBER' | translate }}</th>
+                      <th>{{ 'UNITS.UNIT_TYPE' | translate }}</th>
+                      <th>{{ 'UNITS.FLOOR' | translate }}</th>
+                      <th>{{ 'UNITS.AREA' | translate }}</th>
+                      <th>{{ 'UNITS.RENT' | translate }}</th>
+                      <th>{{ 'UNITS.RENTED' | translate }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let u of propertyUnits">
+                      <td>{{ u.unitNumber || '—' }}</td>
+                      <td>{{ u.unitType || '—' }}</td>
+                      <td>{{ u.floorId ?? '—' }}</td>
+                      <td>{{ u.areaSqm != null ? u.areaSqm : '—' }}</td>
+                      <td>{{ u.rentAmount != null ? (u.rentAmount | number) + (u.currency ? ' ' + u.currency : '') : '—' }}</td>
+                      <td>{{ (u.rented ? 'UNITS.RENTED' : 'DASHBOARD.VACANT_UNITS') | translate }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <ng-template #noUnitsOnProperty>
+                <p class="no-owners-msg">{{ 'PROPERTY_FORM.NO_UNITS_ON_PROPERTY' | translate }}</p>
+              </ng-template>
+            </ng-container>
+          </div>
+        </section>
+
+        <section class="app-card detail-panel full-span" *ngIf="propertyId">
+          <div class="app-card-header att-section-header">
+            <span class="app-card-title">{{ 'PROPERTY_FORM.SECTION_TENANTS_ON_PROPERTY' | translate }}</span>
+            <a mat-stroked-button [routerLink]="['/admin/tenants']" [queryParams]="{ propertyId: propertyId }">
+              <span class="material-icons">open_in_new</span>
+              {{ 'PROPERTY_FORM.MANAGE_TENANTS' | translate }}
+            </a>
+          </div>
+          <div class="app-card-body">
+            <div class="units-tenants-loading" *ngIf="unitsTenantsLoading">
+              <mat-spinner diameter="28"></mat-spinner>
             </div>
-            <div class="detail-item">
-              <label>{{ 'PROPERTY_FORM.OWNER_EMAIL' | translate }}</label>
-              <span>{{ propertyRecord.ownerEmail || '-' }}</span>
-            </div>
-            <div class="detail-item">
-              <label>{{ 'PROPERTY_FORM.OWNER_ID' | translate }}</label>
-              <span>{{ propertyRecord.ownerId }}</span>
-            </div>
-            <div class="detail-item">
-              <label>{{ 'PROPERTY_LIST.UNITS' | translate }}</label>
-              <span>{{ propertyRecord.totalUnits || 0 }}</span>
-            </div>
+            <ng-container *ngIf="!unitsTenantsLoading">
+              <div class="owners-table-wrap" *ngIf="propertyTenants.length > 0; else noTenantsOnProperty">
+                <table class="owners-mini-table">
+                  <thead>
+                    <tr>
+                      <th>{{ 'TENANTS.LIST' | translate }}</th>
+                      <th>{{ 'UNITS.UNIT_NUMBER' | translate }}</th>
+                      <th>{{ 'USERS.PHONE' | translate }}</th>
+                      <th>{{ 'COMMON.ACTIVE' | translate }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let t of propertyTenants">
+                      <td class="owner-name-cell">{{ tenantDisplayName(t) }}</td>
+                      <td>{{ unitNumberForTenant(t) }}</td>
+                      <td>{{ t.phone || '—' }}</td>
+                      <td>{{ t.active ? ('COMMON.ACTIVE' | translate) : ('COMMON.INACTIVE' | translate) }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <ng-template #noTenantsOnProperty>
+                <p class="no-owners-msg">{{ 'PROPERTY_FORM.NO_TENANTS_ON_PROPERTY' | translate }}</p>
+              </ng-template>
+            </ng-container>
           </div>
         </section>
 
@@ -736,7 +927,7 @@
 
             <div class="request-form-actions">
               <button mat-stroked-button type="button" (click)="close()">{{ 'ACTIONS.CANCEL' | translate }}</button>
-              <button mat-flat-button type="submit" [disabled]="form.invalid || submitting || loadingLookups || isViewMode">
+              <button mat-flat-button type="submit" [disabled]="submitting || loadingLookups || isViewMode">
                 <mat-spinner *ngIf="submitting" diameter="18"></mat-spinner>
                 <span *ngIf="!submitting">{{ 'PROPERTY_FORM.SAVE_BUTTON' | translate }}</span>
               </button>
@@ -762,11 +953,24 @@
     <form [formGroup]="form" *ngIf="!loading" class="property-dialog-form">
       <ng-container *ngTemplateOutlet="propertyFields"></ng-container>
     </form>
+
+    <app-audit-trail
+      *ngIf="!loading && isViewMode && propertyRecord"
+      class="property-dialog-audit"
+      [createdAt]="propertyRecord.createdAt"
+      [updatedAt]="propertyRecord.updatedAt"
+      [createdBy]="propertyRecord.createdBy"
+      [createdByName]="propertyRecord.createdByName"
+      [modifiedBy]="propertyRecord.modifiedBy"
+      [modifiedByName]="propertyRecord.modifiedByName">
+    </app-audit-trail>
   </mat-dialog-content>
 
   <div mat-dialog-actions align="end" class="dialog-actions-row">
-    <button mat-stroked-button type="button" (click)="close()">{{ 'ACTIONS.CANCEL' | translate }}</button>
-    <button mat-flat-button class="navy-btn" type="button" (click)="submit()" [disabled]="form.invalid || submitting || loadingLookups || isViewMode">
+    <button mat-stroked-button type="button" (click)="close()">
+      {{ (isViewMode ? 'ACTIONS.CLOSE' : 'ACTIONS.CANCEL') | translate }}
+    </button>
+    <button mat-flat-button class="navy-btn" type="button" *ngIf="!isViewMode" (click)="submit()" [disabled]="submitting || loadingLookups">
       <mat-spinner *ngIf="submitting" diameter="18"></mat-spinner>
       <span *ngIf="!submitting">{{ 'PROPERTY_FORM.SAVE_BUTTON' | translate }}</span>
     </button>

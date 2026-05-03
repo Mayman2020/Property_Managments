@@ -11,6 +11,7 @@ import { I18nService } from '../../core/i18n/i18n.service';
 import { User } from '../../core/models/user.model';
 import { Property, PropertyService } from '../../core/services/property.service';
 import { ContractorCompany, ContractorCompanyService } from '../../core/services/contractor-company.service';
+import { DeleteConfirmService } from '../../core/services/delete-confirm.service';
 import { PermissionService } from '../../core/services/permission.service';
 import { SnackService } from '../../core/services/snack.service';
 import { UserService } from '../../core/services/user.service';
@@ -18,6 +19,7 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
 import { TablePagerComponent } from '../../shared/components/table-pager/table-pager.component';
 import { ExportColumn, TableExportToolbarComponent } from '../../shared/components/table-export-toolbar/table-export-toolbar.component';
 import { FilterBarComponent, FilterSpec } from '../../shared/components/filter-bar/filter-bar.component';
+import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { UserDialogComponent, UserDialogData } from './user-dialog.component';
 
 @Component({
@@ -36,7 +38,8 @@ import { UserDialogComponent, UserDialogData } from './user-dialog.component';
     PageHeaderComponent,
     TablePagerComponent,
     TableExportToolbarComponent,
-    FilterBarComponent
+    FilterBarComponent,
+    EmptyStateComponent
   ],
   templateUrl: './user-management.component.html',
   styleUrl: './user-management.component.scss'
@@ -61,6 +64,7 @@ export class UserManagementComponent implements OnInit {
     private readonly userService: UserService,
     private readonly propertyService: PropertyService,
     private readonly contractorCompanyService: ContractorCompanyService,
+    private readonly deleteConfirm: DeleteConfirmService,
     private readonly location: Location,
     readonly permissions: PermissionService,
     private readonly snack: SnackService,
@@ -85,7 +89,8 @@ export class UserManagementComponent implements OnInit {
           { value: 'SUPER_ADMIN', label: this.i18n.instant('ROLE.SUPER_ADMIN') },
           { value: 'PROPERTY_ADMIN', label: this.i18n.instant('ROLE.PROPERTY_ADMIN') },
           { value: 'MAINTENANCE_OFFICER', label: this.i18n.instant('ROLE.MAINTENANCE_OFFICER') },
-          { value: 'TENANT', label: this.i18n.instant('ROLE.TENANT') }
+          { value: 'TENANT', label: this.i18n.instant('ROLE.TENANT') },
+          { value: 'OWNER', label: this.i18n.instant('ROLE.OWNER') }
         ]
       },
       {
@@ -183,13 +188,13 @@ export class UserManagementComponent implements OnInit {
 
   openAdd(): void {
     const data: UserDialogData = { user: null, properties: this.properties, contractorCompanies: this.contractorCompanies };
-    this.dialog.open(UserDialogComponent, { data, panelClass: 'app-dialog-panel', width: '660px' })
+    this.dialog.open(UserDialogComponent, { data, panelClass: 'app-dialog-panel', width: '720px', disableClose: true })
       .afterClosed().subscribe(saved => { if (saved) this.loadData(); });
   }
 
   openEdit(user: User): void {
     const data: UserDialogData = { user, properties: this.properties, contractorCompanies: this.contractorCompanies };
-    this.dialog.open(UserDialogComponent, { data, panelClass: 'app-dialog-panel', width: '660px' })
+    this.dialog.open(UserDialogComponent, { data, panelClass: 'app-dialog-panel', width: '720px', disableClose: true })
       .afterClosed().subscribe(saved => { if (saved) this.loadData(); });
   }
 
@@ -207,6 +212,24 @@ export class UserManagementComponent implements OnInit {
         this.togglingIds.delete(user.id);
         this.snack.error(err.message || this.i18n.instant('USER_MGMT.SAVE_ERROR'));
       }
+    });
+  }
+
+  deleteUser(user: User): void {
+    this.deleteConfirm.openDeleteConfirm({
+      messageKey: 'USER_MGMT.DELETE_CONFIRM',
+      messageParams: { name: user.fullName || user.email }
+    }).subscribe(confirmed => {
+      if (!confirmed) return;
+      this.userService.delete(user.id).subscribe({
+        next: () => {
+          this.snack.success(this.i18n.instant('USER_MGMT.DELETE_SUCCESS'));
+          this.loadData();
+        },
+        error: (err: Error) => {
+          this.deleteConfirm.handleDeleteError(err, this.snack);
+        }
+      });
     });
   }
 

@@ -16,6 +16,9 @@ public class EmployeeResponse {
     private String fullName;
     private String phone;
     private String email;
+    private String nationalId;
+    private String profileImageUrl;
+    private String civilIdImageUrl;
     private String jobTitle;
     private BigDecimal basicSalary;
     private BigDecimal totalSalary;

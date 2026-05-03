@@ -2,11 +2,12 @@ import { ApplicationConfig, APP_INITIALIZER, importProvidersFrom } from '@angula
 import { provideRouter } from '@angular/router';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { MAT_DATE_FORMATS, provideNativeDateAdapter } from '@angular/material/core';
+import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MAT_DIALOG_DEFAULT_OPTIONS, MatDialogModule } from '@angular/material/dialog';
 import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
 import { TranslateHttpLoader, provideTranslateHttpLoader } from '@ngx-translate/http-loader';
+import { DateFormatAdapter } from './core/adapters/date-format.adapter';
 
 import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
@@ -18,11 +19,11 @@ import { AuthService } from './core/services/auth.service';
 import { PermissionService } from './core/services/permission.service';
 
 export const DD_MM_YYYY_DATE_FORMATS = {
-  parse: { dateInput: 'DD/MM/YYYY' },
+  parse:   { dateInput: 'dd/MM/yyyy' },
   display: {
-    dateInput: 'dd/MM/yyyy',
-    monthYearLabel: 'MMM yyyy',
-    dateA11yLabel: 'dd/MM/yyyy',
+    dateInput:          'dd/MM/yyyy',
+    monthYearLabel:     'MMM yyyy',
+    dateA11yLabel:      'dd/MM/yyyy',
     monthYearA11yLabel: 'MMMM yyyy'
   }
 };
@@ -49,7 +50,8 @@ export const appConfig: ApplicationConfig = {
     },
     provideRouter(routes),
     provideAnimationsAsync(),
-    provideNativeDateAdapter(),
+    { provide: MAT_DATE_LOCALE, useValue: 'en-GB' },
+    { provide: DateAdapter, useClass: DateFormatAdapter },
     { provide: MAT_DATE_FORMATS, useValue: DD_MM_YYYY_DATE_FORMATS },
     provideHttpClient(withInterceptors([loadingInterceptor, languageInterceptor, authInterceptor, errorInterceptor])),
     provideTranslateHttpLoader({

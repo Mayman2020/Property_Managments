@@ -125,7 +125,7 @@ export interface MaintenanceRequestDialogData {
     </mat-dialog-content>
     <div mat-dialog-actions align="end" class="dialog-actions-row">
       <button mat-stroked-button type="button" (click)="ref.close(false)">{{ 'ACTIONS.CANCEL' | translate }}</button>
-      <button mat-flat-button class="navy-btn" type="button" (click)="submit()" [disabled]="form.invalid || submitting || !canSubmitRequest()">
+      <button mat-flat-button class="navy-btn" type="button" (click)="submit()" [disabled]="submitting">
         <mat-spinner *ngIf="submitting" diameter="18"></mat-spinner>
         <span *ngIf="!submitting">
           <span class="material-icons" style="font-size: 18px; margin-inline-end: 4px;">send</span>
@@ -239,7 +239,12 @@ export class MaintenanceRequestDialogComponent implements OnInit, OnDestroy {
   }
 
   submit(): void {
-    if (this.form.invalid || this.submitting || !this.canSubmitRequest()) return;
+    this.form.markAllAsTouched();
+    if (this.form.invalid) {
+      this.snack.error(this.i18n.instant('COMMON.FILL_REQUIRED_FIELDS'));
+      return;
+    }
+    if (this.submitting) return;
     this.submitting = true;
 
     const payload: RequestForm = this.form.getRawValue();

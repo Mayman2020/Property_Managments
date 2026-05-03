@@ -32,6 +32,15 @@
       color-mix(in srgb, var(--brass-600) 40%, var(--navy-800)) 100%);
   position: relative;
   overflow: hidden;
+  background-size: cover;
+  background-position: center;
+
+  &.has-photo {
+    min-height: 140px;
+    height: auto;
+    aspect-ratio: 21 / 6;
+    max-height: 200px;
+  }
 
   &::before {
     content: '';
@@ -40,7 +49,49 @@
     background-image:
       radial-gradient(circle at 20% 50%, rgba(200,154,61,.18) 0%, transparent 50%),
       radial-gradient(circle at 80% 20%, rgba(200,154,61,.10) 0%, transparent 40%);
+    pointer-events: none;
   }
+}
+
+.profile-docs-card {
+  grid-column: 1 / -1;
+}
+
+.docs-hint {
+  margin: 0 0 14px;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.docs-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.doc-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--text-main);
+  text-decoration: none;
+  font-size: 0.88rem;
+  transition: border-color var(--t-fast), background var(--t-fast);
+}
+
+.doc-pill:hover {
+  border-color: var(--accent);
+  background: var(--surface);
+}
+
+.doc-pill .material-icons {
+  font-size: 20px;
+  color: var(--accent);
 }
 
 .hero-body {
@@ -182,7 +233,8 @@
 
 /* ─── CARD SHARED ───────────────────── */
 .profile-card,
-.security-card {
+.security-card,
+.profile-docs-card {
   animation: fadeUp 280ms ease both;
   display: flex;
   flex-direction: column;
@@ -382,6 +434,37 @@
 
 .btn-ico {
   font-size: 17px;
+}
+
+.registry-block {
+  margin: 8px 0 20px;
+  padding: 16px 0 4px;
+  border-top: 1px solid var(--line, rgba(0, 0, 0, 0.08));
+  border-bottom: 1px solid var(--line, rgba(0, 0, 0, 0.08));
+}
+
+.registry-head {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.registry-ico {
+  font-size: 22px;
+  color: var(--brass-600, #b08d57);
+  margin-top: 2px;
+}
+
+.registry-title {
+  margin-bottom: 4px;
+}
+
+.registry-hint {
+  margin: 0;
+  font-size: 0.875rem;
+  opacity: 0.82;
+  line-height: 1.45;
 }
 
 /* ─── RESPONSIVE ────────────────────── */

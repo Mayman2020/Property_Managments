@@ -46,7 +46,9 @@
             <th class="center-col">{{ 'UNITS.UNIT_NUMBER' | translate }}</th>
             <th class="center-col">{{ 'AUTH.EMAIL' | translate }}</th>
             <th class="center-col">{{ 'PROFILE.PHONE' | translate }}</th>
-            <th class="actions-col"></th>
+            <th class="center-col">{{ 'TENANTS.PORTAL_LOGIN' | translate }}</th>
+            <th class="center-col">{{ 'COMMON.ACTIVE' | translate }}</th>
+            <th class="actions-col">{{ 'REQUEST_LIST.ACTIONS' | translate }}</th>
           </tr>
         </thead>
         <tbody>
@@ -69,8 +71,24 @@
             <td class="center-col"><span class="unit-badge">{{ unitLabel(t.unitId) }}</span></td>
             <td class="center-col"><span class="email-text">{{ t.email || '—' }}</span></td>
             <td class="center-col"><span class="phone-text">{{ t.phone || '—' }}</span></td>
+            <td class="center-col">
+              <span class="portal-badge" [class.portal-badge--on]="tenantPortalLoginActive(t)" [class.portal-badge--off]="!tenantPortalLoginActive(t)">
+                {{ (tenantPortalLoginActive(t) ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') | translate }}
+              </span>
+            </td>
+            <td class="center-col">
+              <span class="portal-badge" [class.portal-badge--on]="tenantRowEffectiveActive(t)" [class.portal-badge--off]="!tenantRowEffectiveActive(t)">
+                {{ (tenantRowEffectiveActive(t) ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') | translate }}
+              </span>
+            </td>
             <td class="actions-col">
               <div class="table-actions">
+                <button class="app-icon-btn accent" type="button" (click)="openTenantDetails(t)" [matTooltip]="'ACTIONS.VIEW' | translate">
+                  <mat-icon>visibility</mat-icon>
+                </button>
+                <button class="app-icon-btn" type="button" (click)="openTenantEdit(t)" [matTooltip]="'ACTIONS.EDIT' | translate">
+                  <mat-icon>edit</mat-icon>
+                </button>
                 <button class="app-icon-btn danger" type="button" (click)="remove(t)" [matTooltip]="'ACTIONS.DELETE' | translate">
                   <mat-icon>delete</mat-icon>
                 </button>
@@ -78,7 +96,7 @@
             </td>
           </tr>
           <tr *ngIf="pagedTenants.length === 0">
-            <td colspan="6" class="empty-row">{{ 'COMMON.NO_DATA' | translate }}</td>
+            <td colspan="8" class="empty-row">{{ 'COMMON.NO_DATA' | translate }}</td>
           </tr>
         </tbody>
       </table>

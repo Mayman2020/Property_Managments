@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface RentReceiptRepository extends JpaRepository<RentReceipt, Long> {
+    boolean existsByTenantId(Long tenantId);
+
     List<RentReceipt> findByTenantIdOrderByPeriodYearDescPeriodMonthDesc(Long tenantId);
     Optional<RentReceipt> findByTenantIdAndPeriodYearAndPeriodMonth(Long tenantId, Integer year, Integer month);
     List<RentReceipt> findByContractIdOrderByPeriodYearDescPeriodMonthDesc(Long contractId);

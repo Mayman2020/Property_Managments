@@ -2,7 +2,14 @@
 import { Observable, map } from 'rxjs';
 import { ApiService } from './api.service';
 import { ApiResponse, PagedResponse } from '../models/api-response.model';
-import { MaintenanceOfficerType, User, UserRole } from '../models/user.model';
+import {
+  EmployeeProfileLink,
+  MaintenanceOfficerType,
+  OwnerProfileLink,
+  TenantProfileLink,
+  User,
+  UserRole
+} from '../models/user.model';
 
 export interface UserManageRequest {
   username: string;
@@ -11,17 +18,27 @@ export interface UserManageRequest {
   fullName: string;
   phone?: string;
   profileImageUrl?: string;
+  civilIdImageUrl?: string;
   bio?: string;
   role: UserRole;
   propertyId?: number;
   maintenanceOfficerType?: MaintenanceOfficerType;
   maintenanceCompanyName?: string;
   contractorCompanyId?: number;
+  ownerLink?: OwnerProfileLink;
+  tenantLink?: TenantProfileLink;
+  employeeLink?: EmployeeProfileLink;
 }
 
 @Injectable({ providedIn: 'root' })
 export class UserService {
   constructor(private readonly api: ApiService) {}
+
+  getById(id: number): Observable<ApiResponse<User>> {
+    return this.api.get<ApiResponse<User>>(`/users/${id}`).pipe(
+      map((res) => ({ ...res, data: res.data ? this.normalizeUser(res.data) : res.data }))
+    );
+  }
 
   getAll(page = 0, size = 50, q?: string, role?: UserRole): Observable<ApiResponse<PagedResponse<User>>> {
     const params: Record<string, string | number | boolean> = { page, size };
@@ -56,6 +73,10 @@ export class UserService {
     return this.api.patch<ApiResponse<User>>(`/users/${id}/toggle-active`).pipe(
       map((res) => ({ ...res, data: res.data ? this.normalizeUser(res.data) : res.data }))
     );
+  }
+
+  delete(id: number): Observable<ApiResponse<void>> {
+    return this.api.delete<ApiResponse<void>>(`/users/${id}`);
   }
 
   updateRole(id: number, role: UserRole): Observable<ApiResponse<User>> {

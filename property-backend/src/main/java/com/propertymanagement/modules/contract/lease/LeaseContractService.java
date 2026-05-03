@@ -9,6 +9,8 @@ import com.propertymanagement.modules.owner.OwnerRepository;
 import com.propertymanagement.modules.property.PropertyRepository;
 import com.propertymanagement.modules.tenant.TenantRepository;
 import com.propertymanagement.modules.unit.UnitRepository;
+import com.propertymanagement.modules.user.User;
+import com.propertymanagement.modules.user.UserRepository;
 import com.propertymanagement.shared.exception.AppException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -33,6 +35,7 @@ public class LeaseContractService {
     private final UnitRepository unitRepository;
     private final PropertyRepository propertyRepository;
     private final OwnerRepository ownerRepository;
+    private final UserRepository userRepository;
     private final CodeGenerationService codeGenerationService;
 
     public Page<ContractResponse> getAll(Pageable pageable) {
@@ -82,6 +85,9 @@ public class LeaseContractService {
                 .autoRenewable(Boolean.TRUE.equals(dto.getAutoRenewable()))
                 .renewalNoticeDays(dto.getRenewalNoticeDays() != null ? dto.getRenewalNoticeDays() : 30)
                 .notes(dto.getNotes())
+                .hasFreeMonth(Boolean.TRUE.equals(dto.getHasFreeMonth()))
+                .rentDiscountReason(dto.getRentDiscountReason())
+                .otherReasonText(dto.getOtherReasonText())
                 .status(ContractStatus.DRAFT)
                 .build();
 
@@ -110,6 +116,9 @@ public class LeaseContractService {
         if (dto.getAutoRenewable() != null) contract.setAutoRenewable(dto.getAutoRenewable());
         if (dto.getRenewalNoticeDays() != null) contract.setRenewalNoticeDays(dto.getRenewalNoticeDays());
         contract.setNotes(dto.getNotes());
+        if (dto.getHasFreeMonth() != null) contract.setHasFreeMonth(dto.getHasFreeMonth());
+        if (dto.getRentDiscountReason() != null) contract.setRentDiscountReason(dto.getRentDiscountReason());
+        if (dto.getOtherReasonText() != null) contract.setOtherReasonText(dto.getOtherReasonText());
         return toResponse(contractRepository.save(contract));
     }
 
@@ -244,12 +253,26 @@ public class LeaseContractService {
                 .terminationReason(c.getTerminationReason())
                 .notes(c.getNotes())
                 .freeMonths(c.getFreeMonths())
+                .hasFreeMonth(c.getHasFreeMonth())
+                .rentDiscountReason(c.getRentDiscountReason())
+                .otherReasonText(c.getOtherReasonText())
                 .ownerApprovalStatus(c.getOwnerApprovalStatus())
                 .ownerApprovalNotes(c.getOwnerApprovalNotes())
                 .daysUntilExpiry(daysUntilExpiry)
                 .createdAt(c.getCreatedAt())
                 .updatedAt(c.getUpdatedAt())
+                .createdBy(c.getCreatedByUserId())
+                .createdByName(resolveUserName(c.getCreatedByUserId()))
+                .approvedBy(c.getApprovedBy())
+                .approvedByName(resolveUserName(c.getApprovedBy()))
+                .modifiedBy(c.getModifiedBy())
+                .modifiedByName(resolveUserName(c.getModifiedBy()))
                 .build();
+    }
+
+    private String resolveUserName(Long userId) {
+        if (userId == null) return null;
+        return userRepository.findById(userId).map(u -> u.getFullName()).orElse(null);
     }
 
     private ContractSummaryDto toSummary(LeaseContract c) {

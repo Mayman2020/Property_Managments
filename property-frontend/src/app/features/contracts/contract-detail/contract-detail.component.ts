@@ -13,6 +13,7 @@ import { catchError, forkJoin, of } from 'rxjs';
 import { RecordPaymentFormComponent } from '../record-payment-form/record-payment-form.component';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { AuditTrailComponent } from '../../../shared/components/audit-trail/audit-trail.component';
 import { ContractService } from '../../../core/services/contract.service';
 import { PaymentService } from '../../../core/services/payment.service';
 import { ViolationService } from '../../../core/services/violation.service';
@@ -31,7 +32,7 @@ import {
     MatCardModule, MatButtonModule, MatIconModule,
     MatTabsModule, MatProgressSpinnerModule,
     MatTableModule, MatDialogModule,
-    TranslateModule, PageHeaderComponent
+    TranslateModule, PageHeaderComponent, AuditTrailComponent
   ],
   templateUrl: './contract-detail.component.html',
   styleUrl: './contract-detail.component.scss'
@@ -125,6 +126,7 @@ export class ContractDetailComponent implements OnInit {
       width: '600px',
       maxWidth: '95vw',
       panelClass: 'app-dialog-panel',
+      disableClose: true,
       data: {
         contractId: this.contractId,
         scheduleId: row?.id,

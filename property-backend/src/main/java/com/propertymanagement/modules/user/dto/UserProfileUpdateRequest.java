@@ -1,5 +1,6 @@
 package com.propertymanagement.modules.user.dto;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -13,4 +14,11 @@ public class UserProfileUpdateRequest {
     private String profileImageUrl;
     @Size(max = 2000)
     private String bio;
+
+    @Valid
+    private OwnerProfileLinkDto ownerLink;
+    @Valid
+    private TenantProfileLinkDto tenantLink;
+    @Valid
+    private EmployeeProfileLinkDto employeeLink;
 }

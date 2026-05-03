@@ -66,6 +66,13 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.ok(userService.toggleActive(id)));
     }
 
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
+        userService.delete(id);
+        return ResponseEntity.ok(ApiResponse.ok(null));
+    }
+
     @PatchMapping("/{id}/role")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<UserResponse>> updateRole(

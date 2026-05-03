@@ -51,7 +51,7 @@
 .floor-badge, .type-badge { display: inline-block; padding: 4px 10px; border-radius: 6px; background: var(--surface-2); border: 1px solid var(--line); color: var(--text-main); font-size: 0.82rem; font-weight: 600; }
 .area-text { font-family: var(--font-mono); color: var(--text-muted); font-size: 0.85rem; }
 
-.actions-col { width: 120px; text-align: center; }
+.actions-col { width: 124px; min-width: 124px; text-align: center; }
 .center-col { text-align: center; }
 
 @media (max-width: 768px) {

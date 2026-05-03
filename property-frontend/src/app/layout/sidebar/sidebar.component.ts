@@ -73,6 +73,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     { icon: 'plumbing', labelKey: 'NAV.MAINTENANCE', route: '/admin/maintenance', roles: ['SUPER_ADMIN', 'PROPERTY_ADMIN'], permissionKey: 'maintenance', sectionKey: 'NAV_SECTION.OPERATIONS' },
     { icon: 'star_rate', labelKey: 'NAV.RATINGS', route: '/admin/ratings', roles: ['SUPER_ADMIN', 'PROPERTY_ADMIN'], permissionKey: 'ratings', sectionKey: 'NAV_SECTION.DIRECTORY' },
     { icon: 'engineering', labelKey: 'NAV.CONTRACTOR_COMPANIES', route: '/admin/contractors', roles: ['SUPER_ADMIN', 'PROPERTY_ADMIN'], permissionKey: 'contractors', sectionKey: 'NAV_SECTION.DIRECTORY' },
+    { icon: 'person_pin', labelKey: 'NAV.OWNERS', route: '/admin/owners', roles: ['SUPER_ADMIN', 'PROPERTY_ADMIN'], permissionKey: 'properties', sectionKey: 'NAV_SECTION.DIRECTORY' },
     { icon: 'inventory_2', labelKey: 'NAV.INVENTORY', route: '/admin/inventory', roles: ['SUPER_ADMIN', 'PROPERTY_ADMIN'], permissionKey: 'inventory', sectionKey: 'NAV_SECTION.OPERATIONS' },
     { icon: 'bar_chart', labelKey: 'NAV.REPORTS', route: '/admin/reports', roles: ['SUPER_ADMIN', 'PROPERTY_ADMIN'], permissionKey: 'reports', sectionKey: 'NAV_SECTION.OPERATIONS' },
     { icon: 'tune', labelKey: 'NAV.USERS', route: '/admin/users', roles: ['SUPER_ADMIN', 'PROPERTY_ADMIN'], permissionKey: 'users', sectionKey: 'NAV_SECTION.YOU' },
@@ -109,7 +110,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
     { icon: 'badge', labelKey: 'NAV.EMPLOYEES', route: '/admin/hr/employees', roles: ['SUPER_ADMIN', 'PROPERTY_ADMIN', 'HR_OFFICER'], permissionKey: 'hr', sectionKey: 'NAV_SECTION.DIRECTORY', bypassPermission: true },
     { icon: 'calculate', labelKey: 'NAV.PAYROLL', route: '/admin/hr/payroll', roles: ['SUPER_ADMIN', 'PROPERTY_ADMIN', 'HR_OFFICER', 'ACCOUNTANT'], permissionKey: 'hr', sectionKey: 'NAV_SECTION.OPERATIONS', bypassPermission: true },
     { icon: 'event_available', labelKey: 'NAV.LEAVES', route: '/admin/hr/leaves', roles: ['SUPER_ADMIN', 'PROPERTY_ADMIN', 'HR_OFFICER'], permissionKey: 'hr', sectionKey: 'NAV_SECTION.OPERATIONS', bypassPermission: true },
-    { icon: 'engineering', labelKey: 'NAV.VENDORS', route: '/admin/vendors/list', roles: ['SUPER_ADMIN', 'PROPERTY_ADMIN', 'ACCOUNTANT', 'HR_OFFICER'], permissionKey: 'vendors', sectionKey: 'NAV_SECTION.DIRECTORY', bypassPermission: true },
     { icon: 'notifications', labelKey: 'NAV.NOTIFICATIONS', route: '/admin/notifications', roles: ['SUPER_ADMIN', 'PROPERTY_ADMIN', 'CONTRACTS_OFFICER', 'ACCOUNTANT', 'HR_OFFICER', 'OWNER'], permissionKey: 'notifications', sectionKey: 'NAV_SECTION.YOU', bypassPermission: true },
     { icon: 'history', labelKey: 'NAV.AUDIT_LOG', route: '/admin/audit-log', roles: ['SUPER_ADMIN', 'PROPERTY_ADMIN', 'ACCOUNTANT', 'HR_OFFICER'], permissionKey: 'audit', sectionKey: 'NAV_SECTION.YOU', bypassPermission: true },
     { icon: 'apartment', labelKey: 'NAV.OWNER_PORTAL', route: '/admin/owner-portal/dashboard', roles: ['OWNER'], permissionKey: 'owner_portal', sectionKey: 'NAV_SECTION.OVERVIEW', bypassPermission: true },
@@ -240,7 +240,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
         maxWidth: '95vw',
         maxHeight: '90vh',
         panelClass: 'app-dialog-panel',
-        data: { context: 'tenant' }
+        data: { context: 'tenant' },
+        disableClose: true
       });
       dialogRef.afterClosed().subscribe((result) => {
         if (result) {

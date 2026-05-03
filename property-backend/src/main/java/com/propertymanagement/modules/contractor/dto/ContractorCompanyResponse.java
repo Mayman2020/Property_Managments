@@ -16,6 +16,8 @@ public class ContractorCompanyResponse {
     private String nameEn;
     private String phone;
     private String email;
+    private String profileImageUrl;
+    private String civilIdImageUrl;
     private String notes;
     private boolean active;
     private LocalDate contractStart;
@@ -23,4 +25,8 @@ public class ContractorCompanyResponse {
     private List<String> attachmentFiles;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Long createdBy;
+    private String createdByName;
+    private Long modifiedBy;
+    private String modifiedByName;
 }

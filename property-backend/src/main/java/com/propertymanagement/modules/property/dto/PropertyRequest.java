@@ -8,12 +8,14 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.util.List;
+import java.util.Map;
 
 @Data
 public class PropertyRequest {
     private String propertyName;
     private String propertyNameAr;
     private String propertyNameEn;
+    private Map<Integer, Integer> floorUnitsConfig;
 
     @Size(max = 80)
     private String propertyCode;
@@ -34,19 +36,17 @@ public class PropertyRequest {
     private Integer totalUnits = 0;
     private String description;
     private String coverImageUrl;
-    private String ownerNameAr;
-    private String ownerNameEn;
-    private String ownerEmail;
-    private String ownerCivilId;
+    private List<String> coverImageUrls;
 
-    @NotNull
-    private Long ownerId;
+    /** One or more owner IDs — first entry is treated as the primary owner. */
     @NotEmpty
+    private List<Long> ownerIds;
+
     private List<String> ownerDocumentFiles;
 
-    /** Optional: internal maintenance officer (user id) for this property — mutually exclusive with contractor company. */
-    private Long maintenanceInternalOfficerUserId;
+    /** Optional: provider type for default maintenance routing — "USER" or "COMPANY". */
+    private String maintenanceProviderType;
 
-    /** Optional: contractor company responsible for maintenance — mutually exclusive with internal officer. */
-    private Long maintenanceContractorCompanyId;
+    /** Optional: IDs of maintenance officers (USER) or contractor companies (COMPANY) for default routing. */
+    private List<Long> maintenanceProviderIds;
 }

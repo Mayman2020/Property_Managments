@@ -3,6 +3,11 @@ package com.propertymanagement.modules.contractor;
 import com.propertymanagement.shared.persistence.StringListJsonConverter;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -11,6 +16,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "contractor_companies")
+@EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -37,6 +43,12 @@ public class ContractorCompany {
     @Column(length = 150)
     private String email;
 
+    @Column(name = "profile_image_url", length = 500)
+    private String profileImageUrl;
+
+    @Column(name = "civil_id_image_url", length = 500)
+    private String civilIdImageUrl;
+
     @Column(columnDefinition = "TEXT")
     private String notes;
 
@@ -55,21 +67,19 @@ public class ContractorCompany {
     @Column(nullable = false)
     private boolean active = true;
 
-    @Column(name = "created_at")
+    @CreatedBy
+    @Column(name = "created_by", updatable = false)
+    private Long createdBy;
+
+    @LastModifiedBy
+    @Column(name = "modified_by")
+    private Long modifiedBy;
+
+    @CreatedDate
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @LastModifiedDate
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-
-    @PrePersist
-    void prePersist() {
-        LocalDateTime now = LocalDateTime.now();
-        createdAt = now;
-        updatedAt = now;
-    }
-
-    @PreUpdate
-    void preUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 }

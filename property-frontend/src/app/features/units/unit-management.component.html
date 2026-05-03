@@ -85,11 +85,17 @@
             </td>
             <td class="actions-col">
               <div class="table-actions">
+                <button class="app-icon-btn accent" type="button" (click)="openViewDialog(unit)" [matTooltip]="'ACTIONS.VIEW' | translate">
+                  <mat-icon>visibility</mat-icon>
+                </button>
                 <button class="app-icon-btn info" type="button" (click)="openEditDialog(unit)" [matTooltip]="'ACTIONS.EDIT' | translate">
                   <mat-icon>edit</mat-icon>
                 </button>
                 <button class="app-icon-btn" [ngClass]="unit.rented ? 'warning' : 'success'" type="button" (click)="toggleRented(unit)" [matTooltip]="(unit.rented ? 'UNITS.MARK_VACANT' : 'UNITS.MARK_RENTED') | translate">
                   <mat-icon>{{ unit.rented ? 'event_busy' : 'event_available' }}</mat-icon>
+                </button>
+                <button class="app-icon-btn danger" type="button" (click)="deleteUnit(unit)" [disabled]="unit.rented" [matTooltip]="(unit.rented ? 'UNITS.DELETE_RENTED_HINT' : 'ACTIONS.DELETE') | translate">
+                  <mat-icon>delete</mat-icon>
                 </button>
               </div>
             </td>

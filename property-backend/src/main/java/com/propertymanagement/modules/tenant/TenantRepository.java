@@ -17,7 +17,10 @@ public interface TenantRepository extends JpaRepository<Tenant, Long> {
     Page<Tenant> findByActiveTrue(Pageable pageable);
     @Query("""
             SELECT t FROM Tenant t
-            WHERE t.active = true
+            WHERE (
+                (:propertyId IS NULL AND t.active = true) OR
+                (:propertyId IS NOT NULL AND t.propertyId = :propertyId)
+              )
               AND (
                 :q IS NULL OR :q = '' OR
                 LOWER(COALESCE(t.fullName, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
@@ -26,6 +29,6 @@ public interface TenantRepository extends JpaRepository<Tenant, Long> {
                 LOWER(COALESCE(t.nationalId, '')) LIKE LOWER(CONCAT('%', :q, '%'))
               )
             """)
-    Page<Tenant> searchActive(@Param("q") String q, Pageable pageable);
+    Page<Tenant> searchActive(@Param("q") String q, @Param("propertyId") Long propertyId, Pageable pageable);
     boolean existsByEmail(String email);
 }

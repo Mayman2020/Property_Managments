@@ -8,6 +8,8 @@ export interface ContractorCompany {
   name: string;
   nameAr?: string;
   nameEn?: string;
+  profileImageUrl?: string;
+  civilIdImageUrl?: string;
   phone?: string;
   email?: string;
   notes?: string;
@@ -17,12 +19,18 @@ export interface ContractorCompany {
   attachmentFiles?: string[];
   createdAt?: string;
   updatedAt?: string;
+  createdBy?: number;
+  createdByName?: string;
+  modifiedBy?: number;
+  modifiedByName?: string;
 }
 
 export interface ContractorCompanyForm {
   name: string;
   nameAr?: string;
   nameEn?: string;
+  profileImageUrl?: string;
+  civilIdImageUrl?: string;
   phone?: string;
   email?: string;
   notes?: string;

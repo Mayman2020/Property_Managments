@@ -53,7 +53,8 @@ export class RenewalRequestsComponent implements OnInit {
   openProcess(request: RenewalRequestWithDetails): void {
     const ref = this.dialog.open(ProcessRenewalDialogComponent, {
       width: '520px',
-      data: { request }
+      data: { request },
+      disableClose: true
     });
     ref.afterClosed().subscribe((payload: ProcessRenewalPayload | undefined) => {
       if (!payload) return;

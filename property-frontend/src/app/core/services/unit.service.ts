@@ -9,6 +9,7 @@ export interface Unit {
   floorId?: number;
   unitNumber: string;
   unitType?: string;
+  furnishedStatus?: string;
   areaSqm?: number;
   bedrooms?: number;
   bathrooms?: number;
@@ -19,6 +20,10 @@ export interface Unit {
   active: boolean;
   createdAt?: string;
   updatedAt?: string;
+  createdBy?: number;
+  createdByName?: string;
+  modifiedBy?: number;
+  modifiedByName?: string;
 }
 
 export interface UnitRequest {
@@ -26,6 +31,7 @@ export interface UnitRequest {
   floorId?: number;
   unitNumber: string;
   unitType: string;
+  furnishedStatus: string;
   areaSqm?: number;
   bedrooms?: number;
   bathrooms?: number;
@@ -54,5 +60,9 @@ export class UnitService {
 
   setRentalStatus(id: number, rented: boolean): Observable<ApiResponse<Unit>> {
     return this.api.patch(`/units/${id}/rental-status?rented=${rented}`);
+  }
+
+  delete(id: number): Observable<ApiResponse<void>> {
+    return this.api.delete(`/units/${id}`);
   }
 }

@@ -95,7 +95,6 @@
             <th>{{ 'PROPERTY_LIST.UNITS' | translate }}</th>
             <th>{{ 'DASHBOARD.OCCUPANCY_RATE' | translate }}</th>
             <th>{{ 'MAINTENANCE.STATUS' | translate }}</th>
-            <th>{{ 'PROPERTY_LIST.OWNER' | translate }}</th>
             <th>{{ 'REQUEST_LIST.ACTIONS' | translate }}</th>
           </tr>
         </thead>
@@ -124,7 +123,7 @@
             </td>
             <td>
               <div class="stacked-metric">
-                <strong>{{ property.totalUnits || 0 }}</strong>
+                <strong>{{ occupancyByPropertyId[property.id]?.total ?? property.totalUnits }}</strong>
                 <span>{{ 'PROPERTY_LIST.FLOORS' | translate }}: {{ property.totalFloors || 0 }}</span>
               </div>
             </td>
@@ -138,11 +137,15 @@
               </div>
             </td>
             <td>
-              <span class="status-badge" [attr.data-status]="property.isActive ? 'ACTIVE' : 'INACTIVE'">
+              <button
+                type="button"
+                class="status-badge status-toggle-btn"
+                [attr.data-status]="property.isActive ? 'ACTIVE' : 'INACTIVE'"
+                (click)="toggleActive(property); $event.stopPropagation()"
+                [matTooltip]="(property.isActive ? 'PROPERTY_LIST.DEACTIVATE_HINT' : 'PROPERTY_LIST.ACTIVATE_HINT') | translate">
                 {{ statusLabel(property.isActive) }}
-              </span>
+              </button>
             </td>
-            <td>{{ ownerName(property) || ('PROPERTY_FORM.OWNER_ID' | translate) + ': ' + property.ownerId }}</td>
             <td>
               <div class="row-actions">
                 <button
@@ -169,11 +172,18 @@
                   [attr.aria-label]="'PROPERTY_LIST.OPEN_MAP' | translate">
                   <span class="material-icons">map</span>
                 </a>
+                <button
+                  type="button"
+                  class="app-icon-btn danger"
+                  (click)="deleteProperty(property); $event.stopPropagation()"
+                  [matTooltip]="'ACTIONS.DELETE' | translate">
+                  <mat-icon>delete</mat-icon>
+                </button>
               </div>
             </td>
           </tr>
           <tr *ngIf="filteredProperties.length === 0">
-            <td colspan="9" class="empty-row">{{ 'COMMON.NO_DATA' | translate }}</td>
+            <td colspan="8" class="empty-row">{{ 'COMMON.NO_DATA' | translate }}</td>
           </tr>
         </tbody>
       </table>

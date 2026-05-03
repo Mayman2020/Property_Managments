@@ -57,8 +57,20 @@
                 <span>{{ request.tenantName || '-' }}</span>
               </div>
               <div class="detail-meta-item">
-                <label>{{ 'REQUEST_DETAIL.CREATED_AT' | translate }}</label>
+                <label>{{ 'AUDIT.CREATED_AT' | translate }}</label>
                 <span>{{ formatDateTime(request.createdAt) }}</span>
+              </div>
+              <div class="detail-meta-item" *ngIf="request.updatedAt">
+                <label>{{ 'AUDIT.UPDATED_AT' | translate }}</label>
+                <span>{{ formatDateTime(request.updatedAt) }}</span>
+              </div>
+              <div class="detail-meta-item" *ngIf="request.createdByName">
+                <label>{{ 'AUDIT.CREATED_BY' | translate }}</label>
+                <span>{{ request.createdByName }}</span>
+              </div>
+              <div class="detail-meta-item" *ngIf="request.modifiedByName">
+                <label>{{ 'AUDIT.MODIFIED_BY' | translate }}</label>
+                <span>{{ request.modifiedByName }}</span>
               </div>
               <div class="detail-meta-item">
                 <label>{{ 'MAINTENANCE.CATEGORY' | translate }}</label>

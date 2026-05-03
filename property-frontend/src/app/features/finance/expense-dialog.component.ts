@@ -120,7 +120,9 @@ export class ExpenseDialogComponent {
   }
 
   save(): void {
-    if (this.form.invalid) { this.form.markAllAsTouched(); return; }
+    this.form.markAllAsTouched();
+    if (this.form.invalid) { this.snack.error(this.i18n.instant('COMMON.FILL_REQUIRED_FIELDS')); return; }
+    if (this.saving) return;
     this.saving = true;
     const v = this.form.getRawValue();
     this.svc.createExpense({

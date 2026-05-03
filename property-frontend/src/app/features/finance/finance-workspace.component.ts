@@ -255,7 +255,8 @@ export class FinanceWorkspaceComponent implements OnInit {
     this.dialog.open(ExpenseDialogComponent, {
       data: { properties: this.properties, defaultPropertyId: this.selectedPropertyId ?? undefined },
       width: '520px',
-      panelClass: 'app-dialog-panel'
+      panelClass: 'app-dialog-panel',
+      disableClose: true
     }).afterClosed().subscribe((ok) => { if (ok) this.loadSection(); });
   }
 
@@ -263,7 +264,8 @@ export class FinanceWorkspaceComponent implements OnInit {
     this.dialog.open(RevenueDialogComponent, {
       data: { properties: this.properties, defaultPropertyId: this.selectedPropertyId ?? undefined },
       width: '520px',
-      panelClass: 'app-dialog-panel'
+      panelClass: 'app-dialog-panel',
+      disableClose: true
     }).afterClosed().subscribe((ok) => { if (ok) this.loadSection(); });
   }
 

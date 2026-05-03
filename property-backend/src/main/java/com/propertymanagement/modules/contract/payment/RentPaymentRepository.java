@@ -11,6 +11,8 @@ import java.util.List;
 
 public interface RentPaymentRepository extends JpaRepository<RentPayment, Long> {
 
+    boolean existsByTenantId(Long tenantId);
+
     List<RentPayment> findByContractId(Long contractId);
 
     Page<RentPayment> findAll(Pageable pageable);

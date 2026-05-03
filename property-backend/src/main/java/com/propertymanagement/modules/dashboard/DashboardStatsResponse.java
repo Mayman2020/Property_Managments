@@ -23,6 +23,8 @@ public class DashboardStatsResponse {
 
     // Contract stats
     private long activeContracts;
+    /** Leases created but not yet activated (e.g. after tenant onboarding). */
+    private long draftContracts;
     private long expiringIn30Days;
     private long overduePayments;
     private long openViolations;

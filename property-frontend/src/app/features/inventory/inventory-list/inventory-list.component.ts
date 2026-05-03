@@ -16,7 +16,7 @@ import { FilterBarComponent, FilterSpec } from '../../../shared/components/filte
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
 import { ExportColumn, TableExportToolbarComponent } from '../../../shared/components/table-export-toolbar/table-export-toolbar.component';
-import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { DeleteConfirmService } from '../../../core/services/delete-confirm.service';
 import { InventoryService, InventoryItem } from '../../../core/services/inventory.service';
 import { PropertyService, Property } from '../../../core/services/property.service';
 import { SnackService } from '../../../core/services/snack.service';
@@ -50,6 +50,7 @@ export class InventoryListComponent implements OnInit {
     private readonly invSvc: InventoryService,
     private readonly propertySvc: PropertyService,
     private readonly snack: SnackService,
+    private readonly deleteConfirm: DeleteConfirmService,
     private readonly dialog: MatDialog,
     readonly i18n: I18nService
   ) {}
@@ -87,7 +88,8 @@ export class InventoryListComponent implements OnInit {
     this.dialog.open(InventoryItemDialogComponent, {
       data: { item: null, properties: this.properties },
       width: '560px',
-      panelClass: 'app-dialog-panel'
+      panelClass: 'app-dialog-panel',
+      disableClose: true
     }).afterClosed().subscribe((ok) => { if (ok) this.load(); });
   }
 
@@ -95,25 +97,21 @@ export class InventoryListComponent implements OnInit {
     this.dialog.open(InventoryItemDialogComponent, {
       data: { item, properties: this.properties },
       width: '560px',
-      panelClass: 'app-dialog-panel'
+      panelClass: 'app-dialog-panel',
+      disableClose: true
     }).afterClosed().subscribe((ok) => { if (ok) this.load(); });
   }
 
   confirmDelete(item: InventoryItem): void {
     const name = this.isAr ? item.itemNameAr : (item.itemNameEn || item.itemNameAr);
-    this.dialog.open(ConfirmDialogComponent, {
-      data: {
-        title: this.isAr ? 'حذف الصنف' : 'Delete Item',
-        message: this.isAr ? `هل أنت متأكد من حذف "${name}"؟` : `Delete "${name}"?`,
-        confirmLabel: this.isAr ? 'حذف' : 'Delete',
-        danger: true
-      },
-      panelClass: 'app-dialog-panel'
-    }).afterClosed().subscribe((confirmed) => {
+    this.deleteConfirm.openDeleteConfirm({
+      messageKey: 'DIALOG.DELETE_NAMED',
+      messageParams: { name }
+    }).subscribe((confirmed) => {
       if (!confirmed) return;
       this.invSvc.delete(item.id).subscribe({
-        next: () => { this.snack.success(this.isAr ? 'تم الحذف' : 'Deleted'); this.load(); },
-        error: () => {}
+        next: () => { this.snack.success(this.i18n.instant('COMMON.SUCCESS')); this.load(); },
+        error: (err: Error) => this.deleteConfirm.handleDeleteError(err, this.snack)
       });
     });
   }

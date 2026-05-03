@@ -177,13 +177,13 @@
   </ng-container>
 
   <app-empty-state
-    *ngIf="(listContext === 'admin' || listContext === 'officer') && !loading && filteredAdminRequests.length === 0"
+    *ngIf="(listContext === 'admin' || listContext === 'officer') && !loading && filteredAdminRequests.length === 0 && !hasFiltersBar()"
     icon="build_circle"
     [title]="'REQUEST_LIST.EMPTY_TITLE' | translate"
     [message]="'REQUEST_LIST.EMPTY_MESSAGE' | translate">
   </app-empty-state>
 
-  <section class="app-card table-card" *ngIf="(listContext === 'admin' || listContext === 'officer') && !loading && filteredAdminRequests.length > 0">
+  <section class="app-card table-card" *ngIf="(listContext === 'admin' || listContext === 'officer') && !loading && (filteredAdminRequests.length > 0 || hasFiltersBar())">
     <div class="estate-table-toolbar" *ngIf="listContext === 'admin' || listContext === 'officer'">
       <div class="estate-search-inline">
         <span class="material-icons" style="font-size: 18px; color: var(--ink-400)">search</span>

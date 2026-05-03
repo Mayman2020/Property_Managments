@@ -31,6 +31,16 @@
       </div>
     </article>
 
+    <article class="kpi-card draft-contracts" [matTooltip]="'CONTRACTS.DRAFT_CONTRACTS_HINT' | translate">
+      <div class="kpi-icon-wrap">
+        <mat-icon>edit_note</mat-icon>
+      </div>
+      <div class="kpi-body">
+        <div class="kpi-value">{{ stats.draftContracts }}</div>
+        <div class="kpi-label">{{ 'CONTRACTS.DRAFT_CONTRACTS' | translate }}</div>
+      </div>
+    </article>
+
     <article class="kpi-card expiring-soon">
       <div class="kpi-icon-wrap">
         <mat-icon>event_upcoming</mat-icon>

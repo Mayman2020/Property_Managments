@@ -1,8 +1,11 @@
 import { AfterViewInit, ChangeDetectorRef, Component, Inject, OnInit, Optional } from '@angular/core';
-import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { debounceTime, distinctUntilChanged, forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DatePipe, DecimalPipe, NgFor, NgIf, NgTemplateOutlet } from '@angular/common';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -14,10 +17,13 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { PropertyService } from '../../../core/services/property.service';
+import { Unit, UnitService } from '../../../core/services/unit.service';
+import { Tenant, TenantService } from '../../../core/services/tenant.service';
 import { UserService } from '../../../core/services/user.service';
 import { ContractorCompany, ContractorCompanyService } from '../../../core/services/contractor-company.service';
 import { User } from '../../../core/models/user.model';
 import { SnackService } from '../../../core/services/snack.service';
+import { DeleteConfirmService } from '../../../core/services/delete-confirm.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { LookupItem, LookupService } from '../../../core/services/lookup.service';
 import { PropertyAttachment, PropertyAttachmentService } from '../../../core/services/property-attachment.service';
@@ -25,17 +31,25 @@ import { MaintenanceAssignment, MaintenanceAssignmentService } from '../../../co
 import { MaintenanceContractResponse, MaintenanceContractService } from '../../../core/services/maintenance-contract.service';
 import { MaintenanceContractInvoiceResponse, MaintenanceContractInvoiceService } from '../../../core/services/maintenance-contract-invoice.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { Owner, OwnerService, ownerDisplayName } from '../../../core/services/owner.service';
+import { ApiResponse, PagedResponse } from '../../../core/models/api-response.model';
 import { UploadZoneComponent } from '../../../shared/components/upload-zone/upload-zone.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { SearchableSelectComponent } from '../../../shared/components/searchable-select/searchable-select.component';
+import { MapPreviewComponent } from '../../../shared/components/map-preview/map-preview.component';
+import { AuditTrailComponent } from '../../../shared/components/audit-trail/audit-trail.component';
 
 export interface PropertyDialogData {
   propertyId?: number | null;
   mode?: 'create' | 'view' | 'edit';
 }
 
+import { ChangeDetectionStrategy } from '@angular/core';
+
 @Component({
   selector: 'app-property-form',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     DatePipe,
     DecimalPipe,
@@ -46,6 +60,7 @@ export interface PropertyDialogData {
     ReactiveFormsModule,
     RouterLink,
     TranslateModule,
+    MatAutocompleteModule,
     MatButtonModule,
     MatCheckboxModule,
     MatDialogModule,
@@ -55,7 +70,10 @@ export interface PropertyDialogData {
     MatProgressSpinnerModule,
     MatSelectModule,
     PageHeaderComponent,
-    UploadZoneComponent
+    UploadZoneComponent,
+    SearchableSelectComponent,
+    MapPreviewComponent,
+    AuditTrailComponent
   ],
   templateUrl: './property-form.component.html',
   styleUrl: './property-form.component.scss',
@@ -74,6 +92,8 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
   cities: LookupItem[] = [];
   propertyStatuses: LookupItem[] = [];
   ownerDocumentUrls: string[] = [];
+  /** Bound to cover upload zone (single image as one-element array). */
+  coverUploadUrls: string[] = [];
   attachments: PropertyAttachment[] = [];
   attachmentUploading = false;
   assignments: MaintenanceAssignment[] = [];
@@ -101,14 +121,15 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
   contractorCompanies: ContractorCompany[] = [];
   maintenanceCompanies: ContractorCompany[] = [];
   internalOfficerOptions: User[] = [];
+  floorUnitsConfig: Record<number, number> = {};
+  liveUnitCount: number | null = null;
+  /** Units and tenants loaded for full-page property view (detail workspace). */
+  propertyUnits: Unit[] = [];
+  propertyTenants: Tenant[] = [];
+  unitsTenantsLoading = false;
   propertyRecord: {
     id: number;
     ownerId: number;
-    ownerName?: string;
-    ownerNameAr?: string;
-    ownerNameEn?: string;
-    ownerEmail?: string;
-    ownerCivilId?: string;
     propertyName: string;
     propertyNameAr?: string;
     propertyNameEn?: string;
@@ -123,27 +144,126 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
     description?: string;
     coverImageUrl?: string;
     ownerDocumentFiles?: string[];
-    maintenanceInternalOfficerUserId?: number;
-    maintenanceContractorCompanyId?: number;
     isActive: boolean;
     createdAt: string;
+    updatedAt?: string;
+    createdBy?: number;
+    createdByName?: string;
+    modifiedBy?: number;
+    modifiedByName?: string;
   } | null = null;
 
   propertyTypes: LookupItem[] = [];
+  owners: Owner[] = [];
+  ownersLoading = false;
+  selectedOwners: Owner[] = [];
+  ownerTouched = false;
+  ownerSearchControl = new FormControl('');
+
+  get filteredOwners(): Owner[] {
+    const q = (this.ownerSearchControl.value ?? '').toString().toLowerCase().trim();
+    return this.owners.filter((o) => {
+      if (!q) return true;
+      const blob = [o.fullName, o.fullNameAr, o.fullNameEn, o.nationalId]
+        .filter((x): x is string => !!x && String(x).trim().length > 0)
+        .join(' ')
+        .toLowerCase();
+      return blob.includes(q);
+    });
+  }
+
+  isOwnerSelected(owner: Owner): boolean {
+    return this.selectedOwners.some((o) => o.id === owner.id);
+  }
+
+  addOwner(owner: Owner): void {
+    if (!this.isOwnerSelected(owner)) {
+      this.selectedOwners = [...this.selectedOwners, owner];
+    }
+    this.ownerSearchControl.setValue('', { emitEvent: false });
+    this.cdr.markForCheck();
+  }
+
+  removeOwner(owner: Owner): void {
+    this.selectedOwners = this.selectedOwners.filter((o) => o.id !== owner.id);
+    this.cdr.markForCheck();
+  }
+
+  ownerDisplayFn = (o: Owner | null): string => {
+    if (!o) return '';
+    return ownerDisplayName(o, this.i18n.currentLang);
+  };
+
+  ownerLabel(o: Owner): string {
+    return ownerDisplayName(o, this.i18n.currentLang);
+  }
+
+  // Maintenance provider multi-select state
+  maintenanceProviderType: 'USER' | 'COMPANY' = 'USER';
+  selectedMaintenanceProviders: Array<{id: number; name: string; providerType: 'USER' | 'COMPANY'}> = [];
+  maintenanceProviderSearchControl = new FormControl('');
+
+  get filteredMaintenanceProviderOptions(): Array<{id: number; name: string}> {
+    const q = (this.maintenanceProviderSearchControl.value ?? '').toString().toLowerCase().trim();
+    const selectedIds = new Set(this.selectedMaintenanceProviders.map((p) => p.id));
+    if (this.maintenanceProviderType === 'USER') {
+      return this.internalOfficerOptions
+        .filter((u) => !selectedIds.has(u.id))
+        .filter((u) => !q || u.fullName.toLowerCase().includes(q))
+        .map((u) => ({ id: u.id, name: u.fullName }));
+    } else {
+      return this.contractorCompanies
+        .filter((c) => !selectedIds.has(c.id))
+        .filter((c) => !q || this.contractorCompanyLabel(c).toLowerCase().includes(q))
+        .map((c) => ({ id: c.id, name: this.contractorCompanyLabel(c) }));
+    }
+  }
+
+  isMaintenanceProviderSelected(id: number): boolean {
+    return this.selectedMaintenanceProviders.some((p) => p.id === id);
+  }
+
+  addMaintenanceProvider(item: {id: number; name: string}): void {
+    if (!this.isMaintenanceProviderSelected(item.id)) {
+      this.selectedMaintenanceProviders = [
+        ...this.selectedMaintenanceProviders,
+        { ...item, providerType: this.maintenanceProviderType }
+      ];
+    }
+    this.maintenanceProviderSearchControl.setValue('', { emitEvent: false });
+    this.cdr.markForCheck();
+  }
+
+  removeMaintenanceProvider(item: {id: number}): void {
+    this.selectedMaintenanceProviders = this.selectedMaintenanceProviders.filter((p) => p.id !== item.id);
+    this.cdr.markForCheck();
+  }
+
+  onMaintenanceProviderTypeChange(): void {
+    this.selectedMaintenanceProviders = [];
+    this.maintenanceProviderSearchControl.setValue('', { emitEvent: false });
+    this.cdr.markForCheck();
+  }
+
+  maintenanceProviderDisplayFn = (): string => '';
 
   constructor(
     private readonly fb: FormBuilder,
     private readonly propertySvc: PropertyService,
+    private readonly unitSvc: UnitService,
+    private readonly tenantSvc: TenantService,
     private readonly userSvc: UserService,
     private readonly contractorCompanySvc: ContractorCompanyService,
     private readonly lookupSvc: LookupService,
     private readonly snack: SnackService,
+    private readonly deleteConfirm: DeleteConfirmService,
     readonly i18n: I18nService,
     private readonly attachmentSvc: PropertyAttachmentService,
     private readonly assignmentSvc: MaintenanceAssignmentService,
     private readonly contractSvc: MaintenanceContractService,
     private readonly invoiceSvc: MaintenanceContractInvoiceService,
     private readonly authSvc: AuthService,
+    private readonly ownerSvc: OwnerService,
     private readonly router: Router,
     private readonly route: ActivatedRoute,
     private readonly cdr: ChangeDetectorRef,
@@ -163,14 +283,7 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
       googleMapUrl: [''],
       coverImageUrl: [''],
       totalFloors: [1],
-      description: [''],
-      ownerId: [null, Validators.required],
-      ownerNameAr: [''],
-      ownerNameEn: [''],
-      ownerEmail: [''],
-      ownerCivilId: [''],
-      maintenanceInternalOfficerUserId: [null as number | null],
-      maintenanceContractorCompanyId: [null as number | null]
+      description: ['']
     });
   }
 
@@ -188,18 +301,14 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
     this.loadPropertyTypes();
     this.loadPropertyStatuses();
     this.loadContractorCompanies();
+    this.loadOwners();
+    this.loadMaintenanceOfficers();
 
-    this.form.get('maintenanceInternalOfficerUserId')?.valueChanges.subscribe((value) => {
-      if (value != null && value !== '') {
-        this.form.patchValue({ maintenanceContractorCompanyId: null }, { emitEvent: false });
-      }
-    });
-
-    this.form.get('maintenanceContractorCompanyId')?.valueChanges.subscribe((value) => {
-      if (value != null && value !== '') {
-        this.form.patchValue({ maintenanceInternalOfficerUserId: null }, { emitEvent: false });
-      }
-    });
+    this.form.get('googleMapUrl')?.valueChanges
+      .pipe(debounceTime(600), distinctUntilChanged())
+      .subscribe(() => {
+        this.cdr.markForCheck();
+      });
   }
 
   get isViewMode(): boolean {
@@ -241,53 +350,12 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
     return this.form.get('country')?.value || this.propertyRecord?.country || '-';
   }
 
-  get internalOfficerName(): string {
-    const officerId = this.form.get('maintenanceInternalOfficerUserId')?.value;
-    if (!officerId) return '-';
-    return this.internalOfficerOptions.find((user) => user.id === officerId)?.fullName || String(officerId);
-  }
-
-  get contractorCompanyName(): string {
-    const companyId = this.form.get('maintenanceContractorCompanyId')?.value;
-    if (!companyId) return '-';
-    const company = this.contractorCompanies.find((item) => item.id === companyId);
-    return company ? this.contractorCompanyLabel(company) : String(companyId);
-  }
-
   get coverImageUrl(): string {
     return this.form.get('coverImageUrl')?.value || this.propertyRecord?.coverImageUrl || '';
   }
 
-  get mapEmbedUrl(): SafeResourceUrl | null {
-    const url: string = this.propertyRecord?.googleMapUrl || this.form.get('googleMapUrl')?.value || '';
-    if (!url) return null;
-    const embed = this.computeEmbedUrl(url);
-    return embed ? this.sanitizer.bypassSecurityTrustResourceUrl(embed) : null;
-  }
-
   openGoogleMaps(): void {
     window.open('https://www.google.com/maps', '_blank', 'noopener');
-  }
-
-  private computeEmbedUrl(url: string): string | null {
-    const coordMatch = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
-    if (coordMatch) {
-      return `https://maps.google.com/maps?q=${coordMatch[1]},${coordMatch[2]}&output=embed`;
-    }
-    if (url.includes('google.com/maps')) {
-      try {
-        const u = new URL(url);
-        u.searchParams.set('output', 'embed');
-        return u.toString();
-      } catch { return null; }
-    }
-    return null;
-  }
-
-  get createdAtLabel(): string {
-    return this.propertyRecord?.createdAt
-      ? this.datePipe.transform(this.propertyRecord.createdAt, 'dd MMM yyyy') || '-'
-      : '-';
   }
 
   documentName(url: string): string {
@@ -297,6 +365,25 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
 
   cityLabel(city: LookupItem): string {
     return this.i18n.currentLang === 'ar' ? city.nameAr : city.nameEn;
+  }
+
+  get floorArray(): number[] {
+    const count = this.form.get('totalFloors')?.value || 0;
+    return Array.from({ length: count > 100 ? 100 : count }, (_, i) => i + 1);
+  }
+
+  updateFloorUnit(floor: number, event: Event): void {
+    const val = (event.target as HTMLInputElement).value;
+    const num = parseInt(val, 10);
+    if (!isNaN(num)) {
+      this.floorUnitsConfig[floor] = num;
+    } else {
+      delete this.floorUnitsConfig[floor];
+    }
+  }
+
+  getFloorUnitValue(floor: number): number | string {
+    return this.floorUnitsConfig[floor] || '';
   }
 
   lookupLabel(item: LookupItem): string {
@@ -329,21 +416,15 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
     return ar || en || base || String(company.id);
   }
 
-  onCoverUploaded(urls: string[]): void {
-    if (urls.length > 0) {
-      this.form.patchValue({ coverImageUrl: urls[0] });
-    }
+  onCoverUrlListChange(urls: string[]): void {
+    this.coverUploadUrls = [...urls];
+    this.form.patchValue({ coverImageUrl: (urls[0] || '').trim() });
+    this.cdr.markForCheck();
   }
 
-  onOwnerDocumentsUploaded(urls: string[]): void {
-    if (urls.length === 0) return;
-    const merged = [...this.ownerDocumentUrls, ...urls];
-    this.ownerDocumentUrls = Array.from(new Set(merged));
-  }
-
-  removeOwnerDocument(url: string): void {
-    if (this.isViewMode) return;
-    this.ownerDocumentUrls = this.ownerDocumentUrls.filter((item) => item !== url);
+  onOwnerDocumentUrlsChange(urls: string[]): void {
+    this.ownerDocumentUrls = [...urls];
+    this.cdr.markForCheck();
   }
 
   editCurrent(): void {
@@ -409,13 +490,19 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
 
   deleteAttachment(att: PropertyAttachment): void {
     if (!this.propertyId) return;
-    this.attachmentSvc.delete(this.propertyId, att.id).subscribe({
-      next: () => {
-        this.attachments = this.attachments.filter((a) => a.id !== att.id);
-      },
-      error: () => {
-        this.snack.error(this.i18n.instant('PROPERTY_FORM.ATTACHMENT_DELETE_ERROR'));
-      }
+    const label = att.originalName?.trim() || `#${att.id}`;
+    this.deleteConfirm.openDeleteConfirm({
+      messageKey: 'DIALOG.DELETE_NAMED',
+      messageParams: { name: label }
+    }).subscribe((ok) => {
+      if (!ok) return;
+      this.attachmentSvc.delete(this.propertyId!, att.id).subscribe({
+        next: () => {
+          this.attachments = this.attachments.filter((a) => a.id !== att.id);
+          this.cdr.markForCheck();
+        },
+        error: (err: Error) => this.deleteConfirm.handleDeleteError(err, this.snack)
+      });
     });
   }
 
@@ -608,7 +695,10 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
         }
         this.snack.success(this.i18n.instant('MAINTENANCE_CONTRACT.TERMINATED'));
       },
-      error: (err: Error) => { this.snack.error(err.message || this.i18n.instant('MAINTENANCE_CONTRACT.TERMINATE_ERROR')); }
+      error: (err: Error) => {
+        this.snack.error(err.message || this.i18n.instant('MAINTENANCE_CONTRACT.TERMINATE_ERROR'));
+        this.cdr.markForCheck();
+      }
     });
   }
 
@@ -625,7 +715,29 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
   }
 
   submit(): void {
-    if (this.isViewMode || this.form.invalid || this.submitting) return;
+    if (this.isViewMode || this.submitting) return;
+
+    this.form.markAllAsTouched();
+    this.ownerTouched = true;
+    this.cdr.markForCheck();
+
+    if (this.selectedOwners.length === 0) {
+      this.snack.error(this.i18n.instant('PROPERTY_FORM.OWNER_REQUIRED'));
+      return;
+    }
+
+    if (this.form.invalid) {
+      const missing: string[] = [];
+      if (this.form.get('propertyNameAr')?.invalid) missing.push('اسم العقار (عربي)');
+      if (this.form.get('propertyNameEn')?.invalid) missing.push('اسم العقار (إنجليزي)');
+      if (this.form.get('address')?.invalid) missing.push(this.i18n.instant('PROPERTY_FORM.ADDRESS'));
+      if (this.form.get('cityId')?.invalid) missing.push(this.i18n.instant('PROPERTY_FORM.CITY'));
+      const msg = missing.length > 0
+        ? 'الحقول المطلوبة: ' + missing.join(' ، ')
+        : this.i18n.instant('COMMON.REQUIRED');
+      this.snack.error(msg);
+      return;
+    }
 
     const raw = this.form.getRawValue();
     const selectedCity = this.cities.find((city) => city.id === raw.cityId);
@@ -633,17 +745,9 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
       this.snack.error(this.i18n.instant('PROPERTY_FORM.LOCATION_REQUIRED'));
       return;
     }
-    if (this.ownerDocumentUrls.length === 0) {
-      this.snack.error(this.i18n.instant('PROPERTY_FORM.OWNER_DOCS_REQUIRED'));
-      return;
-    }
 
     const payload = {
-      ownerId: raw.ownerId,
-      ownerNameAr: raw.ownerNameAr || undefined,
-      ownerNameEn: raw.ownerNameEn || undefined,
-      ownerEmail: raw.ownerEmail || undefined,
-      ownerCivilId: raw.ownerCivilId || undefined,
+      ownerIds: this.selectedOwners.map((o) => o.id),
       propertyName: raw.propertyNameAr || raw.propertyName || raw.propertyNameEn,
       propertyNameAr: raw.propertyNameAr || raw.propertyName,
       propertyNameEn: raw.propertyNameEn || raw.propertyName,
@@ -653,12 +757,16 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
       city: selectedCity.nameAr,
       country: this.omanCountry.nameAr,
       googleMapUrl: raw.googleMapUrl || undefined,
-      coverImageUrl: raw.coverImageUrl || undefined,
+      coverImageUrl: (this.coverUploadUrls[0] || raw.coverImageUrl || '').trim() || undefined,
+      coverImageUrls: this.coverUploadUrls.length > 0 ? [...this.coverUploadUrls] : undefined,
       totalFloors: raw.totalFloors,
+      floorUnitsConfig: this.floorUnitsConfig,
       description: raw.description,
       ownerDocumentFiles: [...this.ownerDocumentUrls],
-      maintenanceInternalOfficerUserId: raw.maintenanceInternalOfficerUserId || undefined,
-      maintenanceContractorCompanyId: raw.maintenanceContractorCompanyId || undefined
+      maintenanceProviderType: this.selectedMaintenanceProviders.length > 0 ? this.maintenanceProviderType : undefined,
+      maintenanceProviderIds: this.selectedMaintenanceProviders.length > 0
+        ? this.selectedMaintenanceProviders.map((p) => p.id)
+        : undefined
     };
 
     this.submitting = true;
@@ -675,10 +783,12 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
           return;
         }
         void this.router.navigateByUrl('/admin/properties');
+        this.cdr.markForCheck();
       },
       error: (err: Error) => {
         this.submitting = false;
         this.snack.error(err.message || this.i18n.instant('PROPERTY_FORM.SAVE_ERROR'));
+        this.cdr.markForCheck();
       }
     });
   }
@@ -721,19 +831,21 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
             this.cities = citiesRes.data ?? [];
             this.loadingLookups = false;
             if (this.propertyId) {
-              this.loadInternalOfficers(this.propertyId);
               this.loadProperty(this.propertyId);
             }
+            this.cdr.markForCheck();
           },
           error: () => {
             this.loadingLookups = false;
             this.snack.error(this.i18n.instant('PROPERTY_FORM.LOAD_LOCATION_ERROR'));
+            this.cdr.markForCheck();
           }
         });
       },
       error: () => {
         this.loadingLookups = false;
         this.snack.error(this.i18n.instant('PROPERTY_FORM.LOAD_LOCATION_ERROR'));
+        this.cdr.markForCheck();
       }
     });
   }
@@ -749,6 +861,7 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
       },
       error: () => {
         this.propertyTypes = [];
+        this.cdr.markForCheck();
       }
     });
   }
@@ -760,6 +873,44 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
       },
       error: () => {
         this.propertyStatuses = [];
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  tenantDisplayName(t: Tenant): string {
+    return this.i18n.currentLang === 'ar' ? (t.fullNameAr || t.fullName) : (t.fullNameEn || t.fullName);
+  }
+
+  unitNumberForTenant(t: Tenant): string {
+    if (!t.unitId) return '—';
+    const u = this.propertyUnits.find((x) => x.id === t.unitId);
+    return u?.unitNumber || `#${t.unitId}`;
+  }
+
+  private loadPropertyUnitsAndTenants(propertyId: number): void {
+    this.unitsTenantsLoading = true;
+    this.propertyUnits = [];
+    this.propertyTenants = [];
+    forkJoin({
+      units: this.unitSvc.getByProperty(propertyId, 0, 500).pipe(
+        catchError(() => of({ data: { content: [] as Unit[] } } as ApiResponse<PagedResponse<Unit>>))
+      ),
+      tenants: this.tenantSvc.getAll(0, 500, '', propertyId).pipe(
+        catchError(() => of({ data: { content: [] as Tenant[] } } as ApiResponse<PagedResponse<Tenant>>))
+      )
+    }).subscribe({
+      next: ({ units, tenants }) => {
+        this.propertyUnits = units.data?.content ?? [];
+        this.liveUnitCount = this.propertyUnits.length;
+        this.propertyTenants = tenants.data?.content ?? [];
+        this.unitsTenantsLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.liveUnitCount = null;
+        this.unitsTenantsLoading = false;
+        this.cdr.markForCheck();
       }
     });
   }
@@ -775,6 +926,7 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
         }
 
         this.propertyRecord = property;
+        this.loadPropertyUnitsAndTenants(property.id);
         const cityMatch = this.cities.find((city) => city.nameAr === property.city || city.nameEn === property.city);
 
         this.form.patchValue({
@@ -789,24 +941,46 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
           googleMapUrl: property.googleMapUrl || '',
           coverImageUrl: property.coverImageUrl || '',
           totalFloors: property.totalFloors,
-          description: property.description || '',
-          ownerId: property.ownerId,
-          ownerNameAr: property.ownerNameAr || '',
-          ownerNameEn: property.ownerNameEn || '',
-          ownerEmail: property.ownerEmail || '',
-          ownerCivilId: property.ownerCivilId || '',
-          maintenanceInternalOfficerUserId: property.maintenanceInternalOfficerUserId ?? null,
-          maintenanceContractorCompanyId: property.maintenanceContractorCompanyId ?? null
+          description: property.description || ''
         });
+        if (property.maintenanceProviders && property.maintenanceProviders.length > 0) {
+          this.maintenanceProviderType = property.maintenanceProviders[0].providerType;
+          this.selectedMaintenanceProviders = property.maintenanceProviders.map((mp) => ({
+            id: mp.id,
+            name: mp.name,
+            providerType: mp.providerType
+          }));
+        }
+        this.selectedOwners = (property.owners ?? []).map((o) => ({
+          id: o.id,
+          fullName: o.fullName,
+          fullNameAr: o.fullNameAr,
+          fullNameEn: o.fullNameEn,
+          nationalId: o.nationalId,
+          phone: o.phone,
+          email: o.email,
+          active: true,
+          portalAccess: false
+        }));
+        this.floorUnitsConfig = (property as any).floorUnitsConfig || {};
         this.ownerDocumentUrls = property.ownerDocumentFiles ?? [];
+        const coverUrls = (property as any).coverImageUrls as string[] | undefined;
+        if (coverUrls && coverUrls.length > 0) {
+          this.coverUploadUrls = coverUrls.filter((u: string) => u && u.trim());
+        } else {
+          const cover = (property.coverImageUrl || '').trim();
+          this.coverUploadUrls = cover ? [cover] : [];
+        }
         this.loading = false;
         this.loadAttachments(id);
         this.loadAssignments(id);
         this.loadContracts(id);
+        this.cdr.markForCheck();
       },
       error: (err: Error) => {
         this.loading = false;
         this.snack.error(err.message || this.i18n.instant('PROPERTY_LIST.LOAD_ERROR'));
+        this.cdr.markForCheck();
       }
     });
   }
@@ -824,20 +998,13 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
     });
   }
 
-  private loadInternalOfficers(propertyId: number): void {
+  private loadMaintenanceOfficers(): void {
     this.userSvc.getAll(0, 200, undefined, 'MAINTENANCE_OFFICER').subscribe({
       next: (res) => {
-        const rows = res.data?.content ?? [];
-        this.internalOfficerOptions = rows.filter(
-          (user) =>
-            user.maintenanceOfficerType === 'INTERNAL_PROPERTY'
-            && user.propertyId != null
-            && user.propertyId === propertyId
-        );
+        this.internalOfficerOptions = (res.data?.content ?? []).filter((u) => u.isActive !== false);
+        this.cdr.markForCheck();
       },
-      error: () => {
-        this.internalOfficerOptions = [];
-      }
+      error: () => { this.internalOfficerOptions = []; }
     });
   }
 
@@ -861,6 +1028,22 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
     this.contractSvc.listByProperty(propertyId).subscribe({
       next: (res) => { this.contracts = res.data ?? []; this.contractsLoading = false; },
       error: () => { this.contracts = []; this.contractsLoading = false; }
+    });
+  }
+
+  private loadOwners(): void {
+    this.ownersLoading = true;
+    this.ownerSvc.getAll(0, 200).subscribe({
+      next: (res: ApiResponse<PagedResponse<Owner>>) => {
+        this.owners = res.data?.content || [];
+        this.ownersLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.owners = [];
+        this.ownersLoading = false;
+        this.cdr.markForCheck();
+      }
     });
   }
 }

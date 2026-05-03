@@ -16,7 +16,14 @@
     <mat-spinner diameter="40"></mat-spinner>
   </div>
 
-  <section class="app-card" *ngIf="!loading">
+  <app-empty-state
+    *ngIf="!loading && filteredUsers.length === 0 && !hasFiltersBar()"
+    icon="manage_accounts"
+    [title]="'USER_MGMT.EMPTY_TITLE' | translate"
+    [message]="'USER_MGMT.EMPTY_MSG' | translate">
+  </app-empty-state>
+
+  <section class="app-card" *ngIf="!loading && (filteredUsers.length > 0 || hasFiltersBar())">
     <div class="search-bar-shell">
       <app-filter-bar [filters]="pageFilters" (filtersChange)="onFilterBarChange($event)"></app-filter-bar>
       <button mat-icon-button class="clear-filters-btn" (click)="clearFiltersFromBar()" *ngIf="hasFiltersBar()" [matTooltip]="'ACTIONS.CLEAR_FILTERS' | translate">
@@ -77,8 +84,11 @@
                 <button class="app-icon-btn info" type="button" *ngIf="permissions.can('users', 'edit')" (click)="openEdit(user)" [matTooltip]="'ACTIONS.EDIT' | translate">
                   <mat-icon>edit</mat-icon>
                 </button>
-                <button class="app-icon-btn" [ngClass]="user.isActive ? 'danger' : 'success'" type="button" *ngIf="permissions.can('users', 'toggle')" (click)="toggleActive(user)" [disabled]="togglingIds.has(user.id)" [matTooltip]="(user.isActive ? 'COMMON.DEACTIVATE' : 'COMMON.ACTIVATE') | translate">
+                <button class="app-icon-btn" [ngClass]="user.isActive ? 'danger' : 'success'" type="button" *ngIf="permissions.can('users', 'toggle')" (click)="toggleActive(user)" [disabled]="togglingIds.has(user.id)" [matTooltip]="(user.isActive ? 'USER_MGMT.DEACTIVATE' : 'USER_MGMT.ACTIVATE') | translate">
                   <mat-icon>{{ user.isActive ? 'person_off' : 'person' }}</mat-icon>
+                </button>
+                <button class="app-icon-btn danger" type="button" *ngIf="permissions.can('users', 'delete')" (click)="deleteUser(user)" [matTooltip]="'ACTIONS.DELETE' | translate">
+                  <mat-icon>delete</mat-icon>
                 </button>
               </div>
             </td>

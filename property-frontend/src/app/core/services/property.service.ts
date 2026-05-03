@@ -1,16 +1,29 @@
-﻿import { Injectable } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { ApiService } from './api.service';
 import { ApiResponse, PagedResponse } from '../models/api-response.model';
 
+export interface OwnerSummary {
+  id: number;
+  fullName: string;
+  fullNameAr?: string;
+  fullNameEn?: string;
+  nationalId?: string;
+  phone?: string;
+  email?: string;
+}
+
+export interface MaintenanceProviderSummary {
+  id: number;
+  providerType: 'USER' | 'COMPANY';
+  name: string;
+}
+
 export interface Property {
   id: number;
   ownerId: number;
-  ownerName?: string;
-  ownerNameAr?: string;
-  ownerNameEn?: string;
-  ownerEmail?: string;
-  ownerCivilId?: string;
+  owners?: OwnerSummary[];
+  maintenanceProviders?: MaintenanceProviderSummary[];
   propertyName: string;
   propertyNameAr?: string;
   propertyNameEn?: string;
@@ -24,19 +37,19 @@ export interface Property {
   totalUnits: number;
   description?: string;
   coverImageUrl?: string;
+  coverImageUrls?: string[];
   ownerDocumentFiles?: string[];
-  maintenanceInternalOfficerUserId?: number;
-  maintenanceContractorCompanyId?: number;
   isActive: boolean;
   createdAt: string;
+  updatedAt?: string;
+  createdBy?: number;
+  createdByName?: string;
+  modifiedBy?: number;
+  modifiedByName?: string;
 }
 
 export interface PropertyForm {
-  ownerId: number;
-  ownerNameAr?: string;
-  ownerNameEn?: string;
-  ownerEmail?: string;
-  ownerCivilId?: string;
+  ownerIds: number[];
   propertyName: string;
   propertyNameAr?: string;
   propertyNameEn?: string;
@@ -46,11 +59,13 @@ export interface PropertyForm {
   country?: string;
   googleMapUrl?: string;
   totalFloors?: number;
+  floorUnitsConfig?: Record<number, number>;
   description?: string;
   coverImageUrl?: string;
+  coverImageUrls?: string[];
   ownerDocumentFiles: string[];
-  maintenanceInternalOfficerUserId?: number;
-  maintenanceContractorCompanyId?: number;
+  maintenanceProviderType?: string;
+  maintenanceProviderIds?: number[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -95,6 +110,10 @@ export class PropertyService {
     return this.api.patch<ApiResponse<Property>>(`/properties/${id}/toggle-active`).pipe(
       map((res) => ({ ...res, data: res.data ? this.normalizeProperty(res.data) : res.data }))
     );
+  }
+
+  delete(id: number): Observable<ApiResponse<void>> {
+    return this.api.delete(`/properties/${id}`);
   }
 
   private normalizeProperty(property: Property & { active?: boolean }): Property {

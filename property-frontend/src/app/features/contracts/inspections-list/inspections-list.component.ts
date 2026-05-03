@@ -11,6 +11,7 @@ import { catchError, of } from 'rxjs';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
+import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { InspectionService } from '../../../core/services/inspection.service';
 import { UnitInspection } from '../../../core/models/contract.model';
 import { PropertyService, Property } from '../../../core/services/property.service';
@@ -26,7 +27,7 @@ import { I18nService } from '../../../core/i18n/i18n.service';
     MatButtonModule, MatIconModule,
     MatInputModule, MatSelectModule,
     MatProgressSpinnerModule,
-    TranslateModule, PageHeaderComponent, TablePagerComponent
+    TranslateModule, PageHeaderComponent, TablePagerComponent, EmptyStateComponent
   ],
   templateUrl: './inspections-list.component.html',
   styleUrl: './inspections-list.component.scss'

@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { DatePipe, NgFor, NgIf, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -16,15 +17,14 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
 import { FilterBarComponent, FilterSpec } from '../../shared/components/filter-bar/filter-bar.component';
 import { Property, PropertyService } from '../../core/services/property.service';
 import { SnackService } from '../../core/services/snack.service';
+import { DeleteConfirmService } from '../../core/services/delete-confirm.service';
 import { Tenant, TenantService } from '../../core/services/tenant.service';
 import { Unit, UnitService } from '../../core/services/unit.service';
 import { I18nService } from '../../core/i18n/i18n.service';
-import { User } from '../../core/models/user.model';
-import { UserService } from '../../core/services/user.service';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { TablePagerComponent } from '../../shared/components/table-pager/table-pager.component';
-import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { TenantDialogComponent } from './tenant-dialog.component';
+import { TenantEditDialogComponent } from './tenant-edit-dialog.component';
 
 @Component({
   selector: 'app-tenant-management',
@@ -45,7 +45,6 @@ export class TenantManagementComponent implements OnInit {
   properties: Property[] = [];
   propertyById: Record<number, Property> = {};
   unitById: Record<number, Unit> = {};
-  tenantUsers: User[] = [];
   filterPropertyId: number | null = null;
   searchTerm = '';
   pageIndex = 0;
@@ -57,25 +56,75 @@ export class TenantManagementComponent implements OnInit {
     private readonly tenantSvc: TenantService,
     private readonly propertySvc: PropertyService,
     private readonly unitSvc: UnitService,
-    private readonly userSvc: UserService,
     private readonly snack: SnackService,
+    private readonly deleteConfirm: DeleteConfirmService,
     readonly i18n: I18nService,
     private readonly location: Location,
+    private readonly route: ActivatedRoute,
     private readonly dialog: MatDialog
   ) {}
 
   goBack(): void { this.location.back(); }
 
+  /** Tenant can sign in when linked to an active system user. */
+  tenantPortalLoginActive(t: Tenant): boolean {
+    return !!(t.userId && t.linkedUserActive);
+  }
+
+  /** «نشط»: سجل المستأجر + إن وُجد مستخدم مرتبط يجب أن يكون الحساب مفعّلاً (مثل تعطيل المستخدم من شاشة المستخدمين). */
+  tenantRowEffectiveActive(t: Tenant): boolean {
+    if (!t.active) return false;
+    if (t.userId) return !!t.linkedUserActive;
+    return true;
+  }
+
   ngOnInit(): void {
+    const qp = this.route.snapshot.queryParamMap.get('propertyId');
+    if (qp) {
+      const n = Number(qp);
+      if (!Number.isNaN(n) && n > 0) this.filterPropertyId = n;
+    }
     this.loadData();
   }
 
   openAddDialog(): void {
     this.dialog.open(TenantDialogComponent, {
-      data: { properties: this.properties, tenantUsers: this.tenantUsers, defaultPropertyId: this.filterPropertyId ?? undefined },
+      data: { properties: this.properties, defaultPropertyId: this.filterPropertyId ?? undefined },
       width: '640px',
-      panelClass: 'app-dialog-panel'
+      maxWidth: '95vw',
+      maxHeight: '90vh',
+      panelClass: 'app-dialog-panel',
+      disableClose: true
     }).afterClosed().subscribe((ok) => { if (ok) this.loadTenants(); });
+  }
+
+  openTenantDetails(tenant: Tenant): void {
+    this.dialog
+      .open(TenantEditDialogComponent, {
+        data: { tenantId: tenant.id, properties: this.properties, readOnly: true },
+        width: '640px',
+        maxWidth: '95vw',
+        maxHeight: '90vh',
+        panelClass: 'app-dialog-panel'
+      })
+      .afterClosed()
+      .subscribe(() => { /* view-only */ });
+  }
+
+  openTenantEdit(tenant: Tenant): void {
+    this.dialog
+      .open(TenantEditDialogComponent, {
+        data: { tenantId: tenant.id, properties: this.properties },
+        width: '640px',
+        maxWidth: '95vw',
+        maxHeight: '90vh',
+        panelClass: 'app-dialog-panel',
+        disableClose: true
+      })
+      .afterClosed()
+      .subscribe((ok) => {
+        if (ok) this.loadTenants();
+      });
   }
 
   private setupFilters(): void {
@@ -93,15 +142,20 @@ export class TenantManagementComponent implements OnInit {
   }
 
   onFilterBarChange(values: any): void {
+    const prev = this.filterPropertyId;
     if (values?.filterPropertyId !== undefined) this.filterPropertyId = values.filterPropertyId;
     this.pageIndex = 0;
-    this.applyFilters();
+    if (prev !== this.filterPropertyId) {
+      this.loadTenants();
+    } else {
+      this.applyFilters();
+    }
   }
 
   clearFiltersFromBar(): void {
     this.filterPropertyId = null;
     this.pageIndex = 0;
-    this.applyFilters();
+    this.loadTenants();
   }
 
   hasFiltersBar(): boolean {
@@ -119,12 +173,19 @@ export class TenantManagementComponent implements OnInit {
     this.applyFilters();
   }
 
+  tenantDisplayName(t: Tenant): string {
+    return this.isAr ? (t.fullNameAr || t.fullName) : (t.fullNameEn || t.fullName);
+  }
+
   private applyFilters(): void {
     const q = this.searchTerm.trim().toLowerCase();
     this.filteredTenants = this.tenants.filter((t) => {
-      if (this.filterPropertyId && t.propertyId !== this.filterPropertyId) return false;
       if (!q) return true;
-      return t.fullName.toLowerCase().includes(q) || (t.email ?? '').toLowerCase().includes(q) || (t.phone ?? '').toLowerCase().includes(q);
+      return t.fullName.toLowerCase().includes(q)
+        || (t.fullNameAr ?? '').toLowerCase().includes(q)
+        || (t.fullNameEn ?? '').toLowerCase().includes(q)
+        || (t.email ?? '').toLowerCase().includes(q)
+        || (t.phone ?? '').toLowerCase().includes(q);
     });
   }
 
@@ -143,19 +204,14 @@ export class TenantManagementComponent implements OnInit {
   }
 
   remove(t: Tenant): void {
-    this.dialog.open(ConfirmDialogComponent, {
-      data: {
-        title: this.isAr ? 'حذف المستأجر' : 'Delete Tenant',
-        message: this.isAr ? `هل أنت متأكد من حذف "${t.fullName}"؟` : `Delete "${t.fullName}"?`,
-        confirmLabel: this.isAr ? 'حذف' : 'Delete',
-        danger: true
-      },
-      panelClass: 'app-dialog-panel'
-    }).afterClosed().subscribe((ok) => {
+    this.deleteConfirm.openDeleteConfirm({
+      messageKey: 'DIALOG.DELETE_NAMED',
+      messageParams: { name: t.fullName }
+    }).subscribe((ok) => {
       if (!ok) return;
       this.tenantSvc.delete(t.id).subscribe({
         next: () => { this.snack.success(this.i18n.instant('TENANTS.DELETE_SUCCESS')); this.loadTenants(); },
-        error: (err: Error) => this.snack.error(err.message || this.i18n.instant('TENANTS.SAVE_ERROR'))
+        error: (err: Error) => this.deleteConfirm.handleDeleteError(err, this.snack)
       });
     });
   }
@@ -173,26 +229,21 @@ export class TenantManagementComponent implements OnInit {
 
   private loadData(): void {
     this.loading = true;
-    forkJoin({
-      properties: this.propertySvc.getAll(0, 500).pipe(catchError(() => of({ data: { content: [] as Property[] } }))),
-      users: this.userSvc.getAll(0, 500).pipe(catchError(() => of({ data: { content: [] as User[] } })))
-    }).subscribe(({ properties, users }) => {
-      this.properties = properties.data?.content ?? [];
-      this.propertyById = this.properties.reduce((acc, p) => { acc[p.id] = p; return acc; }, {} as Record<number, Property>);
-      this.setupFilters();
-      this.tenantUsers = (users.data?.content ?? []).filter((u) => u.role === 'TENANT' && u.isActive);
-      this.loadAllUnits();
-      this.loadTenants();
-    });
+    this.propertySvc.getAll(0, 500).pipe(catchError(() => of({ data: { content: [] as Property[] } } as any)))
+      .subscribe((res: any) => {
+        this.properties = res.data?.content ?? [];
+        this.propertyById = this.properties.reduce((acc: Record<number, Property>, p: Property) => { acc[p.id] = p; return acc; }, {} as Record<number, Property>);
+        this.setupFilters();
+        this.loadAllUnits();
+        this.loadTenants();
+      });
   }
 
   loadTenants(): void {
-    this.tenantSvc.getAll(0, 200, '').subscribe({
+    this.tenantSvc.getAll(0, 500, '', this.filterPropertyId ?? undefined).subscribe({
       next: (res) => {
         this.tenants = res.data?.content ?? [];
-        this.filteredTenants = this.filterPropertyId
-          ? this.tenants.filter((t) => t.propertyId === this.filterPropertyId)
-          : [...this.tenants];
+        this.applyFilters();
         this.pageIndex = Math.min(this.pageIndex, this.totalPages - 1);
         this.loading = false;
       },

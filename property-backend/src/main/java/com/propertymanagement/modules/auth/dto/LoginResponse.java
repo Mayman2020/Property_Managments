@@ -3,6 +3,7 @@ package com.propertymanagement.modules.auth.dto;
 import lombok.Builder;
 import lombok.Data;
 
+import java.util.List;
 import java.util.Map;
 
 @Data
@@ -15,7 +16,7 @@ public class LoginResponse {
     private UserDto user;
 
     @Data
-    @Builder
+    @Builder(toBuilder = true)
     public static class UserDto {
         private Long id;
         private String email;
@@ -32,6 +33,10 @@ public class LoginResponse {
         private Long tenantId;
         /** Populated for OWNER role when the user account is linked to an owners row. */
         private Long ownerId;
+        /** Owner / employee civil ID scan when not stored on the user row. */
+        private String civilIdImageUrl;
+        /** Tenant lease attachments. */
+        private List<String> leaseContractFiles;
         private Map<String, Map<String, Boolean>> permissions;
         private Map<String, Boolean> clientModules;
     }

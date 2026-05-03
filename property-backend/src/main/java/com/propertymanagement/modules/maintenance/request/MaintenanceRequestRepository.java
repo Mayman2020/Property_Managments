@@ -3,6 +3,7 @@ package com.propertymanagement.modules.maintenance.request;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -87,4 +88,8 @@ public interface MaintenanceRequestRepository extends JpaRepository<MaintenanceR
 
     @Query("SELECT COUNT(r) FROM MaintenanceRequest r WHERE r.propertyId = :pid AND r.status NOT IN ('COMPLETED', 'CANCELLED')")
     long countOpenExcludingTerminalForProperty(@Param("pid") Long propertyId);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE MaintenanceRequest r SET r.tenantId = null WHERE r.tenantId = :tenantId")
+    void clearTenantIdForTenant(@Param("tenantId") Long tenantId);
 }

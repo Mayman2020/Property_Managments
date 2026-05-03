@@ -32,6 +32,15 @@ public class Employee {
     @Column(length = 150)
     private String email;
 
+    @Column(name = "national_id", length = 30)
+    private String nationalId;
+
+    @Column(name = "profile_image_url", length = 500)
+    private String profileImageUrl;
+
+    @Column(name = "civil_id_image_url", length = 500)
+    private String civilIdImageUrl;
+
     @Column(name = "department_id")
     private Long departmentId;
 
@@ -71,6 +80,9 @@ public class Employee {
 
     @Column(length = 20)
     private String status;
+
+    @Column(name = "linked_user_id")
+    private Long linkedUserId;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

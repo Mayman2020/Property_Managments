@@ -338,7 +338,6 @@ export class UserAccessManagementComponent implements OnInit {
     { key: 'users', icon: 'manage_accounts' },
     { key: 'lookups', icon: 'public' },
     { key: 'contractors', icon: 'engineering' },
-    { key: 'vendors', icon: 'engineering' },
     { key: 'vacancies', icon: 'door_open' },
     { key: 'ratings', icon: 'star_rate' },
     { key: 'finance', icon: 'bar_chart' },
@@ -465,6 +464,7 @@ export class UserAccessManagementComponent implements OnInit {
     this.dialog.open(UserAccessDetailsDialogComponent, {
       width: '920px',
       panelClass: 'app-dialog-panel',
+      disableClose: true,
       data: {
         user,
         permissions,

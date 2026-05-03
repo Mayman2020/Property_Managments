@@ -3,6 +3,9 @@ package com.propertymanagement.modules.unit;
 import com.propertymanagement.modules.unit.dto.UnitRequest;
 import com.propertymanagement.codegen.CodeGenerationService;
 import com.propertymanagement.modules.unit.dto.UnitResponse;
+import com.propertymanagement.modules.property.Property;
+import com.propertymanagement.modules.property.PropertyRepository;
+import com.propertymanagement.modules.user.UserRepository;
 import com.propertymanagement.shared.exception.AppException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -10,11 +13,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Map;
+
 @Service
 @RequiredArgsConstructor
 public class UnitService {
 
     private final UnitRepository unitRepository;
+    private final PropertyRepository propertyRepository;
+    private final UserRepository userRepository;
     private final CodeGenerationService codeGenerationService;
 
     public Page<UnitResponse> getByProperty(Long propertyId, Pageable pageable, String q) {
@@ -27,12 +34,14 @@ public class UnitService {
 
     @Transactional
     public UnitResponse create(UnitRequest request) {
+        validateFloorCapacity(request.getPropertyId(), request.getFloorId(), null);
         String generatedUnitNumber = codeGenerationService.generate("UNIT");
         Unit unit = Unit.builder()
                 .propertyId(request.getPropertyId())
                 .floorId(request.getFloorId())
                 .unitNumber(generatedUnitNumber)
                 .unitType(request.getUnitType())
+                .furnishedStatus(request.getFurnishedStatus())
                 .areaSqm(request.getAreaSqm())
                 .bedrooms(request.getBedrooms())
                 .bathrooms(request.getBathrooms())
@@ -47,8 +56,10 @@ public class UnitService {
     @Transactional
     public UnitResponse update(Long id, UnitRequest request) {
         Unit unit = findActive(id);
+        validateFloorCapacity(request.getPropertyId(), request.getFloorId(), id);
         // unitNumber is generated on create and must not be changed on update
         unit.setUnitType(request.getUnitType());
+        unit.setFurnishedStatus(request.getFurnishedStatus());
         unit.setFloorId(request.getFloorId());
         unit.setAreaSqm(request.getAreaSqm());
         unit.setBedrooms(request.getBedrooms());
@@ -69,6 +80,9 @@ public class UnitService {
     @Transactional
     public void delete(Long id) {
         Unit unit = findActive(id);
+        if (unit.isRented()) {
+            throw new AppException("Cannot delete a rented unit. Mark it as vacant first.", org.springframework.http.HttpStatus.CONFLICT, "UNIT_IS_RENTED");
+        }
         unit.setActive(false);
         unitRepository.save(unit);
     }
@@ -86,6 +100,7 @@ public class UnitService {
                 .floorId(u.getFloorId())
                 .unitNumber(u.getUnitNumber())
                 .unitType(u.getUnitType())
+                .furnishedStatus(u.getFurnishedStatus())
                 .areaSqm(u.getAreaSqm())
                 .bedrooms(u.getBedrooms())
                 .bathrooms(u.getBathrooms())
@@ -96,7 +111,43 @@ public class UnitService {
                 .active(u.isActive())
                 .createdAt(u.getCreatedAt())
                 .updatedAt(u.getUpdatedAt())
+                .createdBy(u.getCreatedBy())
+                .createdByName(resolveUserName(u.getCreatedBy()))
+                .modifiedBy(u.getModifiedBy())
+                .modifiedByName(resolveUserName(u.getModifiedBy()))
                 .build();
+    }
+
+    private String resolveUserName(Long userId) {
+        if (userId == null) {
+            return null;
+        }
+        return userRepository.findById(userId).map(u -> u.getFullName()).orElse(null);
+    }
+
+    private void validateFloorCapacity(Long propertyId, Long floorId, Long currentUnitId) {
+        if (propertyId == null || floorId == null) return;
+        Property property = propertyRepository.findById(propertyId)
+                .orElseThrow(() -> AppException.notFound("Property not found"));
+        
+        Map<Integer, Integer> config = property.getFloorUnitsConfig();
+        Integer floorKey = floorId.intValue();
+        if (config == null || !config.containsKey(floorKey)) return;
+        
+        int capacity = config.get(floorKey);
+        long currentCount = unitRepository.countByPropertyIdAndFloorIdAndActiveTrue(propertyId, floorId);
+        
+        // If updating, don't count the current unit if it was already on this floor
+        if (currentUnitId != null) {
+            Unit currentUnit = unitRepository.findById(currentUnitId).orElse(null);
+            if (currentUnit != null && currentUnit.getPropertyId().equals(propertyId) && floorId.equals(currentUnit.getFloorId())) {
+                currentCount--;
+            }
+        }
+
+        if (currentCount >= capacity) {
+            throw new AppException("Floor " + floorId + " capacity reached (" + capacity + " units max)", org.springframework.http.HttpStatus.BAD_REQUEST, "FLOOR_CAPACITY_REACHED");
+        }
     }
 
     private String trimToNull(String value) {

@@ -11,7 +11,9 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { PropertyService, Property } from '../../../core/services/property.service';
+import { Owner, ownerDisplayName } from '../../../core/services/owner.service';
 import { SnackService } from '../../../core/services/snack.service';
+import { DeleteConfirmService } from '../../../core/services/delete-confirm.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { LookupCacheService } from '../../../core/services/lookup-cache.service';
 import { LookupItem } from '../../../core/services/lookup.service';
@@ -51,7 +53,7 @@ export class PropertyListComponent implements OnInit {
   totalElements = 0;
   page = 0;
   readonly pageSize = 5;
-  occupancyByPropertyId: Record<number, { occupied: number; total: number }> = {};
+  occupancyByPropertyId: Partial<Record<number, { occupied: number; total: number }>> = {};
 
   searchTerm = '';
   filterType: string | null = null;
@@ -66,6 +68,7 @@ export class PropertyListComponent implements OnInit {
     private readonly propertySvc: PropertyService,
     private readonly unitSvc: UnitService,
     private readonly snack: SnackService,
+    private readonly deleteConfirm: DeleteConfirmService,
     private readonly lookupCache: LookupCacheService,
     readonly i18n: I18nService
   ) {}
@@ -167,7 +170,7 @@ export class PropertyListComponent implements OnInit {
       { header: this.i18n.instant('PROPERTY_FORM.PROPERTY_NAME'), value: (row) => this.propertyName(row) },
       { header: this.i18n.instant('PROPERTY_FORM.CITY'), value: (row) => row.city || '-' },
       { header: this.i18n.instant('PROPERTY_FORM.PROPERTY_TYPE'), value: (row) => this.typeLabel(row.propertyType) },
-      { header: this.i18n.instant('PROPERTY_LIST.UNITS'), value: (row) => row.totalUnits || 0 },
+      { header: this.i18n.instant('PROPERTY_LIST.UNITS'), value: (row) => this.occupancyByPropertyId[row.id]?.total ?? row.totalUnits ?? 0 },
       { header: this.i18n.instant('MAINTENANCE.STATUS'), value: (row) => this.statusLabel(row.isActive) },
       { header: this.i18n.instant('PROPERTY_LIST.OWNER'), value: (row) => this.ownerName(row) }
     ];
@@ -302,7 +305,8 @@ export class PropertyListComponent implements OnInit {
       maxWidth: '94vw',
       maxHeight: '92vh',
       panelClass: 'app-dialog-panel',
-      data: { mode: 'create' }
+      data: { mode: 'create' },
+      disableClose: true
     }).afterClosed().subscribe((saved) => {
       if (saved) this.load();
     });
@@ -314,7 +318,8 @@ export class PropertyListComponent implements OnInit {
       maxWidth: '94vw',
       maxHeight: '92vh',
       panelClass: 'app-dialog-panel',
-      data: { propertyId: property.id, mode: 'view' }
+      data: { propertyId: property.id, mode: 'view' },
+      disableClose: true
     });
   }
 
@@ -324,7 +329,8 @@ export class PropertyListComponent implements OnInit {
       maxWidth: '94vw',
       maxHeight: '92vh',
       panelClass: 'app-dialog-panel',
-      data: { propertyId: property.id, mode: 'edit' }
+      data: { propertyId: property.id, mode: 'edit' },
+      disableClose: true
     }).afterClosed().subscribe((saved) => {
       if (saved) this.load();
     });
@@ -371,9 +377,43 @@ export class PropertyListComponent implements OnInit {
       : (property.propertyNameEn || property.propertyName);
   }
 
+  toggleActive(property: Property): void {
+    this.propertySvc.toggleActive(property.id).subscribe({
+      next: (res) => {
+        property.isActive = res.data?.isActive ?? !property.isActive;
+        this.snack.success(this.i18n.instant(property.isActive ? 'PROPERTY_LIST.ACTIVATED' : 'PROPERTY_LIST.DEACTIVATED'));
+      },
+      error: (err: Error) => this.snack.error(err.message)
+    });
+  }
+
+  deleteProperty(property: Property): void {
+    this.deleteConfirm.openDeleteConfirm({
+      messageKey: 'DIALOG.DELETE_NAMED',
+      messageParams: { name: this.propertyName(property) }
+    }).subscribe((ok) => {
+      if (!ok) return;
+      this.propertySvc.delete(property.id).subscribe({
+        next: () => {
+          this.snack.success(this.i18n.instant('PROPERTY_LIST.DELETED'));
+          this.load();
+        },
+        error: (err: Error) => this.deleteConfirm.handleDeleteError(err, this.snack)
+      });
+    });
+  }
+
   ownerName(property: Property): string {
-    return this.i18n.currentLang === 'ar'
-      ? (property.ownerNameAr || property.ownerName || property.ownerNameEn || '-')
-      : (property.ownerNameEn || property.ownerName || property.ownerNameAr || '-');
+    const primary = property.owners?.[0];
+    if (!primary) return '-';
+    const o: Owner = {
+      id: primary.id,
+      fullName: primary.fullName,
+      fullNameAr: primary.fullNameAr,
+      fullNameEn: primary.fullNameEn,
+      active: true,
+      portalAccess: false
+    };
+    return ownerDisplayName(o, this.i18n.currentLang) || primary.fullName || '-';
   }
 }
