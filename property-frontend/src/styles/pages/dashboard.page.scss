@@ -397,12 +397,35 @@
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
+  .kpi-link {
+    cursor: pointer;
+    text-decoration: none;
+    display: block;
+    color: inherit;
+  }
+
+  .kpi-nav-arrow {
+    font-size: 14px !important;
+    width: 14px !important;
+    height: 14px !important;
+    opacity: 0.6;
+  }
+
+  .kpi-sep {
+    opacity: 0.5;
+  }
+
   .status-strip-item {
     padding: 20px;
     border-inline-end: 1px solid var(--line);
     display: grid;
     gap: 12px;
     justify-items: start;
+    transition: background 0.15s;
+  }
+
+  .status-strip-item.kpi-link:hover {
+    background: var(--surface-2);
   }
 
   .status-strip-item:last-child {

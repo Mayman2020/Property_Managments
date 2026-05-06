@@ -21,7 +21,7 @@ public class VendorController {
     private final VendorService service;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','ACCOUNTANT','HR_OFFICER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT','PROCEDURES_CLERK')")
     public ResponseEntity<ApiResponse<Page<VendorResponse>>> list(
             @RequestParam(required = false) String q,
             @RequestParam(required = false) Long propertyId,
@@ -30,13 +30,13 @@ public class VendorController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','ACCOUNTANT','HR_OFFICER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT','PROCEDURES_CLERK')")
     public ResponseEntity<ApiResponse<VendorResponse>> get(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok(service.getById(id)));
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
     public ResponseEntity<ApiResponse<VendorResponse>> create(@Valid @RequestBody VendorRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.ok(service.create(request)));

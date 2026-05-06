@@ -12,6 +12,35 @@
   gap: 20px;
 }
 
+.section-heading {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--ink-700, #1f2937);
+  margin: 24px 0 12px;
+  padding-block-end: 6px;
+  border-block-end: 1px solid var(--card-border, #e2e8f0);
+}
+.section-heading:first-of-type { margin-top: 0; }
+
+.contract-card.pending-termination {
+  border-color: rgba(214, 147, 41, 0.55);
+  .card-header {
+    background: linear-gradient(135deg, #d69329 0%, #a0670d 100%);
+  }
+  .reason-text {
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: var(--ink-700, #334155);
+  }
+}
+
+.contract-card.pending-renewal {
+  border-color: rgba(29, 78, 216, 0.45);
+  .card-header {
+    background: linear-gradient(135deg, #1d4ed8 0%, #1e3a8a 100%);
+  }
+}
+
 .contract-card {
   background: var(--surface-card);
   border-radius: 12px;
@@ -57,4 +86,35 @@
 .card-actions {
   padding: 12px 20px; border-top: 1px solid var(--border-color);
   display: flex; gap: 8px; justify-content: flex-end;
+}
+
+.draft-badge {
+  padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700;
+  background: rgba(243, 244, 246, 0.9); color: #374151;
+}
+
+.activate-btn {
+  background: var(--navy-900, #0c2340) !important;
+  color: #f4e7c4 !important;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+
+.view-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+}
+
+.badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700;
+  flex-shrink: 0;
+  mat-icon { font-size: 12px; width: 12px; height: 12px; }
+}
+.badge-neutral { background: #f3f4f6; color: #374151; }
+.badge-warn    { background: #fef3c7; color: #92400e; }
+
+.rent-amount { font-weight: 700; }
+
+.info-row.highlight {
+  color: #059669; font-weight: 600;
+  mat-icon { color: #059669; }
 }

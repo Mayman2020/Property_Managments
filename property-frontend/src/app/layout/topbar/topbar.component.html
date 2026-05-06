@@ -7,8 +7,6 @@
   </div>
 
   <div class="topbar-end">
-    <div class="tb-role-chip" *ngIf="roleKey">{{ roleKey | translate }}</div>
-
     <button class="tb-action-btn" [matTooltip]="'TOPBAR.LANGUAGE' | translate" [matMenuTriggerFor]="langMenu">
       <img class="flag" [src]="activeLanguage.flagUrl" [attr.alt]="languageLabel(activeLanguage)">
       <span class="lang-name">{{ languageNativeLabel(activeLanguage) }}</span>
@@ -24,6 +22,17 @@
       <span class="material-icons">{{ (theme.isDark$ | async) ? 'light_mode' : 'dark_mode' }}</span>
     </button>
 
+    <button class="tb-action-btn" [matMenuTriggerFor]="roleMenu" [matTooltip]="'ROLE.' + (auth.getRole() || '') | translate">
+      <span class="material-icons">manage_accounts</span>
+      <span class="lang-name" *ngIf="roleKey">{{ roleKey | translate }}</span>
+    </button>
+    <mat-menu #roleMenu="matMenu">
+      <button mat-menu-item *ngFor="let role of switchableRoles" (click)="switchRole(role)" [disabled]="isRoleActive(role)">
+        <span class="material-icons">{{ isRoleActive(role) ? 'check_circle' : 'radio_button_unchecked' }}</span>
+        <span>{{ ('ROLE.' + role) | translate }}</span>
+      </button>
+    </mat-menu>
+
     <button class="tb-action-btn tb-notify-btn" [matMenuTriggerFor]="notifyMenu" [matTooltip]="'NOTIFICATIONS.TITLE' | translate">
       <span class="material-icons">notifications</span>
       <span *ngIf="unreadCount > 0" class="tb-notify-count">{{ unreadCount }}</span>
@@ -37,12 +46,14 @@
       <div class="tb-notify-empty" *ngIf="notifications.length === 0">{{ 'NOTIFICATIONS.EMPTY' | translate }}</div>
       <button mat-menu-item *ngFor="let n of notifications" (click)="markAsRead(n)" class="tb-notify-item" [class.unread]="!n.read">
         <div class="tb-notify-item-content">
-          <div class="tb-notify-title">
+          <div class="tb-notify-head">
             <span class="material-icons tb-notify-type-icon">{{ notificationIcon(n) }}</span>
-            <span>{{ notificationTitle(n) }}</span>
+            <div class="tb-notify-copy">
+              <div class="tb-notify-primary">{{ notificationDropdownTitle(n) }}</div>
+              <div class="tb-notify-hint">{{ notificationDropdownHint(n) }}</div>
+            </div>
             <span class="tb-dot" *ngIf="!n.read"></span>
           </div>
-          <div class="tb-notify-message">{{ notificationMessage(n) }}</div>
           <div class="tb-notify-meta">{{ n.createdAt | date:'dd/MM/yyyy' }}</div>
         </div>
       </button>
@@ -51,12 +62,13 @@
     <button class="tb-user-btn" [matMenuTriggerFor]="userMenu">
       <div class="tb-avatar" *ngIf="!currentUser?.profileImageUrl">{{ currentUser?.initials || 'U' }}</div>
       <img class="tb-avatar tb-avatar-img" *ngIf="currentUser?.profileImageUrl" [src]="currentUser?.profileImageUrl" [attr.alt]="'PROFILE.AVATAR_ALT' | translate">
-      <span class="tb-user-name">{{ currentUser?.fullName }}</span>
+      <span class="tb-user-name" *ngIf="roleKey">{{ roleKey | translate }}</span>
+      <span class="tb-user-name" *ngIf="!roleKey">{{ currentUserDisplayName || '—' }}</span>
     </button>
 
     <mat-menu #userMenu="matMenu">
       <div class="user-menu-header">
-        <strong>{{ currentUser?.fullName }}</strong>
+        <strong>{{ currentUserDisplayName }}</strong>
         <span style="font-size: 0.75rem; color: var(--text-muted)">{{ currentUser?.email }}</span>
       </div>
       <mat-divider></mat-divider>

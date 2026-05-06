@@ -12,6 +12,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { HrService } from '../../core/services/hr.service';
+import { isUserRoleCode } from '../../core/models/user.model';
 import { LookupItem, LookupService } from '../../core/services/lookup.service';
 import { Property } from '../../core/services/property.service';
 import { SnackService } from '../../core/services/snack.service';
@@ -116,10 +117,11 @@ export interface EmployeeDialogData {
           <mat-select formControlName="systemRole">
             <mat-option [value]="null">{{ 'HR.SYSTEM_ROLE_NONE' | translate }}</mat-option>
             <mat-option value="ACCOUNTANT">{{ 'ROLE.ACCOUNTANT' | translate }}</mat-option>
-            <mat-option value="HR_OFFICER">{{ 'ROLE.HR_OFFICER' | translate }}</mat-option>
-            <mat-option value="CONTRACTS_OFFICER">{{ 'ROLE.CONTRACTS_OFFICER' | translate }}</mat-option>
+            <mat-option value="GENERAL_MANAGER">{{ 'ROLE.GENERAL_MANAGER' | translate }}</mat-option>
             <mat-option value="MAINTENANCE_OFFICER">{{ 'ROLE.MAINTENANCE_OFFICER' | translate }}</mat-option>
-            <mat-option value="PROPERTY_ADMIN">{{ 'ROLE.PROPERTY_ADMIN' | translate }}</mat-option>
+            <mat-option value="MAINTENANCE_CONTRACTOR">{{ 'ROLE.MAINTENANCE_CONTRACTOR' | translate }}</mat-option>
+            <mat-option value="PROPERTY_GUARD">{{ 'ROLE.PROPERTY_GUARD' | translate }}</mat-option>
+            <mat-option value="PROCEDURES_CLERK">{{ 'ROLE.PROCEDURES_CLERK' | translate }}</mat-option>
           </mat-select>
           <mat-hint>{{ 'HR.PORTAL_ROLE_HINT' | translate }}</mat-hint>
         </mat-form-field>
@@ -181,7 +183,12 @@ export class EmployeeDialogComponent {
     readonly i18n: I18nService
   ) {
     this.lookupSvc.getByType('JOB_TITLE').subscribe({
-      next: (res) => { this.jobTitles = res.data ?? []; },
+      next: (res) => {
+        // JOB_TITLE rows whose code is a portal UserRole are for user-access labels; keep ACCOUNTANT (HR + role).
+        this.jobTitles = (res.data ?? []).filter(
+          (t) => !isUserRoleCode(t.code) || t.code === 'ACCOUNTANT'
+        );
+      },
       error: () => { this.jobTitles = []; }
     });
     this.form.get('systemRole')?.valueChanges.subscribe(() => this.applyPortalEmailRules());

@@ -10,7 +10,7 @@
     ]"
     [showBack]="true"
     (backClick)="goBack()">
-    <button mat-flat-button (click)="openAddDialog()">
+    <button mat-flat-button (click)="openAddDialog()" *ngIf="canCreateContract()">
       <mat-icon>add</mat-icon>
       {{ 'CONTRACTS.NEW_CONTRACT' | translate }}
     </button>
@@ -57,8 +57,9 @@
             <option *ngFor="let s of statusOptions" [value]="s">{{ 'CONTRACTS.STATUS_' + s | translate }}</option>
           </select>
         </div>
+        <div class="contracts-filter-tray">
         <div class="estate-filter-row">
-          <button type="button" class="estate-filter-btn" [class.active]="filterStatus === ''" (click)="filterStatus = ''; onFilterChange()">
+          <button type="button" class="estate-filter-btn fs-all" [class.active]="filterStatus === ''" (click)="filterStatus = ''; onFilterChange()">
             {{ 'COMMON.ALL' | translate }}
           </button>
           <button
@@ -66,9 +67,16 @@
             class="estate-filter-btn"
             *ngFor="let s of statusOptions"
             [class.active]="filterStatus === s"
+            [class.fs-active]="s === 'ACTIVE'"
+            [class.fs-draft]="s === 'DRAFT'"
+            [class.fs-expired]="s === 'EXPIRED'"
+            [class.fs-terminated]="s === 'TERMINATED'"
+            [class.fs-renewed]="s === 'RENEWED'"
+            [class.fs-suspended]="s === 'SUSPENDED'"
             (click)="filterStatus = s; onFilterChange()">
             {{ 'CONTRACTS.STATUS_' + s | translate }}
           </button>
+        </div>
         </div>
       </div>
 

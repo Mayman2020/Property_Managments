@@ -23,14 +23,14 @@ public class PropertyAttachmentController {
     private final PropertyAttachmentService service;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','MAINTENANCE_OFFICER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','MAINTENANCE_OFFICER','MAINTENANCE_CONTRACTOR')")
     public ResponseEntity<ApiResponse<List<PropertyAttachmentResponse>>> list(
             @PathVariable Long propertyId) {
         return ResponseEntity.ok(ApiResponse.ok(service.list(propertyId)));
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER')")
     public ResponseEntity<ApiResponse<PropertyAttachmentResponse>> upload(
             @PathVariable Long propertyId,
             @RequestParam("file") MultipartFile file) throws IOException {
@@ -39,7 +39,7 @@ public class PropertyAttachmentController {
 
     /** View in browser (inline) */
     @GetMapping("/{attachmentId}/view")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','MAINTENANCE_OFFICER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','MAINTENANCE_OFFICER','MAINTENANCE_CONTRACTOR')")
     public ResponseEntity<Resource> view(
             @PathVariable Long propertyId,
             @PathVariable Long attachmentId) {
@@ -56,7 +56,7 @@ public class PropertyAttachmentController {
 
     /** Force download */
     @GetMapping("/{attachmentId}/download")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','MAINTENANCE_OFFICER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','MAINTENANCE_OFFICER','MAINTENANCE_CONTRACTOR')")
     public ResponseEntity<Resource> download(
             @PathVariable Long propertyId,
             @PathVariable Long attachmentId) {
@@ -72,7 +72,7 @@ public class PropertyAttachmentController {
     }
 
     @DeleteMapping("/{attachmentId}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER')")
     public ResponseEntity<ApiResponse<Void>> delete(
             @PathVariable Long propertyId,
             @PathVariable Long attachmentId) {

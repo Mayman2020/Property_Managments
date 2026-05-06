@@ -5,7 +5,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,9 +40,6 @@ public class ModuleDefinition {
     @Convert(converter = StringListJsonConverter.class)
     @Column(name = "recommended_modules")
     private List<String> recommendedModules = new ArrayList<>();
-
-    @Column(name = "monthly_price", precision = 12, scale = 2)
-    private BigDecimal monthlyPrice;
 
     @Column(name = "display_order")
     private Integer displayOrder;

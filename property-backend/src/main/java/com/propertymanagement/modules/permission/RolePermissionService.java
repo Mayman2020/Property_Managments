@@ -39,8 +39,58 @@ public class RolePermissionService {
         return toResponse(findOrCreate(role));
     }
 
-    public RolePermissionResponse getMyPermissions() {
-        return getByRole(currentUserRole());
+    public RolePermissionResponse getMyPermissions(UserRole selectedRole) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !(authentication.getPrincipal() instanceof User user) || user.getRole() == null) {
+            throw AppException.forbidden("Authenticated user is required");
+        }
+        if (selectedRole != null) {
+            if (!user.getAllAssignedRoles().contains(selectedRole)) {
+                throw AppException.forbidden("Selected role is not assigned to this user");
+            }
+            return RolePermissionResponse.builder()
+                    .role(selectedRole)
+                    .permissions(getPermissionMap(selectedRole))
+                    .build();
+        }
+        List<Map<String, Map<String, Boolean>>> maps = new ArrayList<>();
+        for (UserRole r : user.getAllAssignedRoles()) {
+            maps.add(getPermissionMap(r));
+        }
+        return RolePermissionResponse.builder()
+                .role(user.getRole())
+                .permissions(mergePermissionMaps(maps))
+                .build();
+    }
+
+    /**
+     * OR-merge module/action flags (union of access from several portal roles).
+     */
+    public static Map<String, Map<String, Boolean>> mergePermissionMaps(List<Map<String, Map<String, Boolean>>> maps) {
+        if (maps == null || maps.isEmpty()) {
+            return new LinkedHashMap<>();
+        }
+        Map<String, Map<String, Boolean>> out = new LinkedHashMap<>();
+        for (Map.Entry<String, Map<String, Boolean>> entry : maps.get(0).entrySet()) {
+            out.put(entry.getKey(), new LinkedHashMap<>(entry.getValue()));
+        }
+        for (int i = 1; i < maps.size(); i++) {
+            Map<String, Map<String, Boolean>> next = maps.get(i);
+            if (next == null) {
+                continue;
+            }
+            for (Map.Entry<String, Map<String, Boolean>> e : out.entrySet()) {
+                Map<String, Boolean> dest = e.getValue();
+                Map<String, Boolean> src = next.get(e.getKey());
+                if (src == null) {
+                    continue;
+                }
+                for (String action : dest.keySet()) {
+                    dest.put(action, Boolean.TRUE.equals(dest.get(action)) || Boolean.TRUE.equals(src.get(action)));
+                }
+            }
+        }
+        return out;
     }
 
     @Transactional
@@ -102,35 +152,80 @@ public class RolePermissionService {
         return normalized;
     }
 
-    private UserRole currentUserRole() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getPrincipal() instanceof User user && user.getRole() != null) {
-            return user.getRole();
-        }
-        throw AppException.forbidden("Authenticated user is required");
-    }
-
     public static Map<String, Map<String, Boolean>> defaultPermissions(UserRole role) {
         Map<String, Map<String, Boolean>> permissions = baseCatalog();
         switch (role) {
             case SUPER_ADMIN -> permissions.replaceAll((key, value) -> fillTrue(value));
-            case PROPERTY_ADMIN -> {
+            case GENERAL_MANAGER -> {
                 allow(permissions, "dashboard", "enabled", "menu", "view");
-                allow(permissions, "properties", "enabled", "menu", "view", "create", "edit");
-                allow(permissions, "units", "enabled", "menu", "view", "create", "edit", "toggle");
-                allow(permissions, "tenants", "enabled", "menu", "view", "create", "edit", "delete");
-                allow(permissions, "maintenance", "enabled", "menu", "view", "create", "edit", "assign", "schedule");
-                allow(permissions, "inventory", "enabled", "menu", "view", "create", "edit");
+                allow(permissions, "properties", "enabled", "menu", "view", "create", "edit", "export");
+                allow(permissions, "units", "enabled", "menu", "view", "create", "edit", "toggle", "export");
+                allow(permissions, "tenants", "enabled", "menu", "view", "create", "edit", "export");
+                allow(permissions, "maintenance", "enabled", "menu", "view", "create", "edit", "assign", "schedule", "approve", "reject", "export");
+                allow(permissions, "inventory", "enabled", "menu", "view", "create", "edit", "export");
                 allow(permissions, "reports", "enabled", "menu", "view", "export");
                 allow(permissions, "users", "enabled", "menu", "view");
-                allow(permissions, "contractors", "enabled", "menu", "view", "create", "edit");
-                allow(permissions, "ratings", "enabled", "menu", "view");
+                allow(permissions, "contractors", "enabled", "menu", "view", "create", "edit", "export");
+                allow(permissions, "ratings", "enabled", "menu", "view", "export");
                 allow(permissions, "profile", "enabled", "menu", "view", "edit");
+                allow(permissions, "contracts", "enabled", "menu", "view", "approve", "reject", "export");
+                allow(permissions, "finance", "enabled", "menu", "view", "approve", "reject", "export");
+                allow(permissions, "hr", "enabled", "menu", "view", "export");
+                allow(permissions, "vacancies", "enabled", "menu", "view", "export");
+                allow(permissions, "owner_portal", "enabled", "menu", "view", "approve", "reject", "export");
+                allow(permissions, "notifications", "enabled", "menu", "view");
+                allow(permissions, "audit", "enabled", "menu", "view", "export");
             }
-            case MAINTENANCE_OFFICER -> {
+            case ACCOUNTANT -> {
+                allow(permissions, "dashboard", "enabled", "menu", "view");
+                allow(permissions, "properties", "enabled", "menu", "view", "create", "edit", "delete", "export");
+                allow(permissions, "units", "enabled", "menu", "view", "create", "edit", "delete", "toggle", "export");
+                allow(permissions, "tenants", "enabled", "menu", "view", "create", "edit", "delete", "export");
+                allow(permissions, "maintenance", "enabled", "menu", "view", "create", "edit", "export");
+                allow(permissions, "inventory", "enabled", "menu", "view", "create", "edit", "export");
+                allow(permissions, "reports", "enabled", "menu", "view", "export");
+                allow(permissions, "users", "enabled", "menu", "view");
+                allow(permissions, "contractors", "enabled", "menu", "view", "export");
+                allow(permissions, "ratings", "enabled", "menu", "view", "export");
+                allow(permissions, "profile", "enabled", "menu", "view", "edit");
+                allow(permissions, "contracts", "enabled", "menu", "view", "create", "edit", "delete", "approve", "reject", "export");
+                allow(permissions, "finance", "enabled", "menu", "view", "create", "edit", "delete", "approve", "reject", "export");
+                allow(permissions, "hr", "enabled", "menu", "view", "create", "edit", "export");
+                allow(permissions, "vacancies", "enabled", "menu", "view", "create", "edit", "export");
+                allow(permissions, "notifications", "enabled", "menu", "view");
+                allow(permissions, "audit", "enabled", "menu", "view", "export");
+            }
+            case MAINTENANCE_OFFICER, MAINTENANCE_CONTRACTOR -> {
                 allow(permissions, "schedule", "enabled", "menu", "view", "start");
                 allow(permissions, "my_requests", "enabled", "menu", "view", "start", "submit", "schedule");
                 allow(permissions, "maintenance", "enabled", "view", "start", "submit", "schedule");
+                allow(permissions, "profile", "enabled", "menu", "view", "edit");
+            }
+            case PROPERTY_GUARD -> {
+                allow(permissions, "dashboard", "enabled", "menu", "view");
+                allow(permissions, "maintenance", "enabled", "menu", "view");
+                allow(permissions, "profile", "enabled", "menu", "view", "edit");
+            }
+            case PROCEDURES_CLERK -> {
+                allow(permissions, "profile", "enabled", "menu", "view", "edit");
+                allow(permissions, "hr", "enabled", "menu", "view");
+            }
+            case OWNER -> {
+                // Broad admin navigation: read-only modules + approvals where the business allows.
+                allow(permissions, "dashboard", "enabled", "menu", "view");
+                allow(permissions, "properties", "enabled", "menu", "view", "export");
+                allow(permissions, "units", "enabled", "menu", "view", "export");
+                allow(permissions, "tenants", "enabled", "menu", "view", "export");
+                allow(permissions, "maintenance", "enabled", "menu", "view", "export");
+                allow(permissions, "inventory", "enabled", "menu", "view", "export");
+                allow(permissions, "reports", "enabled", "menu", "view", "export");
+                allow(permissions, "contractors", "enabled", "menu", "view", "export");
+                allow(permissions, "contracts", "enabled", "menu", "view", "approve", "reject", "export");
+                allow(permissions, "finance", "enabled", "menu", "view", "export");
+                allow(permissions, "hr", "enabled", "menu", "view", "export");
+                allow(permissions, "notifications", "enabled", "menu", "view");
+                allow(permissions, "audit", "enabled", "menu", "view", "export");
+                allow(permissions, "owner_portal", "enabled", "menu", "view", "approve", "reject", "export");
                 allow(permissions, "profile", "enabled", "menu", "view", "edit");
             }
             case TENANT -> {
@@ -148,7 +243,8 @@ public class RolePermissionService {
         String[] modules = {
                 "dashboard", "properties", "units", "tenants", "maintenance", "inventory",
                 "reports", "users", "lookups", "contractors", "ratings", "schedule",
-                "profile", "my_unit", "new_request", "my_requests", "permissions"
+                "profile", "my_unit", "new_request", "my_requests", "permissions",
+                "contracts", "finance", "hr", "owner_portal", "vacancies", "notifications", "audit"
         };
         String[] actions = {
                 "enabled", "menu", "view", "create", "edit", "delete", "assign", "schedule",

@@ -24,13 +24,13 @@ public class PropertyModuleSettingController {
     }
 
     @GetMapping("/property/{propertyId}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER')")
     public ResponseEntity<ApiResponse<List<PropertyModuleSettingResponse>>> getByProperty(@PathVariable Long propertyId) {
         return ResponseEntity.ok(ApiResponse.ok(service.getByProperty(propertyId)));
     }
 
     @PutMapping("/property/{propertyId}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER')")
     public ResponseEntity<ApiResponse<List<PropertyModuleSettingResponse>>> update(
             @PathVariable Long propertyId,
             @Valid @RequestBody PropertyModuleSettingsUpdateRequest request

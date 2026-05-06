@@ -3,17 +3,35 @@ package com.propertymanagement.modules.unit;
 import com.propertymanagement.modules.unit.dto.UnitRequest;
 import com.propertymanagement.codegen.CodeGenerationService;
 import com.propertymanagement.modules.unit.dto.UnitResponse;
+import com.propertymanagement.modules.contract.lease.LeaseContractService;
+import com.propertymanagement.modules.notification.NotificationService;
+import com.propertymanagement.modules.notification.NotificationType;
+import com.propertymanagement.modules.owner.OwnerPropertyAccessService;
+import com.propertymanagement.modules.property.Floor;
+import com.propertymanagement.modules.property.FloorRepository;
 import com.propertymanagement.modules.property.Property;
+import com.propertymanagement.modules.property.PropertyOwnerPortalRecipientService;
 import com.propertymanagement.modules.property.PropertyRepository;
+import com.propertymanagement.modules.user.User;
 import com.propertymanagement.modules.user.UserRepository;
 import com.propertymanagement.shared.exception.AppException;
+import com.propertymanagement.shared.i18n.BilingualNotificationText;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -21,19 +39,39 @@ public class UnitService {
 
     private final UnitRepository unitRepository;
     private final PropertyRepository propertyRepository;
+    private final FloorRepository floorRepository;
+    private final OwnerPropertyAccessService ownerPropertyAccessService;
     private final UserRepository userRepository;
     private final CodeGenerationService codeGenerationService;
+    private final LeaseContractService leaseContractService;
+    private final NotificationService notificationService;
+    private final PropertyOwnerPortalRecipientService propertyOwnerPortalRecipientService;
 
     public Page<UnitResponse> getByProperty(Long propertyId, Pageable pageable, String q) {
-        return unitRepository.searchByProperty(propertyId, trimToNull(q), pageable).map(this::toResponse);
+        ownerPropertyAccessService.assertOwnerCanAccessProperty(propertyId);
+        Page<Unit> page = unitRepository.searchByProperty(propertyId, trimToNull(q), pageable);
+        Map<Long, Integer> floorNumbers = loadFloorNumbersForUnits(page.getContent());
+        return page.map(u -> toResponse(u, floorNumbers));
     }
 
     public UnitResponse getById(Long id) {
-        return toResponse(findActive(id));
+        Unit unit = findActive(id);
+        ownerPropertyAccessService.assertOwnerCanAccessProperty(unit.getPropertyId());
+        return toResponse(unit, loadFloorNumbersForUnits(List.of(unit)));
+    }
+
+    /** For embedded screens (e.g. contract renewal); includes inactive units. */
+    public Optional<UnitResponse> findByIdForContext(Long unitId) {
+        if (unitId == null) {
+            return Optional.empty();
+        }
+        return unitRepository.findById(unitId)
+                .map(u -> toResponse(u, loadFloorNumbersForUnits(List.of(u))));
     }
 
     @Transactional
     public UnitResponse create(UnitRequest request) {
+        validatePropertyTotalUnitCapacity(request.getPropertyId());
         validateFloorCapacity(request.getPropertyId(), request.getFloorId(), null);
         String generatedUnitNumber = codeGenerationService.generate("UNIT");
         Unit unit = Unit.builder()
@@ -50,13 +88,65 @@ public class UnitService {
                 .notes(request.getNotes())
                 .active(true)
                 .build();
-        return toResponse(unitRepository.save(unit));
+        Unit saved = unitRepository.save(unit);
+        notifyOwnersOfNewUnit(saved);
+        return toResponse(saved, loadFloorNumbersForUnits(List.of(saved)));
+    }
+
+    private void notifyOwnersOfNewUnit(Unit unit) {
+        if (unit == null || unit.getPropertyId() == null) {
+            return;
+        }
+        List<Long> recipients = propertyOwnerPortalRecipientService.portalRecipientUserIds(unit.getPropertyId());
+        if (recipients.isEmpty()) {
+            return;
+        }
+        try {
+            Property property = propertyRepository.findById(unit.getPropertyId()).filter(Property::isActive).orElse(null);
+            if (property == null) {
+                return;
+            }
+            Map<String, Object> vars = new LinkedHashMap<>();
+            vars.put(
+                    "propertyName",
+                    BilingualNotificationText.composite(
+                            property.getPropertyNameAr(),
+                            property.getPropertyNameEn(),
+                            property.getPropertyName()));
+            vars.put("unitNumber", unit.getUnitNumber() != null ? unit.getUnitNumber() : "");
+            Map<String, Object> hints = new LinkedHashMap<>();
+            hints.put("unitId", unit.getId());
+            hints.put("propertyId", unit.getPropertyId());
+            notificationService.createLocalized(
+                    recipients,
+                    currentActorUserId(),
+                    unit.getPropertyId(),
+                    null,
+                    NotificationType.UNIT_ADDED_TO_OWNER_PROPERTY,
+                    "NOTIFICATIONS.UNIT_ADDED_TITLE",
+                    "NOTIFICATIONS.UNIT_ADDED_OWNER_BODY",
+                    vars,
+                    hints);
+        } catch (Exception ignored) {
+            // Side-effect: unit save must succeed even if notification persistence fails.
+        }
+    }
+
+    private Long currentActorUserId() {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.getPrincipal() instanceof User u) {
+                return u.getId();
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
     }
 
     @Transactional
     public UnitResponse update(Long id, UnitRequest request) {
         Unit unit = findActive(id);
-        validateFloorCapacity(request.getPropertyId(), request.getFloorId(), id);
+        validateFloorCapacity(unit.getPropertyId(), request.getFloorId(), id);
         // unitNumber is generated on create and must not be changed on update
         unit.setUnitType(request.getUnitType());
         unit.setFurnishedStatus(request.getFurnishedStatus());
@@ -67,21 +157,26 @@ public class UnitService {
         unit.setRentAmount(request.getRentAmount());
         unit.setCurrency(request.getCurrency() != null ? request.getCurrency() : "OMR");
         unit.setNotes(request.getNotes());
-        return toResponse(unitRepository.save(unit));
+        Unit saved = unitRepository.save(unit);
+        return toResponse(saved, loadFloorNumbersForUnits(List.of(saved)));
     }
 
+    /**
+     * Recomputes {@code is_rented} (ACTIVE/SUSPENDED) and {@code is_reserved} (DRAFT/PENDING without live lease)
+     * from lease contracts. The request body flag is ignored; callers use this as a manual resync.
+     */
     @Transactional
     public UnitResponse setRentalStatus(Long id, boolean rented) {
-        Unit unit = findActive(id);
-        unit.setRented(rented);
-        return toResponse(unitRepository.save(unit));
+        findActive(id);
+        leaseContractService.syncUnitRentedFromContracts(id);
+        return getById(id);
     }
 
     @Transactional
     public void delete(Long id) {
         Unit unit = findActive(id);
-        if (unit.isRented()) {
-            throw new AppException("Cannot delete a rented unit. Mark it as vacant first.", org.springframework.http.HttpStatus.CONFLICT, "UNIT_IS_RENTED");
+        if (unit.isRented() || unit.isReserved()) {
+            throw new AppException("Cannot delete a unit with an active or pending lease. Cancel the lease or wait until the unit is vacant.", org.springframework.http.HttpStatus.CONFLICT, "UNIT_IS_RENTED");
         }
         unit.setActive(false);
         unitRepository.save(unit);
@@ -93,11 +188,28 @@ public class UnitService {
                 .orElseThrow(() -> AppException.notFound("Unit not found: " + id));
     }
 
-    private UnitResponse toResponse(Unit u) {
+    private Map<Long, Integer> loadFloorNumbersForUnits(List<Unit> units) {
+        if (units == null || units.isEmpty()) {
+            return Map.of();
+        }
+        Set<Long> ids = units.stream()
+                .map(Unit::getFloorId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(HashSet::new));
+        if (ids.isEmpty()) {
+            return Map.of();
+        }
+        return floorRepository.findAllById(ids).stream()
+                .collect(Collectors.toMap(Floor::getId, Floor::getFloorNumber));
+    }
+
+    private UnitResponse toResponse(Unit u, Map<Long, Integer> floorNumberByFloorId) {
+        Integer floorNumber = u.getFloorId() == null ? null : floorNumberByFloorId.get(u.getFloorId());
         return UnitResponse.builder()
                 .id(u.getId())
                 .propertyId(u.getPropertyId())
                 .floorId(u.getFloorId())
+                .floorNumber(floorNumber)
                 .unitNumber(u.getUnitNumber())
                 .unitType(u.getUnitType())
                 .furnishedStatus(u.getFurnishedStatus())
@@ -105,6 +217,7 @@ public class UnitService {
                 .bedrooms(u.getBedrooms())
                 .bathrooms(u.getBathrooms())
                 .rented(u.isRented())
+                .reserved(u.isReserved())
                 .rentAmount(u.getRentAmount())
                 .currency(u.getCurrency())
                 .notes(u.getNotes())
@@ -125,19 +238,48 @@ public class UnitService {
         return userRepository.findById(userId).map(u -> u.getFullName()).orElse(null);
     }
 
+    private void validatePropertyTotalUnitCapacity(Long propertyId) {
+        if (propertyId == null) {
+            return;
+        }
+        Property property = propertyRepository.findById(propertyId)
+                .orElseThrow(() -> AppException.notFound("Property not found"));
+        Map<Integer, Integer> config = property.getFloorUnitsConfig();
+        if (config == null || config.isEmpty()) {
+            return;
+        }
+        int maxTotal = config.values().stream().mapToInt(Integer::intValue).sum();
+        if (maxTotal <= 0) {
+            return;
+        }
+        long current = unitRepository.countByPropertyIdAndActiveTrue(propertyId);
+        if (current >= maxTotal) {
+            throw AppException.badRequest(
+                    "This property has reached its maximum configured unit count (" + maxTotal + ").",
+                    "PROPERTY_UNIT_CAPACITY_REACHED");
+        }
+    }
+
     private void validateFloorCapacity(Long propertyId, Long floorId, Long currentUnitId) {
         if (propertyId == null || floorId == null) return;
         Property property = propertyRepository.findById(propertyId)
                 .orElseThrow(() -> AppException.notFound("Property not found"));
-        
+
         Map<Integer, Integer> config = property.getFloorUnitsConfig();
-        Integer floorKey = floorId.intValue();
-        if (config == null || !config.containsKey(floorKey)) return;
-        
-        int capacity = config.get(floorKey);
+        if (config == null || config.isEmpty()) return;
+
+        Floor floor = floorRepository.findById(floorId)
+                .orElseThrow(() -> AppException.badRequest("Invalid floor id: " + floorId, "INVALID_FLOOR"));
+        if (!floor.getPropertyId().equals(propertyId)) {
+            throw AppException.badRequest("Floor does not belong to this property.", "FLOOR_PROPERTY_MISMATCH");
+        }
+
+        int floorNumber = floor.getFloorNumber();
+        if (!config.containsKey(floorNumber)) return;
+
+        int capacity = config.get(floorNumber);
         long currentCount = unitRepository.countByPropertyIdAndFloorIdAndActiveTrue(propertyId, floorId);
-        
-        // If updating, don't count the current unit if it was already on this floor
+
         if (currentUnitId != null) {
             Unit currentUnit = unitRepository.findById(currentUnitId).orElse(null);
             if (currentUnit != null && currentUnit.getPropertyId().equals(propertyId) && floorId.equals(currentUnit.getFloorId())) {
@@ -146,7 +288,9 @@ public class UnitService {
         }
 
         if (currentCount >= capacity) {
-            throw new AppException("Floor " + floorId + " capacity reached (" + capacity + " units max)", org.springframework.http.HttpStatus.BAD_REQUEST, "FLOOR_CAPACITY_REACHED");
+            throw AppException.badRequest(
+                    "Floor " + floorNumber + " capacity reached (" + capacity + " units max).",
+                    "FLOOR_CAPACITY_REACHED");
         }
     }
 

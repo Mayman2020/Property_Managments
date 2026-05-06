@@ -93,9 +93,11 @@
               </span>
             </td>
             <td>
-              <button type="button" class="app-icon-btn" (click)="openEdit(t)" [title]="'COMMON.EDIT' | translate">
-                <mat-icon>edit</mat-icon>
-              </button>
+              <div class="table-actions">
+                <button type="button" class="app-icon-btn" (click)="openEdit(t)" [matTooltip]="'ACTIONS.EDIT' | translate">
+                  <mat-icon>edit</mat-icon>
+                </button>
+              </div>
             </td>
           </tr>
           <tr *ngIf="templates.length === 0">

@@ -19,32 +19,32 @@ public class PayrollController {
     private final PayrollService service;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','HR_OFFICER','ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','PROCEDURES_CLERK','ACCOUNTANT')")
     public ResponseEntity<ApiResponse<Page<PayrollRunResponse>>> list(@PageableDefault(size = 20) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.ok(service.getAll(pageable)));
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','HR_OFFICER','ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','PROCEDURES_CLERK','ACCOUNTANT')")
     public ResponseEntity<ApiResponse<PayrollRunDetailResponse>> get(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok(service.getById(id)));
     }
 
     @PostMapping("/generate")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','HR_OFFICER','ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
     public ResponseEntity<ApiResponse<PayrollRunDetailResponse>> generate(@Valid @RequestBody GeneratePayrollRequest request) {
         return ResponseEntity.ok(ApiResponse.ok("Payroll generated successfully", service.generate(request)));
     }
 
     @PostMapping("/advances")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','HR_OFFICER','ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
     public ResponseEntity<ApiResponse<Long>> createAdvance(@Valid @RequestBody SalaryAdvanceRequest request) {
         SalaryAdvance advance = service.createAdvance(request);
         return ResponseEntity.ok(ApiResponse.ok("Salary advance saved successfully", advance.getId()));
     }
 
     @PatchMapping("/{id}/payslips/{payslipId}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','HR_OFFICER','ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
     public ResponseEntity<ApiResponse<PayrollRunDetailResponse>> adjustPayslip(
             @PathVariable Long id,
             @PathVariable Long payslipId,
@@ -54,7 +54,7 @@ public class PayrollController {
     }
 
     @PostMapping("/{id}/bonuses")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','HR_OFFICER','ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
     public ResponseEntity<ApiResponse<PayrollRunDetailResponse>> addBonus(
             @PathVariable Long id,
             @Valid @RequestBody BonusRequest request
@@ -63,13 +63,13 @@ public class PayrollController {
     }
 
     @PostMapping("/{id}/approve")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','HR_OFFICER','ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','OWNER')")
     public ResponseEntity<ApiResponse<PayrollRunDetailResponse>> approve(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok("Payroll approved successfully", service.approve(id)));
     }
 
     @PostMapping("/{id}/mark-paid")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','HR_OFFICER','ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
     public ResponseEntity<ApiResponse<PayrollRunDetailResponse>> markPaid(
             @PathVariable Long id,
             @Valid @RequestBody PayrollPaidRequest request

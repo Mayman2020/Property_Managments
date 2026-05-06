@@ -10,6 +10,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { TranslateModule } from '@ngx-translate/core';
 
@@ -26,7 +27,7 @@ import { User } from '../../../core/models/user.model';
   imports: [
     NgIf, NgFor, DatePipe, RouterLink, ReactiveFormsModule, TranslateModule,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule,
-    MatFormFieldModule, MatInputModule, MatSelectModule, MatDatepickerModule, MatMenuModule
+    MatFormFieldModule, MatInputModule, MatSelectModule, MatDatepickerModule, MatMenuModule, MatTooltipModule
   ],
   templateUrl: './request-detail.component.html',
   styleUrl: './request-detail.component.scss'
@@ -55,7 +56,12 @@ export class RequestDetailComponent implements OnInit {
   scheduleForm!: FormGroup;
   rejectForm!: FormGroup;
   ratingForm!: FormGroup;
-  ratingStars = [1, 2, 3, 4, 5];
+  readonly ratingOptions = [
+    { value: 1, icon: 'sentiment_very_dissatisfied', colorClass: 'very-unsatisfied', labelKey: 'RATING.SCALE.VERY_UNSATISFIED' },
+    { value: 2, icon: 'sentiment_dissatisfied', colorClass: 'unsatisfied', labelKey: 'RATING.SCALE.UNSATISFIED' },
+    { value: 3, icon: 'sentiment_satisfied', colorClass: 'satisfied', labelKey: 'RATING.SCALE.SATISFIED' },
+    { value: 4, icon: 'sentiment_very_satisfied', colorClass: 'very-satisfied', labelKey: 'RATING.SCALE.VERY_SATISFIED' }
+  ] as const;
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -85,7 +91,7 @@ export class RequestDetailComponent implements OnInit {
       scheduledTimeTo: ['11:00', Validators.required]
     });
     this.rejectForm = this.fb.group({ rejectionNote: ['', [Validators.required, Validators.minLength(5)]] });
-    this.ratingForm = this.fb.group({ rating: [null, [Validators.required, Validators.min(1), Validators.max(5)]], comment: [''] });
+    this.ratingForm = this.fb.group({ rating: [null, [Validators.required, Validators.min(1), Validators.max(4)]], comment: [''] });
   }
 
   private load(id: number): void {
@@ -197,8 +203,12 @@ export class RequestDetailComponent implements OnInit {
     });
   }
 
-  setRating(star: number): void {
-    this.ratingForm.patchValue({ rating: star });
+  setRating(value: number): void {
+    this.ratingForm.patchValue({ rating: value });
+  }
+
+  isRatingSelected(value: number): boolean {
+    return Number(this.ratingForm.value.rating ?? 0) === value;
   }
 
   submitRating(): void {

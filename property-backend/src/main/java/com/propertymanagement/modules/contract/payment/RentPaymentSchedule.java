@@ -39,6 +39,39 @@ public class RentPaymentSchedule {
     @Column(name = "status", length = 20)
     private PaymentScheduleStatus status = PaymentScheduleStatus.PENDING;
 
+    @Column(name = "proof_url", length = 500)
+    private String proofUrl;
+
+    @Column(name = "proof_urls", columnDefinition = "TEXT")
+    private String proofUrls;
+
+    @Column(name = "proof_payment_date")
+    private LocalDate proofPaymentDate;
+
+    @Column(name = "proof_notes", columnDefinition = "TEXT")
+    private String proofNotes;
+
+    @Column(name = "proof_payment_method", length = 30)
+    private String proofPaymentMethod;
+
+    @Column(name = "proof_reference_number", length = 100)
+    private String proofReferenceNumber;
+
+    @Column(name = "proof_submitted_by")
+    private Long proofSubmittedBy;
+
+    @Column(name = "proof_submitted_at")
+    private LocalDateTime proofSubmittedAt;
+
+    @Column(name = "reviewed_by")
+    private Long reviewedBy;
+
+    @Column(name = "reviewed_at")
+    private LocalDateTime reviewedAt;
+
+    @Column(name = "rejection_reason", columnDefinition = "TEXT")
+    private String rejectionReason;
+
     @CreatedDate
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

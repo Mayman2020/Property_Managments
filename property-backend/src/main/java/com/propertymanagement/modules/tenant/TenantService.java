@@ -2,53 +2,88 @@ package com.propertymanagement.modules.tenant;
 
 import com.propertymanagement.modules.contract.lease.ContractStatus;
 import com.propertymanagement.modules.contract.lease.LeaseContractRepository;
+import com.propertymanagement.modules.contract.lease.LeaseContractService;
 import com.propertymanagement.modules.maintenance.request.MaintenanceRequestRepository;
 import com.propertymanagement.modules.complaint.TenantComplaintRepository;
 import com.propertymanagement.modules.contract.payment.RentPaymentRepository;
 import com.propertymanagement.modules.tenantportal.ContractActionRequestRepository;
 import com.propertymanagement.modules.tenantportal.RentReceiptRepository;
-import com.propertymanagement.modules.violation.TenantViolationRepository;
 import com.propertymanagement.modules.tenant.dto.TenantRequest;
 import com.propertymanagement.modules.tenant.dto.TenantResponse;
+import com.propertymanagement.modules.notification.NotificationService;
+import com.propertymanagement.modules.notification.NotificationType;
+import com.propertymanagement.modules.owner.OwnerPropertyAccessService;
+import com.propertymanagement.modules.property.Property;
+import com.propertymanagement.modules.property.PropertyOwnerPortalRecipientService;
+import com.propertymanagement.modules.property.PropertyRepository;
 import com.propertymanagement.modules.unit.UnitRepository;
+import com.propertymanagement.modules.unit.Unit;
 import com.propertymanagement.modules.user.User;
 import com.propertymanagement.modules.user.UserRepository;
 import com.propertymanagement.modules.user.UserRole;
 import com.propertymanagement.modules.user.UserService;
 import com.propertymanagement.shared.exception.AppException;
+import com.propertymanagement.shared.i18n.BilingualNotificationText;
+import com.propertymanagement.shared.i18n.LocalizedNameResolver;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
 public class TenantService {
+    private static final String DEFAULT_TENANT_PASSWORD = "12345";
 
     private final TenantRepository tenantRepository;
     private final UnitRepository unitRepository;
     private final LeaseContractRepository leaseContractRepository;
+    private final LeaseContractService leaseContractService;
     private final MaintenanceRequestRepository maintenanceRequestRepository;
     private final RentReceiptRepository rentReceiptRepository;
     private final ContractActionRequestRepository contractActionRequestRepository;
     private final RentPaymentRepository rentPaymentRepository;
-    private final TenantViolationRepository tenantViolationRepository;
     private final TenantComplaintRepository tenantComplaintRepository;
     private final UserRepository userRepository;
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
+    private final TenantPortalWelcomeService tenantPortalWelcomeService;
+    private final OwnerPropertyAccessService ownerPropertyAccessService;
+    private final NotificationService notificationService;
+    private final PropertyOwnerPortalRecipientService propertyOwnerPortalRecipientService;
+    private final PropertyRepository propertyRepository;
 
     public Page<TenantResponse> getAll(Pageable pageable, String q, Long propertyId) {
-        return tenantRepository.searchActive(trimToNull(q), propertyId, pageable).map(this::toResponse);
+        String trimmed = trimToNull(q);
+        Set<Long> ownerScope = ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner();
+        if (ownerScope != null) {
+            if (ownerScope.isEmpty()) {
+                return Page.empty(pageable);
+            }
+            if (propertyId != null) {
+                ownerPropertyAccessService.assertOwnerCanAccessProperty(propertyId);
+                return tenantRepository.searchActive(trimmed, propertyId, pageable).map(this::toResponse);
+            }
+            return tenantRepository.searchActiveInPropertyIds(trimmed, ownerScope, pageable).map(this::toResponse);
+        }
+        return tenantRepository.searchActive(trimmed, propertyId, pageable).map(this::toResponse);
     }
 
     public TenantResponse getById(Long id) {
-        return toResponse(findActive(id));
+        Tenant tenant = findActive(id);
+        ownerPropertyAccessService.assertOwnerCanAccessProperty(tenant.getPropertyId());
+        return toResponse(tenant);
     }
 
     public TenantResponse getByUserId(Long userId) {
@@ -67,15 +102,18 @@ public class TenantService {
     public TenantResponse create(TenantRequest request) {
         validateScope(request);
         validateLease(request);
+        Long targetPropertyId = resolveTargetPropertyId(request);
+        requirePropertyHasAccountant(targetPropertyId);
         String email = trimToNull(request.getEmail());
         Long userId = request.getUserId();
 
         Optional<Tenant> existingByUserId = userId != null ? tenantRepository.findByUserId(userId) : Optional.empty();
         if (existingByUserId.isPresent()) {
             Tenant tenant = existingByUserId.get();
+            Long previousPortalUserId = tenant.getUserId();
             String previousEmail = trimToNull(tenant.getEmail());
             if (email != null && !email.equals(previousEmail) && tenantRepository.existsByEmail(email)) {
-                throw AppException.conflict("Email already registered: " + email);
+                throw AppException.conflict("Email already registered: " + email, "EMAIL_ALREADY_USED");
             }
             Long previousUnitId = tenant.getUnitId();
 
@@ -89,6 +127,7 @@ public class TenantService {
             tenant.setLeaseStart(request.getLeaseStart());
             tenant.setLeaseEnd(request.getLeaseEnd());
             tenant.setProfileImage(request.getProfileImage());
+            tenant.setCivilIdImageUrl(trimToNull(request.getCivilIdImageUrl()));
             tenant.setLeaseContractFiles(normalizeFiles(request.getLeaseContractFiles()));
             tenant.setNotes(request.getNotes());
             tenant.setEmail(email);
@@ -106,17 +145,27 @@ public class TenantService {
 
             Tenant saved = tenantRepository.save(tenant);
             if (saved.getUserId() != null) {
-                userRepository.findById(saved.getUserId()).ifPresent(u -> syncTenantPortalUserFromRequest(u, request));
+                userRepository.findById(saved.getUserId()).ifPresent(u -> {
+                    syncTenantPortalUserFromRequest(u, request);
+                    syncTenantPortalLoginEmail(u, email);
+                });
             }
             if (previousUnitId != null && !previousUnitId.equals(request.getUnitId())) {
-                markUnitRented(previousUnitId, false);
+                refreshUnitOccupancyFromLeases(previousUnitId);
             }
-            markUnitRented(request.getUnitId(), true);
+            refreshUnitOccupancyFromLeases(request.getUnitId());
+            if (saved.getUserId() != null && previousPortalUserId == null) {
+                tenantPortalWelcomeService.notifyTenantPortalLinked(saved);
+            }
+            if (saved.getPropertyId() != null && saved.getUnitId() != null
+                    && !Objects.equals(previousUnitId, saved.getUnitId())) {
+                notifyOwnersTenantRegisteredOnUnit(saved);
+            }
             return toResponse(saved);
         }
 
         if (email != null && tenantRepository.existsByEmail(email)) {
-            throw AppException.conflict("Email already registered: " + email);
+            throw AppException.conflict("Email already registered: " + email, "EMAIL_ALREADY_USED");
         }
 
         Tenant tenant = Tenant.builder()
@@ -132,6 +181,7 @@ public class TenantService {
                 .leaseStart(request.getLeaseStart())
                 .leaseEnd(request.getLeaseEnd())
                 .profileImage(request.getProfileImage())
+                .civilIdImageUrl(trimToNull(request.getCivilIdImageUrl()))
                 .leaseContractFiles(normalizeFiles(request.getLeaseContractFiles()))
                 .notes(request.getNotes())
                 .active(true)
@@ -142,27 +192,101 @@ public class TenantService {
             syncTenantPortalUserFromRequest(user, request);
             tenant.setUserId(user.getId());
         } else if (tenant.getUserId() != null) {
-            userRepository.findById(tenant.getUserId()).ifPresent(u -> syncTenantPortalUserFromRequest(u, request));
+            userRepository.findById(tenant.getUserId()).ifPresent(u -> {
+                syncTenantPortalUserFromRequest(u, request);
+                syncTenantPortalLoginEmail(u, email);
+            });
         }
 
         Tenant saved = tenantRepository.save(tenant);
-        markUnitRented(request.getUnitId(), true);
+        if (saved.getUserId() != null) {
+            userRepository.findById(saved.getUserId()).ifPresent(u -> {
+                syncTenantPortalUserFromRequest(u, request);
+                syncTenantPortalLoginEmail(u, email);
+            });
+        }
+        refreshUnitOccupancyFromLeases(request.getUnitId());
+        if (saved.getUserId() != null) {
+            tenantPortalWelcomeService.notifyTenantPortalLinked(saved);
+        }
+        if (saved.getPropertyId() != null && saved.getUnitId() != null) {
+            notifyOwnersTenantRegisteredOnUnit(saved);
+        }
         return toResponse(saved);
+    }
+
+    private void notifyOwnersTenantRegisteredOnUnit(Tenant tenant) {
+        if (tenant == null || tenant.getPropertyId() == null || tenant.getUnitId() == null) {
+            return;
+        }
+        List<Long> recipients = propertyOwnerPortalRecipientService.portalRecipientUserIds(tenant.getPropertyId());
+        if (recipients.isEmpty()) {
+            return;
+        }
+        try {
+            Property property = propertyRepository.findById(tenant.getPropertyId()).filter(Property::isActive).orElse(null);
+            if (property == null) {
+                return;
+            }
+            String unitNumber = unitRepository.findById(tenant.getUnitId()).map(Unit::getUnitNumber).orElse("");
+            String tenantName = BilingualNotificationText.composite(
+                    tenant.getFullNameAr(), tenant.getFullNameEn(), tenant.getFullName());
+            Map<String, Object> vars = new LinkedHashMap<>();
+            vars.put(
+                    "propertyName",
+                    BilingualNotificationText.composite(
+                            property.getPropertyNameAr(),
+                            property.getPropertyNameEn(),
+                            property.getPropertyName()));
+            vars.put("unitNumber", unitNumber != null ? unitNumber : "");
+            vars.put("tenantName", tenantName != null ? tenantName : "");
+            Map<String, Object> hints = new LinkedHashMap<>();
+            hints.put("tenantId", tenant.getId());
+            hints.put("unitId", tenant.getUnitId());
+            hints.put("propertyId", tenant.getPropertyId());
+            notificationService.createLocalized(
+                    recipients,
+                    currentActorUserId(),
+                    tenant.getPropertyId(),
+                    null,
+                    NotificationType.TENANT_REGISTERED_ON_OWNER_PROPERTY,
+                    "NOTIFICATIONS.TENANT_REGISTERED_TITLE",
+                    "NOTIFICATIONS.TENANT_REGISTERED_OWNER_BODY",
+                    vars,
+                    hints);
+        } catch (Exception ignored) {
+            // Side-effect: tenant save must succeed even if notification persistence fails.
+        }
+    }
+
+    private Long currentActorUserId() {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.getPrincipal() instanceof User u) {
+                return u.getId();
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
     }
 
     @Transactional
     public TenantResponse update(Long id, TenantRequest request) {
         validateScope(request);
         validateLease(request);
+        Long targetPropertyId = resolveTargetPropertyId(request);
+        requirePropertyHasAccountant(targetPropertyId);
         Tenant tenant = findActive(id);
+        Long previousUserId = tenant.getUserId();
 
         String email = trimToNull(request.getEmail());
         String previousEmail = trimToNull(tenant.getEmail());
         if (email != null && !email.equals(previousEmail) && tenantRepository.existsByEmail(email)) {
-            throw AppException.conflict("Email already registered: " + email);
+            throw AppException.conflict("Email already registered: " + email, "EMAIL_ALREADY_USED");
         }
 
         Long previousUnitId = tenant.getUnitId();
+        Long previousPropertyId = tenant.getPropertyId();
 
         tenant.setFullName(request.getFullName());
         tenant.setFullNameAr(request.getFullNameAr());
@@ -174,6 +298,7 @@ public class TenantService {
         tenant.setLeaseStart(request.getLeaseStart());
         tenant.setLeaseEnd(request.getLeaseEnd());
         tenant.setProfileImage(request.getProfileImage());
+        tenant.setCivilIdImageUrl(trimToNull(request.getCivilIdImageUrl()));
         tenant.setLeaseContractFiles(normalizeFiles(request.getLeaseContractFiles()));
         tenant.setNotes(request.getNotes());
 
@@ -190,14 +315,25 @@ public class TenantService {
 
         Tenant saved = tenantRepository.save(tenant);
         if (saved.getUserId() != null) {
-            userRepository.findById(saved.getUserId()).ifPresent(u -> syncTenantPortalUserFromRequest(u, request));
+            userRepository.findById(saved.getUserId()).ifPresent(u -> {
+                syncTenantPortalUserFromRequest(u, request);
+                syncTenantPortalLoginEmail(u, email);
+            });
         }
 
         if (previousUnitId != null && !previousUnitId.equals(request.getUnitId())) {
-            markUnitRented(previousUnitId, false);
+            refreshUnitOccupancyFromLeases(previousUnitId);
         }
-        markUnitRented(request.getUnitId(), true);
+        refreshUnitOccupancyFromLeases(request.getUnitId());
 
+        if (saved.getUserId() != null && previousUserId == null) {
+            tenantPortalWelcomeService.notifyTenantPortalLinked(saved);
+        }
+        if (saved.getPropertyId() != null && saved.getUnitId() != null
+                && (!Objects.equals(previousUnitId, saved.getUnitId())
+                        || !Objects.equals(previousPropertyId, saved.getPropertyId()))) {
+            notifyOwnersTenantRegisteredOnUnit(saved);
+        }
         return toResponse(saved);
     }
 
@@ -207,7 +343,7 @@ public class TenantService {
         Long previousUnitId = tenant.getUnitId();
         tenant.setUnitId(null);
         Tenant saved = tenantRepository.save(tenant);
-        markUnitRented(previousUnitId, false);
+        refreshUnitOccupancyFromLeases(previousUnitId);
         return toResponse(saved);
     }
 
@@ -221,7 +357,7 @@ public class TenantService {
         Long unitId = tenant.getUnitId();
         if (canPhysicallyRemoveTenant(id)) {
             maintenanceRequestRepository.clearTenantIdForTenant(id);
-            markUnitRented(unitId, false);
+            refreshUnitOccupancyFromLeases(unitId);
             tenantRepository.delete(tenant);
             if (portalUserId != null) {
                 userService.delete(portalUserId);
@@ -233,7 +369,7 @@ public class TenantService {
         // Row stays for history/FKs; clear email so UNIQUE(tenants.email) does not block new tenants.
         tenant.setEmail(null);
         tenantRepository.save(tenant);
-        markUnitRented(unitId, false);
+        refreshUnitOccupancyFromLeases(unitId);
         if (portalUserId != null) {
             userService.delete(portalUserId);
         }
@@ -244,7 +380,6 @@ public class TenantService {
                 && !rentReceiptRepository.existsByTenantId(tenantId)
                 && !contractActionRequestRepository.existsByTenantId(tenantId)
                 && !rentPaymentRepository.existsByTenantId(tenantId)
-                && !tenantViolationRepository.existsByTenantId(tenantId)
                 && !tenantComplaintRepository.existsByTenantId(tenantId);
     }
 
@@ -252,6 +387,13 @@ public class TenantService {
         if (a != null && !a.isBlank()) return a.trim();
         if (b != null && !b.isBlank()) return b.trim();
         return null;
+    }
+
+    private static String resolveTenantDisplayName(Tenant t) {
+        return LocalizedNameResolver.resolve(
+                t.getFullNameAr(),
+                t.getFullNameEn(),
+                t.getFullName());
     }
 
     private void syncTenantPortalUserFromRequest(User user, TenantRequest request) {
@@ -270,6 +412,28 @@ public class TenantService {
     }
 
     /**
+     * Keeps {@code users.email}/{@code username} aligned with {@code tenants.email} so the address
+     * shown on contracts matches portal login. Previously only the tenant row was updated.
+     */
+    private void syncTenantPortalLoginEmail(User portalUser, String tenantEmail) {
+        if (portalUser == null || tenantEmail == null || tenantEmail.isBlank()) {
+            return;
+        }
+        String normalized = tenantEmail.trim();
+        if (normalized.equals(portalUser.getEmail()) && normalized.equals(portalUser.getUsername())) {
+            return;
+        }
+        userRepository.findByEmail(normalized).ifPresent(other -> {
+            if (!other.getId().equals(portalUser.getId())) {
+                throw AppException.conflict("Email already in use by another account: " + normalized, "EMAIL_ALREADY_USED");
+            }
+        });
+        portalUser.setEmail(normalized);
+        portalUser.setUsername(normalized);
+        userRepository.save(portalUser);
+    }
+
+    /**
      * Creates or reuses a TENANT user for portal login; refuses emails already used by non-tenants
      * and users already linked to another tenant row.
      */
@@ -278,7 +442,7 @@ public class TenantService {
         if (existing.isPresent()) {
             User u = existing.get();
             if (u.getRole() != UserRole.TENANT) {
-                throw AppException.conflict("Email already registered to a non-tenant account: " + email);
+                throw AppException.conflict("Email already registered to a non-tenant account: " + email, "EMAIL_USED_BY_DIFFERENT_ROLE");
             }
             assertTenantUserNotLinkedToOther(u.getId(), currentTenantIdOrNull);
             return u;
@@ -286,7 +450,7 @@ public class TenantService {
         return userRepository.save(User.builder()
                 .username(email)
                 .email(email)
-                .password(passwordEncoder.encode("12345"))
+                .password(passwordEncoder.encode(DEFAULT_TENANT_PASSWORD))
                 .fullName(fullName)
                 .phone(phone)
                 .role(UserRole.TENANT)
@@ -305,6 +469,28 @@ public class TenantService {
     private void validateScope(TenantRequest request) {
         if (request.getUnitId() == null && request.getPropertyId() == null) {
             throw AppException.badRequest("Tenant must be assigned to a unit or a property");
+        }
+    }
+
+    private Long resolveTargetPropertyId(TenantRequest request) {
+        if (request.getPropertyId() != null) {
+            return request.getPropertyId();
+        }
+        if (request.getUnitId() != null) {
+            return unitRepository.findById(request.getUnitId())
+                    .map(Unit::getPropertyId)
+                    .orElseThrow(() -> AppException.badRequest("Unit not found: " + request.getUnitId()));
+        }
+        return null;
+    }
+
+    private void requirePropertyHasAccountant(Long propertyId) {
+        if (propertyId == null) {
+            return;
+        }
+        boolean hasPropertyAccountant = !userRepository.findByPropertyIdAndRoleAndActiveTrue(propertyId, UserRole.ACCOUNTANT).isEmpty();
+        if (!hasPropertyAccountant) {
+            throw AppException.badRequest("Assign an active accountant to this property before registering tenants");
         }
     }
 
@@ -330,12 +516,10 @@ public class TenantService {
                 .toList();
     }
 
-    private void markUnitRented(Long unitId, boolean rented) {
-        if (unitId == null) return;
-        unitRepository.findById(unitId).ifPresent(u -> {
-            u.setRented(rented);
-            unitRepository.save(u);
-        });
+    private void refreshUnitOccupancyFromLeases(Long unitId) {
+        if (unitId != null) {
+            leaseContractService.syncUnitRentedFromContracts(unitId);
+        }
     }
 
     private Tenant findActive(Long id) {
@@ -358,7 +542,7 @@ public class TenantService {
                 .linkedUserActive(resolveLinkedUserActive(t.getUserId()))
                 .unitId(t.getUnitId())
                 .propertyId(t.getPropertyId())
-                .fullName(t.getFullName())
+                .fullName(resolveTenantDisplayName(t))
                 .fullNameAr(t.getFullNameAr())
                 .fullNameEn(t.getFullNameEn())
                 .nationalId(t.getNationalId())
@@ -367,6 +551,7 @@ public class TenantService {
                 .leaseStart(t.getLeaseStart())
                 .leaseEnd(t.getLeaseEnd())
                 .profileImage(t.getProfileImage())
+                .civilIdImageUrl(t.getCivilIdImageUrl())
                 .leaseContractFiles(t.getLeaseContractFiles())
                 .notes(t.getNotes())
                 .active(t.isActive())

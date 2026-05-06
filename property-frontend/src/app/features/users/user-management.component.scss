@@ -19,6 +19,30 @@
 
 .date-text { font-family: var(--font-mono); color: var(--text-muted); font-size: 0.85rem; }
 
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border: 1px solid transparent;
+
+  &.chip-success {
+    background: var(--ok-bg, #d1fae5);
+    color: var(--ok, #065f46);
+    border-color: rgba(6, 95, 70, 0.2);
+  }
+
+  &.chip-danger {
+    background: var(--bad-bg, #fee2e2);
+    color: var(--bad, #991b1b);
+    border-color: rgba(153, 27, 27, 0.2);
+  }
+}
+
 .actions-col { width: 120px; text-align: center; }
 .center-col { text-align: center; }
 

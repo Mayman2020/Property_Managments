@@ -159,16 +159,6 @@ export const ADMIN_ROUTES: Routes = [
             loadComponent: () => import('../hr/hr-workspace.component').then((m) => m.HrWorkspaceComponent)
           },
           {
-            path: 'payroll',
-            data: { section: 'payroll-list' },
-            loadComponent: () => import('../hr/hr-workspace.component').then((m) => m.HrWorkspaceComponent)
-          },
-          {
-            path: 'payroll/:id',
-            data: { section: 'payroll-detail' },
-            loadComponent: () => import('../hr/hr-workspace.component').then((m) => m.HrWorkspaceComponent)
-          },
-          {
             path: 'leaves',
             data: { section: 'leaves' },
             loadComponent: () => import('../hr/hr-workspace.component').then((m) => m.HrWorkspaceComponent)
@@ -193,11 +183,6 @@ export const ADMIN_ROUTES: Routes = [
           {
             path: 'revenues',
             data: { section: 'revenues' },
-            loadComponent: () => import('../finance/finance-workspace.component').then((m) => m.FinanceWorkspaceComponent)
-          },
-          {
-            path: 'petty-cash',
-            data: { section: 'petty-cash' },
             loadComponent: () => import('../finance/finance-workspace.component').then((m) => m.FinanceWorkspaceComponent)
           },
           {
@@ -301,25 +286,12 @@ export const ADMIN_ROUTES: Routes = [
           },
 
           {
-            path: 'payments',
-            loadComponent: () => import('../contracts/payment-list/payment-list.component').then((m) => m.PaymentListComponent)
-          },
-
-          {
             path: 'templates',
             loadComponent: () => import('../contracts/contract-templates/contract-templates.component').then((m) => m.ContractTemplatesComponent)
           },
           {
-            path: 'violations',
-            loadComponent: () => import('../contracts/violations-list/violations-list.component').then((m) => m.ViolationsListComponent)
-          },
-          {
             path: 'complaints',
             loadComponent: () => import('../contracts/complaints-list/complaints-list.component').then((m) => m.ComplaintsListComponent)
-          },
-          {
-            path: 'inspections',
-            loadComponent: () => import('../contracts/inspections-list/inspections-list.component').then((m) => m.InspectionsListComponent)
           },
           {
             path: ':id',

@@ -23,7 +23,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/owners")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN')")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER')")
 public class OwnerController {
 
     private final OwnerService ownerService;

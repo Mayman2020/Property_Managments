@@ -1,10 +1,10 @@
-<div class="app-page">
+<div class="app-page my-contract-page">
   <app-page-header
     [title]="'TENANT_PORTAL.MY_CONTRACT' | translate"
     [subtitle]="'TENANT_PORTAL.MY_CONTRACT_SUB' | translate">
-    <a mat-flat-button routerLink="/tenant/rent-receipts" class="btn-primary">
-      <span class="material-icons">receipt_long</span>
-      {{ 'TENANT_PORTAL.RECEIPTS' | translate }}
+    <a mat-stroked-button routerLink="/tenant/my-contracts" class="btn-secondary">
+      <span class="material-icons">library_books</span>
+      {{ 'TENANT_PORTAL.MY_CONTRACTS' | translate }}
     </a>
   </app-page-header>
 
@@ -18,12 +18,13 @@
   </div>
 
   <ng-container *ngIf="!loading && contract">
-    <!-- Status Banner -->
     <div class="contract-banner" [class]="expiryClass">
-      <span class="material-icons">{{ contract.status === 'ACTIVE' ? 'verified' : 'warning' }}</span>
-      <div class="banner-text">
-        <strong>{{ statusLabel(contract.status) }}</strong>
-        <span>{{ daysLabel }}</span>
+      <div class="banner-left">
+        <span class="material-icons banner-icon">{{ contract.status === 'ACTIVE' ? 'verified' : 'warning' }}</span>
+        <div class="banner-text">
+          <strong>{{ statusLabel(contract.status) }}</strong>
+          <span>{{ daysLabel }}</span>
+        </div>
       </div>
       <div class="banner-actions">
         <a mat-stroked-button routerLink="/tenant/contract-request" [queryParams]="{ action: 'RENEWAL' }">
@@ -37,71 +38,80 @@
       </div>
     </div>
 
-    <!-- Contract Info Grid -->
-    <div class="contract-grid">
-
-      <article class="app-card contract-card">
+    <div class="contract-cards-grid">
+      <article class="app-card contract-info-card">
         <div class="app-card-header">
           <span class="app-card-title">{{ 'TENANT_PORTAL.CONTRACT_INFO' | translate }}</span>
           <code class="contract-number">{{ contract.contractNumber }}</code>
         </div>
         <div class="contract-details">
-          <div class="detail-row">
-            <span class="detail-label">{{ 'TENANT_PORTAL.PROPERTY' | translate }}</span>
-            <span class="detail-value">{{ contract.propertyName || '—' }}</span>
+          <div class="detail-group">
+            <div class="detail-item">
+              <span class="detail-label">{{ 'TENANT_PORTAL.PROPERTY' | translate }}</span>
+              <span class="detail-value">{{ contract.propertyName || '-' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">{{ 'TENANT_PORTAL.UNIT' | translate }}</span>
+              <span class="detail-value">{{ contract.unitNumber || '-' }}</span>
+            </div>
           </div>
-          <div class="detail-row">
-            <span class="detail-label">{{ 'TENANT_PORTAL.UNIT' | translate }}</span>
-            <span class="detail-value">{{ contract.unitNumber || '—' }}</span>
+          <div class="detail-group">
+            <div class="detail-item">
+              <span class="detail-label">{{ 'TENANT_PORTAL.START_DATE' | translate }}</span>
+              <span class="detail-value">{{ contract.startDate | date:'dd/MM/yyyy' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">{{ 'TENANT_PORTAL.END_DATE' | translate }}</span>
+              <span class="detail-value">{{ contract.endDate | date:'dd/MM/yyyy' }}</span>
+            </div>
           </div>
-          <div class="detail-row">
-            <span class="detail-label">{{ 'TENANT_PORTAL.START_DATE' | translate }}</span>
-            <span class="detail-value">{{ contract.startDate | date:'dd/MM/yyyy' }}</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">{{ 'TENANT_PORTAL.END_DATE' | translate }}</span>
-            <span class="detail-value">{{ contract.endDate | date:'dd/MM/yyyy' }}</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">{{ 'TENANT_PORTAL.MONTHLY_RENT' | translate }}</span>
-            <span class="detail-value accent">{{ contract.monthlyRent | number:'1.0-2' }} {{ contract.currency }}</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">{{ 'TENANT_PORTAL.SECURITY_DEPOSIT' | translate }}</span>
-            <span class="detail-value">{{ contract.securityDeposit | number:'1.0-2' }} {{ contract.currency }}</span>
+          <div class="detail-group">
+            <div class="detail-item">
+              <span class="detail-label">{{ 'TENANT_PORTAL.MONTHLY_RENT' | translate }}</span>
+              <span class="detail-value accent">{{ contract.monthlyRent | number:'1.0-2' }} {{ contract.currency }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">{{ 'TENANT_PORTAL.SECURITY_DEPOSIT' | translate }}</span>
+              <span class="detail-value">{{ contract.securityDeposit | number:'1.0-2' }} {{ contract.currency }}</span>
+            </div>
           </div>
         </div>
       </article>
 
-      <article class="app-card contract-card">
+      <article class="app-card contract-docs-card">
         <div class="app-card-header">
           <span class="app-card-title">{{ 'TENANT_PORTAL.CONTRACT_DOCS' | translate }}</span>
         </div>
         <div class="docs-list">
-          <a class="doc-item" *ngIf="contract.contractPdfUrl"
-             [href]="contract.contractPdfUrl" target="_blank" rel="noopener">
+          <a class="doc-item" *ngIf="contract.contractPdfUrl" [href]="contract.contractPdfUrl" target="_blank" rel="noopener">
             <span class="material-icons doc-icon">picture_as_pdf</span>
-            <span>{{ 'TENANT_PORTAL.CONTRACT_PDF' | translate }}</span>
+            <span class="doc-name">{{ 'TENANT_PORTAL.CONTRACT_PDF' | translate }}</span>
             <span class="material-icons open-icon">open_in_new</span>
           </a>
-          <a class="doc-item" *ngIf="contract.signedPdfUrl"
-             [href]="contract.signedPdfUrl" target="_blank" rel="noopener">
+          <a class="doc-item" *ngIf="contract.signedPdfUrl" [href]="contract.signedPdfUrl" target="_blank" rel="noopener">
             <span class="material-icons doc-icon">task</span>
-            <span>{{ 'TENANT_PORTAL.SIGNED_PDF' | translate }}</span>
+            <span class="doc-name">{{ 'TENANT_PORTAL.SIGNED_PDF' | translate }}</span>
             <span class="material-icons open-icon">open_in_new</span>
           </a>
-          <div class="no-docs" *ngIf="!contract.contractPdfUrl && !contract.signedPdfUrl">
-            <span class="material-icons">folder_open</span>
-            <p>{{ 'TENANT_PORTAL.NO_DOCS' | translate }}</p>
-          </div>
         </div>
-        <div class="upload-doc-hint">
-          <span class="material-icons">info</span>
-          <span>{{ 'TENANT_PORTAL.UPLOAD_RECEIPT_HINT' | translate }}</span>
-          <a routerLink="/tenant/rent-receipts">{{ 'TENANT_PORTAL.RECEIPTS' | translate }}</a>
+        <div class="no-docs" *ngIf="!contract.contractPdfUrl && !contract.signedPdfUrl">
+          <span class="material-icons">folder_open</span>
+          <p>{{ 'TENANT_PORTAL.NO_DOCS' | translate }}</p>
         </div>
       </article>
-
     </div>
+
+    <article class="app-card payment-schedule-card">
+      <div class="app-card-header">
+        <span class="app-card-title">{{ 'TENANT_PORTAL.PAYMENT_SCHEDULE' | translate }}</span>
+      </div>
+      <div class="payment-info">
+        <p class="info-text">{{ 'TENANT_PORTAL.PAYMENT_SCHEDULE_HINT' | translate }}</p>
+        <a mat-flat-button color="primary" [routerLink]="['/tenant/contracts', contract.id]">
+          <span class="material-icons">receipt_long</span>
+          {{ 'TENANT_PORTAL.VIEW_PAYMENT_SCHEDULE' | translate }}
+        </a>
+      </div>
+    </article>
   </ng-container>
 </div>

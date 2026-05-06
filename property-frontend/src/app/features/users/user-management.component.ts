@@ -8,7 +8,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { I18nService } from '../../core/i18n/i18n.service';
-import { User } from '../../core/models/user.model';
+import { OwnerPropertyBrief, User } from '../../core/models/user.model';
 import { Property, PropertyService } from '../../core/services/property.service';
 import { ContractorCompany, ContractorCompanyService } from '../../core/services/contractor-company.service';
 import { DeleteConfirmService } from '../../core/services/delete-confirm.service';
@@ -87,7 +87,7 @@ export class UserManagementComponent implements OnInit {
         type: 'select',
         options: [
           { value: 'SUPER_ADMIN', label: this.i18n.instant('ROLE.SUPER_ADMIN') },
-          { value: 'PROPERTY_ADMIN', label: this.i18n.instant('ROLE.PROPERTY_ADMIN') },
+          { value: 'GENERAL_MANAGER', label: this.i18n.instant('ROLE.GENERAL_MANAGER') },
           { value: 'MAINTENANCE_OFFICER', label: this.i18n.instant('ROLE.MAINTENANCE_OFFICER') },
           { value: 'TENANT', label: this.i18n.instant('ROLE.TENANT') },
           { value: 'OWNER', label: this.i18n.instant('ROLE.OWNER') }
@@ -150,7 +150,7 @@ export class UserManagementComponent implements OnInit {
     return [
       { header: this.i18n.instant('USER_MGMT.USERNAME'), value: (row) => row.fullName || row.username },
       { header: this.i18n.instant('USER_MGMT.ROLE'), value: (row) => this.roleLabel(row) },
-      { header: this.i18n.instant('REQUEST_FORM.PROPERTY'), value: (row) => this.propertyName(row.propertyId) },
+      { header: this.i18n.instant('REQUEST_FORM.PROPERTY'), value: (row) => this.userPropertyDisplay(row) },
       { header: this.i18n.instant('MAINTENANCE.STATUS'), value: (row) => this.i18n.instant(row.isActive ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') },
       { header: this.i18n.instant('REQUEST_LIST.CREATED_AT'), value: (row) => this.formatDate(row.createdAt) }
     ];
@@ -243,6 +243,26 @@ export class UserManagementComponent implements OnInit {
     if (!p) return '—';
     const name = this.i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName);
     return `${name} (${p.propertyCode})`;
+  }
+
+  hasPropertyDisplay(user: User): boolean {
+    return !!user.propertyId || !!(user.ownerProperties && user.ownerProperties.length);
+  }
+
+  userPropertyDisplay(user: User): string {
+    if (user.ownerProperties?.length) {
+      return user.ownerProperties.map(op => this.ownerBriefLabel(op)).join('، ');
+    }
+    return this.propertyName(user.propertyId);
+  }
+
+  private ownerBriefLabel(op: OwnerPropertyBrief): string {
+    const name =
+      this.i18n.currentLang === 'ar'
+        ? (op.propertyNameAr || op.propertyName || '')
+        : (op.propertyNameEn || op.propertyName || '');
+    const code = op.propertyCode ?? '';
+    return code ? `${name} (${code})` : name || '—';
   }
 
   userInitials(user: User): string {

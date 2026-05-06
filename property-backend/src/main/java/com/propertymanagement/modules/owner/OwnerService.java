@@ -1,5 +1,7 @@
 package com.propertymanagement.modules.owner;
 
+import com.propertymanagement.modules.notification.NotificationService;
+import com.propertymanagement.modules.notification.NotificationType;
 import com.propertymanagement.modules.owner.dto.LinkUserRequest;
 import com.propertymanagement.modules.owner.dto.OwnerRequest;
 import com.propertymanagement.modules.owner.dto.OwnerResponse;
@@ -8,6 +10,8 @@ import com.propertymanagement.modules.user.UserRepository;
 import com.propertymanagement.modules.user.UserRole;
 import com.propertymanagement.modules.user.UserService;
 import com.propertymanagement.shared.exception.AppException;
+import com.propertymanagement.shared.i18n.AppMessages;
+import com.propertymanagement.shared.i18n.BilingualNotificationText;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,16 +19,20 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class OwnerService {
+    private static final String DEFAULT_SYSTEM_PASSWORD = "1234";
 
     private final OwnerRepository ownerRepository;
     private final UserRepository userRepository;
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
+    private final NotificationService notificationService;
+    private final AppMessages appMessages;
 
     public Page<OwnerResponse> getAll(Pageable pageable) {
         return ownerRepository.findByActiveTrue(pageable).map(this::toResponse);
@@ -63,12 +71,17 @@ public class OwnerService {
             owner.setPortalAccess(true);
         }
 
-        return toResponse(ownerRepository.save(owner));
+        Owner saved = ownerRepository.save(owner);
+        if (saved.getUserId() != null && saved.isPortalAccess()) {
+            notifyOwnerPortalLinked(saved);
+        }
+        return toResponse(saved);
     }
 
     @Transactional
     public OwnerResponse update(Long id, OwnerRequest request) {
         Owner owner = findActive(id);
+        Long previousUserId = owner.getUserId();
         String ar = request.getFullNameAr().trim();
         String en = request.getFullNameEn().trim();
         owner.setFullNameAr(ar);
@@ -94,6 +107,9 @@ public class OwnerService {
         if (saved.getUserId() != null) {
             userRepository.findById(saved.getUserId()).ifPresent(u -> syncPortalUserFromOwnerProfile(u, request));
         }
+        if (saved.getUserId() != null && saved.isPortalAccess() && previousUserId == null) {
+            notifyOwnerPortalLinked(saved);
+        }
         return toResponse(saved);
     }
 
@@ -113,6 +129,8 @@ public class OwnerService {
     @Transactional
     public OwnerResponse linkUser(Long id, LinkUserRequest request) {
         Owner owner = findActive(id);
+        Long previousUserId = owner.getUserId();
+        boolean previousPortal = owner.isPortalAccess();
         if (request.getUserId() != null) {
             User user = userRepository.findById(request.getUserId())
                     .orElseThrow(() -> AppException.notFound("User not found: " + request.getUserId()));
@@ -133,9 +151,45 @@ public class OwnerService {
                 syncPortalUserFromOwnerProfile(u, r);
             });
         }
+        if (saved.getUserId() != null && saved.isPortalAccess()
+                && (previousUserId == null || !previousUserId.equals(saved.getUserId()) || !previousPortal)) {
+            notifyOwnerPortalLinked(saved);
+        }
         return toResponse(saved);
     }
 
+    /** In-app welcome: lists linked properties so the owner knows they will receive operational alerts. */
+    private void notifyOwnerPortalLinked(Owner owner) {
+        if (owner.getUserId() == null) {
+            return;
+        }
+        List<String> labels = ownerRepository.findActivePropertyLabelsForOwner(owner.getId());
+        String sepAr = appMessages.get(AppMessages.LOCALE_AR, "format.property_list.separator");
+        String sepEn = appMessages.get(AppMessages.LOCALE_EN, "format.property_list.separator");
+        String joined = (labels == null || labels.isEmpty()) ? "" : String.join(sepAr, labels);
+        String joinedEn = (labels == null || labels.isEmpty()) ? "" : String.join(sepEn, labels);
+        AppMessages.Bilingual titleB = appMessages.bilingual("owner.portal.notify.title");
+        String title = BilingualNotificationText.title(titleB.ar(), titleB.en());
+        String bodyAr;
+        String bodyEn;
+        if (labels == null || labels.isEmpty()) {
+            AppMessages.Bilingual bodyB = appMessages.bilingual("owner.portal.notify.body.no_properties");
+            bodyAr = bodyB.ar();
+            bodyEn = bodyB.en();
+        } else {
+            bodyAr = appMessages.get(AppMessages.LOCALE_AR, "owner.portal.notify.body.with_properties", joined);
+            bodyEn = appMessages.get(AppMessages.LOCALE_EN, "owner.portal.notify.body.with_properties", joinedEn);
+        }
+        notificationService.createForRecipients(
+                List.of(owner.getUserId()),
+                null,
+                null,
+                null,
+                NotificationType.GENERAL,
+                title,
+                BilingualNotificationText.body(bodyAr, bodyEn)
+        );
+    }
 
     private static String ownerCompositeLine(String ar, String en) {
         String a = ar == null ? "" : ar.trim();
@@ -167,7 +221,7 @@ public class OwnerService {
         if (existing.isPresent()) {
             User u = existing.get();
             if (u.getRole() != UserRole.OWNER) {
-                throw AppException.conflict("Email already registered to a non-owner account: " + email);
+                throw AppException.conflict("Email already registered to a non-owner account: " + email, "EMAIL_USED_BY_DIFFERENT_ROLE");
             }
             assertPortalUserNotLinkedToOtherOwner(u.getId(), currentOwnerIdOrNull);
             return u;
@@ -175,7 +229,7 @@ public class OwnerService {
         return userRepository.save(User.builder()
                 .username(email)
                 .email(email)
-                .password(passwordEncoder.encode("12345"))
+                .password(passwordEncoder.encode(DEFAULT_SYSTEM_PASSWORD))
                 .fullName(fullName)
                 .phone(phone)
                 .role(UserRole.OWNER)

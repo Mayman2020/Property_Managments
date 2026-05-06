@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,11 +24,26 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
             WHERE (:propertyId IS NULL OR e.propertyId = :propertyId)
               AND (:q IS NULL OR :q = '' OR
                    LOWER(COALESCE(e.fullName, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
+                   LOWER(COALESCE(e.fullNameAr, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
+                   LOWER(COALESCE(e.fullNameEn, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
                    LOWER(COALESCE(e.employeeCode, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
                    LOWER(COALESCE(e.jobTitleAr, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
                    LOWER(COALESCE(e.jobTitleEn, '')) LIKE LOWER(CONCAT('%', :q, '%')))
             """)
     Page<Employee> search(@Param("q") String q, @Param("propertyId") Long propertyId, Pageable pageable);
+
+    @Query("""
+            SELECT e FROM Employee e
+            WHERE e.propertyId IN :propertyIds
+              AND (:q IS NULL OR :q = '' OR
+                   LOWER(COALESCE(e.fullName, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
+                   LOWER(COALESCE(e.fullNameAr, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
+                   LOWER(COALESCE(e.fullNameEn, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
+                   LOWER(COALESCE(e.employeeCode, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
+                   LOWER(COALESCE(e.jobTitleAr, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
+                   LOWER(COALESCE(e.jobTitleEn, '')) LIKE LOWER(CONCAT('%', :q, '%')))
+            """)
+    Page<Employee> searchInPropertyIds(@Param("q") String q, @Param("propertyIds") Collection<Long> propertyIds, Pageable pageable);
 
     List<Employee> findByPropertyIdAndStatusOrderByFullNameAsc(Long propertyId, String status);
 

@@ -8,7 +8,7 @@ import lombok.Data;
 @Data
 public class VisitRatingRequest {
     @NotNull
-    @Min(1) @Max(5)
+    @Min(1) @Max(4)
     private Short rating;
     private String comment;
 }

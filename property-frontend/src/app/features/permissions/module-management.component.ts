@@ -1,5 +1,5 @@
 import { Component, Inject, OnInit } from '@angular/core';
-import { CurrencyPipe, NgClass, NgFor, NgIf } from '@angular/common';
+import { NgClass, NgFor, NgIf } from '@angular/common';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { forkJoin } from 'rxjs';
@@ -10,6 +10,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { TablePagerComponent } from '../../shared/components/table-pager/table-pager.component';
 import { ExportColumn, TableExportToolbarComponent } from '../../shared/components/table-export-toolbar/table-export-toolbar.component';
@@ -36,7 +37,7 @@ interface ModuleDetailsDialogData {
 @Component({
   selector: 'app-module-details-dialog',
   standalone: true,
-  imports: [CurrencyPipe, NgFor, NgIf, MatButtonModule, MatDialogModule, MatIconModule, TranslateModule],
+  imports: [NgFor, NgIf, MatButtonModule, MatDialogModule, MatIconModule, TranslateModule],
   template: `
     <h2 mat-dialog-title>
       <span class="material-icons">{{ data.module.icon || 'widgets' }}</span>
@@ -48,10 +49,6 @@ interface ModuleDetailsDialogData {
         <div>
           <span>{{ 'MAINTENANCE.STATUS' | translate }}</span>
           <strong [class.off]="!data.enabled">{{ data.enabled ? ('MODULES.ENABLED' | translate) : ('MODULES.DISABLED' | translate) }}</strong>
-        </div>
-        <div>
-          <span>{{ 'MODULES.MONTHLY_PRICE' | translate }}</span>
-          <strong>{{ data.module.monthlyPrice || 0 | currency:'OMR':'symbol':'1.0-0' }}</strong>
         </div>
       </div>
 
@@ -98,7 +95,7 @@ interface ModuleDetailsDialogData {
 
     .dialog-summary {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: minmax(0, 1fr);
       gap: 10px;
     }
 
@@ -180,7 +177,6 @@ export class ModuleDetailsDialogComponent {
     NgClass,
     NgIf,
     NgFor,
-    CurrencyPipe,
     ReactiveFormsModule,
     MatButtonModule,
     MatDialogModule,
@@ -188,6 +184,7 @@ export class ModuleDetailsDialogComponent {
     MatIconModule,
     MatSelectModule,
     MatSlideToggleModule,
+    MatTooltipModule,
     MatProgressSpinnerModule,
     PageHeaderComponent,
     TablePagerComponent,
@@ -246,10 +243,6 @@ export class ModuleDetailsDialogComponent {
           <span>{{ 'MODULES.ENABLED_MODULES' | translate }}</span>
           <strong>{{ enabledCount }} / {{ modules.length }}</strong>
         </article>
-        <article class="summary-card">
-          <span>{{ 'MODULES.ESTIMATED_VALUE' | translate }}</span>
-          <strong>{{ estimatedTotal | currency:'OMR':'symbol':'1.0-0' }}</strong>
-        </article>
       </section>
 
       <div class="loading-center" *ngIf="loading">
@@ -271,7 +264,6 @@ export class ModuleDetailsDialogComponent {
                 <th>#</th>
                 <th>{{ 'MODULES.MODULE' | translate }}</th>
                 <th>{{ 'MAINTENANCE.STATUS' | translate }}</th>
-                <th>{{ 'MODULES.MONTHLY_PRICE' | translate }}</th>
                 <th>{{ 'MODULES.DEPENDENCIES' | translate }}</th>
                 <th>{{ 'MODULES.ACTIONS' | translate }}</th>
               </tr>
@@ -295,12 +287,12 @@ export class ModuleDetailsDialogComponent {
                     (change)="toggle(module.moduleKey, $event.checked)">
                   </mat-slide-toggle>
                 </td>
-                <td>{{ module.monthlyPrice || 0 | currency:'OMR':'symbol':'1.0-0' }}</td>
                 <td>
                   <span class="count-pill">{{ dependencyCount(module) }}</span>
                 </td>
                 <td>
-                  <button mat-stroked-button type="button" (click)="openDetails(module); $event.stopPropagation()">
+                  <button mat-stroked-button type="button" (click)="openDetails(module); $event.stopPropagation()"
+                          [matTooltip]="'ACTIONS.DETAILS' | translate">
                     <mat-icon>visibility</mat-icon>
                     {{ 'ACTIONS.DETAILS' | translate }}
                   </button>
@@ -364,8 +356,9 @@ export class ModuleDetailsDialogComponent {
 
     .summary-strip {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: minmax(0, 1fr);
       gap: 16px;
+      max-width: 420px;
     }
 
     .summary-card {
@@ -477,18 +470,11 @@ export class ModuleManagementComponent implements OnInit {
     return this.modules.filter((item) => this.moduleState[item.moduleKey] !== false).length;
   }
 
-  get estimatedTotal(): number {
-    return this.modules
-      .filter((item) => this.moduleState[item.moduleKey] !== false)
-      .reduce((sum, item) => sum + Number(item.monthlyPrice || 0), 0);
-  }
-
   get exportColumns(): ExportColumn<ModuleDefinitionDto>[] {
     return [
       { header: this.i18n.instant('MODULES.MODULE'), value: (row) => this.moduleTitle(row) },
       { header: this.i18n.instant('MODULES.CODE'), value: 'moduleKey' },
       { header: this.i18n.instant('MAINTENANCE.STATUS'), value: (row) => this.moduleState[row.moduleKey] !== false ? this.i18n.instant('MODULES.ENABLED') : this.i18n.instant('MODULES.DISABLED') },
-      { header: this.i18n.instant('MODULES.MONTHLY_PRICE'), value: (row) => row.monthlyPrice || 0 },
       { header: this.i18n.instant('MODULES.DEPENDENCIES'), value: (row) => this.dependencyCount(row) }
     ];
   }

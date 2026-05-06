@@ -1,0 +1,76 @@
+<div class="app-page my-contracts-page">
+  <app-page-header
+    [title]="'TENANT_PORTAL.MY_CONTRACTS' | translate"
+    [subtitle]="'TENANT_PORTAL.MY_CONTRACTS_SUB' | translate">
+  </app-page-header>
+
+  <div class="loading-center" *ngIf="loading">
+    <mat-spinner diameter="48"></mat-spinner>
+  </div>
+
+  <div class="empty app-card" *ngIf="!loading && contracts.length === 0">
+    <mat-icon>folder_off</mat-icon>
+    <p>{{ 'TENANT_PORTAL.NO_CONTRACTS_YET' | translate }}</p>
+  </div>
+
+  <div class="contracts-stack" *ngIf="!loading && contracts.length">
+    <article class="lease-card app-card" *ngFor="let c of contracts">
+      <div class="lease-head">
+        <div class="lease-title">
+          <code class="mono">{{ c.contractNumber }}</code>
+          <div class="sub">{{ c.propertyName || '-' }} - {{ c.unitNumber || '-' }}</div>
+        </div>
+        <span class="status-badge" [ngClass]="'st-' + c.status">{{ statusLabel(c.status) }}</span>
+      </div>
+
+      <div class="lease-meta-grid">
+        <div>
+          <span>{{ 'TENANT_PORTAL.START_DATE' | translate }}</span>
+          <strong>{{ c.startDate | date:'dd/MM/yyyy' }}</strong>
+        </div>
+        <div>
+          <span>{{ 'TENANT_PORTAL.END_DATE' | translate }}</span>
+          <strong>{{ c.endDate | date:'dd/MM/yyyy' }}</strong>
+        </div>
+        <div>
+          <span>{{ 'TENANT_PORTAL.MONTHLY_RENT' | translate }}</span>
+          <strong>{{ c.monthlyRent | number:'1.2-2' }} {{ c.currency }}</strong>
+        </div>
+      </div>
+
+      <div class="flow-rail" [attr.aria-label]="'TENANT_PORTAL.CONTRACT_FLOW' | translate">
+        <div class="flow-node" [ngClass]="nodeClass(c.status, 0)">
+          <span class="dot"></span>
+          <span class="lbl">{{ 'TENANT_PORTAL.FLOW_CREATED' | translate }}</span>
+        </div>
+        <div class="flow-line" [ngClass]="{ on: flowStageIndex(c.status) >= 1 }"></div>
+        <div class="flow-node" [ngClass]="nodeClass(c.status, 1)">
+          <span class="dot"></span>
+          <span class="lbl">{{ 'TENANT_PORTAL.FLOW_DRAFT' | translate }}</span>
+        </div>
+        <div class="flow-line" [ngClass]="{ on: flowStageIndex(c.status) >= 2 }"></div>
+        <div class="flow-node" [ngClass]="nodeClass(c.status, 2)">
+          <span class="dot"></span>
+          <span class="lbl">{{ 'TENANT_PORTAL.FLOW_ACTIVE' | translate }}</span>
+        </div>
+        <div class="flow-line" [ngClass]="{ on: flowStageIndex(c.status) >= 3 }"></div>
+        <div class="flow-node" [ngClass]="nodeClass(c.status, 3)">
+          <span class="dot"></span>
+          <span class="lbl">{{ 'TENANT_PORTAL.FLOW_CLOSED' | translate }}</span>
+        </div>
+      </div>
+
+      <div class="owner-log" *ngIf="c.ownerChangeLog">
+        <mat-icon>history</mat-icon>
+        <pre>{{ c.ownerChangeLog }}</pre>
+      </div>
+
+      <div class="lease-actions">
+        <a mat-flat-button color="primary" [routerLink]="['/tenant/contracts', c.id]">
+          <mat-icon>open_in_new</mat-icon>
+          {{ 'TENANT_PORTAL.VIEW_CONTRACT_DETAIL' | translate }}
+        </a>
+      </div>
+    </article>
+  </div>
+</div>

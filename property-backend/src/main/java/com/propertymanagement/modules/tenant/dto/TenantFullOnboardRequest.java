@@ -21,7 +21,7 @@ public class TenantFullOnboardRequest {
     @NotBlank @Email
     private String email;
 
-    /** If blank, {@link #nationalId} is used as initial password (same as tenant dialog). */
+    /** If blank, the default initial password ("12345") is used — same as the rest of tenant user-creation flows. */
     private String password;
 
     @NotBlank
@@ -50,6 +50,7 @@ public class TenantFullOnboardRequest {
 
     private String profileImageUrl;
     private String profileImage;
+    private String civilIdImageUrl;
 
     @NotEmpty
     private List<String> leaseContractFiles;

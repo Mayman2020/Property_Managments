@@ -1,6 +1,9 @@
 package com.propertymanagement.modules.property;
 
+import com.propertymanagement.modules.notification.NotificationService;
+import com.propertymanagement.modules.notification.NotificationType;
 import com.propertymanagement.modules.owner.Owner;
+import com.propertymanagement.modules.owner.OwnerPropertyAccessService;
 import com.propertymanagement.modules.owner.OwnerRepository;
 import com.propertymanagement.modules.property.dto.PropertyRequest;
 import com.propertymanagement.modules.property.dto.PropertyResponse;
@@ -9,17 +12,25 @@ import com.propertymanagement.modules.user.UserRepository;
 import com.propertymanagement.modules.user.UserRole;
 import com.propertymanagement.modules.contractor.ContractorCompanyRepository;
 import com.propertymanagement.shared.exception.AppException;
+import com.propertymanagement.shared.i18n.BilingualNotificationText;
 import com.propertymanagement.codegen.CodeGenerationService;
+import com.propertymanagement.shared.i18n.AppMessages;
 import com.propertymanagement.shared.i18n.LocalizedNameResolver;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -32,17 +43,29 @@ public class PropertyService {
     private final ContractorCompanyRepository contractorCompanyRepository;
     private final CodeGenerationService codeGenerationService;
     private final OwnerRepository ownerRepository;
+    private final OwnerPropertyAccessService ownerPropertyAccessService;
+    private final NotificationService notificationService;
     private final com.propertymanagement.modules.unit.UnitRepository unitRepository;
+    private final AppMessages appMessages;
 
     @PersistenceContext
     private EntityManager em;
 
     public Page<PropertyResponse> getAll(Pageable pageable, String q) {
-        return propertyRepository.searchActive(trimToNull(q), pageable).map(this::toResponse);
+        String trimmed = trimToNull(q);
+        Set<Long> ownerScope = ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner();
+        if (ownerScope != null) {
+            if (ownerScope.isEmpty()) {
+                return Page.empty(pageable);
+            }
+            return propertyRepository.searchActiveInIds(ownerScope, trimmed, pageable).map(this::toResponse);
+        }
+        return propertyRepository.searchActive(trimmed, pageable).map(this::toResponse);
     }
 
     public PropertyResponse getById(Long id) {
         Property p = findActive(id);
+        ownerPropertyAccessService.assertOwnerCanAccessProperty(p);
         return toResponseFull(p);
     }
 
@@ -54,7 +77,7 @@ public class PropertyService {
         String normalizedNameEn = firstNonBlank(request.getPropertyNameEn(), request.getPropertyName(), request.getPropertyNameAr());
         String legacyName = firstNonBlank(request.getPropertyName(), normalizedNameAr, normalizedNameEn);
         if (!LocalizedNameResolver.notBlank(legacyName)) {
-            throw AppException.badRequest("Property name is required in Arabic and English");
+            throw AppException.badRequest("Property name is required in Arabic and English", "PROPERTY_NAME_REQUIRED");
         }
 
         String propertyCode = codeGenerationService.generate("PROPERTY");
@@ -82,7 +105,9 @@ public class PropertyService {
         syncPropertyOwners(saved.getId(), request.getOwnerIds());
         syncMaintenanceProviders(saved.getId(), request.getMaintenanceProviderType(), request.getMaintenanceProviderIds());
         syncFloors(saved.getId(), saved.getTotalFloors());
-        return toResponseFull(propertyRepository.save(saved));
+        Property persisted = propertyRepository.save(saved);
+        notifyOwnersPropertyLinked(persisted.getId(), request.getOwnerIds(), persisted);
+        return toResponseFull(persisted);
     }
 
     @Transactional
@@ -90,11 +115,12 @@ public class PropertyService {
         validateOwnerData(request);
         Long primaryOwnerId = request.getOwnerIds().get(0);
         Property property = findActive(id);
+        Set<Long> previousOwnerIds = resolvePreviousOwnerIds(id, property);
         String normalizedNameAr = firstNonBlank(request.getPropertyNameAr(), request.getPropertyName(), request.getPropertyNameEn());
         String normalizedNameEn = firstNonBlank(request.getPropertyNameEn(), request.getPropertyName(), request.getPropertyNameAr());
         String legacyName = firstNonBlank(request.getPropertyName(), normalizedNameAr, normalizedNameEn);
         if (!LocalizedNameResolver.notBlank(legacyName)) {
-            throw AppException.badRequest("Property name is required in Arabic and English");
+            throw AppException.badRequest("Property name is required in Arabic and English", "PROPERTY_NAME_REQUIRED");
         }
 
         property.setPropertyName(legacyName);
@@ -117,6 +143,11 @@ public class PropertyService {
         syncMaintenanceProviders(id, request.getMaintenanceProviderType(), request.getMaintenanceProviderIds());
         Property saved = propertyRepository.save(property);
         syncFloors(saved.getId(), saved.getTotalFloors());
+        List<Long> newlyLinkedOwners = request.getOwnerIds().stream()
+                .distinct()
+                .filter(oid -> !previousOwnerIds.contains(oid))
+                .toList();
+        notifyOwnersPropertyLinked(saved.getId(), newlyLinkedOwners, saved);
         return toResponseFull(saved);
     }
 
@@ -206,12 +237,24 @@ public class PropertyService {
         return userRepository.findById(userId).map(u -> u.getFullName()).orElse(null);
     }
 
-    @SuppressWarnings("unchecked")
+    /** Owners already tied to the property before this save (junction table + legacy {@code properties.owner_id}). */
+    private Set<Long> resolvePreviousOwnerIds(Long propertyId, Property propertyRow) {
+        Set<Long> ids = new LinkedHashSet<>(fetchPropertyOwnerIds(propertyId));
+        if (propertyRow != null && propertyRow.getOwnerId() != null) {
+            ids.add(propertyRow.getOwnerId());
+        }
+        return ids;
+    }
+
     private List<Long> fetchPropertyOwnerIds(Long propertyId) {
-        return em.createNativeQuery(
+        @SuppressWarnings("unchecked")
+        List<Object> rows = em.createNativeQuery(
                 "SELECT owner_id FROM property_mgmt.property_owners WHERE property_id = :pid")
                 .setParameter("pid", propertyId)
                 .getResultList();
+        return rows.stream()
+                .map(row -> row instanceof Number n ? n.longValue() : Long.parseLong(row.toString()))
+                .toList();
     }
 
     private void syncFloors(Long propertyId, int totalFloors) {
@@ -224,7 +267,7 @@ public class PropertyService {
                 floorRepository.save(Floor.builder()
                         .propertyId(propertyId)
                         .floorNumber(floorNum)
-                        .floorLabel("الطابق " + floorNum)
+                        .floorLabel(appMessages.compositeFloorLabel(floorNum))
                         .build());
             }
         }
@@ -250,11 +293,11 @@ public class PropertyService {
 
     private void validateOwnerData(PropertyRequest request) {
         if (request.getOwnerIds() == null || request.getOwnerIds().isEmpty()) {
-            throw AppException.badRequest("At least one owner is required");
+            throw AppException.badRequest("At least one owner is required", "PROPERTY_OWNER_REQUIRED");
         }
         List<String> files = normalizeFiles(request.getOwnerDocumentFiles());
         if (files.isEmpty()) {
-            throw AppException.badRequest("At least one owner ownership/license attachment is required");
+            throw AppException.badRequest("At least one owner ownership/license attachment is required", "PROPERTY_OWNER_ATTACHMENT_REQUIRED");
         }
     }
 
@@ -298,6 +341,51 @@ public class PropertyService {
         if (value == null) return null;
         String t = value.trim();
         return t.isEmpty() ? null : t;
+    }
+
+    /** Notifies owner portal users when their owner record is linked to a property (create or newly added co-owner). */
+    private void notifyOwnersPropertyLinked(Long propertyId, List<Long> ownerIdsToNotify, Property property) {
+        if (ownerIdsToNotify == null || ownerIdsToNotify.isEmpty() || property == null || propertyId == null) {
+            return;
+        }
+        List<Long> distinctOwners = ownerIdsToNotify.stream().distinct().toList();
+        List<Long> recipientIds = ownerRepository.findPortalUserIdsByOwnerIds(distinctOwners).stream()
+                .distinct()
+                .toList();
+        if (recipientIds.isEmpty()) {
+            return;
+        }
+        try {
+            Map<String, Object> vars = new LinkedHashMap<>();
+            vars.put("propertyName", BilingualNotificationText.composite(
+                    property.getPropertyNameAr(), property.getPropertyNameEn(), property.getPropertyName()));
+            vars.put("propertyCode", property.getPropertyCode() != null ? property.getPropertyCode() : "");
+            Map<String, Object> hints = new LinkedHashMap<>();
+            hints.put("propertyId", propertyId);
+            notificationService.createLocalized(
+                    recipientIds,
+                    currentActorUserId(),
+                    propertyId,
+                    null,
+                    NotificationType.PROPERTY_LINKED_TO_OWNER,
+                    "NOTIFICATIONS.PROPERTY_LINKED_TITLE",
+                    "NOTIFICATIONS.PROPERTY_LINKED_OWNER_BODY",
+                    vars,
+                    hints);
+        } catch (Exception ignored) {
+            // Side-effect: property save must succeed even if notification persistence fails.
+        }
+    }
+
+    private Long currentActorUserId() {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.getPrincipal() instanceof User u) {
+                return u.getId();
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
     }
 
     private void syncMaintenanceProviders(Long propertyId, String providerType, List<Long> providerIds) {

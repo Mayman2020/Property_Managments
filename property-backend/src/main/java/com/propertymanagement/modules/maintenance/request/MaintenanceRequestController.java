@@ -34,7 +34,7 @@ public class MaintenanceRequestController {
     private final VisitRatingService ratingService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN', 'MAINTENANCE_OFFICER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'OWNER', 'PROPERTY_GUARD', 'MAINTENANCE_OFFICER','MAINTENANCE_CONTRACTOR')")
     public ResponseEntity<ApiResponse<Page<MaintenanceRequestResponse>>> getAll(
             @RequestParam(required = false) RequestStatus status,
             @RequestParam(required = false) RequestPriority priority,
@@ -75,7 +75,7 @@ public class MaintenanceRequestController {
     }
 
     @GetMapping("/company-queue")
-    @PreAuthorize("hasRole('MAINTENANCE_OFFICER')")
+    @PreAuthorize("hasAnyRole('MAINTENANCE_OFFICER','MAINTENANCE_CONTRACTOR')")
     public ResponseEntity<ApiResponse<Page<MaintenanceRequestResponse>>> getCompanyQueue(
             @PageableDefault(size = 20) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.ok(requestService.getCompanyQueueForCurrentOfficer(pageable)));
@@ -94,21 +94,21 @@ public class MaintenanceRequestController {
     }
 
     @PatchMapping("/{id}/assign")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN', 'MAINTENANCE_OFFICER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER', 'MAINTENANCE_OFFICER','MAINTENANCE_CONTRACTOR')")
     public ResponseEntity<ApiResponse<MaintenanceRequestResponse>> assign(
             @PathVariable Long id, @Valid @RequestBody AssignRequestDto dto) {
         return ResponseEntity.ok(ApiResponse.ok(requestService.assign(id, dto)));
     }
 
     @PatchMapping("/{id}/schedule")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN', 'MAINTENANCE_OFFICER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER', 'MAINTENANCE_OFFICER','MAINTENANCE_CONTRACTOR')")
     public ResponseEntity<ApiResponse<MaintenanceRequestResponse>> schedule(
             @PathVariable Long id, @Valid @RequestBody ScheduleRequestDto dto) {
         return ResponseEntity.ok(ApiResponse.ok(requestService.schedule(id, dto)));
     }
 
     @PatchMapping("/{id}/start")
-    @PreAuthorize("hasAnyRole('MAINTENANCE_OFFICER')")
+    @PreAuthorize("hasAnyRole('MAINTENANCE_OFFICER','MAINTENANCE_CONTRACTOR')")
     public ResponseEntity<ApiResponse<MaintenanceRequestResponse>> startWork(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok(requestService.startWork(id)));
     }
@@ -134,7 +134,7 @@ public class MaintenanceRequestController {
     }
 
     @PostMapping("/{id}/visit-report")
-    @PreAuthorize("hasAnyRole('MAINTENANCE_OFFICER')")
+    @PreAuthorize("hasAnyRole('MAINTENANCE_OFFICER','MAINTENANCE_CONTRACTOR')")
     public ResponseEntity<ApiResponse<VisitReportResponse>> submitVisitReport(
             @PathVariable Long id, @Valid @RequestBody VisitReportRequest dto) {
         return ResponseEntity.status(HttpStatus.CREATED)

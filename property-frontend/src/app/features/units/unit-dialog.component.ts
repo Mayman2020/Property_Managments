@@ -1,5 +1,8 @@
 import { Component, Inject, OnInit } from '@angular/core';
-import { NgFor, NgIf } from '@angular/common';
+import { DatePipe, DecimalPipe, NgFor, NgIf } from '@angular/common';
+import { Router } from '@angular/router';
+import { catchError } from 'rxjs/operators';
+import { of } from 'rxjs';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
@@ -12,6 +15,8 @@ import { MatRadioModule } from '@angular/material/radio';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { Unit, UnitRequest, UnitService } from '../../core/services/unit.service';
+import { Tenant, TenantService } from '../../core/services/tenant.service';
+import { LeaseContract } from '../../core/models/contract.model';
 import { Property } from '../../core/services/property.service';
 import { FloorItem, FloorService } from '../../core/services/floor.service';
 import { SnackService } from '../../core/services/snack.service';
@@ -26,6 +31,8 @@ export interface UnitDialogData {
   defaultPropertyId?: number;
   /** Read-only details (same layout as edit, no save). */
   readOnly?: boolean;
+  /** Active / draft lease row for this unit (from list cache) — summary in view mode. */
+  leaseContract?: LeaseContract | null;
 }
 
 @Component({
@@ -34,6 +41,8 @@ export interface UnitDialogData {
   imports: [
     NgIf,
     NgFor,
+    DatePipe,
+    DecimalPipe,
     ReactiveFormsModule,
     TranslateModule,
     MatDialogModule,
@@ -106,6 +115,71 @@ export interface UnitDialogData {
           <textarea matInput rows="2" formControlName="notes"></textarea>
         </mat-form-field>
       </form>
+
+      <section *ngIf="data.readOnly && data.unit" class="tenant-lease-panel full">
+        <div class="panel-eyebrow">{{ 'UNITS.TENANT_OCCUPANCY' | translate }}</div>
+        <div *ngIf="loadingTenant" class="tenant-loading">
+          <mat-spinner diameter="36"></mat-spinner>
+        </div>
+        <ng-container *ngIf="!loadingTenant">
+          <div *ngIf="tenantDetail" class="detail-grid">
+            <div class="d-cell full-span">
+              <span class="d-label">{{ 'TENANTS.FULL_NAME' | translate }}</span>
+              <span class="d-val">{{ tenantDetail.fullName.trim() || '—' }}</span>
+            </div>
+            <div class="d-cell">
+              <span class="d-label">{{ 'TENANTS.FULL_NAME_AR' | translate }}</span>
+              <span class="d-val">{{ tenantDetail.fullNameAr?.trim() || '—' }}</span>
+            </div>
+            <div class="d-cell">
+              <span class="d-label">{{ 'TENANTS.FULL_NAME_EN' | translate }}</span>
+              <span class="d-val">{{ tenantDetail.fullNameEn?.trim() || '—' }}</span>
+            </div>
+            <div class="d-cell">
+              <span class="d-label">{{ 'TENANTS.NATIONAL_ID' | translate }}</span>
+              <span class="d-val mono">{{ tenantDetail.nationalId?.trim() || '—' }}</span>
+            </div>
+            <div class="d-cell">
+              <span class="d-label">{{ 'PROFILE.PHONE' | translate }}</span>
+              <span class="d-val mono">{{ tenantDetail.phone.trim() || '—' }}</span>
+            </div>
+            <div class="d-cell full-span">
+              <span class="d-label">{{ 'AUTH.EMAIL' | translate }}</span>
+              <span class="d-val mono">{{ tenantDetail.email?.trim() || '—' }}</span>
+            </div>
+            <div class="d-cell">
+              <span class="d-label">{{ 'TENANTS.LEASE_START' | translate }}</span>
+              <span class="d-val">{{ tenantDetail.leaseStart ? (tenantDetail.leaseStart | date:'dd/MM/yyyy') : '—' }}</span>
+            </div>
+            <div class="d-cell">
+              <span class="d-label">{{ 'TENANTS.LEASE_END' | translate }}</span>
+              <span class="d-val">{{ tenantDetail.leaseEnd ? (tenantDetail.leaseEnd | date:'dd/MM/yyyy') : '—' }}</span>
+            </div>
+            <div class="d-cell full-span" *ngIf="tenantDetail.notes?.trim()">
+              <span class="d-label">{{ 'TENANTS.NOTES' | translate }}</span>
+              <span class="d-val notes">{{ tenantDetail.notes }}</span>
+            </div>
+          </div>
+          <p *ngIf="!tenantDetail && !(data.leaseContract?.tenantName)" class="muted-hint">{{ 'UNITS.NO_TENANT_PROFILE' | translate }}</p>
+        </ng-container>
+
+        <div *ngIf="data.leaseContract as lc" class="lease-snapshot">
+          <div class="panel-eyebrow sub">{{ 'UNITS.LEASE_SNAPSHOT' | translate }}</div>
+          <div class="detail-grid compact">
+            <div class="d-cell"><span class="d-label">{{ 'CONTRACTS.CONTRACT_NUMBER' | translate }}</span><span class="d-val mono">{{ lc.contractNumber }}</span></div>
+            <div class="d-cell"><span class="d-label">{{ 'REQUEST_LIST.TENANT' | translate }}</span><span class="d-val">{{ lc.tenantName?.trim() || '—' }}</span></div>
+            <div class="d-cell"><span class="d-label">{{ 'CONTRACTS.STATUS' | translate }}</span><span class="d-val">{{ ('CONTRACTS.STATUS_' + lc.status) | translate }}</span></div>
+            <div class="d-cell"><span class="d-label">{{ 'CONTRACTS.MONTHLY_RENT' | translate }}</span><span class="d-val">{{ lc.monthlyRent | number }} {{ lc.currency }}</span></div>
+            <div class="d-cell"><span class="d-label">{{ 'CONTRACTS.START_DATE' | translate }}</span><span class="d-val">{{ lc.startDate | date:'dd/MM/yyyy' }}</span></div>
+            <div class="d-cell"><span class="d-label">{{ 'CONTRACTS.END_DATE' | translate }}</span><span class="d-val">{{ lc.endDate | date:'dd/MM/yyyy' }}</span></div>
+          </div>
+          <button mat-stroked-button type="button" class="open-contract-btn" *ngIf="lc.id" (click)="openContract(lc.id)">
+            <mat-icon>open_in_new</mat-icon>
+            {{ 'UNITS.OPEN_CONTRACT' | translate }}
+          </button>
+        </div>
+      </section>
+
       <app-audit-trail *ngIf="data.unit" class="full unit-audit"
         [createdAt]="data.unit.createdAt"
         [updatedAt]="data.unit.updatedAt"
@@ -137,10 +211,27 @@ export interface UnitDialogData {
     mat-error { font-size: 12px; color: #f44336; }
     @media (max-width: 620px) { .unit-dialog-form { grid-template-columns: 1fr; } }
     .unit-audit { grid-column: 1 / -1; margin-top: 8px; }
+    .tenant-lease-panel { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line, rgba(0,0,0,.1)); }
+    .panel-eyebrow { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; opacity: 0.75; margin-bottom: 10px; }
+    .panel-eyebrow.sub { margin-top: 14px; }
+    .tenant-loading { display: flex; justify-content: center; padding: 16px 0; }
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
+    .detail-grid.compact { margin-bottom: 10px; }
+    .d-cell { display: flex; flex-direction: column; gap: 2px; }
+    .d-cell.full-span { grid-column: 1 / -1; }
+    .d-label { font-size: 11px; font-weight: 600; opacity: 0.65; }
+    .d-val { font-size: 0.95rem; word-break: break-word; }
+    .d-val.mono { font-family: var(--font-mono, monospace); }
+    .d-val.notes { white-space: pre-wrap; }
+    .muted-hint { font-size: 0.88rem; color: var(--text-muted); margin: 0 0 8px; }
+    .lease-snapshot { margin-top: 6px; }
+    .open-contract-btn { margin-top: 8px; }
   `]
 })
 export class UnitDialogComponent implements OnInit {
   saving = false;
+  tenantDetail: Tenant | null = null;
+  loadingTenant = false;
   unitTypes: LookupItem[] = [];
   furnishedStatuses: LookupItem[] = [];
   floors: FloorItem[] = [];
@@ -189,7 +280,9 @@ export class UnitDialogComponent implements OnInit {
     private readonly floorSvc: FloorService,
     private readonly lookupSvc: LookupService,
     private readonly snack: SnackService,
-    private readonly i18n: I18nService
+    private readonly i18n: I18nService,
+    private readonly tenantSvc: TenantService,
+    private readonly router: Router
   ) {}
 
   ngOnInit(): void {
@@ -220,6 +313,29 @@ export class UnitDialogComponent implements OnInit {
     if (this.data.readOnly) {
       this.form.disable();
     }
+
+    if (this.data.readOnly && this.data.unit?.id) {
+      this.loadTenantForView(this.data.unit.id);
+    }
+  }
+
+  private loadTenantForView(unitId: number): void {
+    this.loadingTenant = true;
+    this.tenantSvc.getByUnitId(unitId).pipe(catchError(() => of(null))).subscribe({
+      next: (res) => {
+        this.tenantDetail = res?.data ?? null;
+        this.loadingTenant = false;
+      },
+      error: () => {
+        this.tenantDetail = null;
+        this.loadingTenant = false;
+      }
+    });
+  }
+
+  openContract(contractId: number): void {
+    this.ref.close(false);
+    void this.router.navigate(['/admin/contracts', contractId]);
   }
 
   lookupLabel(item: LookupItem): string {

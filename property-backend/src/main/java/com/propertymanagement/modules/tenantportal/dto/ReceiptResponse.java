@@ -18,5 +18,7 @@ public class ReceiptResponse {
     private String fileUrl;
     private String notes;
     private String status;
+    /** TENANT | STAFF */
+    private String uploadSource;
     private LocalDateTime createdAt;
 }

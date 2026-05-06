@@ -28,7 +28,6 @@ public class ModuleCatalogService {
                         .icon(item.getIcon())
                         .requiredModules(item.getRequiredModules())
                         .recommendedModules(item.getRecommendedModules())
-                        .monthlyPrice(item.getMonthlyPrice())
                         .displayOrder(item.getDisplayOrder())
                         .build())
                 .toList();

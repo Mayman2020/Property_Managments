@@ -9,13 +9,23 @@
   <ng-container *ngIf="!loading && !missingTenantLink">
     <app-page-header
       [eyebrow]="i18n.currentLang === 'ar' ? 'نظرة عامة' : 'Overview'"
-      [title]="('TENANT_DASHBOARD.WELCOME' | translate) + ' ' + (currentUser?.fullName || ('ROLE.TENANT' | translate))"
+      [title]="('TENANT_DASHBOARD.WELCOME' | translate) + ' ' + currentUserName"
       [subtitle]="'TENANT_DASHBOARD.SUBTITLE' | translate">
-      <button mat-flat-button routerLink="/tenant/new-request">
-        <span class="material-icons">add</span>
-        {{ 'MAINTENANCE.NEW_REQUEST' | translate }}
-      </button>
     </app-page-header>
+
+    <!-- Unit Filter (if multiple units) -->
+    <div class="unit-filter app-card" *ngIf="uniqueUnits.length > 1">
+      <label>{{ 'TENANT_DASHBOARD.SELECT_UNIT' | translate }}</label>
+      <div class="unit-buttons">
+        <button
+          *ngFor="let unit of uniqueUnits"
+          class="unit-btn"
+          [class.active]="selectedUnitId === unit.unitId || (selectedUnitId === null && activeContract?.unitId === unit.unitId)"
+          (click)="onUnitChange(unit.unitId)">
+          {{ unit.unitNumber }} - {{ unit.propertyName }}
+        </button>
+      </div>
+    </div>
 
     <div class="tenant-grid">
       <section class="app-card unit-hero">
@@ -23,46 +33,46 @@
           <div class="unit-overlay"></div>
           <div class="unit-copy">
             <div class="eyebrow">{{ 'NAV.MY_UNIT' | translate }}</div>
-            <h2>{{ currentRequests.length > 0 ? currentRequests[0].propertyName : 'Estate Residence' }}</h2>
-            <p>{{ 'REQUEST_LIST.UNIT' | translate }} {{ currentRequests.length > 0 ? currentRequests[0].unitNumber : '-' }}</p>
+            <h2>{{ activeContract?.propertyName || ('TENANT_DASHBOARD.NO_CONTRACT_PROPERTY' | translate) }}</h2>
+            <p>{{ 'REQUEST_LIST.UNIT' | translate }} {{ activeContract?.unitNumber || ('TENANT_DASHBOARD.NO_UNIT' | translate) }}</p>
           </div>
         </div>
         <div class="unit-stats">
           <div class="mini-stat">
-            <span class="mini-label">{{ 'TENANT_DASHBOARD.ACTIVE' | translate }}</span>
-            <strong>{{ currentRequests.length }}</strong>
+            <span class="mini-label">{{ 'TENANT_DASHBOARD.CONTRACT_STATUS' | translate }}</span>
+            <strong>{{ contractStatusLabel }}</strong>
           </div>
           <div class="mini-stat">
-            <span class="mini-label">{{ 'STATUS.SCHEDULED' | translate }}</span>
-            <strong>{{ scheduledCount }}</strong>
+            <span class="mini-label">{{ 'TENANT_DASHBOARD.NEXT_RENT_DUE' | translate }}</span>
+            <strong *ngIf="nextDuePayment">{{ nextDuePayment.dueDate | date:'dd/MM/yyyy' }}</strong>
+            <strong *ngIf="!nextDuePayment">{{ 'TENANT_DASHBOARD.NO_NEXT_DUE' | translate }}</strong>
           </div>
           <div class="mini-stat">
-            <span class="mini-label">{{ i18n.currentLang === 'ar' ? 'مغلقة' : 'Closed' }}</span>
-            <strong>{{ previousRequests.length }}</strong>
+            <span class="mini-label">{{ 'TENANT_DASHBOARD.UNITS' | translate }}</span>
+            <strong>{{ unitsCount }}</strong>
           </div>
         </div>
       </section>
 
-      <section class="app-card active-request" *ngIf="currentRequests.length > 0">
+      <section class="app-card active-request">
         <div class="app-card-header">
-          <span class="app-card-title">{{ 'TENANT_DASHBOARD.CURRENT_REQUESTS' | translate }}</span>
-          <span class="status-badge" [attr.data-status]="currentRequests[0].status">{{ statusLabel(currentRequests[0].status) }}</span>
+          <span class="app-card-title">{{ 'TENANT_DASHBOARD.MAINTENANCE_OVERVIEW' | translate }}</span>
         </div>
         <div class="app-card-body">
-          <div class="request-code">{{ currentRequests[0].requestNumber }}</div>
-          <h3>{{ currentRequests[0].title }}</h3>
-          <p>{{ currentRequests[0].description }}</p>
-
-          <div class="visit-row" *ngIf="currentRequests[0].scheduledDate">
-            <div class="visit-icon"><span class="material-icons">event</span></div>
-            <div>
-              <strong>{{ 'TENANT_DASHBOARD.VISIT' | translate }}</strong>
-              <span>{{ currentRequests[0].scheduledDate | date:'dd/MM/yyyy' }}</span>
+          <p>{{ 'TENANT_DASHBOARD.MAINTENANCE_OVERVIEW_MESSAGE' | translate }}</p>
+          <div class="request-summary">
+            <div class="summary-item">
+              <span>{{ 'TENANT_DASHBOARD.CURRENT_REQUESTS' | translate }}</span>
+              <strong>{{ currentRequests.length }}</strong>
+            </div>
+            <div class="summary-item">
+              <span>{{ 'TENANT_DASHBOARD.PREVIOUS_REQUESTS' | translate }}</span>
+              <strong>{{ previousRequests.length }}</strong>
             </div>
           </div>
-
-          <button mat-stroked-button [routerLink]="['/tenant/requests', currentRequests[0].id]">
-            {{ 'ACTIONS.DETAILS' | translate }}
+          <button mat-flat-button color="primary" routerLink="/tenant/new-request">
+            <span class="material-icons">add</span>
+            {{ 'TENANT_DASHBOARD.CREATE_REQUEST' | translate }}
           </button>
         </div>
       </section>
@@ -70,7 +80,7 @@
 
     <div class="app-card history-card">
       <div class="app-card-header">
-        <span class="app-card-title">{{ 'NAV.MY_REQUESTS' | translate }}</span>
+        <span class="app-card-title">{{ 'TENANT_DASHBOARD.MAINTENANCE_REQUESTS' | translate }}</span>
       </div>
 
       <div class="app-table-wrap" *ngIf="requests.length > 0; else emptyHistory">
@@ -93,9 +103,11 @@
               <td><span class="status-badge" [attr.data-status]="req.status">{{ statusLabel(req.status) }}</span></td>
               <td>{{ req.createdAt | date:'dd/MM/yyyy' }}</td>
               <td>
-                <a class="app-icon-btn" [routerLink]="['/tenant/requests', req.id]">
-                  <span class="material-icons">visibility</span>
-                </a>
+                <div class="table-actions">
+                  <a class="app-icon-btn" [routerLink]="['/tenant/requests', req.id]" [matTooltip]="'ACTIONS.VIEW' | translate">
+                    <span class="material-icons">visibility</span>
+                  </a>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -112,3 +124,4 @@
     </div>
   </ng-container>
 </div>
+

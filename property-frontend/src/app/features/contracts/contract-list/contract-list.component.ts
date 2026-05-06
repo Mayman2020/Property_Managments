@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { DatePipe, DecimalPipe, NgClass, NgFor, NgIf, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
@@ -22,6 +22,7 @@ import { ContractService } from '../../../core/services/contract.service';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
+import { PermissionService } from '../../../core/services/permission.service';
 
 @Component({
   selector: 'app-contract-list',
@@ -70,12 +71,24 @@ export class ContractListComponent implements OnInit {
     private readonly contractSvc: ContractService,
     private readonly dialog: MatDialog,
     private readonly location: Location,
-    readonly i18n: I18nService
+    private readonly route: ActivatedRoute,
+    readonly i18n: I18nService,
+    private readonly permissions: PermissionService
   ) {}
+
+  canCreateContract(): boolean {
+    return this.permissions.can('contracts', 'create');
+  }
 
   goBack(): void { this.location.back(); }
 
   ngOnInit(): void {
+    // Pre-select status filter from query param (e.g. ?status=ACTIVE from dashboard KPI cards)
+    const qStatus = this.route.snapshot.queryParamMap.get('status');
+    if (qStatus && this.statusOptions.includes(qStatus as ContractStatus)) {
+      this.filterStatus = qStatus;
+    }
+
     this.search$.pipe(
       debounceTime(300),
       switchMap(() => this.buildQuery())

@@ -13,8 +13,9 @@ import com.propertymanagement.modules.maintenance.visit.dto.VisitReportRequest;
 import com.propertymanagement.modules.maintenance.visit.dto.VisitReportResponse;
 import com.propertymanagement.modules.notification.NotificationService;
 import com.propertymanagement.modules.notification.NotificationType;
-import com.propertymanagement.modules.owner.OwnerRepository;
+import com.propertymanagement.modules.owner.OwnerPropertyAccessService;
 import com.propertymanagement.modules.property.Property;
+import com.propertymanagement.modules.property.PropertyOwnerPortalRecipientService;
 import com.propertymanagement.modules.property.PropertyRepository;
 import com.propertymanagement.modules.tenant.TenantRepository;
 import com.propertymanagement.modules.unit.UnitRepository;
@@ -41,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -59,17 +61,37 @@ public class MaintenanceRequestService {
     private final PropertyMaintenanceAssignmentRepository assignmentRepository;
     private final CodeGenerationService codeGenerationService;
     private final MaintenanceProviderRepository providerRepository;
-    private final OwnerRepository ownerRepository;
+    private final PropertyOwnerPortalRecipientService propertyOwnerPortalRecipientService;
+    private final OwnerPropertyAccessService ownerPropertyAccessService;
 
     public Page<MaintenanceRequestResponse> getAll(Pageable pageable) {
+        Set<Long> ownerScope = ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner();
+        if (ownerScope != null) {
+            if (ownerScope.isEmpty()) {
+                return Page.empty(pageable);
+            }
+            return requestRepository.findByPropertyIdIn(ownerScope, pageable).map(this::toResponse);
+        }
         return requestRepository.findAll(pageable).map(this::toResponse);
     }
 
     public Page<MaintenanceRequestResponse> getAll(RequestStatus status, RequestPriority priority, Long propertyId, Pageable pageable) {
+        Set<Long> ownerScope = ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner();
+        if (ownerScope != null) {
+            if (ownerScope.isEmpty()) {
+                return Page.empty(pageable);
+            }
+            if (propertyId != null) {
+                ownerPropertyAccessService.assertOwnerCanAccessProperty(propertyId);
+                return requestRepository.findFiltered(status, priority, propertyId, pageable).map(this::toResponse);
+            }
+            return requestRepository.findFilteredForPropertyIds(status, priority, ownerScope, pageable).map(this::toResponse);
+        }
         return requestRepository.findFiltered(status, priority, propertyId, pageable).map(this::toResponse);
     }
 
     public Page<MaintenanceRequestResponse> getByProperty(Long propertyId, Pageable pageable) {
+        ownerPropertyAccessService.assertOwnerCanAccessProperty(propertyId);
         return requestRepository.findByPropertyId(propertyId, pageable).map(this::toResponse);
     }
 
@@ -86,7 +108,7 @@ public class MaintenanceRequestService {
             if (!ownTenantId.equals(tenantId)) {
                 throw AppException.forbidden("Access denied");
             }
-        } else if (user.getRole() != UserRole.SUPER_ADMIN && user.getRole() != UserRole.PROPERTY_ADMIN) {
+        } else if (user.getRole() != UserRole.SUPER_ADMIN && user.getRole() != UserRole.GENERAL_MANAGER) {
             throw AppException.forbidden("Access denied");
         }
         return getByTenant(tenantId, pageable);
@@ -108,16 +130,23 @@ public class MaintenanceRequestService {
 
     private void assertOfficerScope(Long officerId) {
         User user = requireUser();
-        if (user.getRole() == UserRole.MAINTENANCE_OFFICER) {
+        if (UserRole.isMaintenanceStaff(user.getRole())) {
             if (!user.getId().equals(officerId)) {
                 throw AppException.forbidden("Access denied");
             }
-        } else if (user.getRole() != UserRole.SUPER_ADMIN && user.getRole() != UserRole.PROPERTY_ADMIN) {
+        } else if (user.getRole() != UserRole.SUPER_ADMIN && user.getRole() != UserRole.GENERAL_MANAGER) {
             throw AppException.forbidden("Access denied");
         }
     }
 
     public Page<MaintenanceRequestResponse> getByStatus(RequestStatus status, Pageable pageable) {
+        Set<Long> ownerScope = ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner();
+        if (ownerScope != null) {
+            if (ownerScope.isEmpty()) {
+                return Page.empty(pageable);
+            }
+            return requestRepository.findByStatusAndPropertyIdIn(status, ownerScope, pageable).map(this::toResponse);
+        }
         return requestRepository.findByStatus(status, pageable).map(this::toResponse);
     }
 
@@ -131,7 +160,7 @@ public class MaintenanceRequestService {
         User user = requireUser();
         switch (user.getRole()) {
             case SUPER_ADMIN -> { /* ok */ }
-            case PROPERTY_ADMIN -> {
+            case GENERAL_MANAGER -> {
                 if (user.getPropertyId() != null && !user.getPropertyId().equals(request.getPropertyId())) {
                     throw AppException.forbidden("Access denied");
                 }
@@ -141,7 +170,7 @@ public class MaintenanceRequestService {
                         .filter(t -> t.getId().equals(request.getTenantId()))
                         .orElseThrow(() -> AppException.forbidden("Access denied"));
             }
-            case MAINTENANCE_OFFICER -> {
+            case MAINTENANCE_OFFICER, MAINTENANCE_CONTRACTOR -> {
                 if (request.getAssignedTo() != null && request.getAssignedTo().equals(user.getId())) {
                     return;
                 }
@@ -150,6 +179,13 @@ public class MaintenanceRequestService {
                 }
                 throw AppException.forbidden("Access denied");
             }
+            case ACCOUNTANT -> { /* org-wide read */ }
+            case PROPERTY_GUARD -> {
+                if (user.getPropertyId() != null && !user.getPropertyId().equals(request.getPropertyId())) {
+                    throw AppException.forbidden("Access denied");
+                }
+            }
+            case OWNER -> ownerPropertyAccessService.assertOwnerCanAccessProperty(request.getPropertyId());
             default -> throw AppException.forbidden("Access denied");
         }
     }
@@ -164,6 +200,7 @@ public class MaintenanceRequestService {
 
     @Transactional
     public MaintenanceRequestResponse create(CreateRequestDto dto) {
+        ownerPropertyAccessService.denyOwnerMutation("Owners cannot create maintenance requests from the admin console");
         Property property = propertyRepository.findById(dto.getPropertyId())
                 .filter(Property::isActive)
                 .orElseThrow(() -> AppException.notFound("Property not found: " + dto.getPropertyId()));
@@ -180,6 +217,8 @@ public class MaintenanceRequestService {
                 .priority(dto.getPriority() != null ? dto.getPriority() : RequestPriority.NORMAL)
                 .tenantNotes(dto.getTenantNotes());
 
+        Long resolvedOfficerId = null;
+
         // ── Routing: new assignment table takes priority over legacy property columns ──
         boolean routed = false;
         var activeAssignment = assignmentRepository.findActivePrimaryByPropertyId(property.getId());
@@ -193,16 +232,23 @@ public class MaintenanceRequestService {
                             .contractorCompanyId(null);
                     routed = true;
                 } else if ("COMPANY".equals(provider.getProviderType()) && provider.getCompanyId() != null) {
-                    builder.status(RequestStatus.PENDING)
-                            .assignedTo(null)
-                            .contractorCompanyId(provider.getCompanyId());
+                    Long autoAssignee = resolveContractorAutoAssignee(provider.getCompanyId(), property.getId());
+                    if (autoAssignee != null) {
+                        builder.status(RequestStatus.ASSIGNED)
+                                .assignedTo(autoAssignee)
+                                .contractorCompanyId(provider.getCompanyId());
+                        resolvedOfficerId = autoAssignee;
+                    } else {
+                        builder.status(RequestStatus.PENDING)
+                                .assignedTo(null)
+                                .contractorCompanyId(provider.getCompanyId());
+                    }
                     routed = true;
                 }
             }
         }
 
         // ── Fallback: legacy direct FK columns on the property ──
-        Long resolvedOfficerId = null;
         if (!routed) {
             Long internalOfficerId = property.getMaintenanceInternalOfficerUserId();
             Long propCompanyId = property.getMaintenanceContractorCompanyId();
@@ -213,9 +259,17 @@ public class MaintenanceRequestService {
                         .contractorCompanyId(null);
                 resolvedOfficerId = internalOfficerId;
             } else if (propCompanyId != null) {
-                builder.status(RequestStatus.PENDING)
-                        .assignedTo(null)
-                        .contractorCompanyId(propCompanyId);
+                Long autoAssignee = resolveContractorAutoAssignee(propCompanyId, property.getId());
+                if (autoAssignee != null) {
+                    builder.status(RequestStatus.ASSIGNED)
+                            .assignedTo(autoAssignee)
+                            .contractorCompanyId(propCompanyId);
+                    resolvedOfficerId = autoAssignee;
+                } else {
+                    builder.status(RequestStatus.PENDING)
+                            .assignedTo(null)
+                            .contractorCompanyId(propCompanyId);
+                }
             } else {
                 builder.status(RequestStatus.PENDING)
                         .assignedTo(null)
@@ -233,6 +287,7 @@ public class MaintenanceRequestService {
 
     @Transactional
     public MaintenanceRequestResponse assign(Long id, AssignRequestDto dto) {
+        ownerPropertyAccessService.denyOwnerMutation("Owners cannot assign maintenance staff");
         MaintenanceRequest request = find(id);
         validateTransition(request.getStatus(), RequestStatus.ASSIGNED);
         User caller = requireUser();
@@ -248,10 +303,12 @@ public class MaintenanceRequestService {
     }
 
     public Page<MaintenanceRequestResponse> getCompanyQueueForOfficer(User officer, Pageable pageable) {
-        if (officer.getRole() != UserRole.MAINTENANCE_OFFICER
-                || officer.getMaintenanceOfficerType() != MaintenanceOfficerType.CONTRACTOR_COMPANY
-                || officer.getContractorCompanyId() == null
-                || officer.getPropertyId() == null) {
+        boolean contractorStaff = officer.getContractorCompanyId() != null
+                && officer.getPropertyId() != null
+                && (officer.getRole() == UserRole.MAINTENANCE_CONTRACTOR
+                    || (officer.getRole() == UserRole.MAINTENANCE_OFFICER
+                        && officer.getMaintenanceOfficerType() == MaintenanceOfficerType.CONTRACTOR_COMPANY));
+        if (!contractorStaff) {
             return Page.empty(pageable);
         }
         return requestRepository.findByContractorCompanyIdAndPropertyIdAndAssignedToIsNullAndStatusOrderByCreatedAtDesc(
@@ -268,6 +325,7 @@ public class MaintenanceRequestService {
 
     @Transactional
     public MaintenanceRequestResponse schedule(Long id, ScheduleRequestDto dto) {
+        ownerPropertyAccessService.denyOwnerMutation("Owners cannot schedule maintenance visits");
         MaintenanceRequest request = find(id);
         validateTransition(request.getStatus(), RequestStatus.SCHEDULED);
         request.setScheduledDate(dto.getScheduledDate());
@@ -320,6 +378,7 @@ public class MaintenanceRequestService {
 
     @Transactional
     public MaintenanceRequestResponse cancel(Long id, CancelRequestDto dto) {
+        ownerPropertyAccessService.denyOwnerMutation("Owners cannot cancel maintenance requests from this screen");
         MaintenanceRequest request = find(id);
         if (EnumSet.of(RequestStatus.COMPLETED, RequestStatus.CANCELLED).contains(request.getStatus())) {
             throw AppException.badRequest("Cannot cancel a request in status: " + request.getStatus());
@@ -381,6 +440,8 @@ public class MaintenanceRequestService {
     }
 
     public VisitReportResponse getVisitReport(Long requestId) {
+        MaintenanceRequest request = find(requestId);
+        assertCanView(request);
         return visitReportRepository.findByRequestId(requestId)
                 .map(this::toVisitResponse)
                 .orElseThrow(() -> AppException.notFound("Visit report not found for request: " + requestId));
@@ -421,10 +482,11 @@ public class MaintenanceRequestService {
 
     private void notifyRequestCreated(MaintenanceRequest request) {
         List<Long> recipientIds = new ArrayList<>(propertyAdminIds(request.getPropertyId()));
+        recipientIds.addAll(propertyAccountantIds(request.getPropertyId()));
         if (request.getContractorCompanyId() != null && request.getPropertyId() != null) {
             recipientIds.addAll(contractorStaffIds(request.getContractorCompanyId(), request.getPropertyId()));
         }
-        ownerUserId(request.getPropertyId()).ifPresent(recipientIds::add);
+        recipientIds.addAll(propertyOwnerPortalRecipientService.portalRecipientUserIds(request.getPropertyId()));
         recipientIds = recipientIds.stream().distinct().collect(Collectors.toList());
         if (recipientIds.isEmpty()) return;
         notificationService.createForRecipients(
@@ -439,6 +501,12 @@ public class MaintenanceRequestService {
         List<Long> recipientIds = new ArrayList<>();
         if (request.getAssignedTo() != null) recipientIds.add(request.getAssignedTo());
         tenantUserId(request.getTenantId()).ifPresent(recipientIds::add);
+        recipientIds.addAll(propertyAdminIds(request.getPropertyId()));
+        recipientIds.addAll(propertyOwnerPortalRecipientService.portalRecipientUserIds(request.getPropertyId()));
+        if (request.getContractorCompanyId() != null && request.getPropertyId() != null) {
+            recipientIds.addAll(contractorStaffIds(request.getContractorCompanyId(), request.getPropertyId()));
+        }
+        recipientIds = recipientIds.stream().distinct().collect(Collectors.toList());
         if (recipientIds.isEmpty()) return;
         notificationService.createForRecipients(
                 recipientIds, currentUserId(), request.getPropertyId(), request.getId(),
@@ -451,6 +519,13 @@ public class MaintenanceRequestService {
     private void notifyRequestScheduled(MaintenanceRequest request) {
         List<Long> recipientIds = new ArrayList<>();
         tenantUserId(request.getTenantId()).ifPresent(recipientIds::add);
+        if (request.getAssignedTo() != null) recipientIds.add(request.getAssignedTo());
+        recipientIds.addAll(propertyAdminIds(request.getPropertyId()));
+        recipientIds.addAll(propertyOwnerPortalRecipientService.portalRecipientUserIds(request.getPropertyId()));
+        if (request.getContractorCompanyId() != null && request.getPropertyId() != null) {
+            recipientIds.addAll(contractorStaffIds(request.getContractorCompanyId(), request.getPropertyId()));
+        }
+        recipientIds = recipientIds.stream().distinct().collect(Collectors.toList());
         if (recipientIds.isEmpty()) return;
         notificationService.createForRecipients(
                 recipientIds, currentUserId(), request.getPropertyId(), request.getId(),
@@ -465,7 +540,11 @@ public class MaintenanceRequestService {
         List<Long> recipientIds = new ArrayList<>();
         if (request.getAssignedTo() != null) recipientIds.add(request.getAssignedTo());
         recipientIds.addAll(propertyAdminIds(request.getPropertyId()));
-        ownerUserId(request.getPropertyId()).ifPresent(recipientIds::add);
+        recipientIds.addAll(propertyOwnerPortalRecipientService.portalRecipientUserIds(request.getPropertyId()));
+        if (request.getContractorCompanyId() != null && request.getPropertyId() != null) {
+            recipientIds.addAll(contractorStaffIds(request.getContractorCompanyId(), request.getPropertyId()));
+        }
+        recipientIds = recipientIds.stream().distinct().collect(Collectors.toList());
         if (recipientIds.isEmpty()) return;
         notificationService.createForRecipients(
                 recipientIds, currentUserId(), request.getPropertyId(), request.getId(),
@@ -479,7 +558,11 @@ public class MaintenanceRequestService {
         List<Long> recipientIds = new ArrayList<>();
         if (request.getAssignedTo() != null) recipientIds.add(request.getAssignedTo());
         recipientIds.addAll(propertyAdminIds(request.getPropertyId()));
-        ownerUserId(request.getPropertyId()).ifPresent(recipientIds::add);
+        recipientIds.addAll(propertyOwnerPortalRecipientService.portalRecipientUserIds(request.getPropertyId()));
+        if (request.getContractorCompanyId() != null && request.getPropertyId() != null) {
+            recipientIds.addAll(contractorStaffIds(request.getContractorCompanyId(), request.getPropertyId()));
+        }
+        recipientIds = recipientIds.stream().distinct().collect(Collectors.toList());
         if (recipientIds.isEmpty()) return;
         notificationService.createForRecipients(
                 recipientIds, currentUserId(), request.getPropertyId(), request.getId(),
@@ -493,8 +576,13 @@ public class MaintenanceRequestService {
     private void notifyWorkStarted(MaintenanceRequest request) {
         List<Long> recipientIds = new ArrayList<>();
         tenantUserId(request.getTenantId()).ifPresent(recipientIds::add);
+        if (request.getAssignedTo() != null) recipientIds.add(request.getAssignedTo());
         recipientIds.addAll(propertyAdminIds(request.getPropertyId()));
-        ownerUserId(request.getPropertyId()).ifPresent(recipientIds::add);
+        recipientIds.addAll(propertyOwnerPortalRecipientService.portalRecipientUserIds(request.getPropertyId()));
+        if (request.getContractorCompanyId() != null && request.getPropertyId() != null) {
+            recipientIds.addAll(contractorStaffIds(request.getContractorCompanyId(), request.getPropertyId()));
+        }
+        recipientIds = recipientIds.stream().distinct().collect(Collectors.toList());
         if (recipientIds.isEmpty()) return;
         notificationService.createForRecipients(
                 recipientIds, currentUserId(), request.getPropertyId(), request.getId(),
@@ -506,8 +594,13 @@ public class MaintenanceRequestService {
 
     private void notifyVisitReported(MaintenanceRequest request) {
         List<Long> recipientIds = new ArrayList<>(propertyAdminIds(request.getPropertyId()));
+        if (request.getAssignedTo() != null) recipientIds.add(request.getAssignedTo());
         tenantUserId(request.getTenantId()).ifPresent(recipientIds::add);
-        ownerUserId(request.getPropertyId()).ifPresent(recipientIds::add);
+        recipientIds.addAll(propertyOwnerPortalRecipientService.portalRecipientUserIds(request.getPropertyId()));
+        if (request.getContractorCompanyId() != null && request.getPropertyId() != null) {
+            recipientIds.addAll(contractorStaffIds(request.getContractorCompanyId(), request.getPropertyId()));
+        }
+        recipientIds = recipientIds.stream().distinct().collect(Collectors.toList());
         if (recipientIds.isEmpty()) return;
         notificationService.createForRecipients(
                 recipientIds, currentUserId(), request.getPropertyId(), request.getId(),
@@ -522,7 +615,11 @@ public class MaintenanceRequestService {
         List<Long> recipientIds = new ArrayList<>(propertyAdminIds(request.getPropertyId()));
         if (request.getAssignedTo() != null) recipientIds.add(request.getAssignedTo());
         tenantUserId(request.getTenantId()).ifPresent(recipientIds::add);
-        ownerUserId(request.getPropertyId()).ifPresent(recipientIds::add);
+        recipientIds.addAll(propertyOwnerPortalRecipientService.portalRecipientUserIds(request.getPropertyId()));
+        if (request.getContractorCompanyId() != null && request.getPropertyId() != null) {
+            recipientIds.addAll(contractorStaffIds(request.getContractorCompanyId(), request.getPropertyId()));
+        }
+        recipientIds = recipientIds.stream().distinct().collect(Collectors.toList());
         if (recipientIds.isEmpty()) return;
         notificationService.createForRecipients(
                 recipientIds, currentUserId(), request.getPropertyId(), request.getId(),
@@ -535,21 +632,25 @@ public class MaintenanceRequestService {
     private List<Long> propertyAdminIds(Long propertyId) {
         Collection<User> users = new ArrayList<>(userRepository.findByRoleAndActiveTrue(UserRole.SUPER_ADMIN));
         if (propertyId != null) {
-            users.addAll(userRepository.findByPropertyIdAndRoleAndActiveTrue(propertyId, UserRole.PROPERTY_ADMIN));
+            users.addAll(userRepository.findByPropertyIdAndRoleAndActiveTrue(propertyId, UserRole.GENERAL_MANAGER));
         } else {
-            users.addAll(userRepository.findByRoleAndActiveTrue(UserRole.PROPERTY_ADMIN));
+            users.addAll(userRepository.findByRoleAndActiveTrue(UserRole.GENERAL_MANAGER));
         }
         return users.stream().map(User::getId).distinct().collect(Collectors.toList());
     }
 
-    private java.util.Optional<Long> ownerUserId(Long propertyId) {
-        if (propertyId == null) return java.util.Optional.empty();
-        return propertyRepository.findById(propertyId)
-                .map(Property::getOwnerId)
-                .filter(ownerId -> ownerId != null)
-                .flatMap(ownerRepository::findById)
-                .filter(o -> o.isPortalAccess() && o.getUserId() != null)
-                .map(o -> o.getUserId());
+    private List<Long> propertyAccountantIds(Long propertyId) {
+        if (propertyId == null) {
+            return userRepository.findByRoleAndActiveTrue(UserRole.ACCOUNTANT).stream()
+                    .map(User::getId)
+                    .distinct()
+                    .collect(Collectors.toList());
+        }
+        return userRepository.findByRoleAndActiveTrue(UserRole.ACCOUNTANT).stream()
+                .filter(u -> u.getPropertyId() == null || propertyId.equals(u.getPropertyId()))
+                .map(User::getId)
+                .distinct()
+                .collect(Collectors.toList());
     }
 
     private java.util.Optional<Long> tenantUserId(Long tenantId) {
@@ -575,13 +676,22 @@ public class MaintenanceRequestService {
         if (caller.getRole() == UserRole.SUPER_ADMIN) {
             return;
         }
-        if (caller.getRole() == UserRole.PROPERTY_ADMIN) {
+        if (caller.getRole() == UserRole.GENERAL_MANAGER) {
             if (caller.getPropertyId() != null && !caller.getPropertyId().equals(request.getPropertyId())) {
                 throw AppException.forbidden("Access denied");
             }
             return;
         }
-        if (caller.getRole() == UserRole.MAINTENANCE_OFFICER
+        if (caller.getRole() == UserRole.ACCOUNTANT) {
+            if (caller.getPropertyId() != null && !caller.getPropertyId().equals(request.getPropertyId())) {
+                throw AppException.forbidden("Access denied");
+            }
+            if (request.getStatus() == RequestStatus.PENDING && request.getAssignedTo() == null) {
+                return;
+            }
+            throw AppException.forbidden("Access denied");
+        }
+        if (UserRole.isMaintenanceStaff(caller.getRole())
                 && request.getStatus() == RequestStatus.PENDING
                 && request.getAssignedTo() == null
                 && isContractorCompanyQueueVisible(caller, request)) {
@@ -591,15 +701,17 @@ public class MaintenanceRequestService {
     }
 
     private void assertAssignableOfficer(User officer, MaintenanceRequest request) {
-        if (officer.getRole() != UserRole.MAINTENANCE_OFFICER || !officer.isActive()) {
+        if (!UserRole.isMaintenanceStaff(officer.getRole()) || !officer.isActive()) {
             throw AppException.badRequest("Invalid officer account");
         }
         if (request.getContractorCompanyId() != null) {
-            if (officer.getMaintenanceOfficerType() != MaintenanceOfficerType.CONTRACTOR_COMPANY
-                    || officer.getContractorCompanyId() == null
-                    || !officer.getContractorCompanyId().equals(request.getContractorCompanyId())
-                    || officer.getPropertyId() == null
-                    || !officer.getPropertyId().equals(request.getPropertyId())) {
+            boolean contractorOk = officer.getContractorCompanyId() != null
+                    && officer.getContractorCompanyId().equals(request.getContractorCompanyId())
+                    && officer.getPropertyId() != null
+                    && officer.getPropertyId().equals(request.getPropertyId())
+                    && (officer.getRole() == UserRole.MAINTENANCE_CONTRACTOR
+                        || officer.getMaintenanceOfficerType() == MaintenanceOfficerType.CONTRACTOR_COMPANY);
+            if (!contractorOk) {
                 throw AppException.badRequest("Officer must belong to the routing contractor company and this property");
             }
             return;
@@ -613,22 +725,31 @@ public class MaintenanceRequestService {
         return request.getContractorCompanyId() != null
                 && request.getAssignedTo() == null
                 && request.getStatus() == RequestStatus.PENDING
-                && user.getMaintenanceOfficerType() == MaintenanceOfficerType.CONTRACTOR_COMPANY
                 && user.getContractorCompanyId() != null
                 && user.getContractorCompanyId().equals(request.getContractorCompanyId())
                 && user.getPropertyId() != null
-                && user.getPropertyId().equals(request.getPropertyId());
+                && user.getPropertyId().equals(request.getPropertyId())
+                && (user.getRole() == UserRole.MAINTENANCE_CONTRACTOR
+                    || user.getMaintenanceOfficerType() == MaintenanceOfficerType.CONTRACTOR_COMPANY);
     }
 
     private List<Long> contractorStaffIds(Long companyId, Long propertyId) {
-        return userRepository.findAssignableContractorOfficers(
-                        UserRole.MAINTENANCE_OFFICER,
-                        propertyId,
-                        companyId,
-                        MaintenanceOfficerType.CONTRACTOR_COMPANY)
+        return userRepository.findActiveContractorStaffForProperty(propertyId, companyId)
                 .stream()
                 .map(User::getId)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Auto-assign company-routed requests when exactly one contractor staff member exists
+     * for this property/company pair; otherwise keep queue assignment open.
+     */
+    private Long resolveContractorAutoAssignee(Long companyId, Long propertyId) {
+        if (companyId == null || propertyId == null) {
+            return null;
+        }
+        List<Long> staffIds = contractorStaffIds(companyId, propertyId);
+        return staffIds.size() == 1 ? staffIds.get(0) : null;
     }
 
     private MaintenanceRequest find(Long id) {

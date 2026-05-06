@@ -74,7 +74,7 @@
   --sidebar-text: rgba(233, 223, 200, 0.78);
   --sidebar-text-active: #f4e7c4;
   --sidebar-item-hover: rgba(255, 255, 255, 0.04);
-  --sidebar-item-active: linear-gradient(90deg, rgba(204, 165, 91, 0.18), rgba(204, 165, 91, 0.06));
+  --sidebar-item-active: rgba(204, 165, 91, 0.22);
   --sidebar-accent: var(--brass-400);
   --sidebar-width: var(--sidebar-w);
   --sidebar-collapsed-width: var(--sidebar-w-collapsed);
@@ -147,7 +147,7 @@ html.dark-theme,
   --header-border: var(--line);
 
   --sidebar-bg: linear-gradient(180deg, var(--navy-900) 0%, var(--navy-800) 100%);
-  --sidebar-item-active: linear-gradient(90deg, rgba(204, 165, 91, 0.22), rgba(204, 165, 91, 0.08));
+  --sidebar-item-active: rgba(204, 165, 91, 0.26);
 
   --card-bg: var(--surface);
   --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.35);
@@ -224,6 +224,39 @@ html.dark-theme input.mat-mdc-input-element:-webkit-autofill:focus {
 
 .dark-theme .mat-mdc-menu-item:hover {
   background: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Topbar notification menu: multi-line rows without forced min-height scrollbar glitch */
+.mat-mdc-menu-panel.tb-notify-menu {
+  max-height: min(520px, calc(100vh - 72px));
+}
+
+.mat-mdc-menu-panel.tb-notify-menu .mat-mdc-menu-content {
+  padding-block: 6px 10px;
+  padding-inline: 0;
+  overflow-x: hidden;
+}
+
+.mat-mdc-menu-panel.tb-notify-menu .tb-notify-header {
+  padding-inline: 22px;
+  column-gap: 28px;
+}
+
+.mat-mdc-menu-panel.tb-notify-menu .tb-link-btn {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  margin-inline-start: 12px;
+}
+
+.mat-mdc-menu-panel.tb-notify-menu button.tb-notify-item.mat-mdc-menu-item {
+  min-height: 0 !important;
+  height: auto !important;
+}
+
+.mat-mdc-menu-panel.tb-notify-menu button.tb-notify-item .mat-mdc-menu-item-text,
+.mat-mdc-menu-panel.tb-notify-menu button.tb-notify-item .mdc-list-item__primary-text {
+  width: 100%;
+  white-space: normal !important;
 }
 
 html,
@@ -402,7 +435,8 @@ a:hover {
   align-items: flex-end;
   justify-content: space-between;
   margin-bottom: 28px;
-  gap: 24px;
+  gap: 28px;
+  column-gap: 36px;
   flex-wrap: wrap;
   padding: 22px 24px 22px;
   border: 1px solid var(--line);
@@ -415,6 +449,10 @@ a:hover {
   flex: 1;
   min-width: 0;
   text-align: start;
+}
+
+.app-page-header .page-actions {
+  margin-inline-start: 8px;
 }
 
 .app-page-title {
@@ -490,7 +528,7 @@ a:hover {
 
 .app-data-table thead th {
   padding: 12px 16px;
-  text-align: start;
+  text-align: center;
   font-weight: 600;
   color: var(--table-header-color);
   font-size: 10.5px;
@@ -503,7 +541,6 @@ a:hover {
 
 .app-data-table thead th:last-child {
   border-inline-end: none;
-  text-align: center;
 }
 
 .app-data-table tbody tr {
@@ -524,10 +561,38 @@ a:hover {
   color: var(--text-main);
   vertical-align: middle;
   border-inline-end: 1px solid var(--line-2);
+  text-align: center;
 }
 
 .app-data-table td:last-child {
   border-inline-end: none;
+}
+
+/* Flex rows inside cells (avatars, actions) stay visually centered with the cell. */
+.app-data-table td .user-cell,
+.app-data-table td .table-actions,
+.app-data-table td .app-row-actions,
+.app-data-table td .row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.app-data-table td .row-actions,
+.app-data-table td .table-actions,
+.app-data-table td .app-row-actions {
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+
+/* Material icon buttons inside table action cells align with app-icon-btn rows */
+.app-data-table td .row-actions .mat-mdc-icon-button,
+.app-data-table td .table-actions .mat-mdc-icon-button {
+  margin: 0;
+}
+
+.app-data-table td .user-info {
+  align-items: center;
   text-align: center;
 }
 
@@ -1024,9 +1089,24 @@ a:hover {
 .app-dialog-panel .mat-mdc-dialog-container {
   border-radius: var(--radius-lg) !important;
   overflow: hidden;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* MDC nests a surface element that wraps title + content + actions; mirror flex column there
+   so only the middle body scrolls and the header/footer stay visible. */
+.app-dialog-panel .mat-mdc-dialog-container .mdc-dialog__container,
+.app-dialog-panel .mat-mdc-dialog-container .mat-mdc-dialog-surface {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 100%;
 }
 
 .app-dialog-panel .mat-mdc-dialog-title {
+  flex: 0 0 auto;
   background: var(--navy-900);
   color: var(--brass-100) !important;
   padding: 18px 24px !important;
@@ -1047,10 +1127,17 @@ a:hover {
 }
 
 .app-dialog-panel .mat-mdc-dialog-content {
+  /* Only the body scrolls; let it consume the remaining vertical space inside the 90vh container. */
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
   padding: 20px 24px !important;
-  max-height: 72vh;
   overflow-y: auto;
   overflow-x: hidden;
+}
+
+.app-dialog-panel .mat-mdc-dialog-actions {
+  flex: 0 0 auto;
 }
 
 .dialog-intro {

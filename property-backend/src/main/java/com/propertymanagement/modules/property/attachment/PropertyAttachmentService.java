@@ -18,6 +18,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -25,6 +26,9 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class PropertyAttachmentService {
+
+    private static final long MAX_IMAGE_ATTACHMENT_BYTES = 20L * 1024 * 1024;
+    private static final long MAX_NON_IMAGE_ATTACHMENT_BYTES = 50L * 1024 * 1024;
 
     private final PropertyAttachmentRepository attachmentRepository;
 
@@ -37,13 +41,15 @@ public class PropertyAttachmentService {
     }
 
     public PropertyAttachmentResponse upload(Long propertyId, MultipartFile file) throws IOException {
+        validateAttachmentSize(file);
+
         Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
         Files.createDirectories(uploadPath);
 
         String ext = "";
         String original = file.getOriginalFilename();
         if (original != null && original.contains(".")) {
-            ext = original.substring(original.lastIndexOf('.'));
+            ext = original.substring(original.lastIndexOf('.')).toLowerCase(Locale.ROOT);
         }
         String storedName = UUID.randomUUID() + ext;
         Path targetPath = uploadPath.resolve(storedName);
@@ -65,6 +71,32 @@ public class PropertyAttachmentService {
                 .build();
 
         return toResponse(attachmentRepository.save(attachment));
+    }
+
+    private void validateAttachmentSize(MultipartFile file) {
+        boolean image = isLikelyImage(file);
+        long max = image ? MAX_IMAGE_ATTACHMENT_BYTES : MAX_NON_IMAGE_ATTACHMENT_BYTES;
+        if (file.getSize() > max) {
+            throw AppException.badRequest(image
+                    ? "Image exceeds maximum size (20 MB)."
+                    : "File exceeds maximum size (50 MB).", "FILE_TOO_LARGE");
+        }
+    }
+
+    private static boolean isLikelyImage(MultipartFile file) {
+        String ct = file.getContentType();
+        if (ct != null && ct.toLowerCase(Locale.ROOT).startsWith("image/")) {
+            return true;
+        }
+        String original = file.getOriginalFilename();
+        if (original == null) {
+            return false;
+        }
+        String n = original.toLowerCase(Locale.ROOT);
+        return n.endsWith(".jpg") || n.endsWith(".jpeg") || n.endsWith(".jpe") || n.endsWith(".jfif") || n.endsWith(".pjpeg")
+                || n.endsWith(".png") || n.endsWith(".gif") || n.endsWith(".webp") || n.endsWith(".avif")
+                || n.endsWith(".bmp") || n.endsWith(".tif") || n.endsWith(".tiff")
+                || n.endsWith(".heic") || n.endsWith(".heif") || n.endsWith(".svg");
     }
 
     public Resource download(Long propertyId, Long attachmentId) {

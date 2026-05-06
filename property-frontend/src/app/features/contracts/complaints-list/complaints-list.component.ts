@@ -21,6 +21,7 @@ import { PropertyService, Property } from '../../../core/services/property.servi
 import { LookupCacheService } from '../../../core/services/lookup-cache.service';
 import { LookupItem } from '../../../core/services/lookup.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
+import { PermissionService } from '../../../core/services/permission.service';
 
 @Component({
   selector: 'app-complaints-list',
@@ -52,8 +53,13 @@ export class ComplaintsListComponent implements OnInit {
     private readonly propertySvc: PropertyService,
     private readonly location: Location,
     readonly lookupCache: LookupCacheService,
-    readonly i18n: I18nService
+    readonly i18n: I18nService,
+    private readonly permissions: PermissionService
   ) {}
+
+  canResolveComplaint(): boolean {
+    return this.permissions.can('contracts', 'approve') || this.permissions.can('contracts', 'edit');
+  }
 
   goBack(): void { this.location.back(); }
 

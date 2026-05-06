@@ -1,13 +1,21 @@
 package com.propertymanagement.modules.ownerportal;
 
+import com.propertymanagement.modules.contract.lease.dto.ContractResponse;
+import com.propertymanagement.modules.ownerportal.dto.OwnerAmendDraftRequest;
 import com.propertymanagement.modules.ownerportal.dto.OwnerDashboardResponse;
 import com.propertymanagement.modules.ownerportal.dto.OwnerPropertyResponse;
+import com.propertymanagement.modules.ownerportal.dto.OwnerRejectDraftRequest;
+import com.propertymanagement.modules.ownerportal.dto.UnitOptionDto;
 import com.propertymanagement.modules.ownerportal.dto.OwnerStatementResponse;
 import com.propertymanagement.shared.response.ApiResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -19,6 +27,7 @@ import java.util.List;
 public class OwnerPortalController {
 
     private final OwnerPortalService service;
+    private final OwnerPortalDraftContractService draftContractService;
 
     @GetMapping("/dashboard")
     @PreAuthorize("hasRole('OWNER')")
@@ -36,5 +45,33 @@ public class OwnerPortalController {
     @PreAuthorize("hasRole('OWNER')")
     public ResponseEntity<ApiResponse<List<OwnerPropertyResponse>>> properties() {
         return ResponseEntity.ok(ApiResponse.ok(service.getProperties()));
+    }
+
+    @GetMapping("/draft-contracts")
+    @PreAuthorize("hasRole('OWNER')")
+    public ResponseEntity<ApiResponse<List<ContractResponse>>> listDraftContracts() {
+        return ResponseEntity.ok(ApiResponse.ok(draftContractService.listDraftsForCurrentOwner()));
+    }
+
+    @GetMapping("/draft-contracts/{id}/unit-options")
+    @PreAuthorize("hasRole('OWNER')")
+    public ResponseEntity<ApiResponse<List<UnitOptionDto>>> listDraftUnitOptions(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.ok(draftContractService.listUnitOptionsForDraftAmend(id)));
+    }
+
+    @PatchMapping("/draft-contracts/{id}/reject")
+    @PreAuthorize("hasRole('OWNER')")
+    public ResponseEntity<ApiResponse<ContractResponse>> rejectDraft(
+            @PathVariable Long id,
+            @Valid @RequestBody OwnerRejectDraftRequest body) {
+        return ResponseEntity.ok(ApiResponse.ok(draftContractService.rejectDraft(id, body.getReason())));
+    }
+
+    @PatchMapping("/draft-contracts/{id}/amend")
+    @PreAuthorize("hasRole('OWNER')")
+    public ResponseEntity<ApiResponse<ContractResponse>> amendDraft(
+            @PathVariable Long id,
+            @Valid @RequestBody OwnerAmendDraftRequest body) {
+        return ResponseEntity.ok(ApiResponse.ok(draftContractService.amendDraft(id, body)));
     }
 }

@@ -1,15 +1,16 @@
-﻿import { Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { NgClass, NgFor, NgIf, NgStyle } from '@angular/common';
+import { NgIf } from '@angular/common';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { RouterLink } from '@angular/router';
+import { Location } from '@angular/common';
+import { Router, RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 
+import { IdentityMediaFieldsComponent } from '../../shared/components/identity-media-fields/identity-media-fields.component';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
-import { UploadZoneComponent } from '../../shared/components/upload-zone/upload-zone.component';
 import { SnackService } from '../../core/services/snack.service';
 import { UserProfileService } from '../../core/services/user-profile.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -22,9 +23,6 @@ import { UserProfileUpdateRequest } from '../../core/services/user-profile.servi
   standalone: true,
   imports: [
     NgIf,
-    NgFor,
-    NgClass,
-    NgStyle,
     ReactiveFormsModule,
     RouterLink,
     TranslateModule,
@@ -32,19 +30,20 @@ import { UserProfileUpdateRequest } from '../../core/services/user-profile.servi
     MatInputModule,
     MatButtonModule,
     MatProgressSpinnerModule,
-    PageHeaderComponent,
-    UploadZoneComponent
+    IdentityMediaFieldsComponent,
+    PageHeaderComponent
   ],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss'
 })
 export class ProfileComponent implements OnInit {
   private static readonly PORTAL_EMPLOYEE_ROLES: UserRole[] = [
-    'PROPERTY_ADMIN',
+    'GENERAL_MANAGER',
     'MAINTENANCE_OFFICER',
-    'CONTRACTS_OFFICER',
+    'MAINTENANCE_CONTRACTOR',
     'ACCOUNTANT',
-    'HR_OFFICER'
+    'PROPERTY_GUARD',
+    'PROCEDURES_CLERK'
   ];
 
   form: FormGroup;
@@ -54,15 +53,20 @@ export class ProfileComponent implements OnInit {
   changingPassword = false;
   /** From owner / employee row (read-only on profile). */
   civilIdImageUrl = '';
-  /** From tenant row: lease PDFs/images. */
-  leaseContractFiles: string[] = [];
+  /** Shown in hero (read-only; login identifier). */
+  accountEmail = '';
+  accountUsername = '';
+  dashboardHomeRoute = '/';
+  private loadedUser: User | null = null;
 
   constructor(
     private readonly fb: FormBuilder,
     private readonly profileService: UserProfileService,
     readonly auth: AuthService,
     private readonly snack: SnackService,
-    readonly i18n: I18nService
+    readonly i18n: I18nService,
+    private readonly location: Location,
+    private readonly router: Router
   ) {
     this.form = this.fb.group({
       fullName: ['', [Validators.required, Validators.maxLength(150)]],
@@ -91,12 +95,16 @@ export class ProfileComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.dashboardHomeRoute = this.resolveDashboardRoute();
     this.loading = true;
     this.profileService.getMyProfile().subscribe({
       next: (res) => {
         const user = res.data as User | undefined;
+        this.loadedUser = user ?? null;
+        this.accountEmail = (user?.email ?? this.auth.getCurrentUser()?.email ?? '').trim();
+        this.accountUsername = (user?.username ?? '').trim();
         this.form.patchValue({
-          fullName: user?.fullName ?? '',
+          fullName: this.localizedName(user),
           phone: user?.phone ?? '',
           profileImageUrl: user?.profileImageUrl ?? '',
           bio: user?.bio ?? ''
@@ -105,7 +113,6 @@ export class ProfileComponent implements OnInit {
           this.patchLinkedRegistryForm(user);
         }
         this.civilIdImageUrl = user?.civilIdImageUrl?.trim() ?? '';
-        this.leaseContractFiles = [...(user?.leaseContractFiles ?? [])];
         this.loading = false;
       },
       error: () => {
@@ -113,6 +120,61 @@ export class ProfileComponent implements OnInit {
         this.snack.error(this.i18n.instant('PROFILE.LOAD_ERROR'));
       }
     });
+  }
+
+  goBack(): void {
+    this.location.back();
+  }
+
+  roleLabel(): string {
+    const r = this.auth.getCurrentUser()?.role as UserRole | undefined;
+    if (!r) return '';
+    return this.i18n.instant(`ROLE.${r}`);
+  }
+
+  heroInitials(): string {
+    const name = (this.form.get('fullName')?.value as string)?.trim()
+      || this.localizedName(this.loadedUser)
+      || this.localizedCurrentUserName()
+      || '';
+    const words = name.split(/\s+/).filter(Boolean);
+    if (!words.length) return 'U';
+    return words.slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('');
+  }
+
+  /** Hero preview: trimmed profile image URL or null when empty. */
+  get heroProfileImageUrl(): string | null {
+    const v = (this.form.get('profileImageUrl')?.value as string | undefined)?.trim();
+    return v || null;
+  }
+
+  private resolveDashboardRoute(): string {
+    const path = this.router.url.split('?')[0];
+    if (path.includes('/admin/')) return '/admin/dashboard';
+    if (path.includes('/officer/')) return '/officer/schedule';
+    if (path.includes('/tenant/')) return '/tenant/my-unit';
+    return '/';
+  }
+
+  private localizedName(user: User | undefined | null): string {
+    if (!user) return '';
+    const ar = (user.fullNameAr ?? user.tenantLink?.fullNameAr ?? user.ownerLink?.fullNameAr ?? '').trim();
+    const en = (user.fullNameEn ?? user.tenantLink?.fullNameEn ?? user.ownerLink?.fullNameEn ?? '').trim();
+    const fallback = (user.fullName ?? '').trim();
+    return this.i18n.currentLang === 'ar'
+      ? (ar || en || fallback)
+      : (en || ar || fallback);
+  }
+
+  private localizedCurrentUserName(): string {
+    const u = this.auth.getCurrentUser();
+    if (!u) return '';
+    const ar = (u.fullNameAr ?? '').trim();
+    const en = (u.fullNameEn ?? '').trim();
+    const fallback = (u.fullName ?? '').trim();
+    return this.i18n.currentLang === 'ar'
+      ? (ar || en || fallback)
+      : (en || ar || fallback);
   }
 
   save(): void {
@@ -135,16 +197,17 @@ export class ProfileComponent implements OnInit {
           const updated = {
             ...existing,
             fullName: d.fullName,
+            fullNameAr: d.fullNameAr ?? d.tenantLink?.fullNameAr ?? d.ownerLink?.fullNameAr ?? existing.fullNameAr,
+            fullNameEn: d.fullNameEn ?? d.tenantLink?.fullNameEn ?? d.ownerLink?.fullNameEn ?? existing.fullNameEn,
             phone: d.phone ?? existing.phone,
             profileImageUrl: d.profileImageUrl,
             bio: d.bio,
             civilIdImageUrl: d.civilIdImageUrl,
             leaseContractFiles: d.leaseContractFiles,
-            initials: this.initialsFrom(d.fullName ?? existing.fullName)
+            initials: this.initialsFrom(this.localizedName(d) || d.fullName || existing.fullName)
           };
           localStorage.setItem('pm_current_user', JSON.stringify(updated));
           this.civilIdImageUrl = d.civilIdImageUrl?.trim() ?? '';
-          this.leaseContractFiles = [...(d.leaseContractFiles ?? [])];
           this.patchLinkedRegistryForm(d);
         }
         this.snack.success(this.i18n.instant('PROFILE.SAVE_SUCCESS'));
@@ -179,16 +242,18 @@ export class ProfileComponent implements OnInit {
     });
   }
 
-  onImageUploaded(urls: string[]): void {
-    if (urls.length > 0) {
-      this.form.patchValue({ profileImageUrl: urls[0] });
-    }
+  onProfileImageUrlChange(url: string): void {
+    this.form.patchValue({ profileImageUrl: url ?? '' });
   }
 
-  get avatarText(): string {
-    return this.form.get('fullName')?.value
-      ? this.initialsFrom(this.form.get('fullName')?.value)
-      : (this.auth.getCurrentUser()?.initials ?? 'U');
+  get needsIdentityMedia(): boolean {
+    const r = this.auth.getCurrentUser()?.role as UserRole | undefined;
+    if (!r) return false;
+    return r === 'OWNER' || r === 'TENANT' || ProfileComponent.PORTAL_EMPLOYEE_ROLES.includes(r);
+  }
+
+  get showCivilSection(): boolean {
+    return this.roleKey !== 'TENANT';
   }
 
   get roleKey(): string {
@@ -238,6 +303,9 @@ export class ProfileComponent implements OnInit {
       profileImageUrl: v['profileImageUrl']?.trim() ? v['profileImageUrl'].trim() : undefined,
       bio: v['bio']?.trim() ? v['bio'].trim() : undefined
     };
+    if (this.needsIdentityMedia && this.showCivilSection) {
+      base.civilIdImageUrl = this.civilIdImageUrl?.trim() ?? '';
+    }
     if (role === 'OWNER') {
       base.ownerLink = {
         fullNameAr: (v['ownerFullNameAr'] ?? '').trim(),
@@ -261,12 +329,6 @@ export class ProfileComponent implements OnInit {
       };
     }
     return base;
-  }
-
-  get heroBannerStyle(): Record<string, string> | null {
-    const u = this.form.get('profileImageUrl')?.value?.trim();
-    if (!u) return null;
-    return { 'background-image': `linear-gradient(120deg, rgba(15,23,42,.72), rgba(15,23,42,.35)), url(${u})` };
   }
 
   private initialsFrom(name: string): string {

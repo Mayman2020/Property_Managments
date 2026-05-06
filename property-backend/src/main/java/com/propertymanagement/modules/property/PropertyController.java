@@ -33,14 +33,14 @@ public class PropertyController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ACCOUNTANT')")
     public ResponseEntity<ApiResponse<PropertyResponse>> create(@Valid @RequestBody PropertyRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.ok(propertyService.create(request)));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
     public ResponseEntity<ApiResponse<PropertyResponse>> update(
             @PathVariable Long id,
             @Valid @RequestBody PropertyRequest request) {
@@ -48,13 +48,13 @@ public class PropertyController {
     }
 
     @PatchMapping("/{id}/toggle-active")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ACCOUNTANT')")
     public ResponseEntity<ApiResponse<PropertyResponse>> toggleActive(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok(propertyService.toggleActive(id)));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ACCOUNTANT')")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         propertyService.delete(id);
         return ResponseEntity.ok(ApiResponse.ok(null));

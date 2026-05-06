@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.Optional;
 
 @Repository
@@ -30,5 +31,22 @@ public interface TenantRepository extends JpaRepository<Tenant, Long> {
               )
             """)
     Page<Tenant> searchActive(@Param("q") String q, @Param("propertyId") Long propertyId, Pageable pageable);
+
+    @Query("""
+            SELECT t FROM Tenant t
+            WHERE t.active = true
+              AND t.propertyId IN :propertyIds
+              AND (
+                :q IS NULL OR :q = '' OR
+                LOWER(COALESCE(t.fullName, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
+                LOWER(COALESCE(t.email, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
+                LOWER(COALESCE(t.phone, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
+                LOWER(COALESCE(t.nationalId, '')) LIKE LOWER(CONCAT('%', :q, '%'))
+              )
+            """)
+    Page<Tenant> searchActiveInPropertyIds(
+            @Param("q") String q,
+            @Param("propertyIds") Collection<Long> propertyIds,
+            Pageable pageable);
     boolean existsByEmail(String email);
 }

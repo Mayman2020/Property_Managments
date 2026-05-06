@@ -1,13 +1,19 @@
-export type ContractStatus = 'DRAFT' | 'PENDING_OWNER_APPROVAL' | 'ACTIVE' | 'EXPIRED' | 'TERMINATED' | 'RENEWED' | 'SUSPENDED';
+export type ContractStatus =
+  | 'DRAFT'
+  | 'PENDING_OWNER_APPROVAL'
+  | 'ACTIVE'
+  | 'EXPIRED'
+  | 'TERMINATED'
+  | 'RENEWED'
+  | 'SUSPENDED'
+  | 'CANCELLED'
+  | 'PENDING_TERMINATION_APPROVAL'
+  | 'PENDING_RENEWAL_APPROVAL';
 export type PaymentFrequency = 'MONTHLY' | 'QUARTERLY' | 'SEMI_ANNUAL' | 'ANNUAL';
-export type PaymentScheduleStatus = 'PENDING' | 'PAID' | 'OVERDUE' | 'PARTIAL' | 'WAIVED';
+export type PaymentScheduleStatus = 'PENDING' | 'PENDING_CONFIRMATION' | 'PAYMENT_REJECTED' | 'PAID' | 'OVERDUE' | 'PARTIAL' | 'WAIVED';
 export type PaymentMethod = 'CASH' | 'BANK_TRANSFER' | 'CHECK' | 'ONLINE' | 'OTHER';
-export type ViolationSeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-export type ViolationStatus = 'OPEN' | 'NOTIFIED' | 'RESOLVED' | 'ESCALATED';
 export type ComplaintPriority = 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
 export type ComplaintStatus = 'OPEN' | 'IN_REVIEW' | 'RESOLVED' | 'CLOSED';
-export type InspectionType = 'MOVE_IN' | 'MOVE_OUT' | 'PERIODIC';
-export type OverallCondition = 'EXCELLENT' | 'GOOD' | 'FAIR' | 'POOR';
 export type TemplateType = 'RESIDENTIAL' | 'COMMERCIAL' | 'SHOP';
 
 export interface LeaseContract {
@@ -38,13 +44,47 @@ export interface LeaseContract {
   signedPdfUrl?: string;
   terminationDate?: string;
   terminationReason?: string;
+  /** محضر إلغاء — هل يُرجع التأمين */
+  terminationDepositReturn?: boolean | null;
+  terminationHasDamages?: boolean | null;
+  terminationDamagesAmount?: number | null;
+  terminationDamagesTenantPaid?: boolean | null;
+  terminatedBy?: number | null;
+  terminatedByName?: string | null;
+  /** Staff user who submitted the termination request (when status = PENDING_TERMINATION_APPROVAL). */
+  terminationRequestedBy?: number | null;
+  terminationRequestedByName?: string | null;
+  terminationRequestedAt?: string | null;
+  terminationRequestNotes?: string | null;
+  /** Owner / admin who decided on the termination request (filled on approve/reject). */
+  terminationDecisionBy?: number | null;
+  terminationDecisionByName?: string | null;
+  terminationDecisionAt?: string | null;
+  terminationDecisionNotes?: string | null;
+  renewalRequestedBy?: number | null;
+  renewalRequestedByName?: string | null;
+  renewalRequestedAt?: string | null;
+  renewalRequestedNote?: string | null;
+  renewalProposedStartDate?: string | null;
+  renewalProposedEndDate?: string | null;
+  renewalProposedRentAmount?: number | null;
+  renewalDecisionBy?: number | null;
+  renewalDecisionByName?: string | null;
+  renewalDecisionAt?: string | null;
+  renewalDecisionNote?: string | null;
+  renewalDecisionStatus?: 'APPROVED' | 'REJECTED' | null;
   notes?: string;
   freeMonths?: number;
   hasFreeMonth?: boolean;
   rentDiscountReason?: string;
   otherReasonText?: string;
+  furnishedStatus?: string;
   ownerApprovalStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
   ownerApprovalNotes?: string;
+  /** Owner edits on draft before activation (human-readable log). */
+  ownerChangeLog?: string;
+  /** Staff audit log (timestamp | user | action | detail). */
+  staffChangeLog?: string;
   daysUntilExpiry: number;
   createdAt: string;
   updatedAt: string;
@@ -75,6 +115,9 @@ export interface ContractSummary {
 export interface RentPaymentSchedule {
   id: number;
   contractId: number;
+  contractNumber?: string;
+  tenantId?: number;
+  tenantName?: string;
   dueDate: string;
   amount: number;
   periodFrom: string;
@@ -82,6 +125,24 @@ export interface RentPaymentSchedule {
   status: PaymentScheduleStatus;
   daysOverdue: number;
   createdAt: string;
+  /** Latest recorded payment for this schedule row (receipt / audit). */
+  receiptUrl?: string;
+  settlementNotes?: string;
+  settlementPaymentDate?: string;
+  recordedByName?: string;
+  proofUrl?: string;
+  proofNotes?: string;
+  proofPaymentMethod?: PaymentMethod | string;
+  proofReferenceNumber?: string;
+  proofSubmittedBy?: number;
+  proofSubmittedByName?: string;
+  proofSubmittedAt?: string;
+  reviewedBy?: number;
+  reviewedByName?: string;
+  reviewedAt?: string;
+  rejectionReason?: string;
+  proofUrls?: string[];
+  proofPaymentDate?: string;
 }
 
 export interface RentPayment {
@@ -118,26 +179,6 @@ export interface ContractFee {
   createdAt: string;
 }
 
-export interface TenantViolation {
-  id: number;
-  contractId?: number;
-  tenantId: number;
-  tenantName?: string;
-  unitId?: number;
-  unitNumber?: string;
-  violationType?: string;
-  description: string;
-  severity?: ViolationSeverity;
-  status: ViolationStatus;
-  fineAmount: number;
-  finePaid: boolean;
-  evidenceUrl?: string;
-  notes?: string;
-  reportedBy?: number;
-  resolvedAt?: string;
-  createdAt: string;
-}
-
 export interface TenantComplaint {
   id: number;
   tenantId?: number;
@@ -155,28 +196,6 @@ export interface TenantComplaint {
   attachmentUrl?: string;
   createdAt: string;
   resolvedAt?: string;
-}
-
-export interface UnitInspection {
-  id: number;
-  unitId: number;
-  contractId?: number;
-  inspectionType?: InspectionType;
-  inspectionDate: string;
-  wallsCondition?: number;
-  floorsCondition?: number;
-  doorsCondition?: number;
-  windowsCondition?: number;
-  plumbingCondition?: number;
-  electricalCondition?: number;
-  acCondition?: number;
-  overallCondition?: OverallCondition;
-  notes?: string;
-  damagesDescription?: string;
-  deductionsAmount?: number;
-  tenantConfirmed: boolean;
-  officerId?: number;
-  createdAt: string;
 }
 
 export interface ContractTemplate {
@@ -198,7 +217,6 @@ export interface ContractsDashboardStats {
   overdueAmount?: number;
   occupancyRate?: number;
   vacantUnits?: number;
-  openViolations: number;
   openComplaints: number;
 }
 
@@ -222,6 +240,10 @@ export interface CreateContractRequest {
   hasFreeMonth?: boolean;
   rentDiscountReason?: string;
   otherReasonText?: string;
+  /** Staff draft edit audit (admin dialog). */
+  staffModificationReason?: string;
+  employeeDiscountPercent?: number;
+  linkedEmployeeId?: number;
 }
 
 export interface RecordPaymentRequest {
@@ -244,9 +266,74 @@ export interface RenewContractRequest {
   newEndDate: string;
   newMonthlyRent: number;
   notes?: string;
+  /** 0–12, optional; defaults 0 on backend */
+  freeMonths?: number;
+}
+
+export interface ContractRenewalRequest {
+  proposedStartDate: string;
+  proposedEndDate: string;
+  proposedRentAmount: number;
+  note?: string;
+}
+
+export interface RenewalChainContract {
+  id: number;
+  contractNumber: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+  freeMonths?: number;
+  hasFreeMonth?: boolean;
+}
+
+export interface MaintenanceRenewalSnippet {
+  id: number;
+  requestNumber: string;
+  title: string;
+  status: string;
+  scheduledDate?: string | null;
+}
+
+/** GET /contracts/:id/renewal-context */
+export interface ContractRenewalContext {
+  contract: LeaseContract;
+  unit: UnitRenewalSnapshot | null;
+  rootContractStartDate: string;
+  currentContractEndDate: string;
+  priorRenewalCount: number;
+  renewalChain: RenewalChainContract[];
+  currentContractFreeMonths?: number | null;
+  currentContractHasFreeMonth?: boolean | null;
+  openMaintenanceRequestCount: number;
+  scheduledOrActiveMaintenanceCount: number;
+  openMaintenanceSamples: MaintenanceRenewalSnippet[];
+}
+
+/** Mirrors backend UnitResponse for renewal screen */
+export interface UnitRenewalSnapshot {
+  id: number;
+  propertyId: number;
+  floorId?: number | null;
+  floorNumber?: number | null;
+  unitNumber: string;
+  unitType?: string;
+  furnishedStatus?: string | null;
+  areaSqm?: number | null;
+  bedrooms?: number | null;
+  bathrooms?: number | null;
+  rented: boolean;
+  rentAmount?: number | null;
+  currency?: string;
+  notes?: string | null;
+  active: boolean;
 }
 
 export interface TerminateContractRequest {
   terminationDate: string;
-  terminationReason?: string;
+  terminationReason: string;
+  securityDepositReturnToTenant: boolean;
+  hasDamages: boolean;
+  damagesAmount?: number | null;
+  damagesPaidByTenant: boolean;
 }

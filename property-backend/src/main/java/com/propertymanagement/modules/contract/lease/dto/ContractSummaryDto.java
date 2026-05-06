@@ -10,6 +10,8 @@ import java.time.LocalDate;
 public class ContractSummaryDto {
     private Long id;
     private String contractNumber;
+    /** Populated for owner-scoped filtering on list endpoints. */
+    private Long propertyId;
     private Long tenantId;
     private String tenantName;
     private Long unitId;

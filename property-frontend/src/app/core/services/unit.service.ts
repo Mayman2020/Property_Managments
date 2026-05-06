@@ -7,6 +7,8 @@ export interface Unit {
   id: number;
   propertyId: number;
   floorId?: number;
+  /** 1-based floor index from API; use for display instead of floorId when present. */
+  floorNumber?: number;
   unitNumber: string;
   unitType?: string;
   furnishedStatus?: string;
@@ -14,6 +16,8 @@ export interface Unit {
   bedrooms?: number;
   bathrooms?: number;
   rented: boolean;
+  /** Draft / pending-owner lease on unit, no active lease. */
+  reserved?: boolean;
   rentAmount?: number;
   currency?: string;
   notes?: string;
@@ -58,6 +62,7 @@ export class UnitService {
     return this.api.put(`/units/${id}`, payload);
   }
 
+  /** Server recomputes {@code rented} from leases; {@code rented} query is ignored. */
   setRentalStatus(id: number, rented: boolean): Observable<ApiResponse<Unit>> {
     return this.api.patch(`/units/${id}/rental-status?rented=${rented}`);
   }

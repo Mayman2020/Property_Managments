@@ -9,6 +9,8 @@ export interface UserProfileUpdateRequest {
   phone?: string;
   profileImageUrl?: string;
   bio?: string;
+  civilIdImageUrl?: string;
+  leaseContractFiles?: string[];
   ownerLink?: OwnerProfileLink;
   tenantLink?: TenantProfileLink;
   employeeLink?: EmployeeProfileLink;

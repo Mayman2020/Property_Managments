@@ -23,11 +23,20 @@ export const TENANT_ROUTES: Routes = [
       },
       {
         path: 'my-contract',
-        loadComponent: () => import('./my-contract/my-contract.component').then((m) => m.MyContractComponent)
+        redirectTo: 'my-contracts',
+        pathMatch: 'full'
       },
       {
-        path: 'rent-receipts',
-        loadComponent: () => import('./rent-receipts/rent-receipts.component').then((m) => m.RentReceiptsComponent)
+        path: 'my-contracts',
+        loadComponent: () => import('./my-contracts/my-contracts.component').then((m) => m.MyContractsComponent)
+      },
+      {
+        path: 'contracts/:id',
+        loadComponent: () => import('./tenant-contract-detail/tenant-contract-detail.component').then((m) => m.TenantContractDetailComponent)
+      },
+      {
+        path: 'notifications',
+        loadComponent: () => import('../notifications/notifications-page.component').then((m) => m.NotificationsPageComponent)
       },
       {
         path: 'contract-request',

@@ -25,7 +25,7 @@ public class FloorController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER')")
     public ResponseEntity<ApiResponse<FloorResponse>> create(
             @PathVariable Long propertyId,
             @Valid @RequestBody FloorRequest request) {
@@ -34,7 +34,7 @@ public class FloorController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER')")
     public ResponseEntity<ApiResponse<FloorResponse>> update(
             @PathVariable Long propertyId,
             @PathVariable Long id,
@@ -43,7 +43,7 @@ public class FloorController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER')")
     public ResponseEntity<ApiResponse<Void>> delete(
             @PathVariable Long propertyId,
             @PathVariable Long id) {

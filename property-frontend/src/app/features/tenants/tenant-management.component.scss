@@ -22,8 +22,30 @@
 .unit-badge { display: inline-block; padding: 4px 10px; border-radius: 6px; background: var(--surface-2); border: 1px solid var(--line); color: var(--text-main); font-size: 0.82rem; font-weight: 600; }
 .email-text, .phone-text { font-family: var(--font-mono); color: var(--text-muted); font-size: 0.85rem; }
 
-.actions-col { width: 80px; text-align: center; }
+.actions-col { width: 130px; text-align: center; }
+.app-icon-btn.teal { color: var(--teal); }
+.app-icon-btn.teal:hover { background: var(--teal-bg); color: var(--teal); }
+.app-icon-btn.navy { color: var(--navy-600); }
+.app-icon-btn.navy:hover { background: var(--navy-50); color: var(--navy-800); }
 .center-col { text-align: center; }
+
+.unit-info-cell { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.unit-entry { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.multi-entry-cell { padding: 4px 0; }
+.multi-entry-cell + .multi-entry-cell { border-top: 1px dashed var(--line); }
+
+.unit-badge--rented { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+
+.contract-meta-badges { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+
+.cmb {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 0.7rem; font-weight: 600; padding: 2px 6px; border-radius: 6px;
+  white-space: nowrap;
+  mat-icon { font-size: 11px; width: 11px; height: 11px; }
+}
+.cmb-discount { background: #fef3c7; color: #92400e; }
+.cmb-free { background: #d1fae5; color: #065f46; }
 
 .portal-badge {
   display: inline-block;

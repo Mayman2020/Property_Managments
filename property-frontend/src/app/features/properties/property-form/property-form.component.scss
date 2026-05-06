@@ -41,7 +41,7 @@
     padding: 8px 12px;
     font-weight: 600;
     color: var(--text-muted);
-    text-align: right;
+    text-align: center;
     border-bottom: 1px solid var(--line);
     white-space: nowrap;
   }
@@ -50,6 +50,7 @@
     padding: 8px 12px;
     border-bottom: 1px solid var(--line);
     vertical-align: middle;
+    text-align: center;
   }
 
   tbody tr:last-child td {
@@ -196,6 +197,38 @@
 
 .full-col {
   grid-column: 1 / -1;
+}
+
+.planned-units-summary {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+}
+
+.planned-units-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 12px;
+}
+
+.planned-units-label {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.planned-units-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.planned-units-hint {
+  margin: 8px 0 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--text-muted);
 }
 
 mat-form-field {

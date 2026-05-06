@@ -5,6 +5,7 @@ import com.propertymanagement.modules.maintenance.request.MaintenanceRequestRepo
 import com.propertymanagement.modules.maintenance.request.RequestStatus;
 import com.propertymanagement.modules.notification.NotificationService;
 import com.propertymanagement.modules.notification.NotificationType;
+import com.propertymanagement.modules.property.PropertyOwnerPortalRecipientService;
 import com.propertymanagement.modules.tenant.TenantRepository;
 import com.propertymanagement.modules.user.User;
 import com.propertymanagement.modules.user.UserRepository;
@@ -31,6 +32,7 @@ public class VisitRatingService {
     private final NotificationService notificationService;
     private final UserRepository userRepository;
     private final TenantRepository tenantRepository;
+    private final PropertyOwnerPortalRecipientService propertyOwnerPortalRecipientService;
 
     @Transactional
     public VisitRatingResponse submitRating(Long requestId, VisitRatingRequest dto) {
@@ -91,18 +93,26 @@ public class VisitRatingService {
     }
 
     private void notifyRatingSubmitted(MaintenanceRequest request) {
-        List<Long> admins = new ArrayList<>(userRepository.findByRoleAndActiveTrue(UserRole.SUPER_ADMIN)
-                .stream().map(User::getId).collect(Collectors.toList()));
+        VisitRating rating = ratingRepository.findByRequestId(request.getId()).orElse(null);
+        String scaleLabel = ratingScaleLabel(rating != null ? rating.getRating() : null);
+        String comment = rating != null && rating.getComment() != null && !rating.getComment().isBlank()
+                ? rating.getComment().trim()
+                : "-";
+        List<Long> recipients = new ArrayList<>();
         if (request.getPropertyId() != null) {
-            userRepository.findByPropertyIdAndRoleAndActiveTrue(request.getPropertyId(), UserRole.PROPERTY_ADMIN)
-                    .stream().map(User::getId).forEach(admins::add);
+            recipients.addAll(propertyOwnerPortalRecipientService.portalRecipientUserIds(request.getPropertyId()));
+            recipients.addAll(propertyAccountantIds(request.getPropertyId()));
         }
-        if (admins.isEmpty()) return;
+        if (request.getContractorCompanyId() != null && request.getPropertyId() != null) {
+            recipients.addAll(contractorStaffIds(request.getContractorCompanyId(), request.getPropertyId()));
+        }
+        recipients = recipients.stream().distinct().collect(Collectors.toList());
+        if (recipients.isEmpty()) return;
         notificationService.createForRecipients(
-                admins, currentUserId(), request.getPropertyId(), request.getId(),
+                recipients, currentUserId(), request.getPropertyId(), request.getId(),
                 NotificationType.REQUEST_RATED,
                 "Tenant submitted a rating",
-                "A rating was submitted for request " + request.getRequestNumber()
+                "Request " + request.getRequestNumber() + " was rated: " + scaleLabel + ". Comment: " + comment
         );
     }
 
@@ -119,8 +129,49 @@ public class VisitRatingService {
                 .id(r.getId())
                 .requestId(r.getRequestId())
                 .rating(r.getRating())
+                .ratingLabel(ratingScaleLabel(r.getRating()))
+                .ratingIcon(ratingScaleIcon(r.getRating()))
                 .comment(r.getComment())
                 .createdAt(r.getCreatedAt())
                 .build();
+    }
+
+    private List<Long> propertyAccountantIds(Long propertyId) {
+        List<Long> ids = new ArrayList<>(userRepository.findByRoleAndActiveTrue(UserRole.ACCOUNTANT)
+                .stream()
+                .filter(u -> u.getPropertyId() == null || u.getPropertyId().equals(propertyId))
+                .map(User::getId)
+                .toList());
+        ids.addAll(userRepository.findByRoleAndActiveTrue(UserRole.SUPER_ADMIN)
+                .stream().map(User::getId).toList());
+        return ids.stream().distinct().toList();
+    }
+
+    private List<Long> contractorStaffIds(Long companyId, Long propertyId) {
+        return userRepository.findActiveContractorStaffForProperty(propertyId, companyId).stream()
+                .map(User::getId)
+                .toList();
+    }
+
+    private String ratingScaleLabel(Short rating) {
+        if (rating == null) return "Unknown";
+        return switch (rating) {
+            case 4 -> "Very Satisfied";
+            case 3 -> "Satisfied";
+            case 2 -> "Unsatisfied";
+            case 1 -> "Very Unsatisfied";
+            default -> "Unknown";
+        };
+    }
+
+    private String ratingScaleIcon(Short rating) {
+        if (rating == null) return "sentiment_neutral";
+        return switch (rating) {
+            case 4 -> "sentiment_very_satisfied";
+            case 3 -> "sentiment_satisfied";
+            case 2 -> "sentiment_dissatisfied";
+            case 1 -> "sentiment_very_dissatisfied";
+            default -> "sentiment_neutral";
+        };
     }
 }

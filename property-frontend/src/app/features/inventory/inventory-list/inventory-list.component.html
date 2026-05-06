@@ -4,7 +4,7 @@
     [title]="'INVENTORY.TITLE' | translate"
     [subtitle]="'INVENTORY.SUBTITLE' | translate"
     [breadcrumbs]="[{label:('NAV.DASHBOARD' | translate), route:'/admin/dashboard'}, {label:('NAV.INVENTORY' | translate)}]">
-    <button mat-flat-button (click)="openAddDialog()">
+    <button mat-flat-button (click)="openAddDialog()" *ngIf="canCreateInventory()">
       <span class="material-icons">add</span>
       {{ 'INVENTORY.ADD_ITEM' | translate }}
     </button>
@@ -75,10 +75,10 @@
             </td>
             <td>
               <div class="row-actions">
-                <button mat-icon-button [matTooltip]="isAr ? 'تعديل' : 'Edit'" (click)="openEditDialog(item)">
+                <button *ngIf="canEditInventory()" mat-icon-button [matTooltip]="'ACTIONS.EDIT' | translate" (click)="openEditDialog(item)">
                   <span class="material-icons" style="font-size:18px">edit</span>
                 </button>
-                <button mat-icon-button [matTooltip]="isAr ? 'حذف' : 'Delete'" color="warn" (click)="confirmDelete(item)">
+                <button *ngIf="canDeleteInventory()" mat-icon-button [matTooltip]="'ACTIONS.DELETE' | translate" color="warn" (click)="confirmDelete(item)">
                   <span class="material-icons" style="font-size:18px">delete_outline</span>
                 </button>
               </div>

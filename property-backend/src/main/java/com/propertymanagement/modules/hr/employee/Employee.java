@@ -26,6 +26,12 @@ public class Employee {
     @Column(name = "full_name", nullable = false)
     private String fullName;
 
+    @Column(name = "full_name_ar", length = 150)
+    private String fullNameAr;
+
+    @Column(name = "full_name_en", length = 150)
+    private String fullNameEn;
+
     @Column(length = 30)
     private String phone;
 

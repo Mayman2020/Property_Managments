@@ -8,4 +8,5 @@ import java.util.Optional;
 public interface ContractRenewalRepository extends JpaRepository<ContractRenewal, Long> {
     List<ContractRenewal> findByOriginalContractId(Long originalContractId);
     Optional<ContractRenewal> findByNewContractId(Long newContractId);
+    Optional<ContractRenewal> findFirstByOriginalContractIdOrderByCreatedAtDesc(Long originalContractId);
 }

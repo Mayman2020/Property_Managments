@@ -20,7 +20,7 @@ public class AttendanceController {
     private final AttendanceService service;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','HR_OFFICER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','PROCEDURES_CLERK')")
     public ResponseEntity<ApiResponse<Page<AttendanceResponse>>> list(@PageableDefault(size = 20) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.ok(service.getAll(pageable)));
     }

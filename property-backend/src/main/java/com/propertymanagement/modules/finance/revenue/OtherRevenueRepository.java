@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Collection;
 
 public interface OtherRevenueRepository extends Repository<OtherRevenue, Long> {
 
@@ -40,6 +41,40 @@ public interface OtherRevenueRepository extends Repository<OtherRevenue, Long> {
             """,
             nativeQuery = true)
     Page<RevenueRow> search(@Param("q") String q, @Param("propertyId") Long propertyId, @Param("lang") String lang, Pageable pageable);
+
+    @Query(value = """
+            SELECT r.id AS id,
+                   r.revenue_number AS revenueNumber,
+                   r.description AS description,
+                   r.amount AS amount,
+                   r.currency AS currency,
+                   r.revenue_date AS revenueDate,
+                   CASE WHEN :lang = 'ar'
+                        THEN COALESCE(rc.category_name_ar, rc.category_name_en)
+                        ELSE COALESCE(rc.category_name_en, rc.category_name_ar)
+                   END AS categoryName
+            FROM other_revenues r
+            LEFT JOIN revenue_categories rc ON rc.id = r.category_id
+            WHERE r.property_id IN (:propertyIds)
+              AND (:q IS NULL OR
+                   LOWER(COALESCE(r.description, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
+                   LOWER(COALESCE(r.revenue_number, '')) LIKE LOWER(CONCAT('%', :q, '%')))
+            ORDER BY r.revenue_date DESC, r.id DESC
+            """,
+            countQuery = """
+            SELECT COUNT(*)
+            FROM other_revenues r
+            WHERE r.property_id IN (:propertyIds)
+              AND (:q IS NULL OR
+                   LOWER(COALESCE(r.description, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
+                   LOWER(COALESCE(r.revenue_number, '')) LIKE LOWER(CONCAT('%', :q, '%')))
+            """,
+            nativeQuery = true)
+    Page<RevenueRow> searchInPropertyIds(
+            @Param("q") String q,
+            @Param("propertyIds") Collection<Long> propertyIds,
+            @Param("lang") String lang,
+            Pageable pageable);
 
     interface RevenueRow {
         Long getId();

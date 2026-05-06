@@ -18,31 +18,34 @@
 
   <ng-container *ngIf="!loading && stats as summary">
     <section class="estate-stat-grid">
-      <article class="estate-stat-card navy">
+      <article class="estate-stat-card navy kpi-link" routerLink="/admin/properties">
         <div class="estate-stat-top">
           <span class="estate-stat-label">{{ 'DASHBOARD.TOTAL_PROPERTIES' | translate }}</span>
           <div class="estate-stat-icon"><span class="material-icons">apartment</span></div>
         </div>
         <div class="estate-stat-value">{{ summary.totalProperties }}</div>
         <div class="estate-stat-foot">
-          <span class="estate-stat-delta up"><span class="material-icons">north</span>+2</span>
-          <span>{{ i18n.currentLang === 'ar' ? 'مقارنة بالشهر الماضي' : 'vs last month' }}</span>
+          <span class="material-icons kpi-nav-arrow">arrow_forward</span>
+          <span>{{ i18n.currentLang === 'ar' ? 'عرض العقارات' : 'View properties' }}</span>
         </div>
       </article>
 
-      <article class="estate-stat-card teal">
+      <article class="estate-stat-card teal kpi-link" routerLink="/admin/units">
         <div class="estate-stat-top">
           <span class="estate-stat-label">{{ 'DASHBOARD.TOTAL_UNITS' | translate }}</span>
           <div class="estate-stat-icon"><span class="material-icons">meeting_room</span></div>
         </div>
         <div class="estate-stat-value">{{ summary.totalUnits }}</div>
         <div class="estate-stat-foot">
-          <span class="estate-stat-delta up"><span class="material-icons">north</span>+12</span>
-          <span>{{ i18n.currentLang === 'ar' ? 'وحدات جديدة' : 'new units online' }}</span>
+          <span>{{ summary.rentedUnits }} {{ 'UNITS.RENTED' | translate }}</span>
+          <span class="kpi-sep">·</span>
+          <span *ngIf="(summary.reservedUnits ?? 0) > 0">{{ summary.reservedUnits }} {{ 'UNITS.RESERVED' | translate }}</span>
+          <span class="kpi-sep" *ngIf="(summary.reservedUnits ?? 0) > 0">·</span>
+          <span>{{ summary.vacantUnits }} {{ 'DASHBOARD.VACANT' | translate }}</span>
         </div>
       </article>
 
-      <article class="estate-stat-card gold">
+      <article class="estate-stat-card gold kpi-link" routerLink="/admin/units" [queryParams]="{status: 'rented'}">
         <div class="estate-stat-top">
           <span class="estate-stat-label">{{ 'DASHBOARD.OCCUPANCY_RATE' | translate }}</span>
           <div class="estate-stat-icon"><span class="material-icons">key</span></div>
@@ -56,15 +59,15 @@
         </div>
       </article>
 
-      <article class="estate-stat-card danger">
+      <article class="estate-stat-card danger kpi-link" routerLink="/admin/maintenance" [queryParams]="{status: 'PENDING'}">
         <div class="estate-stat-top">
           <span class="estate-stat-label">{{ 'DASHBOARD.PENDING_REQUESTS' | translate }}</span>
           <div class="estate-stat-icon"><span class="material-icons">schedule</span></div>
         </div>
         <div class="estate-stat-value">{{ summary.pendingRequests }}</div>
         <div class="estate-stat-foot">
-          <span class="estate-stat-delta down"><span class="material-icons">south</span>-3</span>
-          <span>{{ i18n.currentLang === 'ar' ? 'بانتظار الإجراء' : 'awaiting assignment' }}</span>
+          <span class="material-icons kpi-nav-arrow">arrow_forward</span>
+          <span>{{ i18n.currentLang === 'ar' ? 'عرض الطلبات المعلقة' : 'View pending' }}</span>
         </div>
       </article>
     </section>
@@ -133,6 +136,10 @@
             <div class="mini-stat">
               <div class="mini-stat-label">{{ 'DASHBOARD.RENTED_UNITS' | translate }}</div>
               <div class="mini-stat-value">{{ summary.rentedUnits }}</div>
+            </div>
+            <div class="mini-stat" *ngIf="(summary.reservedUnits ?? 0) > 0">
+              <div class="mini-stat-label">{{ 'DASHBOARD.RESERVED_UNITS' | translate }}</div>
+              <div class="mini-stat-value">{{ summary.reservedUnits }}</div>
             </div>
             <div class="mini-stat">
               <div class="mini-stat-label">{{ vacantLabel }}</div>
@@ -224,7 +231,10 @@
         <span class="app-card-title">{{ requestsStatusLabel }}</span>
       </div>
       <div class="status-strip-grid">
-        <div class="status-strip-item" *ngFor="let tile of statusTiles" [attr.data-status]="tile.status">
+        <div class="status-strip-item kpi-link" *ngFor="let tile of statusTiles"
+             [attr.data-status]="tile.status"
+             routerLink="/admin/maintenance"
+             [queryParams]="{status: tile.status}">
           <span class="status-badge" [attr.data-status]="tile.status">{{ tile.label }}</span>
           <div class="status-strip-value">{{ tile.value }}</div>
         </div>

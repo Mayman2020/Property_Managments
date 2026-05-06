@@ -26,8 +26,6 @@ public class PropertyModuleAccessInterceptor implements HandlerInterceptor {
         PATH_MODULES.put("/contracts", "contracts");
         PATH_MODULES.put("/contract-templates", "contracts");
         PATH_MODULES.put("/complaints", "contracts");
-        PATH_MODULES.put("/violations", "contracts");
-        PATH_MODULES.put("/inspections", "contracts");
         PATH_MODULES.put("/vacancies", "vacancies");
         PATH_MODULES.put("/maintenance", "maintenance");
         PATH_MODULES.put("/inventory", "inventory");
@@ -45,7 +43,9 @@ public class PropertyModuleAccessInterceptor implements HandlerInterceptor {
         if (authentication == null || !(authentication.getPrincipal() instanceof User user)) {
             return true;
         }
-        if (user.getRole() == UserRole.SUPER_ADMIN || user.getPropertyId() == null) {
+        if (user.getRole() == UserRole.SUPER_ADMIN
+                || user.getRole() == UserRole.GENERAL_MANAGER
+                || user.getPropertyId() == null) {
             return true;
         }
 

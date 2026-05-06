@@ -1,6 +1,7 @@
 package com.propertymanagement.modules.hr.employee.dto;
 
 import com.propertymanagement.modules.user.UserRole;
+import com.propertymanagement.modules.user.MaintenanceOfficerType;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -17,6 +18,8 @@ public class EmployeeRequest {
 
     @NotBlank
     private String fullName;
+    private String fullNameAr;
+    private String fullNameEn;
     private String phone;
     private String email;
     private String nationalId;
@@ -30,6 +33,13 @@ public class EmployeeRequest {
     @DecimalMin("1.00")
     private BigDecimal basicSalary;
 
-    /** Optional: system role for portal access (ACCOUNTANT, HR_OFFICER, CONTRACTS_OFFICER, MAINTENANCE_OFFICER, PROPERTY_ADMIN) */
+    /** Optional: portal role for this employee (ACCOUNTANT, GENERAL_MANAGER, MAINTENANCE_*, PROPERTY_GUARD, PROCEDURES_CLERK). */
     private UserRole systemRole;
+
+    /** True when the employee is affiliated with a contracted maintenance company. */
+    private Boolean contractorAffiliated;
+    /** Required when contractorAffiliated=true for maintenance users. */
+    private Long contractorCompanyId;
+    /** Optional explicit type; if omitted it is derived from contractorAffiliated. */
+    private MaintenanceOfficerType maintenanceOfficerType;
 }

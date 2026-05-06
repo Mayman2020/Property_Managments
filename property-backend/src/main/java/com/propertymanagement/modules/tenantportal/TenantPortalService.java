@@ -5,15 +5,25 @@ import com.propertymanagement.modules.contract.lease.LeaseContract;
 import com.propertymanagement.modules.contract.lease.LeaseContractRepository;
 import com.propertymanagement.modules.contract.lease.LeaseContractService;
 import com.propertymanagement.modules.contract.lease.dto.ContractResponse;
+import com.propertymanagement.modules.contract.payment.RentPaymentService;
+import com.propertymanagement.modules.contract.payment.dto.UploadPaymentProofRequest;
+import com.propertymanagement.modules.contract.payment.dto.ScheduleItemResponse;
 import com.propertymanagement.modules.tenant.Tenant;
 import com.propertymanagement.modules.tenant.TenantRepository;
 import com.propertymanagement.modules.tenantportal.dto.*;
+import com.propertymanagement.modules.user.User;
+import com.propertymanagement.modules.user.UserRepository;
+import com.propertymanagement.modules.user.UserRole;
 import com.propertymanagement.shared.exception.AppException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -22,8 +32,10 @@ public class TenantPortalService {
     private final TenantRepository tenantRepository;
     private final LeaseContractRepository contractRepository;
     private final LeaseContractService contractService;
+    private final RentPaymentService rentPaymentService;
     private final RentReceiptRepository receiptRepository;
     private final ContractActionRequestRepository actionRequestRepository;
+    private final UserRepository userRepository;
 
     public Tenant getTenantByUserId(Long userId) {
         return tenantRepository.findByUserId(userId)
@@ -35,6 +47,42 @@ public class TenantPortalService {
                 .findFirstByTenantIdAndStatusOrderByStartDateDesc(tenantId, ContractStatus.ACTIVE)
                 .orElseThrow(() -> AppException.notFound("No active contract found"));
         return contractService.toResponse(contract);
+    }
+
+    public List<ContractResponse> getContractsForTenant(Long tenantId) {
+        return contractRepository.findByTenantIdOrderByCreatedAtDesc(tenantId).stream()
+                .map(contractService::toResponse)
+                .toList();
+    }
+
+    public ContractResponse getContractForTenantUser(Long userId, Long contractId) {
+        Tenant tenant = getTenantByUserId(userId);
+        LeaseContract c = contractRepository.findById(contractId)
+                .orElseThrow(() -> AppException.notFound("Lease contract not found: " + contractId));
+        if (!Objects.equals(c.getTenantId(), tenant.getId())) {
+            throw AppException.forbidden("Not your contract");
+        }
+        return contractService.toResponse(c);
+    }
+
+    public List<ScheduleItemResponse> getPaymentScheduleForTenantUser(Long userId, Long contractId) {
+        getContractForTenantUser(userId, contractId);
+        return rentPaymentService.getSchedule(contractId);
+    }
+
+    public Page<ScheduleItemResponse> getPaymentScheduleForTenantUser(Long userId, Long contractId, Pageable pageable) {
+        getContractForTenantUser(userId, contractId);
+        return rentPaymentService.getSchedule(contractId, pageable);
+    }
+
+    @Transactional
+    public ScheduleItemResponse uploadPaymentProof(Long userId, Long contractId, Long scheduleId, UploadPaymentProofRequest req) {
+        ContractResponse contract = getContractForTenantUser(userId, contractId);
+        ScheduleItemResponse row = rentPaymentService.uploadProof(scheduleId, userId, req);
+        if (!Objects.equals(row.getContractId(), contract.getId())) {
+            throw AppException.forbidden("Payment schedule item is not part of your contract");
+        }
+        return row;
     }
 
     public List<ReceiptResponse> getReceipts(Long tenantId) {
@@ -61,9 +109,74 @@ public class TenantPortalService {
                 .fileUrl(req.getFileUrl())
                 .notes(req.getNotes())
                 .status("PENDING")
+                .uploadSource("TENANT")
                 .build();
 
         return toReceiptResponse(receiptRepository.save(receipt));
+    }
+
+    @Transactional
+    public ReceiptResponse uploadReceiptAsStaff(Long staffUserId, StaffUploadReceiptRequest req) {
+        User staff = userRepository.findById(staffUserId)
+                .orElseThrow(() -> AppException.forbidden("User not found"));
+        Long tenantId = req.getTenantId();
+        Tenant tenant = tenantRepository.findById(tenantId)
+                .orElseThrow(() -> AppException.notFound("Tenant not found: " + tenantId));
+        receiptRepository.findByTenantIdAndPeriodYearAndPeriodMonth(tenantId, req.getPeriodYear(), req.getPeriodMonth())
+                .ifPresent(r -> {
+                    throw AppException.conflict("Receipt already exists for this tenant and period");
+                });
+
+        LeaseContract contractRef = null;
+        if (req.getContractId() != null) {
+            contractRef = contractRepository.findById(req.getContractId())
+                    .orElseThrow(() -> AppException.notFound("Lease contract not found: " + req.getContractId()));
+            if (!Objects.equals(contractRef.getTenantId(), tenantId)) {
+                throw AppException.badRequest("Contract does not belong to this tenant");
+            }
+        } else {
+            contractRef = contractRepository
+                    .findFirstByTenantIdAndStatusOrderByStartDateDesc(tenantId, ContractStatus.ACTIVE)
+                    .orElse(null);
+        }
+        assertStaffMayUploadForTenant(staff, tenant, contractRef);
+
+        Long contractId = req.getContractId() != null ? req.getContractId()
+                : (contractRef != null ? contractRef.getId() : null);
+
+        RentReceipt receipt = RentReceipt.builder()
+                .tenantId(tenantId)
+                .contractId(contractId)
+                .periodMonth(req.getPeriodMonth())
+                .periodYear(req.getPeriodYear())
+                .amount(req.getAmount())
+                .fileUrl(req.getFileUrl())
+                .notes(req.getNotes())
+                .status("APPROVED")
+                .uploadSource("STAFF")
+                .reviewedBy(staffUserId)
+                .reviewedAt(LocalDateTime.now())
+                .build();
+
+        return toReceiptResponse(receiptRepository.save(receipt));
+    }
+
+    private void assertStaffMayUploadForTenant(User staff, Tenant tenant, LeaseContract contractOrNull) {
+        if (staff.getRole() == UserRole.SUPER_ADMIN || staff.getRole() == UserRole.GENERAL_MANAGER) {
+            return;
+        }
+        Long scopePid = staff.getPropertyId();
+        if (scopePid == null) {
+            return;
+        }
+        if (tenant.getPropertyId() != null && tenant.getPropertyId().equals(scopePid)) {
+            return;
+        }
+        if (contractOrNull != null && contractOrNull.getPropertyId() != null
+                && contractOrNull.getPropertyId().equals(scopePid)) {
+            return;
+        }
+        throw AppException.forbidden("Tenant or contract is outside your property scope");
     }
 
     public List<ActionRequestResponse> getActionRequests(Long tenantId) {
@@ -135,6 +248,7 @@ public class TenantPortalService {
                 .fileUrl(r.getFileUrl())
                 .notes(r.getNotes())
                 .status(r.getStatus())
+                .uploadSource(r.getUploadSource())
                 .createdAt(r.getCreatedAt())
                 .build();
     }

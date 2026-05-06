@@ -1,0 +1,195 @@
+/* Force the dialog body to scroll inside the dialog regardless of how the global
+   flex layout behaves. We cap the body explicitly with calc(viewport - chrome) and
+   render a visible scrollbar so the user can see the content is scrollable. */
+
+:host ::ng-deep .app-dialog-panel .mat-mdc-dialog-container,
+:host ::ng-deep .app-dialog-panel .mat-mdc-dialog-container .mat-mdc-dialog-surface,
+:host ::ng-deep .app-dialog-panel .mat-mdc-dialog-container .mdc-dialog__container {
+  display: flex !important;
+  flex-direction: column !important;
+  max-height: 90vh !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+:host ::ng-deep .term-content.mat-mdc-dialog-content {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  /* Hard cap on the body so it always scrolls when content (e.g. damages section)
+     exceeds the available space. 120px ≈ title (~60px) + actions (~60px). */
+  max-height: calc(90vh - 120px) !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 14px 20px !important;
+  box-sizing: border-box !important;
+  scrollbar-gutter: stable;
+}
+
+/* Make the scrollbar visible (Firefox + WebKit) so the user notices the body scrolls. */
+:host ::ng-deep .term-content.mat-mdc-dialog-content {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ink-300, #cbd5e1) transparent;
+}
+:host ::ng-deep .term-content.mat-mdc-dialog-content::-webkit-scrollbar {
+  width: 10px;
+}
+:host ::ng-deep .term-content.mat-mdc-dialog-content::-webkit-scrollbar-thumb {
+  background: var(--ink-300, #cbd5e1);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+:host ::ng-deep .term-content.mat-mdc-dialog-content::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-400, #94a3b8);
+  background-clip: content-box;
+}
+:host ::ng-deep .term-content.mat-mdc-dialog-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sub {
+  margin: 0 0 8px;
+  color: var(--ink-500, #64748b);
+  font-size: 0.85rem;
+  line-height: 1.35;
+}
+
+.request-hint {
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  background: rgba(214, 147, 41, 0.08);
+  border-inline-start: 3px solid var(--amber-600, #d69329);
+  color: var(--ink-700, #334155);
+  font-size: 0.82rem;
+  line-height: 1.4;
+  border-radius: 6px;
+}
+
+.term-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 6px 14px;
+  padding: 0;
+  min-width: min(520px, 92vw);
+}
+
+.full { width: 100%; grid-column: 1 / -1; }
+
+.block {
+  padding: 6px 0;
+  border-top: 1px solid var(--card-border, #e2e8f0);
+  grid-column: 1 / -1;
+}
+
+.block-title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-500, #64748b);
+  margin-bottom: 4px;
+}
+
+.row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  align-items: center;
+}
+
+.damage-grid {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 4px 14px;
+  align-items: center;
+}
+
+.damage-grid mat-slide-toggle {
+  align-self: center;
+}
+
+.err, .field-err {
+  color: #b91c1c;
+  font-size: 0.8rem;
+}
+.field-err { margin: -4px 0 2px; }
+
+/* Compact reason textarea: capped at exactly two lines (~36px) so the whole
+   field stays short while still showing two readable rows of text. */
+:host ::ng-deep textarea.reason-compact.mat-mdc-input-element {
+  min-height: 36px !important;
+  max-height: 36px !important;
+  line-height: 1.35;
+  resize: none;
+  overflow-y: auto;
+}
+
+/* Tighten the Material form-field chrome around every field in this form so the
+   visible field height matches the compact textarea (kills the default vertical
+   padding/min-height that otherwise inflates each field to ~56-64px). */
+:host ::ng-deep .term-form .mat-mdc-form-field {
+  .mat-mdc-text-field-wrapper {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+  .mat-mdc-form-field-flex {
+    min-height: 0 !important;
+  }
+  .mat-mdc-form-field-infix {
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+    min-height: 0 !important;
+  }
+  .mat-mdc-form-field-subscript-wrapper {
+    height: 14px;
+  }
+  .mat-mdc-form-field-hint-wrapper,
+  .mat-mdc-form-field-error-wrapper {
+    padding: 0 12px;
+    font-size: 0.72rem;
+  }
+}
+
+mat-dialog-actions {
+  padding: 10px 20px;
+  background: var(--surface, #fff);
+  border-top: 1px solid var(--card-border, #e2e8f0);
+}
+
+@media (max-width: 760px) {
+  .term-form,
+  .damage-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  :host ::ng-deep .term-content.mat-mdc-dialog-content {
+    padding-inline: 14px !important;
+  }
+
+  mat-dialog-actions {
+    padding-inline: 14px;
+  }
+}
+
+/* On short viewports, kill the form min-width so the body can shrink and scroll
+   instead of forcing the dialog past the screen, and tighten the cap further. */
+@media (max-height: 700px) {
+  .term-form {
+    min-width: 0;
+    gap: 4px 12px;
+  }
+
+  :host ::ng-deep textarea.reason-compact.mat-mdc-input-element {
+    min-height: 32px !important;
+    max-height: 32px !important;
+  }
+
+  .block { padding: 4px 0; }
+  .sub { margin-bottom: 4px; }
+
+  :host ::ng-deep .term-content.mat-mdc-dialog-content {
+    max-height: calc(90vh - 100px) !important;
+  }
+}

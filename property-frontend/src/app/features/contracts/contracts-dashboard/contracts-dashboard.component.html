@@ -21,7 +21,9 @@
 
   <!-- KPI row -->
   <div class="kpi-grid">
-    <article class="kpi-card active-contracts">
+    <article class="kpi-card active-contracts kpi-clickable"
+      routerLink="/admin/contracts/list" [queryParams]="{status:'ACTIVE'}"
+      [matTooltip]="'CONTRACTS.CLICK_TO_VIEW' | translate">
       <div class="kpi-icon-wrap">
         <mat-icon>description</mat-icon>
       </div>
@@ -31,7 +33,9 @@
       </div>
     </article>
 
-    <article class="kpi-card draft-contracts" [matTooltip]="'CONTRACTS.DRAFT_CONTRACTS_HINT' | translate">
+    <article class="kpi-card draft-contracts kpi-clickable"
+      routerLink="/admin/contracts/list" [queryParams]="{status:'DRAFT'}"
+      [matTooltip]="'CONTRACTS.DRAFT_CONTRACTS_HINT' | translate">
       <div class="kpi-icon-wrap">
         <mat-icon>edit_note</mat-icon>
       </div>
@@ -61,16 +65,6 @@
       </div>
     </article>
 
-    <article class="kpi-card open-violations">
-      <div class="kpi-icon-wrap">
-        <mat-icon>report_problem</mat-icon>
-      </div>
-      <div class="kpi-body">
-        <div class="kpi-value">{{ stats.openViolations }}</div>
-        <div class="kpi-label">{{ 'CONTRACTS.OPEN_VIOLATIONS' | translate }}</div>
-      </div>
-    </article>
-
     <article class="kpi-card open-complaints">
       <div class="kpi-icon-wrap">
         <mat-icon>chat_bubble_outline</mat-icon>
@@ -87,14 +81,6 @@
     <a class="action-tile" routerLink="/admin/contracts/list">
       <mat-icon>grid_view</mat-icon>
       <span>{{ 'CONTRACTS.VIEW_ALL' | translate }}</span>
-    </a>
-    <a class="action-tile" routerLink="/admin/contracts/payments">
-      <mat-icon>payments</mat-icon>
-      <span>{{ 'CONTRACTS.PAYMENTS' | translate }}</span>
-    </a>
-    <a class="action-tile" routerLink="/admin/contracts/violations">
-      <mat-icon>warning_amber</mat-icon>
-      <span>{{ 'CONTRACTS.VIOLATIONS' | translate }}</span>
     </a>
     <a class="action-tile" routerLink="/admin/contracts/complaints">
       <mat-icon>chat_bubble_outline</mat-icon>

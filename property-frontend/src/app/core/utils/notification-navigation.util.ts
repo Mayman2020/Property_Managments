@@ -1,0 +1,136 @@
+import type { AppNotification } from '../models/notification.model';
+import type { AuthService } from '../services/auth.service';
+
+function num(v: unknown): number | undefined {
+  if (v == null || v === '') return undefined;
+  if (typeof v === 'number' && Number.isFinite(v) && v > 0) return v;
+  if (typeof v === 'string') {
+    const n = Number(v.trim());
+    return Number.isFinite(n) && n > 0 ? n : undefined;
+  }
+  return undefined;
+}
+
+function idsFromPayload(n: AppNotification): {
+  contractId?: number;
+  unitId?: number;
+  tenantId?: number;
+  propertyId?: number;
+} {
+  const p = (n.params ?? {}) as Record<string, unknown>;
+  const vars = (p['vars'] ?? {}) as Record<string, unknown>;
+  const propertyFromRow = n.propertyId != null && n.propertyId > 0 ? n.propertyId : undefined;
+  return {
+    contractId: num(p['contractId'] ?? vars['contractId']),
+    unitId: num(p['unitId'] ?? vars['unitId']),
+    tenantId: num(p['tenantId'] ?? vars['tenantId']),
+    propertyId: num(p['propertyId'] ?? vars['propertyId']) ?? propertyFromRow,
+  };
+}
+
+/**
+ * In-app route for this notification, or `null` to stay where you are (e.g. notifications inbox row).
+ */
+export function resolveNotificationTargetUrl(n: AppNotification, auth: AuthService): string | null {
+  const role = auth.getRole();
+
+  const reqId = n.requestId != null && n.requestId > 0 ? n.requestId : undefined;
+  if (reqId != null) {
+    if (role === 'MAINTENANCE_OFFICER' || role === 'MAINTENANCE_CONTRACTOR') {
+      return `/officer/requests/${reqId}`;
+    }
+    if (role === 'TENANT') {
+      return `/tenant/requests/${reqId}`;
+    }
+    return `/admin/maintenance/${reqId}`;
+  }
+
+  const { contractId, propertyId } = idsFromPayload(n);
+
+  if (contractId != null) {
+    if (role === 'TENANT') {
+      return `/tenant/contracts/${contractId}`;
+    }
+    if (
+      role === 'SUPER_ADMIN' ||
+      role === 'GENERAL_MANAGER' ||
+      role === 'ACCOUNTANT' ||
+      role === 'OWNER' ||
+      role === 'PROCEDURES_CLERK' ||
+      role === 'PROPERTY_GUARD'
+    ) {
+      return `/admin/contracts/${contractId}`;
+    }
+    return null;
+  }
+
+  if (
+    role === 'TENANT' &&
+    [
+      'CONTRACT_ACTIVATED',
+      'CONTRACT_EXPIRING',
+      'TENANT_DRAFT_LEASE_PENDING_OWNER',
+      'TENANT_LEASE_REJECTED_BY_OWNER',
+      'TENANT_LEASE_AMENDED_BY_OWNER',
+      'TENANT_LEASE_OWNER_APPROVAL_DENIED',
+      'TENANT_CONTRACT_RENEWAL_REQUESTED',
+      'CONTRACT_RENEWAL_APPROVED',
+      'CONTRACT_RENEWAL_REJECTED'
+    ].includes(n.type)
+  ) {
+    return '/tenant/my-contracts';
+  }
+
+  if (
+    (n.type === 'CONTRACT_AWAITING_OWNER_REVIEW'
+      || n.type === 'CONTRACT_TERMINATION_REQUESTED'
+      || n.type === 'CONTRACT_RENEWAL_REQUESTED') &&
+    (role === 'OWNER' ||
+      role === 'SUPER_ADMIN' ||
+      role === 'GENERAL_MANAGER' ||
+      role === 'ACCOUNTANT')
+  ) {
+    return '/admin/owner-portal/contract-approvals';
+  }
+
+  if (n.type === 'UNIT_ADDED_TO_OWNER_PROPERTY') {
+    if (
+      role === 'SUPER_ADMIN' ||
+      role === 'GENERAL_MANAGER' ||
+      role === 'ACCOUNTANT' ||
+      role === 'OWNER'
+    ) {
+      return propertyId != null ? `/admin/units?propertyId=${propertyId}` : '/admin/units';
+    }
+    return null;
+  }
+
+  if (n.type === 'TENANT_REGISTERED_ON_OWNER_PROPERTY') {
+    if (
+      role === 'SUPER_ADMIN' ||
+      role === 'GENERAL_MANAGER' ||
+      role === 'ACCOUNTANT' ||
+      role === 'OWNER'
+    ) {
+      return propertyId != null ? `/admin/tenants?propertyId=${propertyId}` : '/admin/tenants';
+    }
+    return null;
+  }
+
+  if (n.type === 'PROPERTY_LINKED_TO_OWNER' && role === 'OWNER') {
+    return '/admin/properties';
+  }
+
+  if (n.type === 'OWNER_STATEMENT' && role === 'OWNER') {
+    return '/admin/owner-portal/statements';
+  }
+
+  if (
+    n.type === 'PAYMENT_RECEIVED' &&
+    (role === 'ACCOUNTANT' || role === 'SUPER_ADMIN' || role === 'GENERAL_MANAGER')
+  ) {
+    return '/admin/accountant-portal/rent-confirmation';
+  }
+
+  return null;
+}

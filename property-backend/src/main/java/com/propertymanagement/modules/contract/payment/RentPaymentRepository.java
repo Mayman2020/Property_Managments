@@ -8,12 +8,15 @@ import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 public interface RentPaymentRepository extends JpaRepository<RentPayment, Long> {
 
     boolean existsByTenantId(Long tenantId);
 
     List<RentPayment> findByContractId(Long contractId);
+
+    Optional<RentPayment> findTopByScheduleIdOrderByIdDesc(Long scheduleId);
 
     Page<RentPayment> findAll(Pageable pageable);
 

@@ -51,8 +51,25 @@
 .floor-badge, .type-badge { display: inline-block; padding: 4px 10px; border-radius: 6px; background: var(--surface-2); border: 1px solid var(--line); color: var(--text-main); font-size: 0.82rem; font-weight: 600; }
 .area-text { font-family: var(--font-mono); color: var(--text-muted); font-size: 0.85rem; }
 
-.actions-col { width: 124px; min-width: 124px; text-align: center; }
+.actions-col { width: 150px; min-width: 150px; text-align: center; }
 .center-col { text-align: center; }
+
+.unit-status-cell { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+
+.contract-meta-badges { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
+
+.cmb {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 0.72rem; font-weight: 600; padding: 2px 6px; border-radius: 6px;
+  white-space: nowrap;
+  mat-icon { font-size: 12px; width: 12px; height: 12px; }
+}
+.cmb-tenant { background: var(--surface-2); color: var(--text-muted); border: 1px solid var(--line); }
+.cmb-discount { background: #fef3c7; color: #92400e; }
+.cmb-free { background: #d1fae5; color: #065f46; }
+
+.app-icon-btn.navy { color: var(--navy-600); }
+.app-icon-btn.navy:hover { background: var(--navy-50); color: var(--navy-800); }
 
 @media (max-width: 768px) {
   .search-bar-shell { flex-direction: column; align-items: stretch; }

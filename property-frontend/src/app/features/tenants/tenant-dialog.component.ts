@@ -11,7 +11,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { TranslateModule } from '@ngx-translate/core';
-import { switchMap } from 'rxjs/operators';
+import { switchMap, catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
 
 import { TenantService, TenantRequest, TenantFullOnboardRequest } from '../../core/services/tenant.service';
@@ -21,6 +21,8 @@ import { UserService, UserManageRequest } from '../../core/services/user.service
 import { Property } from '../../core/services/property.service';
 import { SnackService } from '../../core/services/snack.service';
 import { I18nService } from '../../core/i18n/i18n.service';
+import { LookupCacheService } from '../../core/services/lookup-cache.service';
+import { LookupItem } from '../../core/services/lookup.service';
 import { CreateContractRequest } from '../../core/models/contract.model';
 import { UploadZoneComponent } from '../../shared/components/upload-zone/upload-zone.component';
 import { SearchableSelectComponent } from '../../shared/components/searchable-select/searchable-select.component';
@@ -203,8 +205,8 @@ export interface TenantDialogData {
             <mat-label>{{ 'CONTRACTS.DISCOUNT_REASON_LABEL' | translate }}</mat-label>
             <mat-select formControlName="rentDiscountReason">
               <mat-option [value]="null">{{ 'CONTRACTS.SELECT_REASON' | translate }}</mat-option>
-              <mat-option *ngFor="let r of discountReasons" [value]="r.value">
-                {{ r.label | translate }}
+              <mat-option *ngFor="let r of rentDiscountLookupItems" [value]="r.code">
+                {{ lookupItemLabel(r) }}
               </mat-option>
             </mat-select>
           </mat-form-field>
@@ -292,11 +294,15 @@ export class TenantDialogComponent implements OnInit {
   selectedUnit: Unit | null = null;
   form: FormGroup;
 
-  readonly discountReasons = [
-    { value: 'OWNER_AGREEMENT', label: 'CONTRACTS.DISCOUNT_OWNER_AGREEMENT' },
-    { value: 'OLD_TENANT',      label: 'CONTRACTS.DISCOUNT_OLD_TENANT' },
-    { value: 'OTHER',           label: 'CONTRACTS.DISCOUNT_OTHER' }
-  ];
+  get rentDiscountLookupItems(): LookupItem[] {
+    return [...this.lookupCache.items('RENT_DISCOUNT_REASON')]
+      .filter((i) => i.active)
+      .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+  }
+
+  lookupItemLabel(item: LookupItem): string {
+    return this.i18n.currentLang === 'ar' ? item.nameAr : item.nameEn;
+  }
 
   get scope(): 'UNIT' | 'PROPERTY' { return this.form.get('scope')?.value ?? 'UNIT'; }
 
@@ -332,7 +338,8 @@ export class TenantDialogComponent implements OnInit {
     private readonly contractSvc: ContractService,
     private readonly userSvc: UserService,
     private readonly snack: SnackService,
-    readonly i18n: I18nService
+    readonly i18n: I18nService,
+    private readonly lookupCache: LookupCacheService
   ) {
     this.form = this.fb.group({
       fullNameAr:       ['', Validators.required],
@@ -357,6 +364,12 @@ export class TenantDialogComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.lookupCache.preload('RENT_DISCOUNT_REASON').pipe(catchError(() => of(undefined))).subscribe(() => {
+      this.wireTenantFormSubscriptions();
+    });
+  }
+
+  private wireTenantFormSubscriptions(): void {
     this.form.get('scope')?.valueChanges.subscribe(() => this.applyScopeRules());
 
     this.form.get('propertyId')?.valueChanges.subscribe((id) => {
@@ -443,7 +456,8 @@ export class TenantDialogComponent implements OnInit {
     if (useAtomicOnboard) {
       const onboardBody: TenantFullOnboardRequest = {
         email: raw.email,
-        password: nationalId,
+        // Omit password so the backend applies its default initial password ("12345"),
+        // matching the rest of the user-creation flows. Admins can reset later from the user screen.
         fullNameAr: raw.fullNameAr,
         fullNameEn: raw.fullNameEn,
         phone: raw.phone,
@@ -482,12 +496,14 @@ export class TenantDialogComponent implements OnInit {
     const userPayload: UserManageRequest = {
       username:        raw.email,
       email:           raw.email,
-      password:        nationalId,
-      fullName:        raw.fullNameEn || raw.fullNameAr,
+      // Omit password so backend defaults to "12345" (consistent with the rest of user creation flows).
+      fullName:        raw.fullNameAr || raw.fullNameEn,
       phone:           raw.phone,
       profileImageUrl: this.profileImageUrl.trim() || undefined,
       role:            'TENANT',
       tenantLink: {
+        fullNameAr: raw.fullNameAr,
+        fullNameEn: raw.fullNameEn,
         nationalId,
         leaseStart,
         leaseEnd
@@ -536,12 +552,6 @@ export class TenantDialogComponent implements OnInit {
           notes:              raw.notes || undefined
         };
         return this.contractSvc.create(contractPayload);
-      }),
-      switchMap(() => {
-        if (this.scope === 'UNIT' && raw.unitId) {
-          return this.unitSvc.setRentalStatus(raw.unitId, true);
-        }
-        return of(null);
       })
     ).subscribe({
       next: () => {
@@ -571,10 +581,10 @@ export class TenantDialogComponent implements OnInit {
   private loadUnits(propertyId: number): void {
     this.unitSvc.getByProperty(propertyId, 0, 500).subscribe({
       next: (res) => {
-        this.units = (res.data?.content ?? []).filter(u => !u.rented);
+        this.units = (res.data?.content ?? []).filter((u) => !u.rented && !u.reserved);
         const currentUnitId = this.form.get('unitId')?.value;
         if (currentUnitId) {
-          this.selectedUnit = this.units.find(u => u.id === currentUnitId) ?? null;
+          this.selectedUnit = this.units.find((u) => u.id === currentUnitId) ?? null;
         }
       },
       error: () => this.units = []

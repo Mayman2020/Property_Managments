@@ -17,13 +17,13 @@ import java.util.Map;
 @RestController
 @RequestMapping("/complaints")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','CONTRACTS_OFFICER','TENANT')")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT','OWNER','TENANT')")
 public class TenantComplaintController {
 
     private final TenantComplaintService complaintService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','CONTRACTS_OFFICER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT','OWNER')")
     public ResponseEntity<ApiResponse<Page<TenantComplaint>>> getAll(
             @PageableDefault(size = 20) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.ok(complaintService.getAll(pageable)));
@@ -37,14 +37,14 @@ public class TenantComplaintController {
     }
 
     @PatchMapping("/{id}/assign")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','CONTRACTS_OFFICER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
     public ResponseEntity<ApiResponse<TenantComplaint>> assign(
             @PathVariable Long id, @RequestBody Map<String, Long> body) {
         return ResponseEntity.ok(ApiResponse.ok(complaintService.assign(id, body.get("officerId"))));
     }
 
     @PatchMapping("/{id}/resolve")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','CONTRACTS_OFFICER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT','OWNER')")
     public ResponseEntity<ApiResponse<TenantComplaint>> resolve(
             @PathVariable Long id,
             @RequestBody(required = false) Map<String, String> body) {

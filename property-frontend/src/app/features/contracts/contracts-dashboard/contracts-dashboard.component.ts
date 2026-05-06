@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { DatePipe, DecimalPipe, NgFor, NgIf } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, RouterModule } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -8,8 +8,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog } from '@angular/material/dialog';
-import { ContractFormComponent } from '../contract-form/contract-form.component';
-import { RecordPaymentFormComponent } from '../record-payment-form/record-payment-form.component';
+import { ContractDialogComponent } from '../contract-dialog/contract-dialog.component';
 import { TranslateModule } from '@ngx-translate/core';
 import { catchError, forkJoin, of } from 'rxjs';
 
@@ -28,6 +27,7 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
     DecimalPipe,
     DatePipe,
     RouterLink,
+    RouterModule,
     MatCardModule,
     MatButtonModule,
     MatChipsModule,
@@ -48,7 +48,6 @@ export class ContractsDashboardComponent implements OnInit {
     draftContracts: 0,
     expiringIn30Days: 0,
     overduePayments: 0,
-    openViolations: 0,
     openComplaints: 0
   };
 
@@ -63,18 +62,19 @@ export class ContractsDashboardComponent implements OnInit {
 
   ngOnInit(): void {
     forkJoin({
-      dash: this.dashSvc.getStats().pipe(catchError(() => of(null))),
-      expiring: this.contractSvc.getExpiring(30).pipe(catchError(() => of(null)))
-    }).subscribe(({ dash, expiring }) => {
-      if (dash?.data) {
-        const data = dash.data;
-        this.stats.activeContracts = data.activeContracts ?? 0;
-        this.stats.draftContracts = data.draftContracts ?? 0;
-        this.stats.expiringIn30Days = data.expiringIn30Days ?? 0;
-        this.stats.overduePayments = data.overduePayments ?? 0;
-        this.stats.openViolations = data.openViolations ?? 0;
-        this.stats.openComplaints = data.openComplaints ?? 0;
-      }
+      all:      this.contractSvc.getAll({ size: 500 }).pipe(catchError(() => of(null))),
+      expiring: this.contractSvc.getExpiring(30).pipe(catchError(() => of(null))),
+      dash:     this.dashSvc.getStats().pipe(catchError(() => of(null)))
+    }).subscribe(({ all, expiring, dash }) => {
+      // Count statuses from real contract data
+      const contracts: any[] = all?.data?.content ?? all?.data ?? [];
+      this.stats.activeContracts   = contracts.filter(c => c.status === 'ACTIVE').length;
+      this.stats.draftContracts    = contracts.filter(c => c.status === 'DRAFT').length;
+      this.stats.expiringIn30Days  = expiring?.data?.content?.length ?? expiring?.data?.length ?? 0;
+      // Complaints from dashboard stats (optional)
+      this.stats.overduePayments   = dash?.data?.overduePayments  ?? 0;
+      this.stats.openComplaints    = dash?.data?.openComplaints    ?? 0;
+
       if (expiring?.data) {
         this.expiringContracts = expiring.data.content ?? expiring.data ?? [];
       }
@@ -83,7 +83,7 @@ export class ContractsDashboardComponent implements OnInit {
   }
 
   openContractDialog(): void {
-    this.dialog.open(ContractFormComponent, {
+    this.dialog.open(ContractDialogComponent, {
       width: '980px',
       maxWidth: '95vw',
       maxHeight: '95vh',

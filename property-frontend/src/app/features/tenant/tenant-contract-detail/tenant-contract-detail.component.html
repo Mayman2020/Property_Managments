@@ -1,0 +1,167 @@
+<div class="app-page contract-detail-page tenant-contract-detail-page">
+  <div *ngIf="loading" class="loading-wrap">
+    <mat-spinner diameter="48"></mat-spinner>
+  </div>
+
+  <div class="error-state app-card" *ngIf="!loading && error">
+    <mat-icon>error_outline</mat-icon>
+    <p>{{ 'TENANT_PORTAL.CONTRACT_LOAD_ERROR' | translate }}</p>
+    <a mat-button routerLink="/tenant/my-contracts">{{ 'TENANT_PORTAL.MY_CONTRACTS' | translate }}</a>
+  </div>
+
+  <ng-container *ngIf="!loading && contract">
+    <app-page-header
+      [title]="contract.contractNumber"
+      [subtitle]="(contract.unitNumber || '') + ' | ' + (contract.propertyName || '')">
+      <a mat-stroked-button routerLink="/tenant/my-contracts">
+        <mat-icon>arrow_back</mat-icon>
+        {{ 'TENANT_PORTAL.MY_CONTRACTS' | translate }}
+      </a>
+    </app-page-header>
+
+    <div class="contract-hero-grid">
+      <article class="contract-stat-card navy">
+        <div class="csc-icon"><mat-icon>payments</mat-icon></div>
+        <div class="csc-body">
+          <div class="csc-label">{{ 'CONTRACTS.MONTHLY_RENT' | translate }}</div>
+          <div class="csc-value">{{ contract.monthlyRent | number }}</div>
+          <div class="csc-foot">{{ contract.currency }}</div>
+        </div>
+      </article>
+
+      <article class="contract-stat-card gold">
+        <div class="csc-icon"><mat-icon>date_range</mat-icon></div>
+        <div class="csc-body">
+          <div class="csc-label">{{ 'TENANT_PORTAL.START_DATE' | translate }}</div>
+          <div class="csc-value date-value">{{ contract.startDate | date:'dd/MM/yyyy' }}</div>
+          <div class="csc-foot">{{ 'TENANT_PORTAL.END_DATE' | translate }}: {{ contract.endDate | date:'dd/MM/yyyy' }}</div>
+        </div>
+      </article>
+
+      <article class="contract-stat-card teal">
+        <div class="csc-icon"><mat-icon>shield</mat-icon></div>
+        <div class="csc-body">
+          <div class="csc-label">{{ 'CONTRACTS.SECURITY_DEPOSIT' | translate }}</div>
+          <div class="csc-value">{{ contract.securityDeposit | number }}</div>
+          <div class="csc-foot">{{ contract.currency }}</div>
+        </div>
+      </article>
+
+      <article class="contract-stat-card" [class.danger]="contract.daysUntilExpiry <= 30 && contract.daysUntilExpiry >= 0">
+        <div class="csc-icon"><mat-icon>event_upcoming</mat-icon></div>
+        <div class="csc-body">
+          <div class="csc-label">{{ 'CONTRACTS.DAYS_LEFT' | translate }}</div>
+          <div class="csc-value">{{ contract.daysUntilExpiry >= 0 ? contract.daysUntilExpiry : '-' }}</div>
+          <div class="csc-foot">{{ contract.endDate | date:'dd/MM/yyyy' }}</div>
+        </div>
+      </article>
+    </div>
+
+    <div class="action-bar app-card">
+      <span class="status-chip" [ngClass]="getStatusClass(contract.status)">
+        {{ statusLabel(contract.status) }}
+      </span>
+      <div class="ab-divider"></div>
+      <div class="ab-meta">
+        <span class="ab-meta-item">
+          <mat-icon>calendar_today</mat-icon>
+          {{ contract.startDate | date:'dd/MM/yyyy' }} - {{ contract.endDate | date:'dd/MM/yyyy' }}
+        </span>
+        <span class="ab-meta-item">
+          <mat-icon>apartment</mat-icon>
+          {{ contract.propertyName }} - {{ contract.unitNumber }}
+        </span>
+      </div>
+    </div>
+
+    <nav class="contract-section-nav app-card" aria-label="Contract sections">
+      <button type="button" class="csn-tile csn-tile--active">
+        <span class="csn-ico"><mat-icon>calendar_month</mat-icon></span>
+        <span class="csn-label">{{ 'CONTRACTS.PAYMENT_SCHEDULE' | translate }}</span>
+      </button>
+      <a class="csn-tile" *ngIf="contract.contractPdfUrl" [href]="contract.contractPdfUrl" target="_blank" rel="noopener">
+        <span class="csn-ico"><mat-icon>picture_as_pdf</mat-icon></span>
+        <span class="csn-label">{{ 'TENANT_PORTAL.CONTRACT_PDF' | translate }}</span>
+      </a>
+      <a class="csn-tile" *ngIf="contract.signedPdfUrl" [href]="contract.signedPdfUrl" target="_blank" rel="noopener">
+        <span class="csn-ico"><mat-icon>task</mat-icon></span>
+        <span class="csn-label">{{ 'TENANT_PORTAL.SIGNED_PDF' | translate }}</span>
+      </a>
+    </nav>
+
+    <div class="section-panel">
+      <div class="app-card" *ngIf="schedule.length > 0; else noSch">
+        <div class="app-table-wrap">
+          <table class="app-data-table schedule-table">
+            <thead>
+              <tr>
+                <th>{{ 'CONTRACTS.DUE_DATE' | translate }}</th>
+                <th>{{ 'CONTRACTS.PERIOD' | translate }}</th>
+                <th>{{ 'CONTRACTS.AMOUNT' | translate }}</th>
+                <th>{{ 'CONTRACTS.PAYMENT_FLAG' | translate }}</th>
+                <th>{{ 'TENANT_PORTAL.PAYMENT_PROOF' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let s of schedule" [ngClass]="scheduleRowClass(s)">
+                <td><strong>{{ s.dueDate | date:'dd/MM/yyyy' }}</strong></td>
+                <td class="text-muted">{{ s.periodFrom | date:'dd/MM/yyyy' }} - {{ s.periodTo | date:'dd/MM/yyyy' }}</td>
+                <td><span class="amount-cell">{{ s.amount | number:'1.2-2' }} <span class="currency-tag">{{ contract.currency }}</span></span></td>
+                <td class="flag-cell">
+                  <div class="flag-row">
+                    <span class="status-chip" [ngClass]="getStatusClass(s.status)">{{ scheduleStatusLabel(s.status) }}</span>
+                  </div>
+                  <div class="settlement-meta" *ngIf="isPaidLike(s) && (s.receiptUrl || s.settlementPaymentDate || s.recordedByName || s.settlementNotes)">
+                    <div class="sm-line" *ngIf="s.settlementPaymentDate">
+                      <mat-icon>event</mat-icon>
+                      <span>{{ 'CONTRACTS.RECEIPT_PAYMENT_DATE' | translate }}: {{ s.settlementPaymentDate | date:'dd/MM/yyyy' }}</span>
+                    </div>
+                    <div class="sm-line" *ngIf="s.recordedByName">
+                      <mat-icon>person</mat-icon>
+                      <span>{{ 'CONTRACTS.RECEIPT_RECORDED_BY' | translate }}: {{ s.recordedByName }}</span>
+                    </div>
+                    <div class="sm-line" *ngIf="s.receiptUrl">
+                      <mat-icon>description</mat-icon>
+                      <a [href]="s.receiptUrl" target="_blank" rel="noopener">{{ 'CONTRACTS.VIEW_RECEIPT' | translate }}</a>
+                    </div>
+                    <p class="sm-notes" *ngIf="s.settlementNotes">{{ s.settlementNotes }}</p>
+                  </div>
+                  <p class="sm-notes rejected-note" *ngIf="s.status === 'PAYMENT_REJECTED' && s.rejectionReason">{{ s.rejectionReason }}</p>
+                </td>
+                <td class="proof-action-cell">
+                  <button mat-stroked-button type="button" *ngIf="canUploadProof(s)" (click)="openProofDialog(s)" [disabled]="submittingScheduleId === s.id">
+                    <mat-icon>upload_file</mat-icon>
+                    {{ 'TENANT_PORTAL.ATTACH_RENT_RECEIPT' | translate }}
+                  </button>
+                  <div class="proof-links" *ngIf="!canUploadProof(s) && (s.proofUrls?.length || s.proofUrl || s.receiptUrl)">
+                    <a *ngFor="let url of (s.proofUrls?.length ? s.proofUrls : [s.proofUrl || s.receiptUrl])" [href]="url" target="_blank" rel="noopener">
+                      <mat-icon>attach_file</mat-icon>
+                      {{ 'COMMON.VIEW_FILE' | translate }}
+                    </a>
+                  </div>
+                  <span class="text-muted" *ngIf="!canUploadProof(s) && !(s.proofUrls?.length || s.proofUrl || s.receiptUrl)">
+                    {{ 'TENANT_PORTAL.NO_PAYMENT_PROOF' | translate }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <app-table-pager
+          [length]="totalSchedule"
+          [pageSize]="pageSize"
+          [pageIndex]="pageIndex"
+          (pageIndexChange)="onPageChange($event)">
+        </app-table-pager>
+      </div>
+
+      <ng-template #noSch>
+        <div class="empty-state app-card">
+          <mat-icon>event_note</mat-icon>
+          <p>{{ 'CONTRACTS.NO_SCHEDULE' | translate }}</p>
+        </div>
+      </ng-template>
+    </div>
+  </ng-container>
+</div>

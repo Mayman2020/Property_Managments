@@ -44,6 +44,11 @@ public class RentReceipt {
     @Column(nullable = false, length = 20)
     private String status = "PENDING";
 
+    /** TENANT = needs accountant review; STAFF = uploaded by office, auto-trusted. */
+    @Builder.Default
+    @Column(name = "upload_source", nullable = false, length = 20)
+    private String uploadSource = "TENANT";
+
     @Column(name = "reviewed_by")
     private Long reviewedBy;
 

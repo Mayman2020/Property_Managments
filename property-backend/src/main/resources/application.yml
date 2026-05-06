@@ -33,6 +33,15 @@ spring:
       max-file-size: 50MB
       max-request-size: 100MB
 
+  messages:
+    basename: messages
+    encoding: UTF-8
+    fallback-to-system-locale: false
+
+  web:
+    locale: en
+    locale-resolver: accept-header
+
 jwt:
   secret: ${JWT_SECRET:PropertyManagementSecretKey2024VeryLongAndSecureKeyForJWT}
   expiration: 86400000       # 24 hours

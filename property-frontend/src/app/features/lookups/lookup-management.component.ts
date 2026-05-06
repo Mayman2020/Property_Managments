@@ -8,6 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTabsModule } from '@angular/material/tabs';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
 import { catchError } from 'rxjs/operators';
 import { forkJoin, of } from 'rxjs';
@@ -26,8 +27,8 @@ type CityRow = LookupItem & { governorateNameAr: string; governorateNameEn: stri
 
 interface ClassificationList {
   type: LookupType;
-  labelAr: string;
-  labelEn: string;
+  /** i18n key under assets/i18n (e.g. LOOKUPS.LIST_PROPERTY_TYPE) */
+  labelKey: string;
   icon: string;
   items: LookupItem[];
   pageIndex: number;
@@ -49,6 +50,7 @@ interface ClassificationList {
     MatProgressSpinnerModule,
     MatIconModule,
     MatTabsModule,
+    MatTooltipModule,
     PageHeaderComponent,
     TablePagerComponent,
     TableExportToolbarComponent
@@ -69,23 +71,33 @@ export class LookupManagementComponent implements OnInit {
   citiesPageIndex = 0;
 
   readonly propertyLists: ClassificationList[] = [
-    { type: 'PROPERTY_TYPE', labelAr: 'نوع العقار', labelEn: 'Property Type', icon: 'apartment', items: [], pageIndex: 0, loading: false },
-    { type: 'PROPERTY_STATUS', labelAr: 'حالة العقار', labelEn: 'Property Status', icon: 'toggle_on', items: [], pageIndex: 0, loading: false },
-    { type: 'UNIT_TYPE', labelAr: 'نوع الوحدة', labelEn: 'Unit Type', icon: 'meeting_room', items: [], pageIndex: 0, loading: false },
-    { type: 'FLOOR_TYPE', labelAr: 'نوع الطابق', labelEn: 'Floor Type', icon: 'layers', items: [], pageIndex: 0, loading: false }
+    { type: 'PROPERTY_TYPE', labelKey: 'LOOKUPS.LIST_PROPERTY_TYPE', icon: 'apartment', items: [], pageIndex: 0, loading: false },
+    { type: 'PROPERTY_STATUS', labelKey: 'LOOKUPS.LIST_PROPERTY_STATUS', icon: 'toggle_on', items: [], pageIndex: 0, loading: false },
+    { type: 'UNIT_TYPE', labelKey: 'LOOKUPS.LIST_UNIT_TYPE', icon: 'meeting_room', items: [], pageIndex: 0, loading: false },
+    { type: 'FLOOR_TYPE', labelKey: 'LOOKUPS.LIST_FLOOR_TYPE', icon: 'layers', items: [], pageIndex: 0, loading: false }
   ];
 
   readonly contractLists: ClassificationList[] = [
-    { type: 'CONTRACT_TYPE', labelAr: 'نوع العقد', labelEn: 'Contract Type', icon: 'description', items: [], pageIndex: 0, loading: false },
-    { type: 'TERMINATION_REASON', labelAr: 'أسباب إنهاء العقد', labelEn: 'Termination Reasons', icon: 'cancel', items: [], pageIndex: 0, loading: false }
+    { type: 'CONTRACT_TYPE', labelKey: 'LOOKUPS.LIST_CONTRACT_TYPE', icon: 'description', items: [], pageIndex: 0, loading: false },
+    { type: 'PAYMENT_FREQUENCY', labelKey: 'LOOKUPS.LIST_PAYMENT_FREQUENCY', icon: 'event_repeat', items: [], pageIndex: 0, loading: false },
+    { type: 'TERMINATION_REASON', labelKey: 'LOOKUPS.LIST_TERMINATION_REASON', icon: 'cancel', items: [], pageIndex: 0, loading: false },
+    { type: 'RENT_DISCOUNT_REASON', labelKey: 'LOOKUPS.LIST_RENT_DISCOUNT_REASON', icon: 'local_offer', items: [], pageIndex: 0, loading: false },
+    { type: 'CONTRACT_DRAFT_AMEND_REASON', labelKey: 'LOOKUPS.LIST_CONTRACT_DRAFT_AMEND_REASON', icon: 'edit_note', items: [], pageIndex: 0, loading: false }
+  ];
+
+  readonly financeLists: ClassificationList[] = [
+    { type: 'CURRENCY', labelKey: 'LOOKUPS.LIST_CURRENCY', icon: 'payments', items: [], pageIndex: 0, loading: false },
+    { type: 'PAYMENT_METHOD', labelKey: 'LOOKUPS.LIST_PAYMENT_METHOD', icon: 'account_balance_wallet', items: [], pageIndex: 0, loading: false },
+    { type: 'MONTH', labelKey: 'LOOKUPS.LIST_MONTHS', icon: 'calendar_month', items: [], pageIndex: 0, loading: false },
+    { type: 'YEAR', labelKey: 'LOOKUPS.LIST_YEARS', icon: 'calendar_today', items: [], pageIndex: 0, loading: false }
   ];
 
   readonly jobLists: ClassificationList[] = [
-    { type: 'JOB_TITLE', labelAr: 'المسميات الوظيفية', labelEn: 'Job Titles', icon: 'badge', items: [], pageIndex: 0, loading: false }
+    { type: 'JOB_TITLE', labelKey: 'LOOKUPS.LIST_JOB_TITLE', icon: 'badge', items: [], pageIndex: 0, loading: false }
   ];
 
   readonly inventoryLists: ClassificationList[] = [
-    { type: 'UNIT_OF_MEASURE', labelAr: 'وحدات القياس', labelEn: 'Units of Measure', icon: 'straighten', items: [], pageIndex: 0, loading: false }
+    { type: 'UNIT_OF_MEASURE', labelKey: 'LOOKUPS.LIST_UNIT_OF_MEASURE', icon: 'straighten', items: [], pageIndex: 0, loading: false }
   ];
 
   constructor(
@@ -98,7 +110,7 @@ export class LookupManagementComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadLocationData();
-    [...this.propertyLists, ...this.contractLists, ...this.jobLists, ...this.inventoryLists].forEach((list) => this.loadClassification(list));
+    [...this.propertyLists, ...this.contractLists, ...this.financeLists, ...this.jobLists, ...this.inventoryLists].forEach((list) => this.loadClassification(list));
   }
 
   get isArabic(): boolean {
@@ -123,7 +135,7 @@ export class LookupManagementComponent implements OnInit {
 
   get lookupExportColumns(): ExportColumn<LookupItem>[] {
     return [
-      { header: this.isArabic ? 'الاسم' : 'Name', value: (row) => this.nameOf(row) },
+      { header: this.i18n.instant('COMMON.NAME'), value: (row) => this.nameOf(row) },
       { header: this.i18n.instant('LOOKUPS.CODE'), value: 'code' },
       { header: this.i18n.instant('COMMON.ACTIVE'), value: (row) => row.active ? this.i18n.instant('COMMON.ACTIVE') : this.i18n.instant('COMMON.INACTIVE') }
     ];
@@ -132,7 +144,7 @@ export class LookupManagementComponent implements OnInit {
   get cityExportColumns(): ExportColumn<CityRow>[] {
     return [
       { header: this.i18n.instant('LOOKUPS.COUNTRY'), value: (row) => this.cityGovernorateName(row) },
-      { header: this.isArabic ? 'الاسم' : 'Name', value: (row) => this.nameOf(row) },
+      { header: this.i18n.instant('COMMON.NAME'), value: (row) => this.nameOf(row) },
       { header: this.i18n.instant('LOOKUPS.CODE'), value: 'code' },
       { header: this.i18n.instant('COMMON.ACTIVE'), value: (row) => row.active ? this.i18n.instant('COMMON.ACTIVE') : this.i18n.instant('COMMON.INACTIVE') }
     ];
@@ -144,10 +156,6 @@ export class LookupManagementComponent implements OnInit {
 
   cityGovernorateName(city: CityRow): string {
     return this.isArabic ? city.governorateNameAr : city.governorateNameEn;
-  }
-
-  listLabel(list: ClassificationList): string {
-    return this.isArabic ? list.labelAr : list.labelEn;
   }
 
   pagedListItems(list: ClassificationList): LookupItem[] {

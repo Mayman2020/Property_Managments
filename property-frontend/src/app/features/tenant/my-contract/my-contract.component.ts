@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { DatePipe, DecimalPipe, NgIf } from '@angular/common';
+import { DatePipe, DecimalPipe, NgFor, NgIf } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -7,15 +7,14 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
-import { TenantPortalService } from '../../../core/services/tenant-portal.service';
-import { I18nService } from '../../../core/i18n/i18n.service';
+import { TenantPortalService } from '../../../core/services/tenant-portal.service';import { AuthService } from '../../../core/services/auth.service';import { I18nService } from '../../../core/i18n/i18n.service';
 import { LeaseContract } from '../../../core/models/contract.model';
 
 @Component({
   selector: 'app-my-contract',
   standalone: true,
   imports: [
-    NgIf, DatePipe, DecimalPipe, RouterLink,
+    NgFor, NgIf, DatePipe, DecimalPipe, RouterLink,
     TranslateModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule,
     PageHeaderComponent
   ],
@@ -27,12 +26,16 @@ export class MyContractComponent implements OnInit {
   contract: LeaseContract | null = null;
   error = false;
 
+  leaseContractFiles: string[] = [];
+
   constructor(
     private readonly portalSvc: TenantPortalService,
+    private readonly auth: AuthService,
     readonly i18n: I18nService
   ) {}
 
   ngOnInit(): void {
+    this.leaseContractFiles = this.auth.getCurrentUser()?.leaseContractFiles ?? [];
     this.portalSvc.getMyContract().subscribe({
       next: res => { this.contract = res.data ?? null; this.loading = false; },
       error: () => { this.error = true; this.loading = false; }
@@ -57,4 +60,13 @@ export class MyContractComponent implements OnInit {
   }
 
   statusLabel(s: string): string { return this.i18n.instant(`CONTRACT_STATUS.${s}`); }
+
+  documentName(url: string): string {
+    try {
+      const decoded = decodeURIComponent(url.split('/').pop() ?? 'Document');
+      return decoded || 'Document';
+    } catch {
+      return 'Document';
+    }
+  }
 }

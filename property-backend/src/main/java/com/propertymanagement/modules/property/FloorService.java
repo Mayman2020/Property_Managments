@@ -3,6 +3,7 @@ package com.propertymanagement.modules.property;
 import com.propertymanagement.modules.property.dto.FloorRequest;
 import com.propertymanagement.modules.property.dto.FloorResponse;
 import com.propertymanagement.shared.exception.AppException;
+import com.propertymanagement.shared.i18n.AppMessages;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +17,7 @@ public class FloorService {
 
     private final FloorRepository floorRepository;
     private final PropertyRepository propertyRepository;
+    private final AppMessages appMessages;
 
     @Transactional
     public List<FloorResponse> getByProperty(Long propertyId) {
@@ -35,7 +37,7 @@ public class FloorService {
                     created.add(floorRepository.save(Floor.builder()
                             .propertyId(propertyId)
                             .floorNumber(n)
-                            .floorLabel("الطابق " + n)
+                            .floorLabel(appMessages.compositeFloorLabel(n))
                             .build()));
                 }
             }

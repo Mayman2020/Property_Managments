@@ -17,20 +17,75 @@
       </div>
       <h2 class="card-title">{{ 'HOME_PORTAL.COMPREHENSIVE_SYSTEM' | translate }}</h2>
       <p class="card-desc">{{ 'HOME_PORTAL.COMPREHENSIVE_DESC' | translate }}</p>
-      <div class="stats-row">
+
+      <div class="kpi-section-label">{{ 'HOME_PORTAL.CONTRACTS_SYSTEM' | translate }}</div>
+      <div class="stats-grid">
         <span class="stat-chip success">
-          <mat-icon>apartment</mat-icon>
+          <mat-icon>check_circle</mat-icon>
           {{ stats.activeContracts }} {{ 'HOME_PORTAL.ACTIVE_CONTRACTS' | translate }}
         </span>
+        <span class="stat-chip danger">
+          <mat-icon>cancel</mat-icon>
+          {{ stats.cancelledContracts }} {{ 'HOME_PORTAL.CANCELLED_CONTRACTS' | translate }}
+        </span>
         <span class="stat-chip warn">
-          <mat-icon>pending</mat-icon>
-          {{ stats.pendingRequests }} {{ 'HOME_PORTAL.PENDING_REQUESTS' | translate }}
+          <mat-icon>edit_note</mat-icon>
+          {{ draftPipelineTotal() }} {{ 'HOME_PORTAL.DRAFT_AND_PENDING' | translate }}
         </span>
         <span class="stat-chip" [class.danger]="stats.overduePayments > 0">
           <mat-icon>payment</mat-icon>
           {{ stats.overduePayments }} {{ 'HOME_PORTAL.OVERDUE_PAYMENTS' | translate }}
         </span>
+        <span class="stat-chip warn" *ngIf="stats.expiringIn30Days > 0">
+          <mat-icon>event</mat-icon>
+          {{ stats.expiringIn30Days }} {{ 'HOME_PORTAL.EXPIRING_SOON' | translate }}
+        </span>
       </div>
+
+      <div class="kpi-section-label">{{ 'NAV.UNITS' | translate }}</div>
+      <div class="stats-grid">
+        <span class="stat-chip neutral">
+          <mat-icon>door_front</mat-icon>
+          {{ stats.totalUnits }} {{ 'HOME_PORTAL.TOTAL_UNITS' | translate }}
+        </span>
+        <span class="stat-chip success">
+          <mat-icon>meeting_room</mat-icon>
+          {{ stats.vacantUnits }} {{ 'HOME_PORTAL.VACANT_UNITS' | translate }}
+        </span>
+        <span class="stat-chip info">
+          <mat-icon>block</mat-icon>
+          {{ stats.unrentedUnits }} {{ 'HOME_PORTAL.UNRENTED_UNITS' | translate }}
+        </span>
+        <span class="stat-chip warn">
+          <mat-icon>bookmark</mat-icon>
+          {{ stats.reservedUnits }} {{ 'HOME_PORTAL.RESERVED_UNITS' | translate }}
+        </span>
+      </div>
+
+      <div class="kpi-section-label">{{ 'HOME_PORTAL.MAINTENANCE_SYSTEM' | translate }}</div>
+      <div class="stats-grid stats-grid--dense">
+        <span class="stat-chip warn" *ngIf="stats.openMaintenanceRequests > 0">
+          <mat-icon>construction</mat-icon>
+          {{ stats.openMaintenanceRequests }} {{ 'HOME_PORTAL.MAINT_OPEN' | translate }}
+        </span>
+        <span class="stat-chip warn">
+          <mat-icon>pending</mat-icon>
+          {{ stats.pendingRequests }} {{ 'HOME_PORTAL.PENDING_REQUESTS' | translate }}
+        </span>
+        <span class="stat-chip info">
+          <mat-icon>sync</mat-icon>
+          {{ stats.inProgressRequests }} {{ 'STATUS.IN_PROGRESS' | translate }}
+        </span>
+        <span class="stat-chip" *ngIf="stats.completedThisMonth > 0">
+          <mat-icon>task_alt</mat-icon>
+          {{ stats.completedThisMonth }} {{ 'DASHBOARD.COMPLETED_THIS_MONTH' | translate }}
+        </span>
+        <span class="stat-chip" [class.danger]="stats.lowStockItems > 0">
+          <mat-icon>inventory_2</mat-icon>
+          {{ stats.lowStockItems }} {{ 'HOME_PORTAL.LOW_STOCK_ALERTS' | translate }}
+        </span>
+      </div>
+
       <button mat-flat-button color="warn" class="enter-btn">
         {{ 'HOME_PORTAL.ENTER_SYSTEM' | translate }}
         <mat-icon>arrow_forward</mat-icon>
@@ -46,16 +101,22 @@
       </div>
       <h2 class="card-title">{{ 'HOME_PORTAL.MAINTENANCE_SYSTEM' | translate }}</h2>
       <p class="card-desc">{{ 'HOME_PORTAL.MAINTENANCE_DESC' | translate }}</p>
-      <div class="stats-row">
-        <span class="stat-chip warn">
-          <mat-icon>pending</mat-icon>
-          {{ stats.pendingRequests }} {{ 'HOME_PORTAL.PENDING_REQUESTS' | translate }}
+
+      <div class="stats-grid">
+        <span class="stat-chip warn" *ngIf="stats.openMaintenanceRequests > 0">
+          <mat-icon>inbox</mat-icon>
+          {{ stats.openMaintenanceRequests }} {{ 'HOME_PORTAL.MAINT_OPEN' | translate }}
         </span>
-        <span class="stat-chip" [class.danger]="stats.lowStockItems > 0">
+        <span class="stat-chip" *ngFor="let st of maintenanceStatusOrder" [ngClass]="maintenanceChipClass(st)">
+          <mat-icon>{{ maintenanceIcon(st) }}</mat-icon>
+          {{ maintenanceCount(st) }} {{ ('STATUS.' + st) | translate }}
+        </span>
+        <span class="stat-chip neutral" [class.danger]="stats.lowStockItems > 0">
           <mat-icon>inventory_2</mat-icon>
           {{ stats.lowStockItems }} {{ 'HOME_PORTAL.LOW_STOCK_ALERTS' | translate }}
         </span>
       </div>
+
       <button mat-flat-button color="primary" class="enter-btn">
         {{ 'HOME_PORTAL.ENTER_SYSTEM' | translate }}
         <mat-icon>arrow_forward</mat-icon>
@@ -71,10 +132,20 @@
       </div>
       <h2 class="card-title">{{ 'HOME_PORTAL.CONTRACTS_SYSTEM' | translate }}</h2>
       <p class="card-desc">{{ 'HOME_PORTAL.CONTRACTS_DESC' | translate }}</p>
-      <div class="stats-row">
+
+      <div class="kpi-section-label">{{ 'CONTRACTS.LIST_TITLE' | translate }}</div>
+      <div class="stats-grid">
         <span class="stat-chip success">
-          <mat-icon>article</mat-icon>
+          <mat-icon>check_circle</mat-icon>
           {{ stats.activeContracts }} {{ 'HOME_PORTAL.ACTIVE_CONTRACTS' | translate }}
+        </span>
+        <span class="stat-chip danger">
+          <mat-icon>cancel</mat-icon>
+          {{ stats.cancelledContracts }} {{ 'HOME_PORTAL.CANCELLED_CONTRACTS' | translate }}
+        </span>
+        <span class="stat-chip warn">
+          <mat-icon>edit_note</mat-icon>
+          {{ draftPipelineTotal() }} {{ 'HOME_PORTAL.DRAFT_AND_PENDING' | translate }}
         </span>
         <span class="stat-chip" [class.danger]="stats.overduePayments > 0">
           <mat-icon>payment</mat-icon>
@@ -85,6 +156,27 @@
           {{ stats.expiringIn30Days }} {{ 'HOME_PORTAL.EXPIRING_SOON' | translate }}
         </span>
       </div>
+
+      <div class="kpi-section-label">{{ 'NAV.UNITS' | translate }}</div>
+      <div class="stats-grid">
+        <span class="stat-chip neutral">
+          <mat-icon>door_front</mat-icon>
+          {{ stats.totalUnits }} {{ 'HOME_PORTAL.TOTAL_UNITS' | translate }}
+        </span>
+        <span class="stat-chip success">
+          <mat-icon>meeting_room</mat-icon>
+          {{ stats.vacantUnits }} {{ 'HOME_PORTAL.VACANT_UNITS' | translate }}
+        </span>
+        <span class="stat-chip info">
+          <mat-icon>block</mat-icon>
+          {{ stats.unrentedUnits }} {{ 'HOME_PORTAL.UNRENTED_UNITS' | translate }}
+        </span>
+        <span class="stat-chip warn">
+          <mat-icon>bookmark</mat-icon>
+          {{ stats.reservedUnits }} {{ 'HOME_PORTAL.RESERVED_UNITS' | translate }}
+        </span>
+      </div>
+
       <button mat-flat-button color="accent" class="enter-btn">
         {{ 'HOME_PORTAL.ENTER_SYSTEM' | translate }}
         <mat-icon>arrow_forward</mat-icon>

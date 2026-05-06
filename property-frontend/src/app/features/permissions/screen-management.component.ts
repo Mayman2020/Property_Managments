@@ -312,7 +312,7 @@ export class ScreenDetailsDialogComponent {
                   <button
                     type="button"
                     class="app-icon-btn details-eye"
-                    [matTooltip]="isAr ? 'تفاصيل' : 'Details'"
+                    [matTooltip]="'ACTIONS.DETAILS' | translate"
                     (click)="openDetails(screen); $event.stopPropagation()">
                     <mat-icon>visibility</mat-icon>
                   </button>
@@ -419,7 +419,17 @@ export class ScreenManagementComponent implements OnInit {
   screenPageIndex = 0;
   private users: User[] = [];
 
-  readonly roleOptions: UserRole[] = ['SUPER_ADMIN', 'PROPERTY_ADMIN', 'CONTRACTS_OFFICER', 'ACCOUNTANT', 'HR_OFFICER', 'OWNER', 'MAINTENANCE_OFFICER', 'TENANT'];
+  readonly roleOptions: UserRole[] = [
+    'SUPER_ADMIN',
+    'GENERAL_MANAGER',
+    'ACCOUNTANT',
+    'MAINTENANCE_CONTRACTOR',
+    'MAINTENANCE_OFFICER',
+    'PROPERTY_GUARD',
+    'PROCEDURES_CLERK',
+    'OWNER',
+    'TENANT'
+  ];
   readonly screens: ScreenConfig[] = [
     { key: 'dashboard', icon: 'dashboard' },
     { key: 'properties', icon: 'apartment' },
@@ -448,24 +458,26 @@ export class ScreenManagementComponent implements OnInit {
 
   rolePermissions: Record<UserRole, PermissionMap> = {
     SUPER_ADMIN: {},
-    PROPERTY_ADMIN: {},
-    CONTRACTS_OFFICER: {},
+    GENERAL_MANAGER: {},
     ACCOUNTANT: {},
-    HR_OFFICER: {},
-    OWNER: {},
+    MAINTENANCE_CONTRACTOR: {},
     MAINTENANCE_OFFICER: {},
+    PROPERTY_GUARD: {},
+    PROCEDURES_CLERK: {},
+    OWNER: {},
     TENANT: {}
   };
   screenSettings: Record<string, boolean> = {};
   savingGlobal = new Set<string>();
   savingRoles: Record<UserRole, Set<string>> = {
     SUPER_ADMIN: new Set<string>(),
-    PROPERTY_ADMIN: new Set<string>(),
-    CONTRACTS_OFFICER: new Set<string>(),
+    GENERAL_MANAGER: new Set<string>(),
     ACCOUNTANT: new Set<string>(),
-    HR_OFFICER: new Set<string>(),
-    OWNER: new Set<string>(),
+    MAINTENANCE_CONTRACTOR: new Set<string>(),
     MAINTENANCE_OFFICER: new Set<string>(),
+    PROPERTY_GUARD: new Set<string>(),
+    PROCEDURES_CLERK: new Set<string>(),
+    OWNER: new Set<string>(),
     TENANT: new Set<string>()
   };
 

@@ -44,6 +44,11 @@ public class Unit {
     @Column(name = "is_rented")
     private boolean rented = false;
 
+    /** True when unit has a DRAFT / PENDING_OWNER_APPROVAL lease and no ACTIVE/SUSPENDED lease. */
+    @Builder.Default
+    @Column(name = "is_reserved")
+    private boolean reserved = false;
+
     @Column(name = "rent_amount", precision = 12, scale = 2)
     private BigDecimal rentAmount;
 

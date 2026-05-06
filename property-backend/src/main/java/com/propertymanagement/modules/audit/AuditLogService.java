@@ -2,7 +2,9 @@ package com.propertymanagement.modules.audit;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.propertymanagement.modules.owner.OwnerPropertyAccessService;
 import com.propertymanagement.modules.user.User;
+import com.propertymanagement.modules.user.UserRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -11,6 +13,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -18,6 +21,7 @@ public class AuditLogService {
 
     private final AuditLogRepository repository;
     private final ObjectMapper objectMapper;
+    private final OwnerPropertyAccessService ownerPropertyAccessService;
 
     public AuditLog log(AuditAction action,
                         String entityType,
@@ -47,6 +51,14 @@ public class AuditLogService {
     }
 
     public Page<AuditLog> search(Long userId, String entityType, AuditAction action, Pageable pageable) {
+        User u = currentUser();
+        if (u != null && u.getRole() == UserRole.OWNER) {
+            Set<Long> scope = ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner();
+            if (scope == null || scope.isEmpty()) {
+                return Page.empty(pageable);
+            }
+            return repository.searchForPropertyScope(userId, entityType, action, scope, pageable);
+        }
         return repository.search(userId, entityType, action, pageable);
     }
 

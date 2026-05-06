@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 
 @Repository
@@ -42,8 +43,26 @@ public interface InventoryRepository extends JpaRepository<InventoryItem, Long> 
             """)
     Page<InventoryItem> searchByPropertyActive(@Param("propertyId") Long propertyId, @Param("q") String q, Pageable pageable);
 
+    @Query("""
+            SELECT i FROM InventoryItem i
+            WHERE i.active = true
+              AND i.propertyId IN :propertyIds
+              AND (
+                :q IS NULL OR :q = '' OR
+                LOWER(COALESCE(i.itemCode, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
+                LOWER(COALESCE(i.itemNameAr, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
+                LOWER(COALESCE(i.itemNameEn, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
+                LOWER(COALESCE(i.unitOfMeasure, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
+                LOWER(COALESCE(i.location, '')) LIKE LOWER(CONCAT('%', :q, '%'))
+              )
+            """)
+    Page<InventoryItem> searchActiveInPropertyIds(@Param("propertyIds") Collection<Long> propertyIds, @Param("q") String q, Pageable pageable);
+
     @Query("SELECT i FROM InventoryItem i WHERE i.active = true AND i.quantity <= i.minQuantity")
     List<InventoryItem> findLowStock();
+
+    @Query("SELECT i FROM InventoryItem i WHERE i.active = true AND i.propertyId IN :propertyIds AND i.quantity <= i.minQuantity")
+    List<InventoryItem> findLowStockInPropertyIds(@Param("propertyIds") Collection<Long> propertyIds);
 
     @Query("SELECT i FROM InventoryItem i WHERE i.propertyId = :pid AND i.active = true AND i.quantity <= i.minQuantity")
     List<InventoryItem> findLowStockByProperty(Long pid);

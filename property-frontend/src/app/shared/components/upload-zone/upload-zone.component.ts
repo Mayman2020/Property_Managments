@@ -1,9 +1,10 @@
-import { Component, ElementRef, EventEmitter, inject, Input, OnChanges, Output, SimpleChanges, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, EventEmitter, inject, Input, OnChanges, Output, SimpleChanges, ViewChild } from '@angular/core';
 import { NgClass, NgFor, NgIf } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ApiService } from '../../../core/services/api.service';
+import { SnackService } from '../../../core/services/snack.service';
 
 export interface UploadedFile {
   file: File;
@@ -377,7 +378,13 @@ export interface UploadedFile {
   `]
 })
 export class UploadZoneComponent implements OnChanges {
+  private static readonly MAX_IMAGE_BYTES = 20 * 1024 * 1024;
+  private static readonly MAX_VIDEO_OR_DOCUMENT_BYTES = 50 * 1024 * 1024;
+
   private readonly api = inject(ApiService);
+  private readonly cdr = inject(ChangeDetectorRef);
+  private readonly snack = inject(SnackService);
+  private readonly translate = inject(TranslateService);
 
   @ViewChild('fileInput') fileInput?: ElementRef<HTMLInputElement>;
 
@@ -490,34 +497,49 @@ export class UploadZoneComponent implements OnChanges {
   urlKind(url: string): 'IMAGE' | 'VIDEO' | 'DOCUMENT' {
     const u = url.split('?')[0].toLowerCase();
     if (url.startsWith('data:image')) return 'IMAGE';
-    if (/\.(jpe?g|png|gif|webp|bmp|svg)$/.test(u)) return 'IMAGE';
+    if (/\.(jpe?g|jfif|pjpeg|png|gif|webp|avif|bmp|tiff?|heic|heif|svg)$/.test(u)) return 'IMAGE';
     if (/\.(mp4|webm|ogg|mov|m4v)$/.test(u)) return 'VIDEO';
     return 'DOCUMENT';
   }
 
   private async processFiles(rawFiles: File[]): Promise<void> {
     if (this.readOnly) return;
-    const batch = this.multiple ? rawFiles : rawFiles.slice(0, 1);
+    const batchRaw = this.multiple ? rawFiles : rawFiles.slice(0, 1);
+    const batch = this.filterFilesByMaxSize(batchRaw);
     if (!batch.length) return;
 
     if (this.isControlled) {
       this.uploading = true;
+      this.cdr.markForCheck();
       try {
-        for (const file of batch) {
-          const result = await firstValueFrom(this.api.uploadFile(file));
-          if (result.url) {
-            if (!this.multiple) this.workingUrls = [];
-            this.workingUrls = [...this.workingUrls, result.url];
-            this.urlListChange.emit([...this.workingUrls]);
+        const settled = await Promise.allSettled(batch.map((file) => firstValueFrom(this.api.uploadFile(file))));
+        const newUrls: string[] = [];
+        let failures = 0;
+        settled.forEach((r) => {
+          if (r.status === 'fulfilled' && r.value.url) {
+            newUrls.push(r.value.url);
+          } else if (r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.url)) {
+            failures++;
           }
+        });
+        if (newUrls.length) {
+          if (!this.multiple) this.workingUrls = [];
+          this.workingUrls = [...this.workingUrls, ...newUrls];
+          this.urlListChange.emit([...this.workingUrls]);
+        }
+        if (failures > 0) {
+          const detail = this.firstRejectionMessage(settled);
+          this.snack.error(detail || this.translate.instant('COMMON.UPLOAD_SOME_FAILED'));
         }
       } finally {
         this.uploading = false;
+        this.cdr.markForCheck();
       }
       return;
     }
 
     this.uploading = true;
+    this.cdr.markForCheck();
     const urls: string[] = [];
     try {
       batch.forEach((file) => {
@@ -534,24 +556,73 @@ export class UploadZoneComponent implements OnChanges {
         this.files.push(uploaded);
       });
 
-      for (const file of batch) {
-        const result = await firstValueFrom(this.api.uploadFile(file));
-        if (result.url) urls.push(result.url);
-      }
+      const settled = await Promise.allSettled(batch.map((file) => firstValueFrom(this.api.uploadFile(file))));
+      let failures = 0;
+      settled.forEach((r) => {
+        if (r.status === 'fulfilled' && r.value.url) {
+          urls.push(r.value.url);
+        } else if (r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.url)) {
+          failures++;
+        }
+      });
 
       if (!this.multiple) this.uploadedUrls = [];
       this.uploadedUrls.push(...urls);
       this.filesChanged.emit([...this.files]);
       this.filesUploaded.emit([...this.uploadedUrls]);
+      if (failures > 0) {
+        const detail = this.firstRejectionMessage(settled);
+        this.snack.error(detail || this.translate.instant('COMMON.UPLOAD_SOME_FAILED'));
+      }
     } finally {
       this.uploading = false;
+      this.cdr.markForCheck();
     }
   }
 
   private detectType(file: File): 'IMAGE' | 'VIDEO' | 'DOCUMENT' {
     if (file.type.startsWith('image/')) return 'IMAGE';
     if (file.type.startsWith('video/')) return 'VIDEO';
+    const name = file.name.toLowerCase();
+    if (/\.(jpe?g|jfif|pjpeg|png|gif|webp|avif|bmp|tiff?|heic|heif|svg)$/.test(name)) return 'IMAGE';
+    if (/\.(mp4|webm|ogg|mov|m4v)$/.test(name)) return 'VIDEO';
     return 'DOCUMENT';
+  }
+
+  /** Images up to 20 MB; video and documents up to 50 MB (aligned with UI copy and backend). */
+  private maxBytesFor(file: File): number {
+    const t = this.detectType(file);
+    return t === 'IMAGE'
+      ? UploadZoneComponent.MAX_IMAGE_BYTES
+      : UploadZoneComponent.MAX_VIDEO_OR_DOCUMENT_BYTES;
+  }
+
+  private firstRejectionMessage(settled: PromiseSettledResult<{ url: string; filename?: string }>[]): string | undefined {
+    for (const r of settled) {
+      if (r.status === 'rejected') {
+        const reason = r.reason;
+        if (reason instanceof Error) {
+          const m = reason.message?.trim();
+          if (m) return m;
+        }
+      }
+    }
+    return undefined;
+  }
+
+  private filterFilesByMaxSize(files: File[]): File[] {
+    let rejected = 0;
+    const ok = files.filter((f) => {
+      if (f.size > this.maxBytesFor(f)) {
+        rejected++;
+        return false;
+      }
+      return true;
+    });
+    if (rejected > 0) {
+      this.snack.error(this.translate.instant('COMMON.UPLOAD_REJECTED_TOO_LARGE'));
+    }
+    return ok;
   }
 
   private urlsEqual(a: string[], b: string[]): boolean {

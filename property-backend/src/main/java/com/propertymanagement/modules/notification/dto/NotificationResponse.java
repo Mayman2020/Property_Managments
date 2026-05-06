@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @Data
 @Builder
@@ -25,4 +26,9 @@ public class NotificationResponse {
     private LocalDateTime readAt;
     private LocalDateTime sentAt;
     private LocalDateTime createdAt;
+    /**
+     * Structured i18n payload — present when the notification was created via the localized flow.
+     * Shape: {@code {"titleKey": "...", "bodyKey": "...", "vars": {...}}}.
+     */
+    private Map<String, Object> params;
 }

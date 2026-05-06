@@ -1,7 +1,9 @@
 package com.propertymanagement.modules.contract.scheduler;
 
 import com.propertymanagement.modules.contract.lease.ContractStatus;
+import com.propertymanagement.modules.contract.lease.LeaseContract;
 import com.propertymanagement.modules.contract.lease.LeaseContractRepository;
+import com.propertymanagement.modules.contract.lease.LeaseContractService;
 import com.propertymanagement.modules.contract.payment.PaymentScheduleStatus;
 import com.propertymanagement.modules.contract.payment.RentPaymentSchedule;
 import com.propertymanagement.modules.contract.payment.RentPaymentScheduleRepository;
@@ -12,7 +14,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
@@ -21,6 +25,7 @@ public class ContractScheduler {
 
     private final RentPaymentScheduleRepository scheduleRepository;
     private final LeaseContractRepository contractRepository;
+    private final LeaseContractService leaseContractService;
 
     @Scheduled(cron = "0 0 9 * * *")
     @Transactional
@@ -42,13 +47,17 @@ public class ContractScheduler {
         LocalDate today = LocalDate.now();
 
         // Mark EXPIRED contracts
-        List<?> expired = contractRepository.findByStatusAndEndDateBefore(
+        List<LeaseContract> expired = contractRepository.findByStatusAndEndDateBefore(
                 ContractStatus.ACTIVE, today);
-        expired.forEach(c -> {
-            var contract = (com.propertymanagement.modules.contract.lease.LeaseContract) c;
+        Set<Long> unitIds = new HashSet<>();
+        for (LeaseContract contract : expired) {
             contract.setStatus(ContractStatus.EXPIRED);
             contractRepository.save(contract);
-        });
+            if (contract.getUnitId() != null) {
+                unitIds.add(contract.getUnitId());
+            }
+        }
+        unitIds.forEach(leaseContractService::syncUnitRentedFromContracts);
 
         if (!expired.isEmpty()) {
             log.info("Marked {} contracts as EXPIRED", expired.size());

@@ -50,6 +50,8 @@ export interface VisitRating {
   id: number;
   requestId: number;
   rating: number;
+  ratingLabel?: string;
+  ratingIcon?: string;
   comment?: string;
   createdAt: string;
 }

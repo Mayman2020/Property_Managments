@@ -32,14 +32,6 @@ export interface RevenueItem {
   categoryName?: string;
 }
 
-export interface PettyCashFundItem {
-  id: number;
-  fundName: string;
-  openingBalance: number;
-  currentBalance: number;
-  maxTransaction: number;
-}
-
 export interface FinancialReportRow {
   propertyName?: string;
   year?: number;
@@ -84,10 +76,6 @@ export class FinanceService {
 
   getRevenues(params: Record<string, string | number> = {}): Observable<ApiResponse<PagedResponse<RevenueItem>>> {
     return this.api.get('/finance/revenues', params);
-  }
-
-  getPettyCashFunds(propertyId?: number): Observable<ApiResponse<PettyCashFundItem[]>> {
-    return this.api.get('/finance/petty-cash/funds', propertyId ? { propertyId } : {});
   }
 
   getBudgets(propertyId?: number): Observable<ApiResponse<BudgetItem[]>> {

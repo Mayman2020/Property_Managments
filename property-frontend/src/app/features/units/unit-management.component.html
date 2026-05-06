@@ -6,7 +6,7 @@
     [breadcrumbs]="[{label:('NAV.DASHBOARD' | translate), route:'/admin/dashboard'}, {label:('NAV.UNITS' | translate)}]"
     [showBack]="true"
     (backClick)="goBack()">
-    <button mat-flat-button type="button" (click)="openAddDialog()">
+    <button mat-flat-button type="button" (click)="openAddDialog()" *ngIf="canCreateUnit()">
       <mat-icon>add</mat-icon>
       {{ 'UNITS.ADD_UNIT' | translate }}
     </button>
@@ -75,26 +75,45 @@
                 <span>{{ propertyName(unit) }}</span>
               </div>
             </td>
-            <td class="center-col"><span class="floor-badge">{{ unit.floorId != null ? unit.floorId : '-' }}</span></td>
+            <td class="center-col"><span class="floor-badge">{{ displayFloor(unit) }}</span></td>
             <td class="center-col"><span class="type-badge">{{ unitTypeLabel(unit.unitType) }}</span></td>
             <td class="center-col"><span class="area-text">{{ unit.areaSqm ? unit.areaSqm + ' m²' : '-' }}</span></td>
             <td class="center-col">
-              <span class="status-chip" [ngClass]="unit.rented ? 'chip-danger' : 'chip-success'">
-                {{ (unit.rented ? 'UNITS.RENTED' : 'DASHBOARD.VACANT_UNITS') | translate }}
-              </span>
+              <div class="unit-status-cell">
+                <span class="status-chip" [ngClass]="unitStatusChipClass(unit)">
+                  {{ unitStatusLabelKey(unit) | translate }}
+                </span>
+                <ng-container *ngIf="(unit.rented || unit.reserved) && contractByUnitId[unit.id] as c">
+                  <div class="contract-meta-badges">
+                    <span class="cmb cmb-tenant" *ngIf="tenantName(unit) !== '—'">
+                      <mat-icon>person</mat-icon>{{ tenantName(unit) }}
+                    </span>
+                    <span class="cmb cmb-discount" *ngIf="c.rentDiscountReason">
+                      <mat-icon>local_offer</mat-icon>{{ discountLabel(c.rentDiscountReason) }}
+                    </span>
+                    <span class="cmb cmb-free" *ngIf="c.hasFreeMonth">
+                      <mat-icon>card_giftcard</mat-icon>{{ 'CONTRACTS.FREE_MONTH_LABEL' | translate }}
+                    </span>
+                  </div>
+                </ng-container>
+              </div>
             </td>
             <td class="actions-col">
               <div class="table-actions">
                 <button class="app-icon-btn accent" type="button" (click)="openViewDialog(unit)" [matTooltip]="'ACTIONS.VIEW' | translate">
                   <mat-icon>visibility</mat-icon>
                 </button>
-                <button class="app-icon-btn info" type="button" (click)="openEditDialog(unit)" [matTooltip]="'ACTIONS.EDIT' | translate">
+                <button *ngIf="canEditUnit()" class="app-icon-btn info" type="button" (click)="openEditDialog(unit)" [matTooltip]="'ACTIONS.EDIT' | translate">
                   <mat-icon>edit</mat-icon>
                 </button>
-                <button class="app-icon-btn" [ngClass]="unit.rented ? 'warning' : 'success'" type="button" (click)="toggleRented(unit)" [matTooltip]="(unit.rented ? 'UNITS.MARK_VACANT' : 'UNITS.MARK_RENTED') | translate">
-                  <mat-icon>{{ unit.rented ? 'event_busy' : 'event_available' }}</mat-icon>
+                <button class="app-icon-btn navy" type="button" *ngIf="(unit.rented || unit.reserved) && contractByUnitId[unit.id]"
+                        (click)="viewContract(unit)" [matTooltip]="'CONTRACTS.VIEW_DETAILS' | translate">
+                  <mat-icon>description</mat-icon>
                 </button>
-                <button class="app-icon-btn danger" type="button" (click)="deleteUnit(unit)" [disabled]="unit.rented" [matTooltip]="(unit.rented ? 'UNITS.DELETE_RENTED_HINT' : 'ACTIONS.DELETE') | translate">
+                <button *ngIf="canEditUnit()" class="app-icon-btn" [ngClass]="unit.rented || unit.reserved ? 'warning' : 'success'" type="button" (click)="toggleRented(unit)" [matTooltip]="(unit.rented || unit.reserved ? 'UNITS.MARK_VACANT' : 'UNITS.MARK_RENTED') | translate">
+                  <mat-icon>{{ unit.rented || unit.reserved ? 'event_busy' : 'event_available' }}</mat-icon>
+                </button>
+                <button *ngIf="canDeleteUnit()" class="app-icon-btn danger" type="button" (click)="deleteUnit(unit)" [disabled]="unit.rented || unit.reserved" [matTooltip]="(unit.rented || unit.reserved ? 'UNITS.DELETE_RENTED_HINT' : 'ACTIONS.DELETE') | translate">
                   <mat-icon>delete</mat-icon>
                 </button>
               </div>

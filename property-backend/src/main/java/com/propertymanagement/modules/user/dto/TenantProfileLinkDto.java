@@ -13,6 +13,10 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TenantProfileLinkDto {
+    @Size(max = 150)
+    private String fullNameAr;
+    @Size(max = 150)
+    private String fullNameEn;
     @Size(max = 30)
     private String nationalId;
     private LocalDate leaseStart;

@@ -11,7 +11,11 @@ public class DashboardStatsResponse {
     private long totalProperties;
     private long totalUnits;
     private long rentedUnits;
+    /** Units with draft / pending-owner lease only (not yet active). */
+    private long reservedUnits;
     private long vacantUnits;
+    /** Units not under an active lease: vacant + reserved (draft / pending). */
+    private long unrentedUnits;
     private long pendingRequests;
     private long inProgressRequests;
     private long completedThisMonth;
@@ -25,8 +29,11 @@ public class DashboardStatsResponse {
     private long activeContracts;
     /** Leases created but not yet activated (e.g. after tenant onboarding). */
     private long draftContracts;
+    /** Drafts sent to owner for approval. */
+    private long pendingOwnerContracts;
+    /** Withdrawn / cancelled draft leases. */
+    private long cancelledContracts;
     private long expiringIn30Days;
     private long overduePayments;
-    private long openViolations;
     private long openComplaints;
 }

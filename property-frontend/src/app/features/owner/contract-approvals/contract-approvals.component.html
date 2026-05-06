@@ -9,10 +9,16 @@
     <mat-spinner diameter="48"></mat-spinner>
   </div>
 
-  <div *ngIf="!loading && contracts.length === 0" class="empty-state">
+  <div *ngIf="!loading && !loadingTerminations && !loadingRenewals
+              && contracts.length === 0 && pendingTerminations.length === 0 && pendingRenewals.length === 0"
+       class="empty-state">
     <mat-icon>check_circle</mat-icon>
     <p>{{ 'OWNER_PORTAL.NO_PENDING_APPROVALS' | translate }}</p>
   </div>
+
+  <h3 class="section-heading" *ngIf="!loading && contracts.length > 0">
+    {{ 'OWNER_PORTAL.PENDING_DRAFTS_HEADING' | translate }}
+  </h3>
 
   <div *ngIf="!loading && contracts.length > 0" class="contracts-grid">
     <div class="contract-card" *ngFor="let c of contracts">
@@ -24,13 +30,14 @@
             <div class="tenant-name">{{ c.tenantName || ('COMMON.UNKNOWN' | translate) }}</div>
           </div>
         </div>
-        <span class="approval-badge">{{ 'OWNER_PORTAL.AWAITING_APPROVAL' | translate }}</span>
+        <span class="draft-badge">{{ 'CONTRACTS.STATUS_DRAFT' | translate }}</span>
       </div>
 
       <div class="card-body">
         <div class="info-row" *ngIf="c.unitNumber">
           <mat-icon>meeting_room</mat-icon>
-          <span>{{ 'CONTRACT.UNIT' | translate }}: {{ c.unitNumber }}</span>
+          <span>{{ c.unitNumber }}</span>
+          <span class="badge badge-neutral" *ngIf="c.furnishedStatus">{{ furnishedLabel(c.furnishedStatus) }}</span>
         </div>
         <div class="info-row" *ngIf="c.propertyName">
           <mat-icon>apartment</mat-icon>
@@ -38,32 +45,211 @@
         </div>
         <div class="info-row">
           <mat-icon>date_range</mat-icon>
-          <span>{{ c.startDate | date:'dd/MM/yyyy' }} → {{ c.endDate | date:'dd/MM/yyyy' }}</span>
+          <span>{{ c.startDate | date:'dd/MM/yyyy' }} — {{ c.endDate | date:'dd/MM/yyyy' }}</span>
         </div>
         <div class="info-row">
           <mat-icon>payments</mat-icon>
-          <span>{{ c.monthlyRent | number:'1.2-2' }} {{ 'COMMON.OMR' | translate }} / {{ 'COMMON.MONTH' | translate }}</span>
+          <span class="rent-amount">{{ c.monthlyRent | number:'1.2-2' }} {{ c.currency || 'OMR' }}</span>
+          <span class="badge badge-warn" *ngIf="c.rentDiscountReason">
+            <mat-icon>local_offer</mat-icon>
+            {{ discountLabel(c.rentDiscountReason) }}
+          </span>
         </div>
-        <div class="info-row highlight" *ngIf="c.freeMonths && c.freeMonths > 0">
-          <mat-icon>star</mat-icon>
-          <span>{{ 'CONTRACT.FREE_MONTHS' | translate }}: {{ c.freeMonths }}</span>
+        <div class="info-row highlight" *ngIf="c.hasFreeMonth">
+          <mat-icon>card_giftcard</mat-icon>
+          <span>{{ 'CONTRACTS.FREE_MONTH_LABEL' | translate }}</span>
         </div>
-        <div class="info-row" *ngIf="c.contractPdfUrl">
-          <mat-icon>picture_as_pdf</mat-icon>
-          <a [href]="c.contractPdfUrl" target="_blank">{{ 'CONTRACT.VIEW_PDF' | translate }}</a>
+        <!-- Security deposit -->
+        <div class="info-row" *ngIf="c.securityDeposit">
+          <mat-icon>security</mat-icon>
+          <span>{{ 'CONTRACTS.SECURITY_DEPOSIT' | translate }}: {{ c.securityDeposit | number:'1.2-2' }} {{ c.currency || 'OMR' }}</span>
         </div>
       </div>
 
       <div class="card-actions">
-        <button mat-flat-button color="warn" (click)="openDecision(c)" class="reject-btn">
-          <mat-icon>close</mat-icon>
-          {{ 'OWNER_PORTAL.REJECT' | translate }}
-        </button>
-        <button mat-flat-button color="primary" (click)="openDecision(c)">
-          <mat-icon>check</mat-icon>
-          {{ 'OWNER_PORTAL.APPROVE' | translate }}
+        <a mat-stroked-button [routerLink]="['/admin/contracts', c.id]" class="view-btn">
+          <mat-icon>open_in_new</mat-icon>
+          {{ 'CONTRACTS.VIEW_DETAILS' | translate }}
+        </a>
+        <ng-container *ngIf="isOwner">
+          <button mat-stroked-button type="button" color="primary"
+            [disabled]="busyAmend[c.id]"
+            (click)="openAmend(c)">
+            <mat-icon>edit</mat-icon>
+            {{ 'OWNER_PORTAL.AMEND_BEFORE_APPROVE' | translate }}
+          </button>
+          <button mat-stroked-button type="button" color="warn"
+            [disabled]="busyReject[c.id]"
+            (click)="openReject(c)">
+            <mat-icon>block</mat-icon>
+            {{ 'OWNER_PORTAL.REJECT' | translate }}
+          </button>
+        </ng-container>
+        <button mat-flat-button class="activate-btn"
+          [disabled]="activating[c.id]"
+          (click)="activate(c)">
+          <mat-spinner *ngIf="activating[c.id]" diameter="16"></mat-spinner>
+          <mat-icon *ngIf="!activating[c.id]">check_circle</mat-icon>
+          <span *ngIf="!activating[c.id]">{{ 'CONTRACTS.ACTIVATE' | translate }}</span>
         </button>
       </div>
     </div>
   </div>
+
+  <!-- Pending termination requests section -->
+  <h3 class="section-heading"
+      *ngIf="!loadingTerminations && pendingTerminations.length > 0">
+    {{ 'OWNER_PORTAL.PENDING_TERMINATIONS_HEADING' | translate }}
+  </h3>
+
+  <div *ngIf="loadingTerminations" class="loading-center">
+    <mat-spinner diameter="32"></mat-spinner>
+  </div>
+
+  <div *ngIf="!loadingTerminations && pendingTerminations.length > 0" class="contracts-grid">
+    <div class="contract-card pending-termination" *ngFor="let c of pendingTerminations">
+      <div class="card-header">
+        <div class="contract-info">
+          <mat-icon class="contract-icon">cancel_schedule_send</mat-icon>
+          <div>
+            <div class="contract-number">{{ c.contractNumber }}</div>
+            <div class="tenant-name">{{ c.tenantName || ('COMMON.UNKNOWN' | translate) }}</div>
+          </div>
+        </div>
+        <span class="badge badge-warn">{{ 'CONTRACTS.STATUS_PENDING_TERMINATION_APPROVAL' | translate }}</span>
+      </div>
+
+      <div class="card-body">
+        <div class="info-row" *ngIf="c.unitNumber">
+          <mat-icon>meeting_room</mat-icon>
+          <span>{{ c.unitNumber }}</span>
+        </div>
+        <div class="info-row" *ngIf="c.propertyName">
+          <mat-icon>apartment</mat-icon>
+          <span>{{ c.propertyName }}</span>
+        </div>
+        <div class="info-row" *ngIf="c.terminationDate">
+          <mat-icon>event_busy</mat-icon>
+          <span>{{ 'CONTRACTS.TERMINATION_DATE' | translate }}: {{ c.terminationDate | date:'dd/MM/yyyy' }}</span>
+        </div>
+        <div class="info-row" *ngIf="c.terminationRequestedByName">
+          <mat-icon>person</mat-icon>
+          <span>{{ 'CONTRACTS.TERMINATION_REQUESTED_BY' | translate }}: {{ c.terminationRequestedByName }}</span>
+        </div>
+        <div class="info-row" *ngIf="c.terminationReason">
+          <mat-icon>description</mat-icon>
+          <span class="reason-text">{{ c.terminationReason }}</span>
+        </div>
+        <div class="info-row" *ngIf="c.terminationDepositReturn != null">
+          <mat-icon>shield</mat-icon>
+          <span>
+            {{ (c.terminationDepositReturn ? 'CONTRACTS.HANDOVER_DEPOSIT_RETURN_YES' : 'CONTRACTS.HANDOVER_DEPOSIT_RETURN_NO') | translate }}
+          </span>
+        </div>
+        <div class="info-row" *ngIf="c.terminationHasDamages">
+          <mat-icon>report</mat-icon>
+          <span>
+            {{ 'CONTRACTS.HANDOVER_DAMAGES_AMOUNT' | translate }}:
+            {{ c.terminationDamagesAmount | number:'1.2-2' }} {{ c.currency || 'OMR' }}
+            ({{ (c.terminationDamagesTenantPaid ? 'CONTRACTS.RENEW_VAL_YES' : 'CONTRACTS.RENEW_VAL_NO') | translate }})
+          </span>
+        </div>
+      </div>
+
+      <div class="card-actions">
+        <a mat-stroked-button [routerLink]="['/admin/contracts', c.id]" class="view-btn">
+          <mat-icon>open_in_new</mat-icon>
+          {{ 'CONTRACTS.VIEW_DETAILS' | translate }}
+        </a>
+        <button mat-stroked-button type="button" color="warn"
+          [disabled]="busyTerminationDecision[c.id]"
+          (click)="openTerminationDecision(c, 'REJECTED')">
+          <mat-icon>block</mat-icon>
+          {{ 'OWNER_PORTAL.REJECT' | translate }}
+        </button>
+        <button mat-flat-button class="activate-btn"
+          [disabled]="busyTerminationDecision[c.id]"
+          (click)="openTerminationDecision(c, 'APPROVED')">
+          <mat-spinner *ngIf="busyTerminationDecision[c.id]" diameter="16"></mat-spinner>
+          <mat-icon *ngIf="!busyTerminationDecision[c.id]">check_circle</mat-icon>
+          <span *ngIf="!busyTerminationDecision[c.id]">{{ 'OWNER_PORTAL.TERMINATION_DECISION_APPROVE_CTA' | translate }}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <h3 class="section-heading" *ngIf="!loadingRenewals && pendingRenewals.length > 0">
+    {{ 'OWNER_PORTAL.RENEWALS.TITLE' | translate }}
+  </h3>
+
+  <div *ngIf="loadingRenewals" class="loading-center">
+    <mat-spinner diameter="32"></mat-spinner>
+  </div>
+
+  <div *ngIf="!loadingRenewals && pendingRenewals.length > 0" class="contracts-grid">
+    <div class="contract-card pending-renewal" *ngFor="let c of pendingRenewals">
+      <div class="card-header">
+        <div class="contract-info">
+          <mat-icon class="contract-icon">autorenew</mat-icon>
+          <div>
+            <div class="contract-number">{{ c.contractNumber }}</div>
+            <div class="tenant-name">{{ c.tenantName || ('COMMON.UNKNOWN' | translate) }}</div>
+          </div>
+        </div>
+        <span class="badge badge-warn">{{ 'CONTRACTS.STATUS_PENDING_RENEWAL_APPROVAL' | translate }}</span>
+      </div>
+
+      <div class="card-body">
+        <div class="info-row" *ngIf="c.propertyName">
+          <mat-icon>apartment</mat-icon>
+          <span>{{ c.propertyName }}</span>
+        </div>
+        <div class="info-row" *ngIf="c.unitNumber">
+          <mat-icon>meeting_room</mat-icon>
+          <span>{{ c.unitNumber }}</span>
+        </div>
+        <div class="info-row" *ngIf="c.endDate">
+          <mat-icon>event</mat-icon>
+          <span>{{ 'OWNER_PORTAL.RENEWALS.CURRENT_END_DATE' | translate }}: {{ c.endDate | date:'dd/MM/yyyy' }}</span>
+        </div>
+        <div class="info-row" *ngIf="c.renewalProposedStartDate">
+          <mat-icon>event_available</mat-icon>
+          <span>{{ 'OWNER_PORTAL.RENEWALS.PROPOSED_START_DATE' | translate }}: {{ c.renewalProposedStartDate | date:'dd/MM/yyyy' }}</span>
+        </div>
+        <div class="info-row" *ngIf="c.renewalProposedEndDate">
+          <mat-icon>event_busy</mat-icon>
+          <span>{{ 'OWNER_PORTAL.RENEWALS.PROPOSED_END_DATE' | translate }}: {{ c.renewalProposedEndDate | date:'dd/MM/yyyy' }}</span>
+        </div>
+        <div class="info-row" *ngIf="c.renewalProposedRentAmount != null">
+          <mat-icon>payments</mat-icon>
+          <span>{{ 'OWNER_PORTAL.RENEWALS.PROPOSED_RENT' | translate }}: {{ c.renewalProposedRentAmount | number:'1.2-2' }} {{ c.currency || 'OMR' }}</span>
+        </div>
+        <div class="info-row" *ngIf="c.renewalRequestedNote">
+          <mat-icon>description</mat-icon>
+          <span class="reason-text">{{ 'OWNER_PORTAL.RENEWALS.REQUEST_NOTE' | translate }}: {{ c.renewalRequestedNote }}</span>
+        </div>
+      </div>
+
+      <div class="card-actions">
+        <a mat-stroked-button [routerLink]="['/admin/contracts', c.id]" class="view-btn">
+          <mat-icon>open_in_new</mat-icon>
+          {{ 'CONTRACTS.VIEW_DETAILS' | translate }}
+        </a>
+        <button mat-stroked-button type="button" color="warn"
+                [disabled]="busyRenewalDecision[c.id]"
+                (click)="openRenewalDecision(c, 'REJECTED')">
+          <mat-icon>block</mat-icon>
+          {{ 'OWNER_PORTAL.RENEWALS.REJECT' | translate }}
+        </button>
+        <button mat-flat-button class="activate-btn"
+                [disabled]="busyRenewalDecision[c.id]"
+                (click)="openRenewalDecision(c, 'APPROVED')">
+          <mat-spinner *ngIf="busyRenewalDecision[c.id]" diameter="16"></mat-spinner>
+          <mat-icon *ngIf="!busyRenewalDecision[c.id]">check_circle</mat-icon>
+          <span *ngIf="!busyRenewalDecision[c.id]">{{ 'OWNER_PORTAL.RENEWALS.APPROVE' | translate }}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
 </div>

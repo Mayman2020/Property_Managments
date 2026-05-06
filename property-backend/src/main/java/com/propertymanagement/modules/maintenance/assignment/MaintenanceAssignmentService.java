@@ -5,16 +5,25 @@ import com.propertymanagement.modules.contractor.ContractorCompanyRepository;
 import com.propertymanagement.modules.maintenance.assignment.dto.AssignMaintenanceRequest;
 import com.propertymanagement.modules.maintenance.assignment.dto.ContractDataRequest;
 import com.propertymanagement.modules.maintenance.assignment.dto.MaintenanceAssignmentResponse;
+import com.propertymanagement.modules.notification.NotificationService;
+import com.propertymanagement.modules.notification.NotificationType;
 import com.propertymanagement.modules.property.PropertyRepository;
+import com.propertymanagement.modules.property.PropertyOwnerPortalRecipientService;
+import com.propertymanagement.modules.property.Property;
+import com.propertymanagement.modules.user.MaintenanceOfficerType;
 import com.propertymanagement.modules.user.User;
 import com.propertymanagement.modules.user.UserRepository;
 import com.propertymanagement.modules.user.UserRole;
 import com.propertymanagement.shared.exception.AppException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,6 +37,8 @@ public class MaintenanceAssignmentService {
     private final PropertyRepository propertyRepo;
     private final UserRepository userRepo;
     private final ContractorCompanyRepository companyRepo;
+    private final NotificationService notificationService;
+    private final PropertyOwnerPortalRecipientService propertyOwnerPortalRecipientService;
 
     // ── List all assignments for a property ──────────────────────────────
     public List<MaintenanceAssignmentResponse> listByProperty(Long propertyId) {
@@ -73,6 +84,7 @@ public class MaintenanceAssignmentService {
                 .notes(req.notes())
                 .build();
         assignment = assignmentRepo.save(assignment);
+        notifyAssignmentCreated(propertyId, provider, assignment);
 
         // Create contract if COMPANY + contract data provided
         if ("COMPANY".equals(type) && req.contract() != null) {
@@ -96,6 +108,7 @@ public class MaintenanceAssignmentService {
         assignment.setStatus("ENDED");
         assignment.setEndDate(LocalDate.now());
         assignmentRepo.save(assignment);
+        notifyAssignmentEnded(assignment);
 
         // End linked contract if exists
         contractRepo.findByAssignmentId(assignmentId).ifPresent(contract -> {
@@ -246,5 +259,103 @@ public class MaintenanceAssignmentService {
                 companyId, companyName, companyNameAr, companyNameEn, companyPhone, companyEmail,
                 contractInfo
         );
+    }
+
+    private void notifyAssignmentCreated(Long propertyId, MaintenanceProvider provider, PropertyMaintenanceAssignment assignment) {
+        if (provider == null || propertyId == null) {
+            return;
+        }
+        List<Long> recipients = new ArrayList<>(propertyAdminIds(propertyId));
+        recipients.addAll(propertyOwnerPortalRecipientService.portalRecipientUserIds(propertyId));
+        if ("USER".equals(provider.getProviderType()) && provider.getUserId() != null) {
+            recipients.add(provider.getUserId());
+        }
+        if ("COMPANY".equals(provider.getProviderType()) && provider.getCompanyId() != null) {
+            recipients.addAll(contractorStaffIds(provider.getCompanyId(), propertyId));
+        }
+        recipients = recipients.stream().distinct().toList();
+        if (recipients.isEmpty()) {
+            return;
+        }
+        String target = providerLabel(provider);
+        String primaryTag = assignment.isPrimary() ? " (primary)" : "";
+        notificationService.createForRecipients(
+                recipients,
+                currentActorUserId(),
+                propertyId,
+                null,
+                NotificationType.MAINTENANCE_PROVIDER_ASSIGNED,
+                "Maintenance provider assigned",
+                "Maintenance provider " + target + " was assigned to property #" + propertyId + primaryTag + "."
+        );
+    }
+
+    private void notifyAssignmentEnded(PropertyMaintenanceAssignment assignment) {
+        if (assignment == null || assignment.getPropertyId() == null) {
+            return;
+        }
+        MaintenanceProvider provider = providerRepo.findById(assignment.getMaintenanceProviderId()).orElse(null);
+        List<Long> recipients = new ArrayList<>(propertyAdminIds(assignment.getPropertyId()));
+        recipients.addAll(propertyOwnerPortalRecipientService.portalRecipientUserIds(assignment.getPropertyId()));
+        if (provider != null && "USER".equals(provider.getProviderType()) && provider.getUserId() != null) {
+            recipients.add(provider.getUserId());
+        }
+        if (provider != null && "COMPANY".equals(provider.getProviderType()) && provider.getCompanyId() != null) {
+            recipients.addAll(contractorStaffIds(provider.getCompanyId(), assignment.getPropertyId()));
+        }
+        recipients = recipients.stream().distinct().toList();
+        if (recipients.isEmpty()) {
+            return;
+        }
+        String target = provider != null ? providerLabel(provider) : "provider #" + assignment.getMaintenanceProviderId();
+        notificationService.createForRecipients(
+                recipients,
+                currentActorUserId(),
+                assignment.getPropertyId(),
+                null,
+                NotificationType.MAINTENANCE_PROVIDER_UNASSIGNED,
+                "Maintenance provider assignment ended",
+                "Maintenance provider " + target + " was ended for property #" + assignment.getPropertyId() + "."
+        );
+    }
+
+    private List<Long> propertyAdminIds(Long propertyId) {
+        Collection<User> users = new ArrayList<>(userRepo.findByRoleAndActiveTrue(UserRole.SUPER_ADMIN));
+        users.addAll(userRepo.findByPropertyIdAndRoleAndActiveTrue(propertyId, UserRole.GENERAL_MANAGER));
+        return users.stream().map(User::getId).distinct().collect(Collectors.toList());
+    }
+
+    private List<Long> contractorStaffIds(Long companyId, Long propertyId) {
+        return userRepo.findActiveContractorStaffForProperty(propertyId, companyId).stream()
+                .map(User::getId)
+                .toList();
+    }
+
+    private String providerLabel(MaintenanceProvider provider) {
+        if (provider == null) {
+            return "unknown";
+        }
+        if ("USER".equals(provider.getProviderType()) && provider.getUserId() != null) {
+            User u = userRepo.findById(provider.getUserId()).orElse(null);
+            return u != null ? (u.getFullName() != null ? u.getFullName() : ("user#" + u.getId())) : ("user#" + provider.getUserId());
+        }
+        if ("COMPANY".equals(provider.getProviderType()) && provider.getCompanyId() != null) {
+            ContractorCompany c = companyRepo.findById(provider.getCompanyId()).orElse(null);
+            if (c != null) {
+                if (c.getNameAr() != null && !c.getNameAr().isBlank()) return c.getNameAr().trim();
+                if (c.getNameEn() != null && !c.getNameEn().isBlank()) return c.getNameEn().trim();
+                if (c.getName() != null && !c.getName().isBlank()) return c.getName().trim();
+            }
+            return "company#" + provider.getCompanyId();
+        }
+        return "provider#" + provider.getId();
+    }
+
+    private Long currentActorUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof User user && user.getId() != null) {
+            return user.getId();
+        }
+        return null;
     }
 }

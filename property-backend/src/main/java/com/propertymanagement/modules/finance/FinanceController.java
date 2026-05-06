@@ -5,7 +5,6 @@ import com.propertymanagement.modules.finance.dto.FinanceDashboardResponse;
 import com.propertymanagement.modules.finance.dto.FinancialReportRowResponse;
 import com.propertymanagement.modules.finance.expense.dto.CreateExpenseRequest;
 import com.propertymanagement.modules.finance.expense.dto.ExpenseResponse;
-import com.propertymanagement.modules.finance.pettycash.dto.PettyCashFundResponse;
 import com.propertymanagement.modules.finance.revenue.dto.CreateRevenueRequest;
 import com.propertymanagement.modules.finance.revenue.dto.OtherRevenueResponse;
 import com.propertymanagement.shared.response.ApiResponse;
@@ -29,14 +28,14 @@ public class FinanceController {
     private final FinanceService service;
 
     @GetMapping("/dashboard")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT','OWNER')")
     public ResponseEntity<ApiResponse<FinanceDashboardResponse>> dashboard(
             @RequestParam(required = false) Long propertyId) {
         return ResponseEntity.ok(ApiResponse.ok(service.getDashboard(propertyId)));
     }
 
     @GetMapping("/expenses")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT','OWNER')")
     public ResponseEntity<ApiResponse<Page<ExpenseResponse>>> expenses(
             @RequestParam(required = false) String q,
             @RequestParam(required = false) Long propertyId,
@@ -46,7 +45,7 @@ public class FinanceController {
     }
 
     @GetMapping("/revenues")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT','OWNER')")
     public ResponseEntity<ApiResponse<Page<OtherRevenueResponse>>> revenues(
             @RequestParam(required = false) String q,
             @RequestParam(required = false) Long propertyId,
@@ -56,7 +55,7 @@ public class FinanceController {
     }
 
     @PostMapping("/expenses")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT','OWNER')")
     public ResponseEntity<ApiResponse<ExpenseResponse>> createExpense(
             @Valid @RequestBody CreateExpenseRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -64,29 +63,22 @@ public class FinanceController {
     }
 
     @PostMapping("/revenues")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT','OWNER')")
     public ResponseEntity<ApiResponse<OtherRevenueResponse>> createRevenue(
             @Valid @RequestBody CreateRevenueRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.ok(service.createRevenue(request)));
     }
 
-    @GetMapping("/petty-cash/funds")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','ACCOUNTANT')")
-    public ResponseEntity<ApiResponse<List<PettyCashFundResponse>>> pettyCashFunds(
-            @RequestParam(required = false) Long propertyId) {
-        return ResponseEntity.ok(ApiResponse.ok(service.getPettyCashFunds(propertyId)));
-    }
-
     @GetMapping("/budgets")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT','OWNER')")
     public ResponseEntity<ApiResponse<List<BudgetResponse>>> budgets(
             @RequestParam(required = false) Long propertyId) {
         return ResponseEntity.ok(ApiResponse.ok(service.getBudgets(propertyId)));
     }
 
     @GetMapping("/reports/pnl")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT','OWNER')")
     public ResponseEntity<ApiResponse<List<FinancialReportRowResponse>>> pnl(
             @RequestParam(required = false) Long propertyId,
             @RequestParam(required = false) Integer yearFrom,
@@ -95,13 +87,13 @@ public class FinanceController {
     }
 
     @GetMapping("/reports/cashflow")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT','OWNER')")
     public ResponseEntity<ApiResponse<List<FinancialReportRowResponse>>> cashFlow(@RequestParam(required = false) Long propertyId) {
         return ResponseEntity.ok(ApiResponse.ok(service.getCashFlowReport(propertyId)));
     }
 
     @GetMapping("/reports/owner-statements")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT','OWNER')")
     public ResponseEntity<ApiResponse<List<FinancialReportRowResponse>>> ownerStatements(@RequestParam(required = false) Long propertyId) {
         return ResponseEntity.ok(ApiResponse.ok(service.getOwnerStatementReport(propertyId)));
     }

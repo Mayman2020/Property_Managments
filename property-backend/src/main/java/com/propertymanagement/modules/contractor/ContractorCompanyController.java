@@ -20,7 +20,7 @@ public class ContractorCompanyController {
     private final ContractorCompanyService service;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER')")
     public ResponseEntity<ApiResponse<List<ContractorCompanyResponse>>> list(
             @RequestParam(required = false) String q,
             @RequestParam(required = false, defaultValue = "false") boolean all) {
@@ -29,13 +29,13 @@ public class ContractorCompanyController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER')")
     public ResponseEntity<ApiResponse<ContractorCompanyResponse>> get(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok(service.get(id)));
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER')")
     public ResponseEntity<ApiResponse<ContractorCompanyResponse>> create(
             @Valid @RequestBody ContractorCompanyRequest dto) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -43,7 +43,7 @@ public class ContractorCompanyController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER')")
     public ResponseEntity<ApiResponse<ContractorCompanyResponse>> update(
             @PathVariable Long id, @Valid @RequestBody ContractorCompanyRequest dto) {
         return ResponseEntity.ok(ApiResponse.ok(service.update(id, dto)));

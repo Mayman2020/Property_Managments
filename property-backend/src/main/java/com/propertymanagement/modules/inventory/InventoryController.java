@@ -57,7 +57,7 @@ public class InventoryController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER')")
     public ResponseEntity<ApiResponse<InventoryItemResponse>> create(
             @Valid @RequestBody InventoryItemRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -65,14 +65,14 @@ public class InventoryController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER')")
     public ResponseEntity<ApiResponse<InventoryItemResponse>> update(
             @PathVariable Long id, @Valid @RequestBody InventoryItemRequest request) {
         return ResponseEntity.ok(ApiResponse.ok(inventoryService.update(id, request)));
     }
 
     @PostMapping("/{id}/stock")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN', 'MAINTENANCE_OFFICER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER', 'MAINTENANCE_OFFICER','MAINTENANCE_CONTRACTOR')")
     public ResponseEntity<ApiResponse<InventoryItemResponse>> adjustStock(
             @PathVariable Long id, @Valid @RequestBody StockTransactionRequest request) {
         return ResponseEntity.ok(ApiResponse.ok(inventoryService.adjustStock(id, request)));
@@ -86,7 +86,7 @@ public class InventoryController {
     }
 
     @PostMapping("/transactions")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN', 'MAINTENANCE_OFFICER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER', 'MAINTENANCE_OFFICER','MAINTENANCE_CONTRACTOR')")
     public ResponseEntity<ApiResponse<InventoryItemResponse>> createTransaction(
             @Valid @RequestBody BulkTransactionRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -94,7 +94,7 @@ public class InventoryController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER')")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         inventoryService.delete(id);
         return ResponseEntity.ok(ApiResponse.ok(null));

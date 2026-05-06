@@ -26,4 +26,6 @@ public class PaymentResponse {
     private BigDecimal discount;
     private String notes;
     private LocalDateTime createdAt;
+    private Long recordedBy;
+    private String recordedByName;
 }

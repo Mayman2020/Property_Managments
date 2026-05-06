@@ -6,11 +6,15 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
+
 public interface TenantComplaintRepository extends JpaRepository<TenantComplaint, Long> {
     boolean existsByTenantId(Long tenantId);
 
     Page<TenantComplaint> findAll(Pageable pageable);
     Page<TenantComplaint> findByPropertyId(Long propertyId, Pageable pageable);
+
+    Page<TenantComplaint> findByPropertyIdIn(Collection<Long> propertyIds, Pageable pageable);
 
     @Query("SELECT COUNT(c) FROM TenantComplaint c WHERE c.status = 'OPEN' OR c.status = 'IN_REVIEW'")
     long countOpen();

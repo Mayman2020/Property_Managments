@@ -80,11 +80,14 @@ export class SearchableSelectComponent implements ControlValueAccessor, OnInit, 
       this.focus$
     ).pipe(
       startWith(''),
-      map(value => {
+      map((value) => {
         if (value === null || value === undefined) return '';
-        return typeof value === 'string' ? value : this.getItemLabel(value);
+        // Only strings are user search text. Objects (selected mat-option value) must not
+        // narrow the list — otherwise e.g. label "عقار 1" filters out "عقار 2" and "عقار 3".
+        if (typeof value === 'string') return value.trim();
+        return '';
       }),
-      map(filterStr => filterStr ? this._filter(filterStr) : this.items.slice())
+      map((filterStr) => (filterStr ? this._filter(filterStr) : this.items.slice()))
     );
   }
 

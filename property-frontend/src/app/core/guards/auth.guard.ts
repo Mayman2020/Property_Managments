@@ -17,8 +17,8 @@ export const roleGuard = (allowedRoles: UserRole[]): CanActivateFn => () => {
   const permissions = inject(PermissionService);
   const router = inject(Router);
   if (!auth.isAuthenticated()) return router.createUrlTree(['/auth/login']);
-  const role = auth.getRole();
-  if (role && allowedRoles.includes(role)) return true;
+  const activeRole = auth.getRole();
+  if (activeRole && allowedRoles.includes(activeRole)) return true;
   return router.createUrlTree([resolveFallbackRoute(auth, permissions)]);
 };
 
@@ -56,69 +56,100 @@ export const moduleGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
 
 export const adminGuard: CanActivateFn = roleGuard([
   'SUPER_ADMIN',
-  'PROPERTY_ADMIN',
-  'CONTRACTS_OFFICER',
+  'GENERAL_MANAGER',
   'ACCOUNTANT',
-  'HR_OFFICER',
+  'MAINTENANCE_CONTRACTOR',
+  'MAINTENANCE_OFFICER',
+  'PROPERTY_GUARD',
+  'PROCEDURES_CLERK',
   'OWNER'
 ]);
-export const officerGuard: CanActivateFn = roleGuard(['SUPER_ADMIN', 'PROPERTY_ADMIN', 'MAINTENANCE_OFFICER']);
-export const tenantGuard: CanActivateFn = roleGuard(['SUPER_ADMIN', 'PROPERTY_ADMIN', 'TENANT']);
+export const officerGuard: CanActivateFn = roleGuard([
+  'SUPER_ADMIN',
+  'GENERAL_MANAGER',
+  'MAINTENANCE_OFFICER',
+  'MAINTENANCE_CONTRACTOR'
+]);
+export const tenantGuard: CanActivateFn = roleGuard(['SUPER_ADMIN', 'GENERAL_MANAGER', 'TENANT']);
 export const ownerGuard: CanActivateFn = roleGuard(['OWNER']);
 export const superAdminGuard: CanActivateFn = roleGuard(['SUPER_ADMIN']);
-export const contractsGuard: CanActivateFn = roleGuard(['SUPER_ADMIN', 'PROPERTY_ADMIN', 'CONTRACTS_OFFICER', 'ACCOUNTANT']);
+export const contractsGuard: CanActivateFn = roleGuard([
+  'SUPER_ADMIN',
+  'GENERAL_MANAGER',
+  'ACCOUNTANT',
+  'OWNER'
+]);
 
 function resolveFallbackRoute(auth: AuthService, permissions: PermissionService): string {
-  const role = auth.getRole();
-  const candidates = role === 'SUPER_ADMIN' || role === 'PROPERTY_ADMIN'
-    ? [
-        { route: '/admin/home', permission: 'dashboard', action: 'view' as PermissionAction },
-        { route: '/admin/dashboard', permission: 'dashboard', action: 'view' as PermissionAction },
-        { route: '/admin/maintenance', permission: 'maintenance', action: 'view' as PermissionAction },
-        { route: '/admin/properties', permission: 'properties', action: 'view' as PermissionAction },
-        { route: '/admin/profile', permission: 'profile', action: 'view' as PermissionAction }
-      ]
-    : role === 'MAINTENANCE_OFFICER'
-      ? [
-          { route: '/officer/schedule', permission: 'schedule', action: 'view' as PermissionAction },
-          { route: '/officer/requests', permission: 'my_requests', action: 'view' as PermissionAction },
-          { route: '/officer/profile', permission: 'profile', action: 'view' as PermissionAction }
-        ]
-      : role === 'CONTRACTS_OFFICER'
-        ? [
-            { route: '/admin/home', permission: 'contracts', action: 'view' as PermissionAction },
-            { route: '/admin/contracts/dashboard', permission: 'contracts', action: 'view' as PermissionAction },
-            { route: '/admin/contracts/list', permission: 'contracts', action: 'view' as PermissionAction },
-            { route: '/admin/profile', permission: 'profile', action: 'view' as PermissionAction }
-          ]
-        : role === 'ACCOUNTANT'
-          ? [
-              { route: '/admin/home', permission: 'finance', action: 'view' as PermissionAction },
-              { route: '/admin/finance/dashboard', permission: 'finance', action: 'view' as PermissionAction },
-              { route: '/admin/contracts/payments', permission: 'contracts', action: 'view' as PermissionAction },
-              { route: '/admin/profile', permission: 'profile', action: 'view' as PermissionAction }
-            ]
-          : role === 'HR_OFFICER'
-            ? [
-                { route: '/admin/home', permission: 'hr', action: 'view' as PermissionAction },
-                { route: '/admin/hr/employees', permission: 'hr', action: 'view' as PermissionAction },
-                { route: '/admin/hr/payroll', permission: 'hr', action: 'view' as PermissionAction },
-                { route: '/admin/profile', permission: 'profile', action: 'view' as PermissionAction }
-              ]
-            : role === 'OWNER'
-              ? [
-                  { route: '/admin/home', permission: 'owner_portal', action: 'view' as PermissionAction },
-                  { route: '/admin/owner-portal/dashboard', permission: 'owner_portal', action: 'view' as PermissionAction },
-                  { route: '/admin/owner-portal/statements', permission: 'owner_portal', action: 'view' as PermissionAction },
-                  { route: '/admin/profile', permission: 'profile', action: 'view' as PermissionAction }
-                ]
-        : role === 'TENANT'
-          ? [
-              { route: '/tenant/my-unit', permission: 'my_unit', action: 'view' as PermissionAction },
-              { route: '/tenant/requests', permission: 'my_requests', action: 'view' as PermissionAction },
-              { route: '/tenant/profile', permission: 'profile', action: 'view' as PermissionAction }
-            ]
-          : [];
+  const activeRole = auth.getRole();
+  const roles = activeRole ? [activeRole] : auth.getEffectiveRoles();
+  const seen = new Set<string>();
+  const blocks: Array<{ route: string; permission: string; action: PermissionAction }[]> = [];
+  if (roles.some((r) => r === 'SUPER_ADMIN' || r === 'GENERAL_MANAGER')) {
+    blocks.push([
+      { route: '/admin/home', permission: 'dashboard', action: 'view' },
+      { route: '/admin/dashboard', permission: 'dashboard', action: 'view' },
+      { route: '/admin/maintenance', permission: 'maintenance', action: 'view' },
+      { route: '/admin/properties', permission: 'properties', action: 'view' },
+      { route: '/admin/profile', permission: 'profile', action: 'view' }
+    ]);
+  }
+  if (roles.some((r) => r === 'MAINTENANCE_OFFICER' || r === 'MAINTENANCE_CONTRACTOR')) {
+    blocks.push([
+      { route: '/officer/schedule', permission: 'schedule', action: 'view' },
+      { route: '/officer/requests', permission: 'my_requests', action: 'view' },
+      { route: '/officer/profile', permission: 'profile', action: 'view' }
+    ]);
+  }
+  if (roles.includes('ACCOUNTANT')) {
+    blocks.push([
+      { route: '/admin/home', permission: 'finance', action: 'view' },
+      { route: '/admin/finance/dashboard', permission: 'finance', action: 'view' },
+      { route: '/admin/contracts/list', permission: 'contracts', action: 'view' },
+      { route: '/admin/profile', permission: 'profile', action: 'view' }
+    ]);
+  }
+  if (roles.includes('PROCEDURES_CLERK')) {
+    blocks.push([
+      { route: '/admin/home', permission: 'hr', action: 'view' },
+      { route: '/admin/hr/employees', permission: 'hr', action: 'view' },
+      { route: '/admin/profile', permission: 'profile', action: 'view' }
+    ]);
+  }
+  if (roles.includes('PROPERTY_GUARD')) {
+    blocks.push([
+      { route: '/admin/home', permission: 'dashboard', action: 'view' },
+      { route: '/admin/maintenance', permission: 'maintenance', action: 'view' },
+      { route: '/admin/profile', permission: 'profile', action: 'view' }
+    ]);
+  }
+  if (roles.includes('OWNER')) {
+    blocks.push([
+      { route: '/admin/home', permission: 'dashboard', action: 'view' },
+      { route: '/admin/dashboard', permission: 'dashboard', action: 'view' },
+      { route: '/admin/properties', permission: 'properties', action: 'view' },
+      { route: '/admin/owner-portal/dashboard', permission: 'owner_portal', action: 'view' },
+      { route: '/admin/owner-portal/contract-approvals', permission: 'owner_portal', action: 'view' },
+      { route: '/admin/profile', permission: 'profile', action: 'view' }
+    ]);
+  }
+  if (roles.includes('TENANT')) {
+    blocks.push([
+      { route: '/tenant/my-unit', permission: 'my_unit', action: 'view' },
+      { route: '/tenant/requests', permission: 'my_requests', action: 'view' },
+      { route: '/tenant/profile', permission: 'profile', action: 'view' }
+    ]);
+  }
+
+  const candidates: Array<{ route: string; permission: string; action: PermissionAction }> = [];
+  for (const group of blocks) {
+    for (const item of group) {
+      if (!seen.has(item.route)) {
+        seen.add(item.route);
+        candidates.push(item);
+      }
+    }
+  }
 
   const firstAllowed = candidates.find((item) => permissions.can(item.permission, item.action));
   return firstAllowed?.route ?? auth.getDashboardRoute();

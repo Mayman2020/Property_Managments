@@ -1,9 +1,8 @@
-import { Component, EventEmitter, Input, Output, OnDestroy } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
-import { RouterLink, Router, Event, NavigationEnd } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
-import { filter } from 'rxjs/operators';
-import { Subscription } from 'rxjs';
+import { NavigationHistoryService } from '../../../core/services/navigation-history.service';
 
 export interface BreadcrumbItem {
   label: string;
@@ -17,10 +16,6 @@ export interface BreadcrumbItem {
   template: `
     <header class="app-page-header" role="banner">
       <div class="page-heading">
-        <button *ngIf="shouldShowBack" type="button" class="back-nav-btn" (click)="onBackClick()" [attr.aria-label]="'COMMON.BACK' | translate">
-          <span class="material-icons back-icon">arrow_back</span>
-          <span class="back-label">{{ 'COMMON.BACK' | translate }}</span>
-        </button>
         <nav
           class="app-breadcrumb"
           *ngIf="breadcrumbs.length"
@@ -38,6 +33,15 @@ export interface BreadcrumbItem {
       </div>
       <div class="page-actions">
         <ng-content></ng-content>
+        <button
+          *ngIf="shouldShowBack"
+          type="button"
+          class="back-fab-btn"
+          (click)="onBackClick()"
+          [attr.aria-label]="'COMMON.BACK' | translate"
+          [attr.title]="'COMMON.BACK' | translate">
+          <span class="material-icons back-fab-icon">arrow_back</span>
+        </button>
       </div>
     </header>
   `,
@@ -50,11 +54,6 @@ export interface BreadcrumbItem {
         min-width: 0;
         display: flex;
         flex-direction: column;
-      }
-      :host-context([dir='rtl']) .page-heading {
-        align-items: flex-start;
-      }
-      :host-context([dir='ltr']) .page-heading {
         align-items: flex-start;
       }
       .app-page-eyebrow {
@@ -76,36 +75,43 @@ export interface BreadcrumbItem {
         text-transform: none;
         letter-spacing: 0.04em;
       }
-      .back-nav-btn {
+      .back-fab-btn {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        background: none;
-        border: none;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        border-radius: 50%;
+        border: 1px solid var(--line);
+        background: var(--surface-2, var(--surface));
+        color: var(--text-main);
         cursor: pointer;
-        color: var(--accent);
-        font-size: 0.84rem;
-        font-weight: 600;
-        padding: 0 0 10px;
-        opacity: 0.85;
-        transition: opacity 0.15s;
-        margin-right: 8px;
+        box-shadow: var(--shadow-soft);
+        transition: background-color 0.15s ease, color 0.15s ease,
+          border-color 0.15s ease, transform 0.15s ease;
       }
-      :host-context([dir='ltr']) .back-nav-btn {
-        margin-right: 8px;
-        margin-left: 0;
+      .back-fab-btn:hover {
+        background: var(--accent);
+        color: var(--accent-contrast, #fff);
+        border-color: var(--accent);
+        transform: translateY(-1px);
       }
-      :host-context([dir='rtl']) .back-nav-btn {
-        margin-left: 8px;
-        margin-right: 0;
+      .back-fab-btn:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
       }
-      .back-nav-btn:hover { opacity: 1; }
-      .back-icon { font-size: 18px; }
-      :host-context([dir='rtl']) .back-icon { transform: scaleX(-1); }
+      .back-fab-icon {
+        font-size: 20px;
+        line-height: 1;
+      }
+      :host-context([dir='rtl']) .back-fab-icon {
+        transform: scaleX(-1);
+      }
     `
   ]
 })
-export class PageHeaderComponent implements OnDestroy {
+export class PageHeaderComponent {
   @Input() eyebrow = '';
   @Input() title = '';
   @Input() subtitle = '';
@@ -113,27 +119,14 @@ export class PageHeaderComponent implements OnDestroy {
   @Input() showBack = false;
   @Output() backClick = new EventEmitter<void>();
 
-  private previousUrl = '';
-  private menuRoutes = ['/admin/home', '/admin/dashboard', '/officer/schedule', '/tenant/my-unit'];
-  private sub: Subscription;
+  constructor(private readonly navHistory: NavigationHistoryService) {}
 
-  constructor(private router: Router) {
-    this.sub = this.router.events.pipe(
-      filter((event: Event): event is NavigationEnd => event instanceof NavigationEnd)
-    ).subscribe((event: NavigationEnd) => {
-      this.previousUrl = event.urlAfterRedirects;
-    });
-  }
-
-  ngOnDestroy(): void {
-    this.sub?.unsubscribe();
-  }
-
+  /** Show only when caller opted in, there is a real previous page, and the
+   * user did NOT just open this page from the sidebar menu. */
   get shouldShowBack(): boolean {
     if (!this.showBack) return false;
-    if (!this.previousUrl) return false;
-    const isFromMenu = this.menuRoutes.some(route => this.previousUrl.startsWith(route));
-    return !isFromMenu;
+    if (this.navHistory.enteredFromMenu) return false;
+    return !!this.navHistory.previousUrl;
   }
 
   onBackClick(): void {

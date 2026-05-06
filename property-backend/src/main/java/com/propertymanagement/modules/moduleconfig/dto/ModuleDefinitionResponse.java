@@ -3,7 +3,6 @@ package com.propertymanagement.modules.moduleconfig.dto;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @Getter
@@ -17,6 +16,5 @@ public class ModuleDefinitionResponse {
     private String icon;
     private List<String> requiredModules;
     private List<String> recommendedModules;
-    private BigDecimal monthlyPrice;
     private Integer displayOrder;
 }

@@ -2,36 +2,90 @@
 <div class="app-page contract-form-page" *ngIf="!isDialog">
   <app-page-header
     [eyebrow]="'NAV_SECTION.CONTRACTS' | translate"
-    [title]="'CONTRACTS.NEW_CONTRACT' | translate"
+    [title]="(editContractId ? 'CONTRACTS.EDIT_CONTRACT' : 'CONTRACTS.NEW_CONTRACT') | translate"
     [subtitle]="'CONTRACTS.NEW_CONTRACT_SUBTITLE' | translate"
     [breadcrumbs]="[
       { label: ('NAV.DASHBOARD' | translate), route: '/admin/dashboard' },
       { label: ('NAV.CONTRACTS_DASHBOARD' | translate), route: '/admin/contracts/dashboard' },
-      { label: ('CONTRACTS.NEW_CONTRACT' | translate) }
+      { label: (editContractId ? 'CONTRACTS.EDIT_CONTRACT' : 'CONTRACTS.NEW_CONTRACT') | translate }
     ]"
     [showBack]="true"
     (backClick)="cancel()">
   </app-page-header>
 
-  <ng-container *ngTemplateOutlet="formContent"></ng-container>
+  <ng-container [ngTemplateOutlet]="formContent"></ng-container>
 </div>
 
 <!-- Dialog mode -->
 <ng-container *ngIf="isDialog">
   <h2 mat-dialog-title class="dialog-title">
     <mat-icon class="dialog-title-icon">description</mat-icon>
-    {{ 'CONTRACTS.NEW_CONTRACT' | translate }}
+    {{ (editContractId ? 'CONTRACTS.EDIT_CONTRACT' : 'CONTRACTS.NEW_CONTRACT') | translate }}
   </h2>
 
-  <mat-dialog-content>
-    <ng-container *ngTemplateOutlet="formContent"></ng-container>
+  <mat-dialog-content class="contract-dialog-body">
+    <div class="contract-dialog-loading" *ngIf="!dialogBootstrapComplete">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>{{ 'COMMON.LOADING' | translate }}</p>
+    </div>
+    <ng-container *ngIf="dialogBootstrapComplete" [ngTemplateOutlet]="formContent"></ng-container>
   </mat-dialog-content>
 </ng-container>
 
 <!-- Shared form template -->
 <ng-template #formContent>
-  <div class="form-shell">
-    <mat-stepper [linear]="true" orientation="horizontal" class="contract-stepper">
+  <div class="form-shell" [class.form-shell--dialog]="isDialog">
+    <div class="staff-amendment-panel" *ngIf="isDialog && editContractId" [formGroup]="amendmentForm">
+      <div class="staff-amendment-title">
+        <mat-icon>edit_note</mat-icon>
+        {{ 'CONTRACTS.STAFF_MOD_SECTION_TITLE' | translate }}
+      </div>
+      <p class="staff-amendment-hint">{{ 'CONTRACTS.STAFF_MOD_SECTION_HINT' | translate }}</p>
+      <p class="warn staff-amendment-warn" *ngIf="staffAmendmentLookupItems.length === 0">
+        {{ 'CONTRACTS.STAFF_MOD_LOOKUP_EMPTY' | translate }}
+      </p>
+      <div *ngIf="errorMsg" class="error-msg staff-amendment-error">{{ errorMsg }}</div>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>{{ 'CONTRACTS.STAFF_MOD_REASON_LABEL' | translate }}</mat-label>
+        <mat-select formControlName="staffModificationReason">
+          <mat-option [value]="null" disabled>{{ 'CONTRACTS.STAFF_MOD_REASON_PLACEHOLDER' | translate }}</mat-option>
+          <mat-option *ngFor="let r of staffAmendmentLookupItems" [value]="r.code">{{ lookupItemLabel(r) }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <div class="price-compare" *ngIf="showStaffPriceCompare">
+        <div class="price-compare-item">
+          <span class="pcl">{{ 'CONTRACTS.STAFF_MOD_OLD_RENT' | translate }}</span>
+          <span class="pcv">{{ loadedMonthlyRent | number }} {{ financialForm.get('currency')?.value }}</span>
+        </div>
+        <mat-icon class="price-arrow">arrow_forward</mat-icon>
+        <div class="price-compare-item highlight">
+          <span class="pcl">{{ 'CONTRACTS.STAFF_MOD_NEW_RENT' | translate }}</span>
+          <span class="pcv">{{ newMonthlyRentValue | number }} {{ financialForm.get('currency')?.value }}</span>
+        </div>
+      </div>
+      <p class="price-compare-note" *ngIf="showStaffPriceCompare">{{ 'CONTRACTS.STAFF_MOD_PRICE_NOTE' | translate }}</p>
+
+      <ng-container *ngIf="showStaffEmployeeDiscount">
+        <div class="two-col">
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'CONTRACTS.STAFF_MOD_DISCOUNT_PCT' | translate }}</mat-label>
+            <input matInput type="number" min="0.01" max="100" step="0.01" formControlName="employeeDiscountPercent" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'CONTRACTS.STAFF_MOD_EMPLOYEE' | translate }}</mat-label>
+            <mat-select formControlName="linkedEmployeeId">
+              <mat-option [value]="null" disabled>{{ 'CONTRACTS.STAFF_MOD_EMPLOYEE_PLACEHOLDER' | translate }}</mat-option>
+              <mat-option *ngFor="let e of hrEmployees" [value]="e.id">
+                {{ e.fullName }}<span *ngIf="e.employeeCode" class="emp-code"> · {{ e.employeeCode }}</span>
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </ng-container>
+    </div>
+
+    <mat-stepper [linear]="true" [orientation]="'horizontal'" class="contract-stepper">
 
       <!-- ── Step 1: Parties ─────────────────────────────── -->
       <mat-step [stepControl]="partyForm" [label]="'CONTRACTS.STEP_PARTIES' | translate">
@@ -85,8 +139,17 @@
             <mat-error>{{ 'COMMON.REQUIRED' | translate }}</mat-error>
           </mat-form-field>
 
-          <!-- Tenant selector -->
-          <mat-form-field appearance="outline" class="full-width">
+          <!-- Pre-filled tenant chip (when opened from tenant list) -->
+          <div class="property-info-chip" *ngIf="preFilledTenant">
+            <mat-icon>person</mat-icon>
+            <div class="chip-text">
+              <span class="chip-name">{{ preFilledTenant.fullName }}</span>
+              <span class="chip-meta" *ngIf="preFilledTenant.phone">{{ preFilledTenant.phone }}</span>
+            </div>
+          </div>
+
+          <!-- Tenant selector (shown only when not pre-filled) -->
+          <mat-form-field appearance="outline" class="full-width" *ngIf="!preFilledTenant">
             <mat-label>{{ 'CONTRACTS.TENANT' | translate }}</mat-label>
             <mat-select formControlName="tenantId" [disabled]="loadingTenants">
               <mat-option [value]="null" disabled>
@@ -233,7 +296,7 @@
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>{{ 'CONTRACTS.CURRENCY' | translate }}</mat-label>
             <mat-select formControlName="currency">
-              <mat-option *ngFor="let c of currencies" [value]="c">{{ c }}</mat-option>
+              <mat-option *ngFor="let c of currencyLookupItems" [value]="c.code">{{ lookupItemLabel(c) }}</mat-option>
             </mat-select>
           </mat-form-field>
 
@@ -252,8 +315,8 @@
               <mat-option [value]="null">
                 {{ 'CONTRACTS.SELECT_REASON' | translate }}
               </mat-option>
-              <mat-option *ngFor="let r of discountReasons" [value]="r.value">
-                {{ r.label | translate }}
+              <mat-option *ngFor="let r of rentDiscountLookupItems" [value]="r.code">
+                {{ lookupItemLabel(r) }}
               </mat-option>
             </mat-select>
           </mat-form-field>

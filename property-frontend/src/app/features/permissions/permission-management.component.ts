@@ -418,12 +418,13 @@ export class PermissionRoleDialogComponent {
 export class PermissionManagementComponent implements OnInit {
   readonly roles: PermissionRoleConfig[] = [
     { key: 'SUPER_ADMIN', icon: 'admin_panel_settings' },
-    { key: 'PROPERTY_ADMIN', icon: 'business_center' },
-    { key: 'CONTRACTS_OFFICER', icon: 'description' },
+    { key: 'GENERAL_MANAGER', icon: 'business_center' },
     { key: 'ACCOUNTANT', icon: 'payments' },
-    { key: 'HR_OFFICER', icon: 'badge' },
+    { key: 'MAINTENANCE_CONTRACTOR', icon: 'engineering' },
+    { key: 'MAINTENANCE_OFFICER', icon: 'plumbing' },
+    { key: 'PROPERTY_GUARD', icon: 'shield' },
+    { key: 'PROCEDURES_CLERK', icon: 'assignment_ind' },
     { key: 'OWNER', icon: 'apartment' },
-    { key: 'MAINTENANCE_OFFICER', icon: 'engineering' },
     { key: 'TENANT', icon: 'home' }
   ];
 
@@ -476,12 +477,13 @@ export class PermissionManagementComponent implements OnInit {
   loading = true;
   private rolePermissions: Record<UserRole, PermissionMap> = {
     SUPER_ADMIN: {},
-    PROPERTY_ADMIN: {},
-    CONTRACTS_OFFICER: {},
+    GENERAL_MANAGER: {},
     ACCOUNTANT: {},
-    HR_OFFICER: {},
-    OWNER: {},
+    MAINTENANCE_CONTRACTOR: {},
     MAINTENANCE_OFFICER: {},
+    PROPERTY_GUARD: {},
+    PROCEDURES_CLERK: {},
+    OWNER: {},
     TENANT: {}
   };
 
@@ -587,8 +589,8 @@ export class PermissionManagementComponent implements OnInit {
       next: (res) => {
         const updated = this.clonePermissions(res.data?.permissions ?? permissions);
         this.rolePermissions[role] = updated;
-        if (this.auth.getRole() === role) {
-          this.permissionService.setPermissions(updated);
+        if (this.auth.hasRole(role)) {
+          this.permissionService.loadMine().subscribe({ error: () => {} });
         }
         this.snack.success(this.i18n.instant('PERMISSIONS.SAVE_SUCCESS'));
       },

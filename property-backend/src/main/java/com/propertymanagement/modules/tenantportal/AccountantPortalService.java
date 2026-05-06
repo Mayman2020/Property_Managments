@@ -8,9 +8,11 @@ import com.propertymanagement.modules.contract.renewal.ContractRenewalService;
 import com.propertymanagement.modules.contract.renewal.dto.RenewContractDto;
 import com.propertymanagement.modules.tenant.Tenant;
 import com.propertymanagement.modules.tenant.TenantRepository;
+import com.propertymanagement.modules.owner.OwnerPropertyAccessService;
 import com.propertymanagement.modules.tenantportal.dto.ActionRequestResponse;
 import com.propertymanagement.modules.tenantportal.dto.ReceiptResponse;
 import com.propertymanagement.shared.exception.AppException;
+import com.propertymanagement.shared.i18n.AppMessages;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +21,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,7 +34,9 @@ public class AccountantPortalService {
     private final ContractRenewalService renewalService;
     private final LeaseContractService contractService;
     private final TenantRepository tenantRepository;
+    private final AppMessages appMessages;
     private final TenantPortalService tenantPortalService;
+    private final OwnerPropertyAccessService ownerPropertyAccessService;
 
     // ── Receipts ────────────────────────────────────────────────────────────
 
@@ -39,6 +44,15 @@ public class AccountantPortalService {
         List<RentReceipt> receipts = (month != null)
                 ? receiptRepository.findByPeriodYearAndMonth(year, month)
                 : receiptRepository.findByStatusOrderByPeriodYearDescPeriodMonthDesc("PENDING");
+
+        Set<Long> ownerScope = ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner();
+        if (ownerScope != null) {
+            receipts = receipts.stream()
+                    .filter(r -> contractRepository.findById(r.getContractId())
+                            .map(c -> c.getPropertyId() != null && ownerScope.contains(c.getPropertyId()))
+                            .orElse(false))
+                    .toList();
+        }
 
         Map<Long, Tenant> tenantMap = tenantRepository.findAllById(
                 receipts.stream().map(RentReceipt::getTenantId).distinct().toList()
@@ -51,6 +65,7 @@ public class AccountantPortalService {
 
     @Transactional
     public ReceiptResponse reviewReceipt(Long receiptId, String status, String notes, Long reviewerUserId) {
+        ownerPropertyAccessService.denyOwnerMutation("Owners cannot review rent receipts");
         RentReceipt receipt = receiptRepository.findById(receiptId)
                 .orElseThrow(() -> AppException.notFound("Receipt not found: " + receiptId));
         receipt.setStatus(status);
@@ -63,15 +78,20 @@ public class AccountantPortalService {
     // ── Renewal Requests ────────────────────────────────────────────────────
 
     public List<RenewalRequestWithDetailsDto> getPendingRenewalRequests() {
+        Set<Long> ownerScope = ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner();
         return actionRequestRepository.findByStatusOrderByCreatedAtDesc("PENDING")
                 .stream()
                 .filter(r -> "RENEWAL".equals(r.getActionType()))
+                .filter(r -> ownerScope == null || contractRepository.findById(r.getContractId())
+                        .map(c -> c.getPropertyId() != null && ownerScope.contains(c.getPropertyId()))
+                        .orElse(false))
                 .map(this::toRenewalWithDetails)
                 .toList();
     }
 
     @Transactional
     public ContractResponse processRenewal(Long requestId, RenewContractDto dto, Long accountantUserId) {
+        ownerPropertyAccessService.denyOwnerMutation("Owners cannot process renewal requests");
         ContractActionRequest request = actionRequestRepository.findById(requestId)
                 .orElseThrow(() -> AppException.notFound("Request not found: " + requestId));
 
@@ -88,7 +108,9 @@ public class AccountantPortalService {
         request.setStatus("APPROVED");
         request.setReviewedBy(accountantUserId);
         request.setReviewedAt(LocalDateTime.now());
-        request.setAdminNotes("تمت المعالجة بواسطة المحاسب — العقد الجديد رقم " + newContract.getContractNumber());
+        String noteAr = appMessages.get(AppMessages.LOCALE_AR, "accountant.renewal.processed_note", newContract.getContractNumber());
+        String noteEn = appMessages.get(AppMessages.LOCALE_EN, "accountant.renewal.processed_note", newContract.getContractNumber());
+        request.setAdminNotes(noteAr + " | " + noteEn);
         actionRequestRepository.save(request);
 
         return newContract;

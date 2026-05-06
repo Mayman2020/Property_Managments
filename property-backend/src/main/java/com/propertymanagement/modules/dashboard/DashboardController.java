@@ -49,26 +49,26 @@ public class DashboardController {
     }
 
     @GetMapping("/ratings-summary")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER')")
     public ResponseEntity<ApiResponse<RatingsSummaryResponse>> getRatingsSummary() {
         return ResponseEntity.ok(ApiResponse.ok(visitRatingService.getSummary()));
     }
 
     @GetMapping("/ratings-details")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER')")
     public ResponseEntity<ApiResponse<List<RatingDashboardItemResponse>>> getRatingsDetails() {
         return ResponseEntity.ok(ApiResponse.ok(visitRatingService.getDashboardDetails()));
     }
 
     @GetMapping("/expiring-contracts")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','CONTRACTS_OFFICER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT','OWNER')")
     public ResponseEntity<ApiResponse<List<ContractSummaryDto>>> getExpiringContracts(
             @RequestParam(defaultValue = "30") int days) {
         return ResponseEntity.ok(ApiResponse.ok(dashboardService.getExpiringContracts(days)));
     }
 
     @GetMapping("/overdue-payments")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','CONTRACTS_OFFICER','ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT','OWNER')")
     public ResponseEntity<ApiResponse<List<ScheduleItemResponse>>> getOverduePayments() {
         return ResponseEntity.ok(ApiResponse.ok(dashboardService.getOverduePayments()));
     }

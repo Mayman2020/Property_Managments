@@ -11,10 +11,12 @@ import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
-import { AccountantPortalService, ReceiptWithTenant } from '../../../core/services/accountant-portal.service';
+import { PaymentService } from '../../../core/services/payment.service';
 import { SnackService } from '../../../core/services/snack.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { ReviewDialogComponent, ReviewDialogData } from '../review-dialog/review-dialog.component';
+import { StaffUploadReceiptDialogComponent } from '../staff-upload-receipt-dialog/staff-upload-receipt-dialog.component';
+import { RentPaymentSchedule } from '../../../core/models/contract.model';
 
 @Component({
   selector: 'app-rent-confirmation',
@@ -29,7 +31,7 @@ import { ReviewDialogComponent, ReviewDialogData } from '../review-dialog/review
   styleUrl: './rent-confirmation.component.scss'
 })
 export class RentConfirmationComponent implements OnInit {
-  receipts: ReceiptWithTenant[] = [];
+  receipts: RentPaymentSchedule[] = [];
   loading = true;
   filterForm: FormGroup;
 
@@ -39,7 +41,7 @@ export class RentConfirmationComponent implements OnInit {
 
   constructor(
     private readonly fb: FormBuilder,
-    private readonly svc: AccountantPortalService,
+    private readonly svc: PaymentService,
     private readonly snack: SnackService,
     private readonly dialog: MatDialog,
     readonly i18n: I18nService
@@ -56,14 +58,13 @@ export class RentConfirmationComponent implements OnInit {
 
   load(): void {
     this.loading = true;
-    const { year, month } = this.filterForm.value;
-    this.svc.getReceipts(year ?? undefined, month ?? undefined).subscribe({
+    this.svc.getPendingProofs().subscribe({
       next: res => { this.receipts = res.data ?? []; this.loading = false; },
       error: () => { this.loading = false; }
     });
   }
 
-  openReview(receipt: ReceiptWithTenant): void {
+  openReview(receipt: RentPaymentSchedule): void {
     const data: ReviewDialogData = {
       title: this.i18n.instant('ACCOUNTANT_PORTAL.REVIEW_RECEIPT'),
       currentStatus: receipt.status
@@ -71,7 +72,8 @@ export class RentConfirmationComponent implements OnInit {
     const ref = this.dialog.open(ReviewDialogComponent, { width: '420px', data, disableClose: true });
     ref.afterClosed().subscribe((result: { status: string; notes: string } | undefined) => {
       if (!result) return;
-      this.svc.reviewReceipt(receipt.id, result.status, result.notes).subscribe({
+      const status = result.status === 'APPROVED' ? 'APPROVED' : 'REJECTED';
+      this.svc.reviewProof(receipt.id, status, result.notes).subscribe({
         next: () => { this.snack.success(this.i18n.instant('COMMON.SAVED')); this.load(); },
         error: (e) => this.snack.error(e?.error?.message || this.i18n.instant('COMMON.ERROR'))
       });
@@ -88,10 +90,21 @@ export class RentConfirmationComponent implements OnInit {
   }
 
   statusClass(s: string): string {
-    return s === 'APPROVED' ? 'approved' : s === 'REJECTED' ? 'rejected' : 'pending';
+    return s === 'PAID' ? 'approved' : s === 'PAYMENT_REJECTED' ? 'rejected' : 'pending';
   }
 
   viewFile(url: string): void {
     window.open(url, '_blank');
+  }
+
+  openStaffUpload(): void {
+    const ref = this.dialog.open(StaffUploadReceiptDialogComponent, {
+      width: '520px',
+      maxHeight: '90vh',
+      disableClose: true
+    });
+    ref.afterClosed().subscribe((saved) => {
+      if (saved) this.load();
+    });
   }
 }

@@ -80,7 +80,11 @@ export class UserService {
   }
 
   updateRole(id: number, role: UserRole): Observable<ApiResponse<User>> {
-    return this.api.patch<ApiResponse<User>>(`/users/${id}/role`, { role }).pipe(
+    return this.updateRoles(id, [role]);
+  }
+
+  updateRoles(id: number, roles: UserRole[]): Observable<ApiResponse<User>> {
+    return this.api.patch<ApiResponse<User>>(`/users/${id}/role`, { roles }).pipe(
       map((res) => ({ ...res, data: res.data ? this.normalizeUser(res.data) : res.data }))
     );
   }
@@ -97,9 +101,11 @@ export class UserService {
 
   private normalizeUser(user: User & { active?: boolean }): User {
     const isActive = typeof user.isActive === 'boolean' ? user.isActive : !!user.active;
+    const extraRoles = Array.isArray(user.extraRoles) ? (user.extraRoles as UserRole[]) : [];
     return {
       ...user,
-      isActive
+      isActive,
+      extraRoles
     };
   }
 }

@@ -20,6 +20,7 @@ import { FilterBarComponent, FilterSpec } from '../../../shared/components/filte
 import { MaintenanceService, MaintenanceRequest } from '../../../core/services/maintenance.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { PermissionService } from '../../../core/services/permission.service';
 import { PropertyService, Property } from '../../../core/services/property.service';
 import { RequestTimelineDialogComponent } from '../request-timeline-dialog.component';
 
@@ -84,8 +85,13 @@ export class RequestListComponent implements OnInit {
     readonly auth: AuthService,
     private readonly propertySvc: PropertyService,
     private readonly location: Location,
-    private readonly dialog: MatDialog
+    private readonly dialog: MatDialog,
+    private readonly permissions: PermissionService
   ) {}
+
+  canCreateMaintenanceRequest(): boolean {
+    return this.permissions.can('maintenance', 'create');
+  }
 
   goBack(): void { this.location.back(); }
 

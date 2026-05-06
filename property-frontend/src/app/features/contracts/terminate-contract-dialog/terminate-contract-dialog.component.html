@@ -1,0 +1,52 @@
+<h2 mat-dialog-title>{{ 'CONTRACTS.TERMINATE_REQUEST_DIALOG_TITLE' | translate }}</h2>
+<mat-dialog-content class="term-content">
+  <p class="request-hint">{{ 'CONTRACTS.TERMINATE_REQUEST_DIALOG_HINT' | translate }}</p>
+
+  <form [formGroup]="form" class="term-form">
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>{{ 'CONTRACTS.TERMINATION_DATE' | translate }}</mat-label>
+      <input matInput [matDatepicker]="dp" formControlName="terminationDate" required>
+      <mat-datepicker-toggle matSuffix [for]="dp"></mat-datepicker-toggle>
+      <mat-datepicker #dp></mat-datepicker>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>{{ 'CONTRACTS.TERMINATION_REASON' | translate }}</mat-label>
+      <textarea matInput formControlName="terminationReason" rows="1" class="reason-compact" required></textarea>
+      <mat-hint>{{ 'CONTRACTS.TERMINATION_REASON_HINT' | translate }}</mat-hint>
+    </mat-form-field>
+
+    <div class="block">
+      <div class="block-title">{{ 'CONTRACTS.HANDOVER_DEPOSIT' | translate }}</div>
+      <mat-radio-group formControlName="securityDepositReturnToTenant" class="row">
+        <mat-radio-button [value]="true">{{ 'CONTRACTS.HANDOVER_DEPOSIT_RETURN_YES' | translate }}</mat-radio-button>
+        <mat-radio-button [value]="false">{{ 'CONTRACTS.HANDOVER_DEPOSIT_RETURN_NO' | translate }}</mat-radio-button>
+      </mat-radio-group>
+    </div>
+
+    <div class="block">
+      <mat-slide-toggle formControlName="hasDamages">{{ 'CONTRACTS.HANDOVER_HAS_DAMAGES' | translate }}</mat-slide-toggle>
+    </div>
+
+    <div class="damage-grid" *ngIf="hasDamages">
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>{{ 'CONTRACTS.HANDOVER_DAMAGES_AMOUNT' | translate }} ({{ data.currency }})</mat-label>
+        <input matInput type="number" min="0" step="0.01" formControlName="damagesAmount">
+      </mat-form-field>
+      <mat-slide-toggle formControlName="damagesPaidByTenant">{{ 'CONTRACTS.HANDOVER_TENANT_PAID_DAMAGES' | translate }}</mat-slide-toggle>
+      <p class="field-err full" *ngIf="form.hasError('damagesAmountInvalid') && (form.touched || form.dirty)">
+        {{ 'CONTRACTS.HANDOVER_DAMAGES_AMOUNT_ERR' | translate }}
+      </p>
+    </div>
+
+    <p class="err" *ngIf="errorMsg">{{ errorMsg }}</p>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="cancel()" [disabled]="saving">{{ 'COMMON.CANCEL' | translate }}</button>
+  <button mat-flat-button color="warn" type="button" (click)="submit()" [disabled]="saving || form.invalid">
+    <mat-spinner diameter="18" *ngIf="saving"></mat-spinner>
+    {{ 'CONTRACTS.TERMINATE_REQUEST_SUBMIT_CTA' | translate }}
+  </button>
+</mat-dialog-actions>

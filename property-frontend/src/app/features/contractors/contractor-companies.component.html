@@ -63,7 +63,7 @@
               <button type="button" class="app-icon-btn" (click)="openDialog(c)" [matTooltip]="'ACTIONS.EDIT' | translate">
                 <span class="material-icons">edit</span>
               </button>
-              <button type="button" class="app-icon-btn danger" *ngIf="canHardDelete" (click)="remove(c)" [title]="'ACTIONS.DELETE' | translate">
+              <button type="button" class="app-icon-btn danger" *ngIf="canHardDelete" (click)="remove(c)" [matTooltip]="'ACTIONS.DELETE' | translate">
                 <span class="material-icons">delete</span>
               </button>
             </td>

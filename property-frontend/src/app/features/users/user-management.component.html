@@ -65,11 +65,11 @@
               <span class="role-badge">{{ roleLabel(user) }}</span>
             </td>
             <td class="center-col">
-              <span class="property-tag" *ngIf="user.propertyId">
+              <span class="property-tag" *ngIf="hasPropertyDisplay(user)">
                 <mat-icon>apartment</mat-icon>
-                {{ propertyName(user.propertyId) }}
+                {{ userPropertyDisplay(user) }}
               </span>
-              <span class="text-muted" *ngIf="!user.propertyId">—</span>
+              <span class="text-muted" *ngIf="!hasPropertyDisplay(user)">—</span>
             </td>
             <td class="center-col">
               <span class="status-chip" [ngClass]="user.isActive ? 'chip-success' : 'chip-danger'">

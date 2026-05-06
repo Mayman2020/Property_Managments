@@ -100,6 +100,72 @@ public class LeaseContract {
     @Column(name = "terminated_by")
     private Long terminatedBy;
 
+    /** Whether the security deposit is to be returned to the tenant. */
+    @Column(name = "termination_deposit_return")
+    private Boolean terminationDepositReturn;
+
+    @Column(name = "termination_has_damages")
+    private Boolean terminationHasDamages;
+
+    @Column(name = "termination_damages_amount", precision = 12, scale = 2)
+    private BigDecimal terminationDamagesAmount;
+
+    /** Whether the tenant has paid the damages amount (recorded on handover). */
+    @Column(name = "termination_damages_tenant_paid")
+    private Boolean terminationDamagesTenantPaid;
+
+    /** Staff user id that submitted the termination request (PENDING_TERMINATION_APPROVAL). */
+    @Column(name = "termination_requested_by")
+    private Long terminationRequestedBy;
+
+    @Column(name = "termination_requested_at")
+    private LocalDateTime terminationRequestedAt;
+
+    @Column(name = "termination_request_notes", columnDefinition = "TEXT")
+    private String terminationRequestNotes;
+
+    /** Owner / admin user id that approved or rejected the termination request. */
+    @Column(name = "termination_decision_by")
+    private Long terminationDecisionBy;
+
+    @Column(name = "termination_decision_at")
+    private LocalDateTime terminationDecisionAt;
+
+    @Column(name = "termination_decision_notes", columnDefinition = "TEXT")
+    private String terminationDecisionNotes;
+
+    /** Staff user id that submitted the renewal request (PENDING_RENEWAL_APPROVAL). */
+    @Column(name = "renewal_requested_by")
+    private Long renewalRequestedBy;
+
+    @Column(name = "renewal_requested_at")
+    private LocalDateTime renewalRequestedAt;
+
+    @Column(name = "renewal_requested_note", columnDefinition = "TEXT")
+    private String renewalRequestedNote;
+
+    @Column(name = "renewal_proposed_start_date")
+    private LocalDate renewalProposedStartDate;
+
+    @Column(name = "renewal_proposed_end_date")
+    private LocalDate renewalProposedEndDate;
+
+    @Column(name = "renewal_proposed_rent_amount", precision = 12, scale = 2)
+    private BigDecimal renewalProposedRentAmount;
+
+    /** Owner/admin decision metadata for the pending renewal request. */
+    @Column(name = "renewal_decision_by")
+    private Long renewalDecisionBy;
+
+    @Column(name = "renewal_decision_at")
+    private LocalDateTime renewalDecisionAt;
+
+    @Column(name = "renewal_decision_note", columnDefinition = "TEXT")
+    private String renewalDecisionNote;
+
+    @Column(name = "renewal_decision_status", length = 20)
+    private String renewalDecisionStatus;
+
     @CreatedBy
     @Column(name = "created_by", updatable = false)
     private Long createdByUserId;
@@ -135,6 +201,14 @@ public class LeaseContract {
 
     @Column(name = "owner_approval_notes", columnDefinition = "TEXT")
     private String ownerApprovalNotes;
+
+    /** Owner-driven amendments on DRAFT before activation (human-readable lines). */
+    @Column(name = "owner_change_log", columnDefinition = "TEXT")
+    private String ownerChangeLog;
+
+    /** Staff actions on contract (activate / cancel / draft edits), newline-separated. */
+    @Column(name = "staff_change_log", columnDefinition = "TEXT")
+    private String staffChangeLog;
 
     @Column(columnDefinition = "TEXT")
     private String notes;

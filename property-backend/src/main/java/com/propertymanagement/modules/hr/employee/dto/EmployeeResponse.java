@@ -14,6 +14,8 @@ public class EmployeeResponse {
     private Long propertyId;
     private String employeeCode;
     private String fullName;
+    private String fullNameAr;
+    private String fullNameEn;
     private String phone;
     private String email;
     private String nationalId;

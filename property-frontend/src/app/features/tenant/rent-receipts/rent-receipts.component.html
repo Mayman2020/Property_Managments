@@ -8,6 +8,12 @@
     </button>
   </app-page-header>
 
+  <div class="filter-banner app-card" *ngIf="filterContractId != null">
+    <span class="material-icons">filter_alt</span>
+    <span>{{ 'TENANT_PORTAL.RECEIPTS_FILTER_CONTRACT' | translate }} #{{ filterContractId }}</span>
+    <a mat-stroked-button routerLink="/tenant/rent-receipts">{{ 'TENANT_PORTAL.RECEIPTS_SHOW_ALL' | translate }}</a>
+  </div>
+
   <!-- Upload Form -->
   <div class="receipt-form-wrap app-card" *ngIf="showForm">
     <h3 class="form-title">{{ 'TENANT_PORTAL.UPLOAD_RECEIPT' | translate }}</h3>
@@ -17,14 +23,14 @@
       <mat-form-field appearance="outline">
         <mat-label>{{ 'TENANT_PORTAL.PERIOD_MONTH' | translate }}</mat-label>
         <mat-select formControlName="periodMonth">
-          <mat-option *ngFor="let m of months" [value]="m">{{ monthLabel(m) }}</mat-option>
+          <mat-option *ngFor="let m of monthOptions" [value]="m.code">{{ monthLabel(m.code) }}</mat-option>
         </mat-select>
       </mat-form-field>
 
       <mat-form-field appearance="outline">
         <mat-label>{{ 'TENANT_PORTAL.PERIOD_YEAR' | translate }}</mat-label>
         <mat-select formControlName="periodYear">
-          <mat-option *ngFor="let y of years" [value]="y">{{ y }}</mat-option>
+          <mat-option *ngFor="let y of yearOptions" [value]="y.code">{{ yearLabel(y.code) }}</mat-option>
         </mat-select>
       </mat-form-field>
 
@@ -74,8 +80,14 @@
   </div>
 
   <!-- Receipts List -->
-  <div class="receipts-grid" *ngIf="!loading && receipts.length > 0">
-    <article class="receipt-card app-card" *ngFor="let r of receipts">
+  <div class="empty-state app-card" *ngIf="!loading && receipts.length > 0 && filteredReceipts.length === 0">
+    <span class="material-icons">receipt_long</span>
+    <p>{{ 'TENANT_PORTAL.RECEIPTS_FILTER_CONTRACT' | translate }}</p>
+    <a mat-flat-button routerLink="/tenant/rent-receipts">{{ 'TENANT_PORTAL.RECEIPTS_SHOW_ALL' | translate }}</a>
+  </div>
+
+  <div class="receipts-grid" *ngIf="!loading && filteredReceipts.length > 0">
+    <article class="receipt-card app-card" *ngFor="let r of filteredReceipts">
       <div class="receipt-period">
         <span class="material-icons period-icon">calendar_month</span>
         <div>
@@ -88,15 +100,18 @@
         {{ r.amount | number:'1.0-2' }}
       </div>
 
-      <span class="status-badge" [attr.data-status]="statusClass(r.status)">
-        {{ ('RECEIPT_STATUS.' + r.status) | translate }}
-      </span>
+      <div class="receipt-status-row">
+        <span class="status-badge" [attr.data-status]="statusClass(r.status)">
+          {{ ('RECEIPT_STATUS.' + r.status) | translate }}
+        </span>
+        <span class="source-chip" [class.staff]="r.uploadSource === 'STAFF'">{{ receiptSourceLabel(r) }}</span>
+      </div>
 
       <div class="receipt-actions">
-        <a mat-icon-button [href]="r.fileUrl" target="_blank" rel="noopener" [title]="'ACTIONS.VIEW' | translate">
+        <a mat-icon-button [href]="r.fileUrl" target="_blank" rel="noopener" [matTooltip]="'ACTIONS.VIEW' | translate">
           <span class="material-icons">visibility</span>
         </a>
-        <a mat-icon-button [href]="r.fileUrl" download [title]="'ACTIONS.DOWNLOAD' | translate">
+        <a mat-icon-button [href]="r.fileUrl" download [matTooltip]="'ACTIONS.DOWNLOAD' | translate">
           <span class="material-icons">download</span>
         </a>
       </div>

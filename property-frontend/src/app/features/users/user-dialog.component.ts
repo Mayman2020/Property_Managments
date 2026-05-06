@@ -112,14 +112,7 @@ export interface UserDialogData {
           <mat-form-field appearance="outline" class="full">
             <mat-label>{{ 'TENANTS.NATIONAL_ID' | translate }}</mat-label>
             <input matInput formControlName="tenantNationalId">
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>{{ 'TENANTS.LEASE_START' | translate }}</mat-label>
-            <input matInput type="date" formControlName="tenantLeaseStart">
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>{{ 'TENANTS.LEASE_END' | translate }}</mat-label>
-            <input matInput type="date" formControlName="tenantLeaseEnd">
+            <mat-hint>{{ 'USER_MGMT.TENANT_NO_UNIT_HINT' | translate }}</mat-hint>
           </mat-form-field>
           <mat-form-field appearance="outline" class="full">
             <mat-label>{{ 'TENANTS.NOTES' | translate }}</mat-label>
@@ -158,7 +151,7 @@ export interface UserDialogData {
           [label]="'REQUEST_FORM.PROPERTY'">
         </app-searchable-select>
 
-        <mat-form-field appearance="outline" class="full" *ngIf="isMaintenanceOfficer">
+        <mat-form-field appearance="outline" class="full" *ngIf="showMaintenanceOfficerType">
           <mat-label>{{ 'USER_MGMT.OFFICER_TYPE' | translate }}</mat-label>
           <mat-select formControlName="maintenanceOfficerType">
             <mat-option *ngFor="let t of officerTypeOptions" [value]="t">{{ officerTypeLabel(t) }}</mat-option>
@@ -167,7 +160,7 @@ export interface UserDialogData {
 
         <app-searchable-select
           class="full"
-          *ngIf="isMaintenanceOfficer && form.get('maintenanceOfficerType')?.value === 'CONTRACTOR_COMPANY'"
+          *ngIf="needsContractorCompanySelect"
           formControlName="contractorCompanyId"
           [items]="data.contractorCompanies"
           [label]="'USER_MGMT.CONTRACTOR_COMPANY'">
@@ -240,8 +233,15 @@ export class UserDialogComponent implements OnInit {
   civilIdImageUrl = '';
 
   readonly roleOptions: UserRole[] = [
-    'SUPER_ADMIN', 'PROPERTY_ADMIN', 'CONTRACTS_OFFICER',
-    'ACCOUNTANT', 'HR_OFFICER', 'OWNER', 'MAINTENANCE_OFFICER', 'TENANT'
+    'SUPER_ADMIN',
+    'GENERAL_MANAGER',
+    'ACCOUNTANT',
+    'MAINTENANCE_CONTRACTOR',
+    'MAINTENANCE_OFFICER',
+    'PROPERTY_GUARD',
+    'PROCEDURES_CLERK',
+    'OWNER',
+    'TENANT'
   ];
   readonly officerTypeOptions: MaintenanceOfficerType[] = ['INTERNAL_PROPERTY', 'CONTRACTOR_COMPANY'];
 
@@ -249,11 +249,27 @@ export class UserDialogComponent implements OnInit {
 
   get needsProperty(): boolean {
     const role = this.form.get('role')?.value as UserRole;
-    return role === 'TENANT' || role === 'PROPERTY_ADMIN' || role === 'MAINTENANCE_OFFICER';
+    return (
+      role === 'GENERAL_MANAGER' ||
+      role === 'MAINTENANCE_OFFICER' ||
+      role === 'MAINTENANCE_CONTRACTOR' ||
+      role === 'ACCOUNTANT' ||
+      role === 'PROPERTY_GUARD' ||
+      role === 'PROCEDURES_CLERK'
+    );
   }
 
-  get isMaintenanceOfficer(): boolean {
+  get showMaintenanceOfficerType(): boolean {
     return this.form.get('role')?.value === 'MAINTENANCE_OFFICER';
+  }
+
+  get needsContractorCompanySelect(): boolean {
+    const role = this.form.get('role')?.value as UserRole;
+    if (role === 'MAINTENANCE_CONTRACTOR') return true;
+    return (
+      role === 'MAINTENANCE_OFFICER' &&
+      this.form.get('maintenanceOfficerType')?.value === 'CONTRACTOR_COMPANY'
+    );
   }
 
   constructor(
@@ -367,11 +383,12 @@ export class UserDialogComponent implements OnInit {
 
   isEmployeeRole(role: UserRole | string | null | undefined): boolean {
     return (
-      role === 'PROPERTY_ADMIN' ||
+      role === 'GENERAL_MANAGER' ||
       role === 'MAINTENANCE_OFFICER' ||
-      role === 'CONTRACTS_OFFICER' ||
+      role === 'MAINTENANCE_CONTRACTOR' ||
       role === 'ACCOUNTANT' ||
-      role === 'HR_OFFICER'
+      role === 'PROPERTY_GUARD' ||
+      role === 'PROCEDURES_CLERK'
     );
   }
 
@@ -436,7 +453,14 @@ export class UserDialogComponent implements OnInit {
     const companyCtrl = this.form.get('maintenanceCompanyName');
     if (!propertyCtrl || !officerTypeCtrl || !companyCtrl) return;
 
-    if (role === 'TENANT' || role === 'PROPERTY_ADMIN' || role === 'MAINTENANCE_OFFICER') {
+    if (
+      role === 'GENERAL_MANAGER' ||
+      role === 'MAINTENANCE_OFFICER' ||
+      role === 'MAINTENANCE_CONTRACTOR' ||
+      role === 'ACCOUNTANT' ||
+      role === 'PROPERTY_GUARD' ||
+      role === 'PROCEDURES_CLERK'
+    ) {
       propertyCtrl.setValidators([Validators.required]);
     } else {
       propertyCtrl.clearValidators();
@@ -450,7 +474,9 @@ export class UserDialogComponent implements OnInit {
       officerTypeCtrl.clearValidators();
       officerTypeCtrl.setValue(null, { emitEvent: false });
       companyCtrl.setValue('', { emitEvent: false });
-      this.form.get('contractorCompanyId')?.setValue(null, { emitEvent: false });
+      if (role !== 'MAINTENANCE_CONTRACTOR') {
+        this.form.get('contractorCompanyId')?.setValue(null, { emitEvent: false });
+      }
     }
     officerTypeCtrl.updateValueAndValidity({ emitEvent: false });
     this.applyCompanyRule();
@@ -463,7 +489,7 @@ export class UserDialogComponent implements OnInit {
     const companyCtrl = this.form.get('maintenanceCompanyName');
     if (!contractorIdCtrl || !companyCtrl) return;
 
-    if (role === 'MAINTENANCE_OFFICER' && officerType === 'CONTRACTOR_COMPANY') {
+    if (role === 'MAINTENANCE_CONTRACTOR' || (role === 'MAINTENANCE_OFFICER' && officerType === 'CONTRACTOR_COMPANY')) {
       contractorIdCtrl.setValidators([Validators.required]);
     } else {
       contractorIdCtrl.clearValidators();
@@ -498,7 +524,10 @@ export class UserDialogComponent implements OnInit {
       if (p) payload.profileImageUrl = p;
     }
     if (raw.password) payload.password = raw.password;
-    if (payload.role !== 'MAINTENANCE_OFFICER') {
+    if (payload.role === 'MAINTENANCE_CONTRACTOR') {
+      payload.maintenanceOfficerType = 'CONTRACTOR_COMPANY';
+    }
+    if (payload.role !== 'MAINTENANCE_OFFICER' && payload.role !== 'MAINTENANCE_CONTRACTOR') {
       payload.maintenanceOfficerType = undefined;
       payload.maintenanceCompanyName = undefined;
       payload.contractorCompanyId = undefined;
@@ -507,7 +536,15 @@ export class UserDialogComponent implements OnInit {
       payload.maintenanceCompanyName = undefined;
       payload.contractorCompanyId = undefined;
     }
-    if (payload.role !== 'TENANT' && payload.role !== 'PROPERTY_ADMIN' && payload.role !== 'MAINTENANCE_OFFICER') {
+    const propertyRoles: UserRole[] = [
+      'GENERAL_MANAGER',
+      'MAINTENANCE_OFFICER',
+      'MAINTENANCE_CONTRACTOR',
+      'ACCOUNTANT',
+      'PROPERTY_GUARD',
+      'PROCEDURES_CLERK'
+    ];
+    if (!propertyRoles.includes(payload.role)) {
       payload.propertyId = undefined;
     }
 
@@ -522,8 +559,6 @@ export class UserDialogComponent implements OnInit {
     } else if (raw.role === 'TENANT') {
       payload.tenantLink = {
         nationalId: (raw.tenantNationalId as string | undefined)?.trim() ?? '',
-        leaseStart: (raw.tenantLeaseStart as string) ? (raw.tenantLeaseStart as string) : null,
-        leaseEnd: (raw.tenantLeaseEnd as string) ? (raw.tenantLeaseEnd as string) : null,
         notes: (raw.tenantNotes as string | undefined)?.trim() ?? ''
       };
     } else if (this.isEmployeeRole(raw.role as UserRole)) {

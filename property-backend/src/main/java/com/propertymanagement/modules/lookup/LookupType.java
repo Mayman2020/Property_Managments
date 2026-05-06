@@ -14,13 +14,16 @@ public enum LookupType {
     TERMINATION_REASON,
     JOB_TITLE,
     UNIT_OF_MEASURE,
-    VIOLATION_STATUS,
-    VIOLATION_SEVERITY,
-    VIOLATION_TYPE,
     COMPLAINT_STATUS,
     COMPLAINT_PRIORITY,
     COMPLAINT_TYPE,
-    INSPECTION_TYPE,
-    INSPECTION_CONDITION,
-    FURNISHED_STATUS
+    FURNISHED_STATUS,
+    /** ISO-like currency codes for contracts and finance. */
+    CURRENCY,
+    MONTH,
+    YEAR,
+    /** Why rent is below list price (stored on lease / tenant flows). */
+    RENT_DISCOUNT_REASON,
+    /** Staff reason when editing a draft contract before activation. */
+    CONTRACT_DRAFT_AMEND_REASON
 }

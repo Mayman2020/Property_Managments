@@ -5,6 +5,7 @@ import com.propertymanagement.modules.inventory.dto.InventoryItemRequest;
 import com.propertymanagement.modules.inventory.dto.InventoryItemResponse;
 import com.propertymanagement.modules.inventory.dto.InventoryTransactionResponse;
 import com.propertymanagement.modules.inventory.dto.StockTransactionRequest;
+import com.propertymanagement.modules.owner.OwnerPropertyAccessService;
 import com.propertymanagement.modules.user.User;
 import com.propertymanagement.shared.exception.AppException;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,16 +27,33 @@ public class InventoryService {
 
     private final InventoryRepository inventoryRepository;
     private final InventoryTransactionRepository transactionRepository;
+    private final OwnerPropertyAccessService ownerPropertyAccessService;
 
     public Page<InventoryItemResponse> getAll(Pageable pageable, String q) {
-        return inventoryRepository.searchActive(trimToNull(q), pageable).map(this::toResponse);
+        String trimmed = trimToNull(q);
+        Set<Long> ownerScope = ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner();
+        if (ownerScope != null) {
+            if (ownerScope.isEmpty()) {
+                return Page.empty(pageable);
+            }
+            return inventoryRepository.searchActiveInPropertyIds(ownerScope, trimmed, pageable).map(this::toResponse);
+        }
+        return inventoryRepository.searchActive(trimmed, pageable).map(this::toResponse);
     }
 
     public Page<InventoryItemResponse> getByProperty(Long propertyId, Pageable pageable, String q) {
+        ownerPropertyAccessService.assertOwnerCanAccessProperty(propertyId);
         return inventoryRepository.searchByPropertyActive(propertyId, trimToNull(q), pageable).map(this::toResponse);
     }
 
     public List<InventoryItemResponse> getLowStock() {
+        Set<Long> ownerScope = ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner();
+        if (ownerScope != null) {
+            if (ownerScope.isEmpty()) {
+                return List.of();
+            }
+            return inventoryRepository.findLowStockInPropertyIds(ownerScope).stream().map(this::toResponse).collect(Collectors.toList());
+        }
         return inventoryRepository.findLowStock().stream().map(this::toResponse).collect(Collectors.toList());
     }
 
@@ -44,11 +63,14 @@ public class InventoryService {
     }
 
     public InventoryItemResponse getById(Long id) {
-        return toResponse(findActive(id));
+        InventoryItem item = findActive(id);
+        ownerPropertyAccessService.assertOwnerCanAccessProperty(item.getPropertyId());
+        return toResponse(item);
     }
 
     @Transactional
     public InventoryItemResponse create(InventoryItemRequest request) {
+        ownerPropertyAccessService.denyOwnerMutation("Owners cannot create inventory items");
         InventoryItem item = InventoryItem.builder()
                 .propertyId(request.getPropertyId())
                 .itemCode(request.getItemCode())
@@ -65,6 +87,7 @@ public class InventoryService {
 
     @Transactional
     public InventoryItemResponse update(Long id, InventoryItemRequest request) {
+        ownerPropertyAccessService.denyOwnerMutation("Owners cannot edit inventory items");
         InventoryItem item = findActive(id);
         item.setItemNameAr(request.getItemNameAr());
         item.setItemNameEn(request.getItemNameEn());
@@ -76,6 +99,7 @@ public class InventoryService {
 
     @Transactional
     public InventoryItemResponse adjustStock(Long id, StockTransactionRequest request) {
+        ownerPropertyAccessService.denyOwnerMutation("Owners cannot adjust inventory stock");
         InventoryItem item = findActive(id);
         BigDecimal qty = request.getQuantity();
 
@@ -104,6 +128,14 @@ public class InventoryService {
     }
 
     public Page<InventoryTransactionResponse> getTransactions(Long itemId, Pageable pageable) {
+        Set<Long> ownerScope = ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner();
+        if (ownerScope != null) {
+            if (itemId == null) {
+                return Page.empty(pageable);
+            }
+            InventoryItem item = findActive(itemId);
+            ownerPropertyAccessService.assertOwnerCanAccessProperty(item.getPropertyId());
+        }
         Page<InventoryTransaction> page = (itemId != null)
                 ? transactionRepository.findByItemId(itemId, pageable)
                 : transactionRepository.findAll(pageable);
@@ -122,6 +154,7 @@ public class InventoryService {
 
     @Transactional
     public void delete(Long id) {
+        ownerPropertyAccessService.denyOwnerMutation("Owners cannot delete inventory items");
         InventoryItem item = findActive(id);
         item.setActive(false);
         inventoryRepository.save(item);

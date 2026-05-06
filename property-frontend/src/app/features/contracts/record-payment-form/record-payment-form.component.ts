@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Location, NgIf, NgFor } from '@angular/common';
+import { Location, NgIf, NgFor, NgTemplateOutlet } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -16,13 +16,16 @@ import { Optional, Inject } from '@angular/core';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { PaymentService } from '../../../core/services/payment.service';
-import { PaymentMethod } from '../../../core/models/contract.model';
+import { ApiService } from '../../../core/services/api.service';
+import { RecordPaymentRequest } from '../../../core/models/contract.model';
+import { LookupItem, LookupService } from '../../../core/services/lookup.service';
+import { I18nService } from '../../../core/i18n/i18n.service';
 
 @Component({
   selector: 'app-record-payment-form',
   standalone: true,
   imports: [
-    NgIf, NgFor, ReactiveFormsModule,
+    NgIf, NgFor, NgTemplateOutlet, ReactiveFormsModule,
     MatCardModule, MatButtonModule, MatIconModule,
     MatInputModule, MatSelectModule,
     MatDatepickerModule, MatNativeDateModule,
@@ -34,56 +37,118 @@ import { PaymentMethod } from '../../../core/models/contract.model';
 })
 export class RecordPaymentFormComponent implements OnInit {
   saving = false;
+  receiptUploading = false;
   errorMsg = '';
   form!: FormGroup;
   contractId: number | null = null;
   scheduleId: number | null = null;
 
-  methods: PaymentMethod[] = ['CASH', 'BANK_TRANSFER', 'CHECK', 'ONLINE', 'OTHER'];
+  methods: LookupItem[] = [];
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private fb: FormBuilder,
     private paymentSvc: PaymentService,
+    private api: ApiService,
+    private lookups: LookupService,
+    private i18n: I18nService,
     private location: Location,
     @Optional() private dialogRef: MatDialogRef<RecordPaymentFormComponent>,
-    @Optional() @Inject(MAT_DIALOG_DATA) public data: any
+    @Optional() @Inject(MAT_DIALOG_DATA) public data: Record<string, unknown> | null
   ) {}
 
   goBack(): void { this.location.back(); }
 
   ngOnInit(): void {
-    this.contractId = this.data?.contractId || Number(this.route.snapshot.queryParamMap.get('contractId')) || null;
-    this.scheduleId = this.data?.scheduleId || Number(this.route.snapshot.queryParamMap.get('scheduleId')) || null;
+    this.contractId = (this.data?.['contractId'] as number) || Number(this.route.snapshot.queryParamMap.get('contractId')) || null;
+    this.scheduleId = (this.data?.['scheduleId'] as number) || Number(this.route.snapshot.queryParamMap.get('scheduleId')) || null;
 
     this.form = this.fb.group({
       contractId: [this.contractId, Validators.required],
       scheduleId: [this.scheduleId],
+      tenantId: [(this.data?.['tenantId'] as number) ?? null],
       paymentDate: [null, Validators.required],
       amountPaid: [null, [Validators.required, Validators.min(0.01)]],
       amountDue: [null, Validators.required],
-      paymentMethod: ['CASH'],
+      paymentMethod: ['', Validators.required],
       lateFee: [0],
       discount: [0],
-      notes: ['']
+      notes: [''],
+      receiptUrl: ['']
     });
 
-    if (this.data?.amountDue) {
-      this.form.patchValue({ amountDue: this.data.amountDue, amountPaid: this.data.amountDue });
+    if (this.data?.['amountDue']) {
+      this.form.patchValue({ amountDue: this.data['amountDue'], amountPaid: this.data['amountDue'] });
     }
+
+    if (this.data?.['requireReceipt']) {
+      this.form.get('receiptUrl')?.setValidators([Validators.required]);
+      this.form.get('receiptUrl')?.updateValueAndValidity();
+    }
+
+    this.loadPaymentMethods();
   }
 
   get isDialog(): boolean {
     return !!this.dialogRef;
   }
 
+  get requireReceipt(): boolean {
+    return !!this.data?.['requireReceipt'];
+  }
+
+  get hideScheduleFields(): boolean {
+    return !!this.data?.['hideScheduleFields'];
+  }
+
+  methodName(item: LookupItem): string {
+    return this.i18n.currentLang === 'ar' ? item.nameAr : item.nameEn;
+  }
+
+  onReceiptFile(ev: Event): void {
+    const input = ev.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    this.receiptUploading = true;
+    this.errorMsg = '';
+    this.api.uploadFile(file).subscribe({
+      next: (res) => {
+        this.form.patchValue({ receiptUrl: res.url || '' });
+        this.receiptUploading = false;
+        input.value = '';
+      },
+      error: () => {
+        this.receiptUploading = false;
+        this.errorMsg = this.i18n.instant('COMMON.UPLOAD_SOME_FAILED');
+      }
+    });
+  }
+
   submit(): void {
+    if (this.requireReceipt) {
+      this.form.get('receiptUrl')?.markAsTouched();
+    }
     if (this.form.invalid) return;
     this.saving = true;
-    const body = {
-      ...this.form.value,
-      paymentDate: this.toIsoDate(this.form.value.paymentDate)
+    const v = this.form.value;
+    const paymentDate = this.toIsoDate(v.paymentDate);
+    if (!paymentDate) {
+      this.saving = false;
+      return;
+    }
+    const body: RecordPaymentRequest = {
+      contractId: v.contractId,
+      scheduleId: v.scheduleId || undefined,
+      tenantId: v.tenantId || undefined,
+      paymentDate,
+      amountPaid: v.amountPaid,
+      amountDue: v.amountDue,
+      paymentMethod: v.paymentMethod,
+      lateFee: v.lateFee,
+      discount: v.discount,
+      notes: v.notes || undefined,
+      receiptUrl: v.receiptUrl || undefined
     };
     this.paymentSvc.recordPayment(body).subscribe({
       next: () => {
@@ -92,11 +157,11 @@ export class RecordPaymentFormComponent implements OnInit {
         } else if (this.contractId) {
           this.router.navigate(['/admin/contracts', this.contractId]);
         } else {
-          this.router.navigate(['/admin/contracts/payments']);
+          this.router.navigate(['/admin/contracts/list']);
         }
       },
-      error: (err: any) => {
-        this.errorMsg = err?.error?.message ?? 'Error recording payment';
+      error: (err: { error?: { message?: string } }) => {
+        this.errorMsg = err?.error?.message ?? this.i18n.instant('COMMON.ERROR');
         this.saving = false;
       }
     });
@@ -111,7 +176,22 @@ export class RecordPaymentFormComponent implements OnInit {
     if (this.isDialog) {
       this.dialogRef.close(false);
     } else {
-      this.router.navigate(['/admin/contracts/payments']);
+      this.router.navigate(['/admin/contracts/list']);
     }
+  }
+
+  private loadPaymentMethods(): void {
+    this.lookups.getByType('PAYMENT_METHOD').subscribe({
+      next: (res) => {
+        this.methods = res.data ?? [];
+        if (!this.form.get('paymentMethod')?.value && this.methods.length) {
+          this.form.patchValue({ paymentMethod: this.methods[0].code });
+        }
+      },
+      error: () => {
+        this.methods = [];
+        this.errorMsg = this.i18n.instant('LOOKUPS.LOAD_ERROR');
+      }
+    });
   }
 }

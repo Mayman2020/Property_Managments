@@ -1,7 +1,9 @@
 package com.propertymanagement.modules.tenantportal;
 
-import com.propertymanagement.modules.user.User;
 import com.propertymanagement.modules.contract.lease.dto.ContractResponse;
+import com.propertymanagement.modules.contract.payment.dto.UploadPaymentProofRequest;
+import com.propertymanagement.modules.contract.payment.dto.ScheduleItemResponse;
+import com.propertymanagement.modules.user.User;
 import com.propertymanagement.modules.tenant.Tenant;
 import com.propertymanagement.modules.tenantportal.dto.*;
 import com.propertymanagement.shared.exception.AppException;
@@ -10,6 +12,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -32,6 +37,37 @@ public class TenantPortalController {
     public ResponseEntity<ApiResponse<ContractResponse>> getMyContract() {
         Tenant tenant = service.getTenantByUserId(currentUserId());
         return ResponseEntity.ok(ApiResponse.ok(service.getActiveContract(tenant.getId())));
+    }
+
+    @GetMapping("/my-contracts")
+    @PreAuthorize("hasRole('TENANT')")
+    public ResponseEntity<ApiResponse<List<ContractResponse>>> getMyContracts() {
+        Tenant tenant = service.getTenantByUserId(currentUserId());
+        return ResponseEntity.ok(ApiResponse.ok(service.getContractsForTenant(tenant.getId())));
+    }
+
+    @GetMapping("/contracts/{id}")
+    @PreAuthorize("hasRole('TENANT')")
+    public ResponseEntity<ApiResponse<ContractResponse>> getTenantContract(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.ok(service.getContractForTenantUser(currentUserId(), id)));
+    }
+
+    @GetMapping("/contracts/{id}/payment-schedule")
+    @PreAuthorize("hasRole('TENANT')")
+    public ResponseEntity<ApiResponse<Page<ScheduleItemResponse>>> getTenantContractSchedule(
+            @PathVariable Long id,
+            @PageableDefault(size = 5, sort = "dueDate") Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.ok(service.getPaymentScheduleForTenantUser(currentUserId(), id, pageable)));
+    }
+
+    @PostMapping("/contracts/{contractId}/payment-schedule/{scheduleId}/proof")
+    @PreAuthorize("hasRole('TENANT')")
+    public ResponseEntity<ApiResponse<ScheduleItemResponse>> uploadPaymentProof(
+            @PathVariable Long contractId,
+            @PathVariable Long scheduleId,
+            @Valid @RequestBody UploadPaymentProofRequest req) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok(service.uploadPaymentProof(currentUserId(), contractId, scheduleId, req)));
     }
 
     @GetMapping("/receipts")
@@ -68,13 +104,13 @@ public class TenantPortalController {
     // ── Admin endpoints ───────────────────────────────────────────────────
 
     @GetMapping("/admin/contract-requests/pending")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','CONTRACTS_OFFICER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
     public ResponseEntity<ApiResponse<List<ActionRequestResponse>>> getPendingRequests() {
         return ResponseEntity.ok(ApiResponse.ok(service.getPendingActionRequests()));
     }
 
     @PatchMapping("/admin/contract-requests/{id}/review")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','CONTRACTS_OFFICER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
     public ResponseEntity<ApiResponse<ActionRequestResponse>> reviewRequest(
             @PathVariable Long id,
             @RequestBody Map<String, String> body) {
@@ -84,18 +120,27 @@ public class TenantPortalController {
     }
 
     @GetMapping("/admin/receipts/contract/{contractId}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','CONTRACTS_OFFICER','ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
     public ResponseEntity<ApiResponse<List<ReceiptResponse>>> getReceiptsByContract(@PathVariable Long contractId) {
         return ResponseEntity.ok(ApiResponse.ok(service.getReceiptsByContract(contractId)));
     }
 
     @PatchMapping("/admin/receipts/{id}/review")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','CONTRACTS_OFFICER','ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
     public ResponseEntity<ApiResponse<ReceiptResponse>> reviewReceipt(
             @PathVariable Long id,
             @RequestBody Map<String, String> body) {
         String status = body.getOrDefault("status", "APPROVED");
         return ResponseEntity.ok(ApiResponse.ok(service.reviewReceipt(id, status, currentUserId())));
+    }
+
+    /** Office uploads proof on behalf of tenant — auto-approved, counts as trusted (STAFF). */
+    @PostMapping("/admin/receipts/for-tenant")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
+    public ResponseEntity<ApiResponse<ReceiptResponse>> createStaffReceiptForTenant(
+            @Valid @RequestBody StaffUploadReceiptRequest body) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok(service.uploadReceiptAsStaff(currentUserId(), body)));
     }
 
     private Long currentUserId() {

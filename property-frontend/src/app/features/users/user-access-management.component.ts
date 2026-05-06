@@ -11,11 +11,12 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
 
-import { PermissionMap, User, UserRole } from '../../core/models/user.model';
+import { isUserRoleCode, PermissionMap, User, UserRole } from '../../core/models/user.model';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { PermissionService } from '../../core/services/permission.service';
 import { SnackService } from '../../core/services/snack.service';
 import { UserService } from '../../core/services/user.service';
+import { LookupItem, LookupService } from '../../core/services/lookup.service';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { TablePagerComponent } from '../../shared/components/table-pager/table-pager.component';
 
@@ -36,6 +37,8 @@ interface UserAccessDetailsData {
   modules: PermissionModuleConfig[];
   actions: PermissionActionConfig[];
   roleLabel: (role: UserRole) => string;
+  /** Display line for one or more assigned roles. */
+  roleTitles: string;
   moduleTitle: (key: string) => string;
   moduleDesc: (key: string) => string;
   actionLabel: (key: string) => string;
@@ -52,7 +55,7 @@ interface UserAccessDetailsData {
         <div class="user-avatar">{{ userInitials }}</div>
         <div class="user-info">
           <strong>{{ data.user.fullName }}</strong>
-          <small>{{ data.roleLabel(data.user.role) }}</small>
+          <small>{{ data.roleTitles }}</small>
         </div>
       </div>
     </h2>
@@ -218,8 +221,8 @@ export class UserAccessDetailsDialogComponent {
                 <th class="center-col">#</th>
                 <th>{{ 'USER_MGMT.USERNAME' | translate }}</th>
                 <th class="center-col">{{ 'MAINTENANCE.STATUS' | translate }}</th>
-                <th class="center-col">{{ 'USER_ACCESS.CURRENT_ROLE' | translate }}</th>
-                <th style="min-width: 200px;">{{ 'USER_ACCESS.ASSIGN_ROLE' | translate }}</th>
+                <th class="center-col">{{ 'USER_ACCESS.CURRENT_ROLES' | translate }}</th>
+                <th style="min-width: 260px;">{{ 'USER_ACCESS.ASSIGN_ROLES' | translate }}</th>
                 <th class="actions-col"></th>
               </tr>
             </thead>
@@ -240,13 +243,13 @@ export class UserAccessDetailsDialogComponent {
                     {{ (user.isActive ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') | translate }}
                   </span>
                 </td>
-                <td class="center-col">
-                  <span class="role-badge">{{ roleLabel(user.role) }}</span>
+                <td class="center-col current-roles-cell">
+                  <span class="role-badge" *ngFor="let r of rolesFromUser(user)">{{ roleLabel(r) }}</span>
                 </td>
                 <td>
                   <mat-form-field appearance="outline" class="role-select" subscriptSizing="dynamic" *ngIf="permissions.can('users', 'edit')">
-                    <mat-select [ngModel]="draftRoles[user.id]" (ngModelChange)="draftRoles[user.id] = $event">
-                      <mat-option *ngFor="let role of roleOptions" [value]="role">{{ roleLabel(role) }}</mat-option>
+                    <mat-select multiple [(ngModel)]="draftMultiRoles[user.id]" [compareWith]="compareRoles">
+                      <mat-option *ngFor="let row of roleRows" [value]="row.role">{{ roleLabel(row.role) }}</mat-option>
                     </mat-select>
                   </mat-form-field>
                 </td>
@@ -257,12 +260,12 @@ export class UserAccessDetailsDialogComponent {
                       [matTooltip]="'USER_ACCESS.SAVE_ROLE' | translate"
                       type="button"
                       *ngIf="permissions.can('users', 'edit')"
-                      [disabled]="savingIds.has(user.id) || draftRoles[user.id] === user.role"
-                      (click)="saveRole(user)">
+                      [disabled]="savingIds.has(user.id) || !isRoleDirty(user) || isDraftRolesEmpty(user)"
+                      (click)="saveRoles(user)">
                       <mat-spinner *ngIf="savingIds.has(user.id)" diameter="18"></mat-spinner>
                       <mat-icon *ngIf="!savingIds.has(user.id)">save</mat-icon>
                     </button>
-                    <button class="app-icon-btn info" [matTooltip]="isAr ? 'التفاصيل' : 'Details'" type="button" (click)="openDetails(user)">
+                    <button class="app-icon-btn info" [matTooltip]="'ACTIONS.DETAILS' | translate" type="button" (click)="openDetails(user)">
                       <mat-icon>tune</mat-icon>
                     </button>
                   </div>
@@ -302,6 +305,7 @@ export class UserAccessDetailsDialogComponent {
     .user-email { font-size: 0.78rem; color: var(--text-muted); }
 
     .role-badge { display: inline-block; padding: 4px 10px; border-radius: 6px; background: var(--surface-2); border: 1px solid var(--line); color: var(--text-main); font-size: 0.82rem; font-weight: 600; }
+    .current-roles-cell { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; align-items: center; }
     .role-select { width: 100%; }
     ::ng-deep .role-select .mat-mdc-form-field-wrapper { padding-bottom: 0; }
 
@@ -321,8 +325,11 @@ export class UserAccessManagementComponent implements OnInit {
   searchTerm = '';
   loading = true;
   savingIds = new Set<number>();
-  draftRoles: Record<number, UserRole> = {};
-  readonly roleOptions: UserRole[] = ['SUPER_ADMIN', 'PROPERTY_ADMIN', 'CONTRACTS_OFFICER', 'ACCOUNTANT', 'HR_OFFICER', 'OWNER', 'MAINTENANCE_OFFICER', 'TENANT'];
+  draftMultiRoles: Record<number, UserRole[]> = {};
+  readonly compareRoles = (a: UserRole, b: UserRole) => a === b;
+  /** Assign-role dropdown: order from JOB_TITLE (code = role), then any role without lookup row. */
+  roleRows: { role: UserRole; lookup?: LookupItem }[] = [];
+  private roleLookupByCode = new Map<string, LookupItem>();
 
   readonly pageSize = 5;
   pageIndex = 0;
@@ -360,12 +367,20 @@ export class UserAccessManagementComponent implements OnInit {
   ];
 
   private rolePermissions: Record<UserRole, PermissionMap> = {
-    SUPER_ADMIN: {}, PROPERTY_ADMIN: {}, CONTRACTS_OFFICER: {}, ACCOUNTANT: {},
-    HR_OFFICER: {}, OWNER: {}, MAINTENANCE_OFFICER: {}, TENANT: {}
+    SUPER_ADMIN: {},
+    GENERAL_MANAGER: {},
+    ACCOUNTANT: {},
+    MAINTENANCE_CONTRACTOR: {},
+    MAINTENANCE_OFFICER: {},
+    PROPERTY_GUARD: {},
+    PROCEDURES_CLERK: {},
+    OWNER: {},
+    TENANT: {}
   };
 
   constructor(
     private readonly userService: UserService,
+    private readonly lookupSvc: LookupService,
     private readonly snack: SnackService,
     private readonly i18n: I18nService,
     readonly permissions: PermissionService,
@@ -377,6 +392,7 @@ export class UserAccessManagementComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.loadJobTitleRoles();
     this.loadUsers();
     this.permissions.getAll().subscribe({
       next: (res) => {
@@ -385,6 +401,43 @@ export class UserAccessManagementComponent implements OnInit {
         }
       }
     });
+  }
+
+  private loadJobTitleRoles(): void {
+    this.lookupSvc.getByType('JOB_TITLE').subscribe({
+      next: (res) => this.applyJobTitleRoleLookups(res.data ?? []),
+      error: () => this.applyJobTitleRoleLookups([])
+    });
+  }
+
+  /**
+   * Assign-role list: active JOB_TITLE rows whose {@code code} is a {@link UserRole} name.
+   * Order from {@code sort_order}. No fixed product list — add rows in Reference Data.
+   */
+  private applyJobTitleRoleLookups(items: LookupItem[]): void {
+    const portalItems = items
+      .filter((it) => it.active && isUserRoleCode(it.code))
+      .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+    this.roleLookupByCode = new Map(portalItems.map((it) => [it.code, it]));
+    this.roleRows = portalItems.map((it) => ({ role: it.code as UserRole, lookup: it }));
+    this.ensureRoleRowsCoverLoadedUsers();
+  }
+
+  /** Mat-select needs an option for every role value loaded from API. */
+  private ensureRoleRowsCoverLoadedUsers(): void {
+    const seen = new Set(this.roleRows.map((r) => r.role));
+    const extra: { role: UserRole; lookup?: LookupItem }[] = [];
+    for (const u of this.users) {
+      for (const r of this.rolesFromUser(u)) {
+        if (!seen.has(r)) {
+          seen.add(r);
+          extra.push({ role: r });
+        }
+      }
+    }
+    if (extra.length) {
+      this.roleRows = [...this.roleRows, ...extra];
+    }
   }
 
   get pagedUsers(): User[] {
@@ -398,10 +451,11 @@ export class UserAccessManagementComponent implements OnInit {
     this.userService.getAll(0, 200, this.searchTerm).subscribe({
       next: (res) => {
         this.users = res.data?.content ?? [];
-        this.draftRoles = this.users.reduce<Record<number, UserRole>>((acc, user) => {
-          acc[user.id] = user.role;
+        this.draftMultiRoles = this.users.reduce<Record<number, UserRole[]>>((acc, user) => {
+          acc[user.id] = [...this.rolesFromUser(user)];
           return acc;
         }, {});
+        this.ensureRoleRowsCoverLoadedUsers();
         this.loading = false;
       },
       error: () => {
@@ -411,19 +465,19 @@ export class UserAccessManagementComponent implements OnInit {
     });
   }
 
-  saveRole(user: User): void {
-    const role = this.draftRoles[user.id] ?? user.role;
-    if (role === user.role || this.savingIds.has(user.id)) return;
+  saveRoles(user: User): void {
+    const roles = this.normalizeRoleList(this.draftMultiRoles[user.id] ?? []);
+    if (!roles.length || this.savingIds.has(user.id) || !this.isRoleDirty(user)) return;
 
     this.savingIds.add(user.id);
-    this.userService.updateRole(user.id, role).subscribe({
+    this.userService.updateRoles(user.id, roles).subscribe({
       next: (res) => {
         this.savingIds.delete(user.id);
         if (res.data) {
           const index = this.users.findIndex((item) => item.id === user.id);
           if (index >= 0) {
             this.users[index] = res.data;
-            this.draftRoles[user.id] = res.data.role;
+            this.draftMultiRoles[user.id] = [...this.rolesFromUser(res.data)];
           }
         }
         this.snack.success(this.i18n.instant('USER_ACCESS.SAVE_SUCCESS'));
@@ -435,7 +489,69 @@ export class UserAccessManagementComponent implements OnInit {
     });
   }
 
+  rolesFromUser(user: User): UserRole[] {
+    const out: UserRole[] = [];
+    const seen = new Set<UserRole>();
+    for (const r of [user.role, ...(user.extraRoles ?? [])]) {
+      if (r && !seen.has(r)) {
+        seen.add(r);
+        out.push(r);
+      }
+    }
+    return out;
+  }
+
+  private normalizeRoleList(roles: UserRole[]): UserRole[] {
+    const out: UserRole[] = [];
+    const seen = new Set<UserRole>();
+    for (const r of roles) {
+      if (r && !seen.has(r)) {
+        seen.add(r);
+        out.push(r);
+      }
+    }
+    return out;
+  }
+
+  isRoleDirty(user: User): boolean {
+    return !this.roleSetsEqual(this.rolesFromUser(user), this.normalizeRoleList(this.draftMultiRoles[user.id] ?? []));
+  }
+
+  isDraftRolesEmpty(user: User): boolean {
+    const d = this.draftMultiRoles[user.id];
+    return !d || d.length === 0;
+  }
+
+  private roleSetsEqual(a: UserRole[], b: UserRole[]): boolean {
+    if (a.length !== b.length) return false;
+    const sa = [...a].sort().join(',');
+    const sb = [...b].sort().join(',');
+    return sa === sb;
+  }
+
+  private mergeRolePermissionMaps(roles: UserRole[]): PermissionMap {
+    const maps = roles.map((r) => this.rolePermissions[r]).filter((m): m is PermissionMap => !!m && Object.keys(m).length > 0);
+    if (!maps.length) return {};
+    const out: PermissionMap = JSON.parse(JSON.stringify(maps[0]));
+    for (let i = 1; i < maps.length; i++) {
+      const next = maps[i];
+      for (const mod of Object.keys(out)) {
+        const dest = out[mod] as Record<string, boolean>;
+        const src = next[mod] as Record<string, boolean> | undefined;
+        if (!dest || !src) continue;
+        for (const action of Object.keys(dest)) {
+          dest[action] = !!(dest[action] || src[action]);
+        }
+      }
+    }
+    return out;
+  }
+
   roleLabel(role: UserRole): string {
+    const lu = this.roleLookupByCode.get(role);
+    if (lu) {
+      return this.i18n.currentLang === 'ar' ? lu.nameAr : lu.nameEn;
+    }
     return this.i18n.instant(`ROLE.${role}`);
   }
 
@@ -458,9 +574,10 @@ export class UserAccessManagementComponent implements OnInit {
   }
 
   openDetails(user: User): void {
-    const role = this.draftRoles[user.id] ?? user.role;
-    const permissions = JSON.parse(JSON.stringify(this.rolePermissions[role] ?? {}));
-    
+    const roles = this.normalizeRoleList(this.draftMultiRoles[user.id] ?? this.rolesFromUser(user));
+    const permissions = this.mergeRolePermissionMaps(roles);
+    const roleTitles = roles.map((r) => this.roleLabel(r)).join(' · ');
+
     this.dialog.open(UserAccessDetailsDialogComponent, {
       width: '920px',
       panelClass: 'app-dialog-panel',
@@ -471,6 +588,7 @@ export class UserAccessManagementComponent implements OnInit {
         modules: this.modules,
         actions: this.actions,
         roleLabel: this.roleLabel.bind(this),
+        roleTitles,
         moduleTitle: this.moduleTitle.bind(this),
         moduleDesc: this.moduleDesc.bind(this),
         actionLabel: this.actionLabel.bind(this)

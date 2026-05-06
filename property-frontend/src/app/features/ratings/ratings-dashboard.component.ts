@@ -42,7 +42,7 @@ export class RatingsDashboardComponent implements OnInit {
   dateFrom: Date | null = null;
   dateTo: Date | null = null;
 
-  readonly stars = [5, 4, 3, 2, 1];
+  readonly stars = [4, 3, 2, 1];
 
   constructor(private readonly dashSvc: DashboardService) {}
 
@@ -134,7 +134,7 @@ export class RatingsDashboardComponent implements OnInit {
 
   get satisfactionRate(): number {
     if (this.totalRatings === 0) return 0;
-    const satisfied = this.filteredRatings.filter((r) => r.rating >= 4).length;
+    const satisfied = this.filteredRatings.filter((r) => r.rating >= 3).length;
     return Math.round((satisfied / this.totalRatings) * 100);
   }
 

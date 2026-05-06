@@ -34,21 +34,24 @@ public class UnitController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
     public ResponseEntity<ApiResponse<UnitResponse>> create(@Valid @RequestBody UnitRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.ok(unitService.create(request)));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
     public ResponseEntity<ApiResponse<UnitResponse>> update(
             @PathVariable Long id, @Valid @RequestBody UnitRequest request) {
         return ResponseEntity.ok(ApiResponse.ok(unitService.update(id, request)));
     }
 
+    /**
+     * Re-syncs unit {@code is_rented} / {@code is_reserved} from lease contracts. Query {@code rented} is ignored.
+     */
     @PatchMapping("/{id}/rental-status")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
     public ResponseEntity<ApiResponse<UnitResponse>> setRentalStatus(
             @PathVariable Long id,
             @RequestParam boolean rented) {
@@ -56,7 +59,7 @@ public class UnitController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ACCOUNTANT')")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         unitService.delete(id);
         return ResponseEntity.ok(ApiResponse.ok(null));

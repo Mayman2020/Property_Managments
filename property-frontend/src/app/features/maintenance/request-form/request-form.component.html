@@ -35,7 +35,7 @@
           <div class="field-grid">
             <label class="field-shell">
               <span>{{ 'REQUEST_FORM.PROPERTY' | translate }}</span>
-              <select formControlName="propertyId">
+              <select formControlName="propertyId" [disabled]="!!tenantContract">
                 <option [ngValue]="null" disabled>{{ 'REQUEST_FORM.SELECT_PROPERTY' | translate }}</option>
                 <option *ngFor="let p of properties" [ngValue]="p.id">
                   {{ p.propertyName }} ({{ p.propertyCode }})
@@ -45,7 +45,7 @@
 
             <label class="field-shell">
               <span>{{ 'REQUEST_FORM.UNIT' | translate }}</span>
-              <select formControlName="unitId" [disabled]="!form.get('propertyId')?.value || loadingUnits">
+              <select formControlName="unitId" [disabled]="!!tenantContract || !form.get('propertyId')?.value || loadingUnits">
                 <option [ngValue]="null" disabled>
                   {{ form.get('propertyId')?.value ? (loadingUnits ? ('REQUEST_FORM.LOADING_UNITS' | translate) : ('REQUEST_FORM.SELECT_UNIT' | translate)) : ('REQUEST_FORM.SELECT_PROPERTY_FIRST' | translate) }}
                 </option>

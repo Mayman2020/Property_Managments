@@ -28,6 +28,7 @@ public class TenantRequest {
     @NotNull
     private LocalDate leaseEnd;
     private String profileImage;
+    private String civilIdImageUrl;
     @NotEmpty
     private List<String> leaseContractFiles;
     private String notes;

@@ -152,7 +152,8 @@ export class DashboardComponent implements OnInit {
 
   get occupancyPercent(): number {
     if (!this.stats?.totalUnits) return 0;
-    return Math.round((this.stats.rentedUnits / this.stats.totalUnits) * 100);
+    const occupied = this.stats.rentedUnits + (this.stats.reservedUnits ?? 0);
+    return Math.round((occupied / this.stats.totalUnits) * 100);
   }
 
   get showMaintenanceInsights(): boolean {

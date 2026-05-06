@@ -1,12 +1,17 @@
 package com.propertymanagement.modules.hr.employee;
 
 import com.propertymanagement.modules.hr.employee.dto.EmployeeRequest;
+import com.propertymanagement.modules.owner.OwnerPropertyAccessService;
 import com.propertymanagement.modules.hr.employee.dto.EmployeeResponse;
+import com.propertymanagement.modules.contractor.ContractorCompany;
+import com.propertymanagement.modules.contractor.ContractorCompanyRepository;
+import com.propertymanagement.modules.user.MaintenanceOfficerType;
 import com.propertymanagement.modules.user.User;
 import com.propertymanagement.modules.user.UserRepository;
 import com.propertymanagement.modules.user.UserRole;
 import com.propertymanagement.modules.user.UserService;
 import com.propertymanagement.shared.exception.AppException;
+import com.propertymanagement.shared.i18n.LocalizedNameResolver;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,36 +28,62 @@ import java.util.Set;
 @Service
 @RequiredArgsConstructor
 public class EmployeeService {
+    private static final String DEFAULT_EMPLOYEE_PASSWORD = "1234";
+    private static final String DEFAULT_CONTRACTOR_PASSWORD = "123";
+    private static final UserRole DEFAULT_EMPLOYEE_ROLE = UserRole.PROCEDURES_CLERK;
 
     private static final Set<UserRole> EMPLOYEE_PORTAL_ROLES = Set.of(
             UserRole.ACCOUNTANT,
-            UserRole.HR_OFFICER,
-            UserRole.CONTRACTS_OFFICER,
+            UserRole.PROCEDURES_CLERK,
+            UserRole.GENERAL_MANAGER,
             UserRole.MAINTENANCE_OFFICER,
-            UserRole.PROPERTY_ADMIN
+            UserRole.MAINTENANCE_CONTRACTOR,
+            UserRole.PROPERTY_GUARD
     );
 
     private final EmployeeRepository repository;
+    private final ContractorCompanyRepository contractorCompanyRepository;
     private final UserRepository userRepository;
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
+    private final OwnerPropertyAccessService ownerPropertyAccessService;
 
     public Page<EmployeeResponse> getAll(Pageable pageable, String q, Long propertyId) {
+        Set<Long> ownerScope = ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner();
+        if (ownerScope != null) {
+            if (ownerScope.isEmpty()) {
+                return Page.empty(pageable);
+            }
+            if (propertyId != null) {
+                ownerPropertyAccessService.assertOwnerCanAccessProperty(propertyId);
+                return repository.search(trimToNull(q), propertyId, pageable).map(this::toResponse);
+            }
+            return repository.searchInPropertyIds(trimToNull(q), ownerScope, pageable).map(this::toResponse);
+        }
         return repository.search(trimToNull(q), propertyId, pageable).map(this::toResponse);
     }
 
     public EmployeeResponse getById(Long id) {
-        return toResponse(find(id));
+        Employee employee = find(id);
+        if (employee.getPropertyId() != null) {
+            ownerPropertyAccessService.assertOwnerCanAccessProperty(employee.getPropertyId());
+        } else if (ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner() != null) {
+            throw AppException.forbidden("You do not have access to this employee record");
+        }
+        return toResponse(employee);
     }
 
     @Transactional
     public EmployeeResponse create(EmployeeRequest request) {
+        ownerPropertyAccessService.denyOwnerMutation("Owners cannot create employees");
         User user = currentUser();
         Long propertyId = request.getPropertyId() != null ? request.getPropertyId() : user.getPropertyId();
         String email = trimToNull(request.getEmail());
         Employee employee = Employee.builder()
                 .employeeCode(generateCode())
                 .fullName(request.getFullName().trim())
+                .fullNameAr(trimToNull(request.getFullNameAr()))
+                .fullNameEn(trimToNull(request.getFullNameEn()))
                 .phone(trimToNull(request.getPhone()))
                 .email(email)
                 .nationalId(trimToNull(request.getNationalId()))
@@ -67,9 +98,10 @@ public class EmployeeService {
 
         Employee saved = repository.save(employee);
 
-        if (email != null && request.getSystemRole() != null) {
+        if (email != null) {
+            UserRole requestedRole = request.getSystemRole() != null ? request.getSystemRole() : DEFAULT_EMPLOYEE_ROLE;
             User portalUser = ensureEmployeeSystemUser(
-                    email, saved.getFullName(), saved.getPhone(), request.getSystemRole(), propertyId);
+                    email, resolvedDisplayName(saved), saved.getPhone(), requestedRole, propertyId, request);
             saved.setLinkedUserId(portalUser.getId());
             saved = repository.save(saved);
         }
@@ -79,6 +111,7 @@ public class EmployeeService {
 
     @Transactional
     public void delete(Long id) {
+        ownerPropertyAccessService.denyOwnerMutation("Owners cannot delete employees");
         Employee employee = find(id);
         if (employee.getPropertyId() != null) {
             throw AppException.badRequest("Cannot delete employee assigned to a property. Clear the property assignment first.");
@@ -99,28 +132,88 @@ public class EmployeeService {
     /**
      * Creates or reuses a system user for the employee portal role; refuses mismatched roles on the same email.
      */
-    private User ensureEmployeeSystemUser(String email, String fullName, String phone, UserRole role, Long propertyId) {
+    private User ensureEmployeeSystemUser(
+            String email,
+            String fullName,
+            String phone,
+            UserRole role,
+            Long propertyId,
+            EmployeeRequest request
+    ) {
         if (!EMPLOYEE_PORTAL_ROLES.contains(role)) {
             throw AppException.badRequest("Invalid system role for employee portal account");
         }
+        MaintenanceOfficerType officerType = resolveOfficerType(role, request);
+        Long contractorCompanyId = resolveContractorCompanyId(role, officerType, request);
+        String contractorName = resolveContractorName(contractorCompanyId);
         Optional<User> existing = userRepository.findByEmail(email);
         if (existing.isPresent()) {
             User u = existing.get();
             if (u.getRole() != role) {
-                throw AppException.conflict("Email already registered with a different system role: " + email);
+                throw AppException.conflict("Email already registered with a different system role: " + email, "EMAIL_USED_BY_DIFFERENT_ROLE");
             }
             return u;
         }
         return userRepository.save(User.builder()
                 .username(email)
                 .email(email)
-                .password(passwordEncoder.encode("12345"))
+                .password(passwordEncoder.encode(defaultPasswordFor(role, officerType)))
                 .fullName(fullName)
                 .phone(phone)
                 .role(role)
                 .propertyId(propertyId)
+                .maintenanceOfficerType(officerType)
+                .contractorCompanyId(contractorCompanyId)
+                .maintenanceCompanyName(contractorName)
                 .active(true)
                 .build());
+    }
+
+    private MaintenanceOfficerType resolveOfficerType(UserRole role, EmployeeRequest request) {
+        if (role == UserRole.MAINTENANCE_CONTRACTOR) {
+            return MaintenanceOfficerType.CONTRACTOR_COMPANY;
+        }
+        if (role != UserRole.MAINTENANCE_OFFICER) {
+            return null;
+        }
+        if (request.getMaintenanceOfficerType() != null) {
+            return request.getMaintenanceOfficerType();
+        }
+        return Boolean.TRUE.equals(request.getContractorAffiliated())
+                ? MaintenanceOfficerType.CONTRACTOR_COMPANY
+                : MaintenanceOfficerType.INTERNAL_PROPERTY;
+    }
+
+    private Long resolveContractorCompanyId(UserRole role, MaintenanceOfficerType type, EmployeeRequest request) {
+        boolean requiresContractor = role == UserRole.MAINTENANCE_CONTRACTOR
+                || (role == UserRole.MAINTENANCE_OFFICER && type == MaintenanceOfficerType.CONTRACTOR_COMPANY);
+        if (!requiresContractor) {
+            return null;
+        }
+        if (request.getContractorCompanyId() == null) {
+            throw AppException.badRequest("contractorCompanyId is required for contracted maintenance staff");
+        }
+        if (!contractorCompanyRepository.existsById(request.getContractorCompanyId())) {
+            throw AppException.badRequest("Contractor company not found: " + request.getContractorCompanyId());
+        }
+        return request.getContractorCompanyId();
+    }
+
+    private String resolveContractorName(Long contractorCompanyId) {
+        if (contractorCompanyId == null) {
+            return null;
+        }
+        ContractorCompany cc = contractorCompanyRepository.findById(contractorCompanyId).orElse(null);
+        if (cc == null) {
+            return null;
+        }
+        return firstNonBlank(cc.getNameAr(), cc.getNameEn(), cc.getName());
+    }
+
+    private String defaultPasswordFor(UserRole role, MaintenanceOfficerType type) {
+        boolean contractedMaintenance = role == UserRole.MAINTENANCE_CONTRACTOR
+                || (role == UserRole.MAINTENANCE_OFFICER && type == MaintenanceOfficerType.CONTRACTOR_COMPANY);
+        return contractedMaintenance ? DEFAULT_CONTRACTOR_PASSWORD : DEFAULT_EMPLOYEE_PASSWORD;
     }
 
     private Employee find(Long id) {
@@ -129,12 +222,15 @@ public class EmployeeService {
     }
 
     private EmployeeResponse toResponse(Employee employee) {
-        String title = firstNonBlank(employee.getJobTitleAr(), employee.getJobTitleEn());
+        String title = LocalizedNameResolver.resolve(employee.getJobTitleAr(), employee.getJobTitleEn(), null);
+        String resolvedName = resolvedDisplayName(employee);
         return EmployeeResponse.builder()
                 .id(employee.getId())
                 .propertyId(employee.getPropertyId())
                 .employeeCode(employee.getEmployeeCode())
-                .fullName(employee.getFullName())
+                .fullName(resolvedName)
+                .fullNameAr(firstNonBlank(employee.getFullNameAr(), employee.getFullName()))
+                .fullNameEn(firstNonBlank(employee.getFullNameEn(), employee.getFullName()))
                 .phone(employee.getPhone())
                 .email(employee.getEmail())
                 .nationalId(employee.getNationalId())
@@ -148,6 +244,13 @@ public class EmployeeService {
                 .createdAt(employee.getCreatedAt())
                 .updatedAt(employee.getUpdatedAt())
                 .build();
+    }
+
+    private String resolvedDisplayName(Employee employee) {
+        return LocalizedNameResolver.resolve(
+                employee.getFullNameAr(),
+                employee.getFullNameEn(),
+                employee.getFullName());
     }
 
     private User currentUser() {

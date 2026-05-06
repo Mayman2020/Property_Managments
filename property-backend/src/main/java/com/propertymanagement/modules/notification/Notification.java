@@ -2,10 +2,13 @@ package com.propertymanagement.modules.notification;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @Entity
 @Table(name = "notifications")
@@ -42,6 +45,15 @@ public class Notification {
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String message;
+
+    /**
+     * Optional structured payload (JSONB) that lets the frontend render the localized
+     * title/body via i18n. Shape: {@code {"titleKey": "...", "bodyKey": "...", "vars": {...}}}.
+     * When present, frontend prefers these keys over the raw {@link #title}/{@link #message} columns.
+     */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private Map<String, Object> params;
 
     @Column(name = "read_at")
     private LocalDateTime readAt;

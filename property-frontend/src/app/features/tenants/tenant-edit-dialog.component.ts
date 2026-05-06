@@ -290,7 +290,7 @@ export class TenantEditDialogComponent implements OnInit {
     this.unitSvc.getByProperty(propertyId, 0, 500).subscribe({
       next: (res) => {
         const all = res.data?.content ?? [];
-        this.units = all.filter((u) => !u.rented || u.id === keepUnitId);
+        this.units = all.filter((u) => u.id === keepUnitId || (!u.rented && !u.reserved));
       },
       error: () => { this.units = []; }
     });

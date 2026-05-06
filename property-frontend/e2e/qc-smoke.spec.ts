@@ -56,8 +56,6 @@ test.describe('QC smoke', () => {
       '/admin/inventory',
       '/admin/contracts/dashboard',
       '/admin/contracts/list',
-      '/admin/contracts/payments',
-      '/admin/contracts/violations',
       '/admin/contracts/complaints',
       '/admin/finance/dashboard',
       '/admin/finance/expenses',

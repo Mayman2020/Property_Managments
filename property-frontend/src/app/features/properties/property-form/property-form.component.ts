@@ -13,6 +13,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { TranslateModule } from '@ngx-translate/core';
 
@@ -69,6 +70,7 @@ import { ChangeDetectionStrategy } from '@angular/core';
     MatInputModule,
     MatProgressSpinnerModule,
     MatSelectModule,
+    MatTooltipModule,
     PageHeaderComponent,
     UploadZoneComponent,
     SearchableSelectComponent,
@@ -140,6 +142,8 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
     country?: string;
     googleMapUrl?: string;
     totalFloors: number;
+    /** Max units from floor config; mirrored in {@link floorUnitsConfig} after load. */
+    floorUnitsConfig?: Record<number, number>;
     totalUnits: number;
     description?: string;
     coverImageUrl?: string;
@@ -160,8 +164,13 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
   ownerTouched = false;
   ownerSearchControl = new FormControl('');
 
+  /** mat-autocomplete may set the control to the selected object; only strings are user-typed search. */
+  private autocompleteSearchText(raw: unknown): string {
+    return typeof raw === 'string' ? raw.trim().toLowerCase() : '';
+  }
+
   get filteredOwners(): Owner[] {
-    const q = (this.ownerSearchControl.value ?? '').toString().toLowerCase().trim();
+    const q = this.autocompleteSearchText(this.ownerSearchControl.value);
     return this.owners.filter((o) => {
       if (!q) return true;
       const blob = [o.fullName, o.fullNameAr, o.fullNameEn, o.nationalId]
@@ -204,7 +213,7 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
   maintenanceProviderSearchControl = new FormControl('');
 
   get filteredMaintenanceProviderOptions(): Array<{id: number; name: string}> {
-    const q = (this.maintenanceProviderSearchControl.value ?? '').toString().toLowerCase().trim();
+    const q = this.autocompleteSearchText(this.maintenanceProviderSearchControl.value);
     const selectedIds = new Set(this.selectedMaintenanceProviders.map((p) => p.id));
     if (this.maintenanceProviderType === 'USER') {
       return this.internalOfficerOptions
@@ -309,6 +318,8 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
       .subscribe(() => {
         this.cdr.markForCheck();
       });
+
+    this.form.get('totalFloors')?.valueChanges.subscribe(() => this.cdr.markForCheck());
   }
 
   get isViewMode(): boolean {
@@ -380,6 +391,30 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
     } else {
       delete this.floorUnitsConfig[floor];
     }
+    this.cdr.markForCheck();
+  }
+
+  /** Sum of per-floor limits for floors 1..totalFloors (matches backend capacity cap). */
+  private sumFloorUnitsConfig(totalFloors: number, config: Record<number, number>): number {
+    const nF = Math.min(100, Math.max(0, Number(totalFloors) || 0));
+    let sum = 0;
+    for (let f = 1; f <= nF; f++) {
+      const raw = config[f];
+      const n = typeof raw === 'number' && !Number.isNaN(raw) ? raw : 0;
+      sum += Math.max(0, n);
+    }
+    return sum;
+  }
+
+  /** Create / edit form: uses form totalFloors + floorUnitsConfig. */
+  plannedTotalUnitsFromConfig(): number {
+    return this.sumFloorUnitsConfig(Number(this.form.get('totalFloors')?.value) || 0, this.floorUnitsConfig);
+  }
+
+  /** Property view page: uses loaded record + floorUnitsConfig (set in loadProperty). */
+  plannedTotalUnitsForView(): number {
+    if (!this.propertyRecord) return 0;
+    return this.sumFloorUnitsConfig(this.propertyRecord.totalFloors, this.floorUnitsConfig);
   }
 
   getFloorUnitValue(floor: number): number | string {
@@ -508,7 +543,7 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
 
   get canManageAssignments(): boolean {
     const role = this.authSvc.getRole();
-    return role === 'SUPER_ADMIN' || role === 'PROPERTY_ADMIN';
+    return role === 'SUPER_ADMIN' || role === 'GENERAL_MANAGER';
   }
 
   toggleAssignForm(): void {

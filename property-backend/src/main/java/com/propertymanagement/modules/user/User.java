@@ -12,7 +12,9 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 @Entity
@@ -49,6 +51,10 @@ public class User implements UserDetails {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private UserRole role;
+
+    /** Comma-separated {@link UserRole} names in addition to {@link #role}; merged into {@link #getAuthorities()}. */
+    @Column(name = "extra_roles", length = 500)
+    private String extraRoles;
 
     @Column(name = "property_id")
     private Long propertyId;
@@ -94,9 +100,37 @@ public class User implements UserDetails {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    /** Extra portal roles (excluding {@link #role} duplicate). */
+    public List<UserRole> getExtraRolesList() {
+        return UserExtraRoles.parseList(extraRoles);
+    }
+
+    /** Primary plus extras, unique, primary first. */
+    public List<UserRole> getAllAssignedRoles() {
+        LinkedHashSet<UserRole> set = new LinkedHashSet<>();
+        if (role != null) {
+            set.add(role);
+        }
+        for (UserRole r : getExtraRolesList()) {
+            if (r != null) {
+                set.add(r);
+            }
+        }
+        return new ArrayList<>(set);
+    }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
+        LinkedHashSet<SimpleGrantedAuthority> authorities = new LinkedHashSet<>();
+        if (role != null) {
+            authorities.add(new SimpleGrantedAuthority("ROLE_" + role.name()));
+        }
+        for (UserRole r : getExtraRolesList()) {
+            if (r != null && r != role) {
+                authorities.add(new SimpleGrantedAuthority("ROLE_" + r.name()));
+            }
+        }
+        return new ArrayList<>(authorities);
     }
 
     @Override public boolean isAccountNonExpired()  { return true; }

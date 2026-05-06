@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,6 +20,10 @@ public interface MaintenanceRequestRepository extends JpaRepository<MaintenanceR
     long countByRequestNumberStartingWith(String prefix);
 
     Page<MaintenanceRequest> findByPropertyId(Long propertyId, Pageable pageable);
+
+    Page<MaintenanceRequest> findByPropertyIdIn(Collection<Long> propertyIds, Pageable pageable);
+
+    Page<MaintenanceRequest> findByStatusAndPropertyIdIn(RequestStatus status, Collection<Long> propertyIds, Pageable pageable);
     Page<MaintenanceRequest> findByTenantId(Long tenantId, Pageable pageable);
     Page<MaintenanceRequest> findByAssignedTo(Long officerId, Pageable pageable);
 
@@ -70,6 +75,19 @@ public interface MaintenanceRequestRepository extends JpaRepository<MaintenanceR
             @Param("propertyId") Long propertyId,
             Pageable pageable);
 
+    @Query("""
+            SELECT r FROM MaintenanceRequest r
+            WHERE (:status IS NULL OR r.status = :status)
+              AND (:priority IS NULL OR r.priority = :priority)
+              AND r.propertyId IN :propertyIds
+            ORDER BY r.createdAt DESC
+            """)
+    Page<MaintenanceRequest> findFilteredForPropertyIds(
+            @Param("status") RequestStatus status,
+            @Param("priority") RequestPriority priority,
+            @Param("propertyIds") Collection<Long> propertyIds,
+            Pageable pageable);
+
     @Query("SELECT YEAR(r.createdAt), MONTH(r.createdAt), COUNT(r) FROM MaintenanceRequest r WHERE r.createdAt >= :since GROUP BY YEAR(r.createdAt), MONTH(r.createdAt) ORDER BY YEAR(r.createdAt), MONTH(r.createdAt)")
     List<Object[]> countByMonth(@Param("since") LocalDateTime since);
 
@@ -92,4 +110,13 @@ public interface MaintenanceRequestRepository extends JpaRepository<MaintenanceR
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE MaintenanceRequest r SET r.tenantId = null WHERE r.tenantId = :tenantId")
     void clearTenantIdForTenant(@Param("tenantId") Long tenantId);
+
+    @Query("SELECT COUNT(r) FROM MaintenanceRequest r WHERE r.unitId = :unitId AND r.status IN :statuses")
+    long countByUnitIdAndStatuses(@Param("unitId") Long unitId, @Param("statuses") Collection<RequestStatus> statuses);
+
+    @Query("SELECT r FROM MaintenanceRequest r WHERE r.unitId = :unitId AND r.status IN :statuses")
+    List<MaintenanceRequest> findByUnitIdAndStatuses(
+            @Param("unitId") Long unitId,
+            @Param("statuses") Collection<RequestStatus> statuses,
+            Pageable pageable);
 }

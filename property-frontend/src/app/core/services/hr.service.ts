@@ -125,12 +125,33 @@ export interface PayrollMarkPaidPayload {
 
 export interface LeaveRequestItem {
   id: number;
+  employeeId?: number;
+  leaveTypeId?: number;
   employeeName?: string;
   leaveTypeName?: string;
   startDate: string;
   endDate: string;
   daysCount: number;
   status?: string;
+  reason?: string;
+  rejectionReason?: string;
+}
+
+export interface LeaveBalanceItem {
+  employeeId: number;
+  year: number;
+  entitledDays: number;
+  usedDays: number;
+  remainingDays: number;
+}
+
+export interface CreateLeavePayload {
+  employeeId: number;
+  leaveTypeId: number;
+  startDate: string;
+  endDate: string;
+  reason?: string;
+  attachmentUrl?: string;
 }
 
 export interface AttendanceItem {
@@ -193,6 +214,22 @@ export class HrService {
 
   getLeaveRequests(params: Record<string, string | number> = {}): Observable<ApiResponse<PagedResponse<LeaveRequestItem>>> {
     return this.api.get('/hr/leaves', params);
+  }
+
+  getLeaveBalances(params: Record<string, string | number> = {}): Observable<ApiResponse<LeaveBalanceItem[]>> {
+    return this.api.get('/hr/leaves/balances', params);
+  }
+
+  createLeave(payload: CreateLeavePayload): Observable<ApiResponse<LeaveRequestItem>> {
+    return this.api.post('/hr/leaves', payload);
+  }
+
+  approveLeave(id: number, note?: string): Observable<ApiResponse<LeaveRequestItem>> {
+    return this.api.post(`/hr/leaves/${id}/approve`, { note });
+  }
+
+  rejectLeave(id: number, note?: string): Observable<ApiResponse<LeaveRequestItem>> {
+    return this.api.post(`/hr/leaves/${id}/reject`, { note });
   }
 
   getAttendance(params: Record<string, string | number> = {}): Observable<ApiResponse<PagedResponse<AttendanceItem>>> {

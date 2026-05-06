@@ -16,7 +16,7 @@ export interface ExportColumn<T = unknown> {
   standalone: true,
   imports: [NgIf, MatButtonModule, MatTooltipModule],
   template: `
-    <div class="export-toolbar" *ngIf="canExport">
+    <div class="export-toolbar" *ngIf="canExport" [class.export-toolbar--inline]="inline">
       <button mat-stroked-button type="button" (click)="exportExcel()" [disabled]="disabled || !hasRows" [matTooltip]="excelLabel">
         <span class="material-icons">table_view</span>
         Excel
@@ -45,9 +45,16 @@ export interface ExportColumn<T = unknown> {
       font-size: 18px;
       margin-inline-end: 6px;
     }
+
+    .export-toolbar--inline {
+      padding: 0;
+      justify-content: flex-start;
+    }
   `]
 })
 export class TableExportToolbarComponent<T = unknown> {
+  /** When true, no extra vertical padding — use beside other buttons in a toolbar row. */
+  @Input() inline = false;
   @Input() title = 'Export';
   @Input() fileName = 'export';
   @Input() permissionKey?: string;

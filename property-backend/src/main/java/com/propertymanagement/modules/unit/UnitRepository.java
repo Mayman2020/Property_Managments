@@ -33,12 +33,18 @@ public interface UnitRepository extends JpaRepository<Unit, Long> {
     @Query("SELECT COUNT(u) FROM Unit u WHERE u.rented = true AND u.active = true")
     long countRented();
 
-    @Query("SELECT COUNT(u) FROM Unit u WHERE u.rented = false AND u.active = true")
+    @Query("SELECT COUNT(u) FROM Unit u WHERE u.rented = false AND u.reserved = false AND u.active = true")
     long countVacant();
+
+    @Query("SELECT COUNT(u) FROM Unit u WHERE u.reserved = true AND u.active = true")
+    long countReserved();
 
     long countByPropertyIdAndActiveTrue(Long propertyId);
 
     long countByPropertyIdAndActiveTrueAndRentedTrue(Long propertyId);
+
+    @Query("SELECT COUNT(u) FROM Unit u WHERE u.propertyId = :propertyId AND u.reserved = true AND u.active = true")
+    long countReservedByPropertyId(@Param("propertyId") Long propertyId);
 
     long countByPropertyIdAndFloorIdAndActiveTrue(Long propertyId, Long floorId);
 }

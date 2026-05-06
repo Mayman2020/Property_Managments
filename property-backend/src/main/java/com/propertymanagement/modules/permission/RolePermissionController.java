@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -32,8 +33,9 @@ public class RolePermissionController {
 
     @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<RolePermissionResponse>> getMine() {
-        return ResponseEntity.ok(ApiResponse.ok(service.getMyPermissions()));
+    public ResponseEntity<ApiResponse<RolePermissionResponse>> getMine(
+            @RequestParam(name = "role", required = false) UserRole role) {
+        return ResponseEntity.ok(ApiResponse.ok(service.getMyPermissions(role)));
     }
 
     @PutMapping("/{role}")

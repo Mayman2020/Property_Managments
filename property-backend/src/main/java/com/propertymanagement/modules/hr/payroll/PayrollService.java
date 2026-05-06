@@ -6,7 +6,12 @@ import com.propertymanagement.modules.finance.expense.ExpenseWriterRepository;
 import com.propertymanagement.modules.hr.employee.Employee;
 import com.propertymanagement.modules.hr.employee.EmployeeRepository;
 import com.propertymanagement.modules.hr.payroll.dto.*;
+import com.propertymanagement.modules.notification.NotificationService;
+import com.propertymanagement.modules.notification.NotificationType;
+import com.propertymanagement.modules.property.PropertyOwnerPortalRecipientService;
 import com.propertymanagement.modules.user.User;
+import com.propertymanagement.modules.user.UserRepository;
+import com.propertymanagement.modules.user.UserRole;
 import com.propertymanagement.shared.exception.AppException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -37,6 +42,9 @@ public class PayrollService {
     private final EmployeeBonusRepository employeeBonusRepository;
     private final ExpenseWriterRepository expenseWriterRepository;
     private final ExpenseCategoryLookupRepository expenseCategoryLookupRepository;
+    private final NotificationService notificationService;
+    private final UserRepository userRepository;
+    private final PropertyOwnerPortalRecipientService propertyOwnerPortalRecipientService;
 
     public Page<PayrollRunResponse> getAll(Pageable pageable) {
         return repository.findAllByOrderByPayPeriodYearDescPayPeriodMonthDesc(pageable)
@@ -67,7 +75,7 @@ public class PayrollService {
                 .payPeriodYear(request.getPayPeriodYear())
                 .payPeriodMonth(request.getPayPeriodMonth())
                 .payDate(LocalDate.of(request.getPayPeriodYear(), request.getPayPeriodMonth(), 25))
-                .status("DRAFT")
+                .status("SUBMITTED")
                 .preparedBy(user.getId())
                 .notes("Generated from active employees")
                 .build());
@@ -96,13 +104,14 @@ public class PayrollService {
 
         refreshRunTotals(run);
         createPayrollExpense(run);
+        notifyPayrollSubmitted(run);
         return toDetailResponse(run);
     }
 
     @Transactional
     public PayrollRunDetailResponse adjustPayslip(Long payrollRunId, Long payslipId, PayslipAdjustRequest request) {
         PayrollRun run = find(payrollRunId);
-        ensureDraft(run);
+        ensureEditable(run);
 
         Payslip slip = payslipRepository.findByIdAndPayrollRunId(payslipId, payrollRunId)
                 .orElseThrow(() -> AppException.notFound("Payslip not found: " + payslipId));
@@ -125,7 +134,7 @@ public class PayrollService {
     @Transactional
     public PayrollRunDetailResponse addBonus(Long payrollRunId, BonusRequest request) {
         PayrollRun run = find(payrollRunId);
-        ensureDraft(run);
+        ensureEditable(run);
         Employee employee = employeeRepository.findById(request.getEmployeeId())
                 .orElseThrow(() -> AppException.notFound("Employee not found: " + request.getEmployeeId()));
         ensureEmployeeInProperty(employee, run.getPropertyId());
@@ -173,11 +182,20 @@ public class PayrollService {
     @Transactional
     public PayrollRunDetailResponse approve(Long id) {
         PayrollRun run = find(id);
-        ensureDraft(run);
+        if (!"SUBMITTED".equalsIgnoreCase(run.getStatus())) {
+            throw AppException.badRequest("Only submitted payroll can be approved");
+        }
+        User actor = currentUser();
+        if (actor.getRole() != UserRole.OWNER
+                && actor.getRole() != UserRole.SUPER_ADMIN
+                && actor.getRole() != UserRole.GENERAL_MANAGER) {
+            throw AppException.forbidden("Only owner can approve payroll");
+        }
         run.setStatus("APPROVED");
-        run.setApprovedBy(currentUser().getId());
+        run.setApprovedBy(actor.getId());
         repository.save(run);
         syncPayrollExpense(run);
+        notifyPayrollApproved(run);
         return toDetailResponse(run);
     }
 
@@ -202,6 +220,7 @@ public class PayrollService {
         repository.save(run);
         syncPayrollExpense(run);
         markAdvancesDeducted(run, slips);
+        notifyPayrollMarkedPaid(run, slips);
         return toDetailResponse(run);
     }
 
@@ -366,9 +385,9 @@ public class PayrollService {
         }
     }
 
-    private void ensureDraft(PayrollRun run) {
-        if (!"DRAFT".equalsIgnoreCase(run.getStatus())) {
-            throw AppException.badRequest("Only draft payroll can be modified");
+    private void ensureEditable(PayrollRun run) {
+        if (!"SUBMITTED".equalsIgnoreCase(run.getStatus())) {
+            throw AppException.badRequest("Only submitted payroll can be modified");
         }
     }
 
@@ -434,5 +453,59 @@ public class PayrollService {
         return expenseCategoryLookupRepository.findByCategoryCode(PAYROLL_EXPENSE_CODE)
                 .map(com.propertymanagement.modules.finance.expense.ExpenseCategory::getId)
                 .orElseThrow(() -> AppException.notFound("Expense category not found: " + PAYROLL_EXPENSE_CODE));
+    }
+
+    private void notifyPayrollSubmitted(PayrollRun run) {
+        List<Long> recipients = new ArrayList<>();
+        recipients.addAll(propertyOwnerPortalRecipientService.portalRecipientUserIds(run.getPropertyId()));
+        recipients.addAll(userRepository.findByPropertyIdAndRoleAndActiveTrue(run.getPropertyId(), UserRole.ACCOUNTANT)
+                .stream().map(User::getId).toList());
+        notificationService.createForRecipients(
+                recipients.stream().distinct().toList(),
+                currentUser().getId(),
+                run.getPropertyId(),
+                run.getId(),
+                NotificationType.PAYROLL_SUBMITTED,
+                "Payroll submitted",
+                "Payroll for " + run.getPayPeriodMonth() + "/" + run.getPayPeriodYear() + " has been submitted"
+        );
+    }
+
+    private void notifyPayrollApproved(PayrollRun run) {
+        List<Long> recipients = new ArrayList<>();
+        recipients.addAll(propertyOwnerPortalRecipientService.portalRecipientUserIds(run.getPropertyId()));
+        recipients.addAll(userRepository.findByPropertyIdAndRoleAndActiveTrue(run.getPropertyId(), UserRole.ACCOUNTANT)
+                .stream().map(User::getId).toList());
+        notificationService.createForRecipients(
+                recipients.stream().distinct().toList(),
+                currentUser().getId(),
+                run.getPropertyId(),
+                run.getId(),
+                NotificationType.PAYROLL_APPROVED,
+                "Payroll approved",
+                "Payroll for " + run.getPayPeriodMonth() + "/" + run.getPayPeriodYear() + " was approved"
+        );
+    }
+
+    private void notifyPayrollMarkedPaid(PayrollRun run, List<Payslip> slips) {
+        List<Long> recipients = new ArrayList<>();
+        recipients.addAll(propertyOwnerPortalRecipientService.portalRecipientUserIds(run.getPropertyId()));
+        recipients.addAll(userRepository.findByPropertyIdAndRoleAndActiveTrue(run.getPropertyId(), UserRole.ACCOUNTANT)
+                .stream().map(User::getId).toList());
+        for (Payslip slip : slips) {
+            employeeRepository.findById(slip.getEmployeeId())
+                    .map(Employee::getLinkedUserId)
+                    .filter(Objects::nonNull)
+                    .ifPresent(recipients::add);
+        }
+        notificationService.createForRecipients(
+                recipients.stream().distinct().toList(),
+                currentUser().getId(),
+                run.getPropertyId(),
+                run.getId(),
+                NotificationType.PAYROLL_MARKED_PAID,
+                "Payroll paid",
+                "Payroll for " + run.getPayPeriodMonth() + "/" + run.getPayPeriodYear() + " marked as paid"
+        );
     }
 }

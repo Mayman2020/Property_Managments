@@ -1,0 +1,49 @@
+<h2 mat-dialog-title>{{ 'ACCOUNTANT_PORTAL.STAFF_UPLOAD_TITLE' | translate }}</h2>
+<mat-dialog-content [formGroup]="form">
+  <p class="hint">{{ 'ACCOUNTANT_PORTAL.STAFF_UPLOAD_HINT' | translate }}</p>
+
+  <mat-form-field appearance="outline" class="full">
+    <mat-label>{{ 'ACCOUNTANT_PORTAL.STAFF_UPLOAD_TENANT_ID' | translate }}</mat-label>
+    <input matInput type="number" formControlName="tenantId" />
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="full">
+    <mat-label>{{ 'ACCOUNTANT_PORTAL.STAFF_UPLOAD_CONTRACT_ID' | translate }}</mat-label>
+    <input matInput type="number" formControlName="contractId" />
+  </mat-form-field>
+
+  <div class="row">
+    <mat-form-field appearance="outline" class="half">
+      <mat-label>{{ 'TENANT_PORTAL.PERIOD_MONTH' | translate }}</mat-label>
+      <mat-select formControlName="periodMonth">
+        <mat-option *ngFor="let m of months" [value]="m">{{ m }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="half">
+      <mat-label>{{ 'TENANT_PORTAL.PERIOD_YEAR' | translate }}</mat-label>
+      <mat-select formControlName="periodYear">
+        <mat-option *ngFor="let y of years" [value]="y">{{ y }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <mat-form-field appearance="outline" class="full">
+    <mat-label>{{ 'TENANT_PORTAL.AMOUNT_PAID' | translate }}</mat-label>
+    <input matInput type="number" formControlName="amount" />
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="full">
+    <mat-label>{{ 'COMMON.NOTES' | translate }}</mat-label>
+    <textarea matInput rows="2" formControlName="notes"></textarea>
+  </mat-form-field>
+
+  <label class="upload-label">{{ 'TENANT_PORTAL.RECEIPT_FILE' | translate }}</label>
+  <app-upload-zone (filesChanged)="onFilesChange($event)"></app-upload-zone>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close type="button" [disabled]="submitting">{{ 'COMMON.CANCEL' | translate }}</button>
+  <button mat-flat-button color="primary" type="button" (click)="submit()" [disabled]="submitting || form.invalid">
+    {{ submitting ? ('COMMON.LOADING' | translate) : ('ACCOUNTANT_PORTAL.STAFF_UPLOAD_SUBMIT' | translate) }}
+  </button>
+</mat-dialog-actions>

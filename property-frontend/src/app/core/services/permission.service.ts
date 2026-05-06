@@ -34,7 +34,6 @@ export interface ModuleDefinitionDto {
   icon?: string;
   requiredModules?: string[];
   recommendedModules?: string[];
-  monthlyPrice?: number;
   displayOrder?: number;
 }
 
@@ -63,8 +62,9 @@ export class PermissionService {
 
   loadMine(): Observable<ApiResponse<RolePermissionDto> | null> {
     if (!this.auth.isAuthenticated()) return of(null);
+    const activeRole = this.auth.getRole();
     return forkJoin({
-      permissionRes: this.api.get<ApiResponse<RolePermissionDto>>('/role-permissions/me'),
+      permissionRes: this.api.get<ApiResponse<RolePermissionDto>>('/role-permissions/me', activeRole ? { role: activeRole } : undefined),
       screenRes: this.api.get<ApiResponse<ScreenSettingDto[]>>('/screen-settings'),
       propertyModuleRes: this.api.get<ApiResponse<PropertyModuleSettingDto[]>>('/property-modules/me')
     }).pipe(
@@ -162,12 +162,13 @@ export class PermissionService {
   }
 
   can(moduleKey: string, action: PermissionAction = 'view'): boolean {
+    if (this.auth.isSuperAdmin()) return true;
     if (!this.isScreenEnabled(moduleKey)) return false;
     if (!this.isPropertyModuleEnabled(moduleKey)) return false;
     const module = this.permissions[moduleKey];
-    if (!module) return this.auth.isSuperAdmin();
+    if (!module) return false;
     if (module.enabled === false) return false;
-    return module[action] === true || this.auth.isSuperAdmin();
+    return module[action] === true;
   }
 
   private toScreenMap(items: ScreenSettingDto[]): Record<string, boolean> {

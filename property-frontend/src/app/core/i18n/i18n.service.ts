@@ -67,6 +67,38 @@ export class I18nService {
     return this.translate.instant(key, params);
   }
 
+  /**
+   * In-app notifications persisted before full i18n keys sometimes store both languages using the same
+   * separators as {@code BilingualNotificationText} on the backend: title {@code "ar | en"}, body {@code "ar\\n\\n—\\n\\nen"}.
+   */
+  pickBilingualSegment(text: string | null | undefined, kind: 'title' | 'body'): string {
+    const trimmed = (text ?? '').trim();
+    if (!trimmed) {
+      return '';
+    }
+    const lang = this.currentLang;
+
+    if (kind === 'body') {
+      const sep = '\n\n—\n\n';
+      if (trimmed.includes(sep)) {
+        const parts = trimmed.split(sep).map((p) => p.trim()).filter(Boolean);
+        const arPart = parts[0] ?? '';
+        const enPart = parts[1] ?? '';
+        return lang === 'ar' ? arPart || enPart : enPart || arPart;
+      }
+      return trimmed;
+    }
+
+    const sep = ' | ';
+    if (trimmed.includes(sep)) {
+      const idx = trimmed.indexOf(sep);
+      const arPart = trimmed.slice(0, idx).trim();
+      const enPart = trimmed.slice(idx + sep.length).trim();
+      return lang === 'ar' ? arPart || enPart : enPart || arPart;
+    }
+    return trimmed;
+  }
+
   private applyLang(code: LangCode): void {
     const lang = this.languages.find((l) => l.code === code) ?? this.languages[0];
     const htmlLang = code === 'ar' ? 'ar-OM' : 'en';

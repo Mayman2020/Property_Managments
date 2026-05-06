@@ -13,6 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +29,25 @@ public class NotificationService {
                                     NotificationType type,
                                     String title,
                                     String message) {
+        createForRecipients(recipientIds, actorUserId, propertyId, requestId, type, title, message, null);
+    }
+
+    /**
+     * Localized variant: pass i18n keys + variables ({@code titleKey}, {@code bodyKey}, {@code vars})
+     * via {@code params} so the frontend renders the final localized text. {@code title} / {@code message}
+     * may be empty strings when {@code params} is supplied (kept non-null to satisfy the column).
+     */
+    public void createForRecipients(Collection<Long> recipientIds,
+                                    Long actorUserId,
+                                    Long propertyId,
+                                    Long requestId,
+                                    NotificationType type,
+                                    String title,
+                                    String message,
+                                    Map<String, Object> params) {
+        Map<String, Object> paramsPayload = emptyToNull(params);
+        String safeTitle = title == null ? "" : title;
+        String safeMessage = message == null ? "" : message;
         recipientIds.stream().distinct().forEach(recipientId -> {
             Notification notification = Notification.builder()
                     .recipientUserId(recipientId)
@@ -34,17 +55,75 @@ public class NotificationService {
                     .propertyId(propertyId)
                     .requestId(requestId)
                     .type(type)
-                    .title(title)
-                    .message(message)
+                    .title(safeTitle)
+                    .message(safeMessage)
+                    .params(paramsPayload)
                     .build();
             notificationRepository.save(notification);
         });
     }
 
-    public Page<NotificationResponse> getMyNotifications(Pageable pageable) {
+    /**
+     * Convenience overload for the new i18n-driven flow: callers pass {@code titleKey},
+     * {@code bodyKey} and a {@code vars} map; everything is wrapped into the structured params payload.
+     * Title/message columns are stored empty so the frontend always uses the keys.
+     */
+    public void createLocalized(Collection<Long> recipientIds,
+                                Long actorUserId,
+                                Long propertyId,
+                                Long requestId,
+                                NotificationType type,
+                                String titleKey,
+                                String bodyKey,
+                                Map<String, Object> vars) {
+        createLocalized(recipientIds, actorUserId, propertyId, requestId, type, titleKey, bodyKey, vars, null);
+    }
+
+    /**
+     * Same as {@link #createLocalized(Collection, Long, Long, Long, NotificationType, String, String, Map)}
+     * with optional navigation hints merged into JSON params (e.g. {@code contractId}, {@code unitId}) for inbox deep-links.
+     */
+    public void createLocalized(Collection<Long> recipientIds,
+                                Long actorUserId,
+                                Long propertyId,
+                                Long requestId,
+                                NotificationType type,
+                                String titleKey,
+                                String bodyKey,
+                                Map<String, Object> vars,
+                                Map<String, Object> navigationHints) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        if (titleKey != null && !titleKey.isBlank()) {
+            payload.put("titleKey", titleKey);
+        }
+        if (bodyKey != null && !bodyKey.isBlank()) {
+            payload.put("bodyKey", bodyKey);
+        }
+        if (vars != null && !vars.isEmpty()) {
+            payload.put("vars", vars);
+        }
+        if (navigationHints != null) {
+            navigationHints.forEach((k, v) -> {
+                if (k != null && !k.isBlank() && v != null) {
+                    payload.put(k, v);
+                }
+            });
+        }
+        createForRecipients(recipientIds, actorUserId, propertyId, requestId, type, "", "", payload.isEmpty() ? null : payload);
+    }
+
+    /**
+     * {@code scope=recent}: created_at &gt;= now - 14 days. {@code scope=older}: created_at &lt; that cutoff.
+     * Sorted by {@code created_at} descending (newest first).
+     */
+    public Page<NotificationResponse> getMyNotifications(Pageable pageable, String scope) {
         Long userId = currentUserId();
-        return notificationRepository.findByRecipientUserIdOrderByCreatedAtDesc(userId, pageable)
-                .map(this::toResponse);
+        LocalDateTime cutoff = LocalDateTime.now().minusDays(14);
+        String s = scope == null ? "recent" : scope.trim().toLowerCase();
+        Page<Notification> page = "older".equals(s)
+                ? notificationRepository.findByRecipientUserIdAndCreatedAtLessThanOrderByCreatedAtDesc(userId, cutoff, pageable)
+                : notificationRepository.findByRecipientUserIdAndCreatedAtGreaterThanEqualOrderByCreatedAtDesc(userId, cutoff, pageable);
+        return page.map(this::toResponse);
     }
 
     public long getMyUnreadCount() {
@@ -87,7 +166,15 @@ public class NotificationService {
                 .read(n.getReadAt() != null)
                 .readAt(n.getReadAt())
                 .createdAt(n.getCreatedAt())
+                .params(emptyToNull(n.getParams()))
                 .build();
+    }
+
+    private static Map<String, Object> emptyToNull(Map<String, Object> params) {
+        if (params == null || params.isEmpty()) {
+            return null;
+        }
+        return params;
     }
 
     private Long currentUserId() {

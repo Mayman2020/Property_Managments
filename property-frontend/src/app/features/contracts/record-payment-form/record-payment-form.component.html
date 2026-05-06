@@ -14,7 +14,7 @@
 <ng-container *ngIf="isDialog">
   <h2 mat-dialog-title class="dialog-title">
     <mat-icon class="dialog-title-icon">payments</mat-icon>
-    {{ 'CONTRACTS.RECORD_PAYMENT' | translate }}
+    {{ (requireReceipt ? 'CONTRACTS.MARK_PAID_DIALOG_TITLE' : 'CONTRACTS.RECORD_PAYMENT') | translate }}
   </h2>
 
   <mat-dialog-content>
@@ -26,7 +26,7 @@
 <ng-template #formContent>
   <form [formGroup]="form" class="payment-form">
 
-    <div class="two-col">
+    <div class="two-col" *ngIf="!hideScheduleFields">
       <mat-form-field appearance="outline">
         <mat-label>{{ 'CONTRACTS.CONTRACT_ID' | translate }}</mat-label>
         <input matInput type="number" formControlName="contractId" required>
@@ -57,16 +57,32 @@
       </mat-form-field>
     </div>
 
-    <mat-form-field appearance="outline" class="full-width">
-      <mat-label>{{ 'CONTRACTS.METHOD' | translate }}</mat-label>
-      <mat-select formControlName="paymentMethod">
-        <mat-option *ngFor="let m of methods" [value]="m">{{ 'CONTRACTS.METHOD_' + m | translate }}</mat-option>
-      </mat-select>
-    </mat-form-field>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>{{ 'CONTRACTS.METHOD' | translate }}</mat-label>
+        <mat-select formControlName="paymentMethod">
+          <mat-option *ngFor="let m of methods" [value]="m.code">{{ methodName(m) }}</mat-option>
+        </mat-select>
+      </mat-form-field>
 
-    <!-- referenceNumber is backend-generated; no input on create -->
+    <div class="receipt-block" *ngIf="requireReceipt">
+      <label class="receipt-label">{{ 'CONTRACTS.RECEIPT_FILE' | translate }} *</label>
+      <div class="receipt-row">
+        <input #receiptInput type="file" class="visually-hidden" (change)="onReceiptFile($event)" accept="image/*,.pdf,application/pdf">
+        <button type="button" mat-stroked-button (click)="receiptInput.click()" [disabled]="receiptUploading">
+          <mat-spinner diameter="18" *ngIf="receiptUploading"></mat-spinner>
+          <mat-icon *ngIf="!receiptUploading">upload_file</mat-icon>
+          {{ 'CONTRACTS.CHOOSE_RECEIPT' | translate }}
+        </button>
+        <a *ngIf="form.value.receiptUrl" class="receipt-link" [href]="form.value.receiptUrl" target="_blank" rel="noopener">
+          {{ 'CONTRACTS.VIEW_RECEIPT' | translate }}
+        </a>
+      </div>
+      <p class="field-error" *ngIf="form.get('receiptUrl')?.invalid && form.get('receiptUrl')?.touched">
+        {{ 'CONTRACTS.RECEIPT_REQUIRED' | translate }}
+      </p>
+    </div>
 
-    <div class="two-col">
+    <div class="two-col" *ngIf="!hideScheduleFields">
       <mat-form-field appearance="outline">
         <mat-label>{{ 'CONTRACTS.LATE_FEE' | translate }}</mat-label>
         <input matInput type="number" formControlName="lateFee">
@@ -87,7 +103,7 @@
 
     <div class="form-actions">
       <button mat-stroked-button type="button" (click)="cancel()">{{ 'COMMON.CANCEL' | translate }}</button>
-      <button mat-flat-button color="primary" [disabled]="form.invalid || saving" (click)="submit()">
+      <button mat-flat-button color="primary" [disabled]="form.invalid || saving || receiptUploading" (click)="submit()">
         <mat-spinner diameter="16" *ngIf="saving"></mat-spinner>
         <mat-icon *ngIf="!saving">save</mat-icon>
         {{ 'CONTRACTS.SAVE_PAYMENT' | translate }}

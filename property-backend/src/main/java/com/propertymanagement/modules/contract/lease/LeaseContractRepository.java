@@ -3,10 +3,13 @@ package com.propertymanagement.modules.contract.lease;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import jakarta.persistence.LockModeType;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,7 +21,13 @@ public interface LeaseContractRepository extends JpaRepository<LeaseContract, Lo
 
     Page<LeaseContract> findByPropertyId(Long propertyId, Pageable pageable);
 
+    Page<LeaseContract> findByPropertyIdIn(Collection<Long> propertyIds, Pageable pageable);
+
+    Page<LeaseContract> findByStatusAndPropertyIdIn(ContractStatus status, Collection<Long> propertyIds, Pageable pageable);
+
     List<LeaseContract> findByTenantId(Long tenantId);
+
+    List<LeaseContract> findByTenantIdOrderByCreatedAtDesc(Long tenantId);
 
     boolean existsByTenantId(Long tenantId);
 
@@ -55,4 +64,16 @@ public interface LeaseContractRepository extends JpaRepository<LeaseContract, Lo
     List<LeaseContract> findByOwnerIdAndStatusOrderByCreatedAtDesc(Long ownerId, ContractStatus status);
 
     List<LeaseContract> findByStatusOrderByCreatedAtDesc(ContractStatus status);
+
+    /** Used by the owner portal so all property co-owners (not only contract.owner_id) see drafts. */
+    List<LeaseContract> findByStatusAndPropertyIdInOrderByCreatedAtDesc(
+            ContractStatus status, Collection<Long> propertyIds);
+
+    @Query("SELECT COUNT(c) FROM LeaseContract c WHERE c.unitId = :unitId AND c.status IN :statuses")
+    long countByUnitIdAndStatusIn(@Param("unitId") Long unitId, @Param("statuses") Collection<ContractStatus> statuses);
+
+    /** Row-level lock used for owner decisions / cancel-request race protection. */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT c FROM LeaseContract c WHERE c.id = :id")
+    Optional<LeaseContract> findByIdForUpdate(@Param("id") Long id);
 }

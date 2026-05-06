@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
+import { timeout } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
@@ -51,8 +52,11 @@ export class ApiService {
   uploadFile(file: File): Observable<{ url: string; filename?: string }> {
     const formData = new FormData();
     formData.append('file', file);
+    /** Avoid indefinite hang if the server or proxy never responds (UI spinner stays forever). */
+    const uploadTimeoutMs = 180_000;
     return this.http.post<{ success: boolean; data?: { url?: string; filename?: string } }>(`${this.base}/files/upload`, formData)
       .pipe(
+        timeout(uploadTimeoutMs),
         map((res) => {
           const data = res?.data ?? {};
           return {

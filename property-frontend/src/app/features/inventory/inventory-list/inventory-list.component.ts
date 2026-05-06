@@ -22,6 +22,7 @@ import { PropertyService, Property } from '../../../core/services/property.servi
 import { SnackService } from '../../../core/services/snack.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { InventoryItemDialogComponent } from '../inventory-item-dialog.component';
+import { PermissionService } from '../../../core/services/permission.service';
 
 @Component({
   selector: 'app-inventory-list',
@@ -52,8 +53,21 @@ export class InventoryListComponent implements OnInit {
     private readonly snack: SnackService,
     private readonly deleteConfirm: DeleteConfirmService,
     private readonly dialog: MatDialog,
-    readonly i18n: I18nService
+    readonly i18n: I18nService,
+    private readonly permissions: PermissionService
   ) {}
+
+  canCreateInventory(): boolean {
+    return this.permissions.can('inventory', 'create');
+  }
+
+  canEditInventory(): boolean {
+    return this.permissions.can('inventory', 'edit');
+  }
+
+  canDeleteInventory(): boolean {
+    return this.permissions.can('inventory', 'delete');
+  }
 
   ngOnInit(): void {
     this.propertySvc.getAll(0, 100).subscribe({

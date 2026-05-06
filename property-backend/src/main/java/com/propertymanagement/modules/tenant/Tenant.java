@@ -64,6 +64,9 @@ public class Tenant {
     @Column(name = "profile_image", length = 500)
     private String profileImage;
 
+    @Column(name = "civil_id_image_url", length = 500)
+    private String civilIdImageUrl;
+
     @Builder.Default
     @Convert(converter = StringListJsonConverter.class)
     @Column(name = "lease_contract_files", columnDefinition = "TEXT")

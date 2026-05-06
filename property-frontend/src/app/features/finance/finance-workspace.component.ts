@@ -8,7 +8,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { TablePagerComponent } from '../../shared/components/table-pager/table-pager.component';
 import { FilterBarComponent, FilterSpec } from '../../shared/components/filter-bar/filter-bar.component';
-import { BudgetItem, ExpenseItem, FinanceDashboardDto, FinanceService, PettyCashFundItem, RevenueItem } from '../../core/services/finance.service';
+import { BudgetItem, ExpenseItem, FinanceDashboardDto, FinanceService, RevenueItem } from '../../core/services/finance.service';
 import { Property, PropertyService } from '../../core/services/property.service';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { ExpenseDialogComponent } from './expense-dialog.component';
@@ -74,6 +74,18 @@ import { RevenueDialogComponent } from './revenue-dialog.component';
             </div>
           </article>
         </section>
+        <section class="quick-actions-grid">
+          <a class="quick-action-card" routerLink="/admin/finance/expenses">
+            <span class="material-icons">receipt_long</span>
+            <h4>{{ 'NAV.EXPENSES' | translate }}</h4>
+            <p>{{ 'FINANCE.EXPENSES_TITLE' | translate }}</p>
+          </a>
+          <a class="quick-action-card" routerLink="/admin/finance/revenues">
+            <span class="material-icons">trending_up</span>
+            <h4>{{ 'NAV.REVENUES' | translate }}</h4>
+            <p>{{ 'FINANCE.REVENUES_TITLE' | translate }}</p>
+          </a>
+        </section>
       </ng-container>
 
       <div class="app-card" *ngIf="section === 'expenses'">
@@ -126,30 +138,6 @@ import { RevenueDialogComponent } from './revenue-dialog.component';
         <app-table-pager [length]="revenues.length" [pageSize]="pageSize" [pageIndex]="revenuesPageIndex" (pageIndexChange)="revenuesPageIndex = $event"></app-table-pager>
       </div>
 
-      <div class="app-card" *ngIf="section === 'petty-cash'">
-        <div class="app-table-wrap">
-          <table class="app-data-table">
-            <thead>
-              <tr>
-                <th>{{ 'FINANCE.FUND_COL' | translate }}</th>
-                <th>{{ 'FINANCE.OPENING_COL' | translate }}</th>
-                <th>{{ 'FINANCE.CURRENT_COL' | translate }}</th>
-                <th>{{ 'FINANCE.LIMIT_COL' | translate }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let item of pagedPettyCashFunds">
-                <td>{{ item.fundName }}</td>
-                <td>{{ item.openingBalance | number:'1.0-2' }}</td>
-                <td>{{ item.currentBalance | number:'1.0-2' }}</td>
-                <td>{{ item.maxTransaction | number:'1.0-2' }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <app-table-pager [length]="pettyCashFunds.length" [pageSize]="pageSize" [pageIndex]="pettyCashPageIndex" (pageIndexChange)="pettyCashPageIndex = $event"></app-table-pager>
-      </div>
-
       <div class="app-card" *ngIf="section === 'budget'">
         <div class="app-table-wrap">
           <table class="app-data-table">
@@ -183,7 +171,6 @@ export class FinanceWorkspaceComponent implements OnInit {
   dashboard?: FinanceDashboardDto;
   expenses: ExpenseItem[] = [];
   revenues: RevenueItem[] = [];
-  pettyCashFunds: PettyCashFundItem[] = [];
   budgets: BudgetItem[] = [];
   properties: Property[] = [];
   selectedPropertyId: number | null = null;
@@ -191,7 +178,6 @@ export class FinanceWorkspaceComponent implements OnInit {
   readonly pageSize = 5;
   expensesPageIndex = 0;
   revenuesPageIndex = 0;
-  pettyCashPageIndex = 0;
   budgetPageIndex = 0;
 
   constructor(
@@ -210,7 +196,6 @@ export class FinanceWorkspaceComponent implements OnInit {
       dashboard: 'FINANCE.DASHBOARD_TITLE',
       expenses: 'FINANCE.EXPENSES_TITLE',
       revenues: 'FINANCE.REVENUES_TITLE',
-      'petty-cash': 'FINANCE.PETTY_CASH_TITLE',
       budget: 'FINANCE.BUDGET_TITLE'
     };
     return this.translate.instant(map[this.section] ?? 'FINANCE.DASHBOARD_TITLE');
@@ -241,14 +226,12 @@ export class FinanceWorkspaceComponent implements OnInit {
     if (this.section === 'dashboard') return !this.dashboardCards.length;
     if (this.section === 'expenses') return !this.expenses.length;
     if (this.section === 'revenues') return !this.revenues.length;
-    if (this.section === 'petty-cash') return !this.pettyCashFunds.length;
     if (this.section === 'budget') return !this.budgets.length;
     return false;
   }
 
   get pagedExpenses(): ExpenseItem[] { return this.pageSlice(this.expenses, this.expensesPageIndex); }
   get pagedRevenues(): RevenueItem[] { return this.pageSlice(this.revenues, this.revenuesPageIndex); }
-  get pagedPettyCashFunds(): PettyCashFundItem[] { return this.pageSlice(this.pettyCashFunds, this.pettyCashPageIndex); }
   get pagedBudgets(): BudgetItem[] { return this.pageSlice(this.budgets, this.budgetPageIndex); }
 
   openAddExpense(): void {
@@ -272,7 +255,6 @@ export class FinanceWorkspaceComponent implements OnInit {
   onPropertyChange(): void {
     this.expensesPageIndex = 0;
     this.revenuesPageIndex = 0;
-    this.pettyCashPageIndex = 0;
     this.budgetPageIndex = 0;
     this.loadSection();
   }
@@ -299,12 +281,6 @@ export class FinanceWorkspaceComponent implements OnInit {
       this.service.getRevenues(params).subscribe({
         next: (res) => { this.revenues = res.data?.content ?? []; },
         error: () => { this.revenues = []; }
-      });
-    }
-    if (this.section === 'petty-cash') {
-      this.service.getPettyCashFunds(propertyId).subscribe({
-        next: (res) => { this.pettyCashFunds = res.data ?? []; },
-        error: () => { this.pettyCashFunds = []; }
       });
     }
     if (this.section === 'budget') {

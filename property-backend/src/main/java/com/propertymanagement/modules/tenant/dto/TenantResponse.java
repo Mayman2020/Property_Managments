@@ -25,6 +25,7 @@ public class TenantResponse {
     private LocalDate leaseStart;
     private LocalDate leaseEnd;
     private String profileImage;
+    private String civilIdImageUrl;
     private List<String> leaseContractFiles;
     private String notes;
     private boolean active;

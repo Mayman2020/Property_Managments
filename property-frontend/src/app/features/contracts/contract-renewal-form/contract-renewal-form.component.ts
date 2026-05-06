@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Location, NgIf, DecimalPipe } from '@angular/common';
+import { Location, NgIf, NgFor, DecimalPipe, DatePipe } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -9,21 +9,22 @@ import { MatInputModule } from '@angular/material/input';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDividerModule } from '@angular/material/divider';
 import { TranslateModule } from '@ngx-translate/core';
 import { catchError, of } from 'rxjs';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { ContractService } from '../../../core/services/contract.service';
-import { LeaseContract } from '../../../core/models/contract.model';
+import { ContractRenewalContext, LeaseContract } from '../../../core/models/contract.model';
 
 @Component({
   selector: 'app-contract-renewal-form',
   standalone: true,
   imports: [
-    NgIf, DecimalPipe, ReactiveFormsModule,
+    NgIf, NgFor, DecimalPipe, DatePipe, ReactiveFormsModule,
     MatCardModule, MatButtonModule, MatIconModule,
     MatInputModule, MatDatepickerModule, MatNativeDateModule,
-    MatProgressSpinnerModule,
+    MatProgressSpinnerModule, MatDividerModule,
     TranslateModule, PageHeaderComponent
   ],
   templateUrl: './contract-renewal-form.component.html',
@@ -34,7 +35,7 @@ export class ContractRenewalFormComponent implements OnInit {
   saving = false;
   errorMsg = '';
   contractId!: number;
-  contract: LeaseContract | null = null;
+  ctx: ContractRenewalContext | null = null;
   form!: FormGroup;
   rentIncreasePercent = 0;
 
@@ -45,6 +46,10 @@ export class ContractRenewalFormComponent implements OnInit {
     private contractSvc: ContractService,
     private location: Location
   ) {}
+
+  get contract(): LeaseContract | null {
+    return this.ctx?.contract ?? null;
+  }
 
   goBack(): void { this.location.back(); }
 
@@ -57,16 +62,18 @@ export class ContractRenewalFormComponent implements OnInit {
       notes: ['']
     });
 
-    this.contractSvc.getById(this.contractId).pipe(catchError(() => of(null))).subscribe(res => {
-      this.contract = res?.data ?? null;
+    this.contractSvc.getRenewalContext(this.contractId).pipe(catchError(() => of(null))).subscribe(res => {
+      this.ctx = res?.data ?? null;
       if (this.contract) {
-        this.form.patchValue({ newMonthlyRent: this.contract.monthlyRent });
+        this.form.patchValue({
+          newMonthlyRent: this.contract.monthlyRent
+        });
       }
       this.loading = false;
     });
 
     this.form.get('newMonthlyRent')?.valueChanges.subscribe(val => {
-      if (this.contract?.monthlyRent && val) {
+      if (this.contract?.monthlyRent && val != null) {
         this.rentIncreasePercent = ((val - this.contract.monthlyRent) / this.contract.monthlyRent) * 100;
       }
     });
@@ -74,18 +81,22 @@ export class ContractRenewalFormComponent implements OnInit {
 
   submit(): void {
     if (this.form.invalid) return;
+    const proposedStartDate = this.toIsoDate(this.form.value.newStartDate);
+    const proposedEndDate = this.toIsoDate(this.form.value.newEndDate);
+    if (!proposedStartDate || !proposedEndDate) return;
     this.saving = true;
     const body = {
-      ...this.form.value,
-      newStartDate: this.toIsoDate(this.form.value.newStartDate),
-      newEndDate: this.toIsoDate(this.form.value.newEndDate)
+      proposedStartDate,
+      proposedEndDate,
+      proposedRentAmount: Number(this.form.value.newMonthlyRent),
+      note: this.form.value.notes ?? ''
     };
-    this.contractSvc.renew(this.contractId, body).subscribe({
+    this.contractSvc.requestRenewal(this.contractId, body).subscribe({
       next: (res) => {
-        this.router.navigate(['/admin/contracts', res.data?.id ?? this.contractId]);
+        this.router.navigate(['/admin/contracts', this.contractId]);
       },
       error: (err) => {
-        this.errorMsg = err?.error?.message ?? 'Error renewing contract';
+        this.errorMsg = err?.error?.message ?? 'CONTRACT.RENEWAL.DIALOG.ERROR_SUBMIT';
         this.saving = false;
       }
     });

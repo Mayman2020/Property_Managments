@@ -21,7 +21,7 @@ public class VacancyController {
     private final VacancyService service;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','CONTRACTS_OFFICER','ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
     public ResponseEntity<ApiResponse<Page<VacancyListingResponse>>> list(
             @RequestParam(required = false) String q,
             @PageableDefault(size = 20) Pageable pageable) {
@@ -29,7 +29,7 @@ public class VacancyController {
     }
 
     @GetMapping("/{id}/inquiries")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','CONTRACTS_OFFICER','ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
     public ResponseEntity<ApiResponse<List<RentalInquiryResponse>>> inquiries(@PathVariable("id") Long listingId) {
         return ResponseEntity.ok(ApiResponse.ok(service.getInquiries(listingId)));
     }

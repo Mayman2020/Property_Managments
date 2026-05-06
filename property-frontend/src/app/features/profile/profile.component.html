@@ -1,311 +1,299 @@
 <div class="app-page profile-page">
 
-  <!-- ═══════════ HERO ═══════════ -->
-  <section class="profile-hero app-card">
-    <div class="hero-banner"
-         [ngClass]="{ 'has-photo': !!form.get('profileImageUrl')?.value }"
-         [ngStyle]="heroBannerStyle"></div>
-    <div class="hero-body">
-
-      <div class="hero-avatar-ring">
-        <div class="hero-avatar">
-          <img *ngIf="form.get('profileImageUrl')?.value"
-               [src]="form.get('profileImageUrl')?.value"
-               [attr.alt]="'PROFILE.AVATAR_ALT' | translate">
-          <span *ngIf="!form.get('profileImageUrl')?.value">{{ avatarText }}</span>
-        </div>
-      </div>
-
-      <div class="hero-info">
-        <div class="hero-name-row">
-          <h2 class="hero-name">{{ form.get('fullName')?.value || ('PROFILE.DEFAULT_USER' | translate) }}</h2>
-          <span class="role-badge">
-            <span class="material-icons">verified_user</span>
-            {{ ('ROLE.' + roleKey) | translate }}
-          </span>
-        </div>
-
-        <div class="hero-chips">
-          <div class="hero-chip">
-            <span class="material-icons">mail_outline</span>
-            <span>{{ auth.getCurrentUser()?.email || '—' }}</span>
-          </div>
-          <div class="hero-chip" *ngIf="form.get('phone')?.value">
-            <span class="material-icons">phone_iphone</span>
-            <span>{{ form.get('phone')?.value }}</span>
-          </div>
-          <div class="hero-chip bio-chip" *ngIf="form.get('bio')?.value">
-            <span class="material-icons">notes</span>
-            <span>{{ form.get('bio')?.value }}</span>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </section>
-  <!-- ═══════════════════════════ -->
-
   <div class="loading-center" *ngIf="loading">
     <mat-spinner diameter="40"></mat-spinner>
   </div>
 
-  <div class="profile-grid" *ngIf="!loading">
+  <ng-container *ngIf="!loading">
+    <app-page-header
+      [eyebrow]="'NAV.PROFILE' | translate"
+      [title]="'PROFILE.TITLE' | translate"
+      [subtitle]="'PROFILE.SUBTITLE' | translate"
+      [breadcrumbs]="[
+        { label: ('NAV.DASHBOARD' | translate), route: dashboardHomeRoute },
+        { label: ('PROFILE.TITLE' | translate) }
+      ]"
+      [showBack]="true"
+      (backClick)="goBack()">
+    </app-page-header>
 
-    <section class="app-card profile-docs-card" *ngIf="civilIdImageUrl || leaseContractFiles.length">
-      <div class="card-head">
-        <div class="card-head-icon-wrap">
-          <span class="material-icons">folder_shared</span>
-        </div>
-        <div>
-          <div class="card-eyebrow">{{ 'PROFILE.ROLE_RECORD_DOCS' | translate }}</div>
-          <h3 class="card-title">{{ 'PROFILE.ROLE_RECORD_DOCS_TITLE' | translate }}</h3>
-        </div>
-      </div>
-      <p class="docs-hint">{{ 'PROFILE.ROLE_RECORD_DOCS_HINT' | translate }}</p>
-      <div class="docs-grid">
-        <a *ngIf="civilIdImageUrl" class="doc-pill" [href]="civilIdImageUrl" target="_blank" rel="noopener">
-          <span class="material-icons">badge</span>
-          {{ 'PROFILE.CIVIL_ID_LINK' | translate }}
-        </a>
-        <a *ngFor="let url of leaseContractFiles; let i = index" class="doc-pill" [href]="url" target="_blank" rel="noopener">
-          <span class="material-icons">description</span>
-          {{ 'PROFILE.LEASE_FILE' | translate }} {{ i + 1 }}
-        </a>
-      </div>
-    </section>
+    <div class="profile-layout">
 
-    <!-- ── PERSONAL INFO CARD ── -->
-    <section class="app-card profile-card">
-      <div class="card-head">
-        <div class="card-head-icon-wrap">
-          <span class="material-icons">manage_accounts</span>
-        </div>
-        <div>
-          <div class="card-eyebrow">{{ 'PROFILE.SECTION_PROFILE' | translate }}</div>
-          <h3 class="card-title">{{ 'PROFILE.YOUR_DETAILS' | translate }}</h3>
-        </div>
-      </div>
+      <div class="profile-main">
 
-      <form [formGroup]="form" (ngSubmit)="save()" class="pf-form">
-
-        <div class="field-row">
-          <div class="field-group">
-            <label class="field-label">{{ 'PROFILE.FULL_NAME' | translate }}</label>
-            <div class="input-wrap">
-              <span class="material-icons input-ico">person_outline</span>
-              <input class="pf-input" type="text" formControlName="fullName"
-                     [placeholder]="'PROFILE.FULL_NAME' | translate">
+        <section class="app-card profile-hero" aria-labelledby="profile-hero-name">
+          <div class="profile-hero__avatar-wrap">
+            <img
+              *ngIf="heroProfileImageUrl as u"
+              class="profile-hero__avatar"
+              [src]="u"
+              [alt]="'PROFILE.AVATAR_ALT' | translate">
+            <div *ngIf="!heroProfileImageUrl" class="profile-hero__avatar profile-hero__avatar--initials" aria-hidden="true">
+              {{ heroInitials() }}
             </div>
           </div>
-
-          <div class="field-group">
-            <label class="field-label">{{ 'PROFILE.PHONE' | translate }}</label>
-            <div class="input-wrap">
-              <span class="material-icons input-ico">phone_iphone</span>
-              <input class="pf-input" type="text" formControlName="phone"
-                     [placeholder]="'PROFILE.PHONE' | translate">
+          <div class="profile-hero__meta">
+            <h2 id="profile-hero-name" class="profile-hero__name">{{ form.get('fullName')?.value || ('PROFILE.DEFAULT_USER' | translate) }}</h2>
+            <p class="profile-hero__email" *ngIf="accountEmail">
+              <span class="material-icons profile-hero__ico">mail_outline</span>
+              <span class="profile-hero__email-text">{{ accountEmail }}</span>
+            </p>
+            <p class="profile-hero__hint">{{ 'PROFILE.EMAIL_READONLY_HINT' | translate }}</p>
+            <div class="profile-hero__chips">
+              <span class="role-chip" *ngIf="roleLabel()">{{ roleLabel() }}</span>
+              <span class="username-chip" *ngIf="accountUsername">{{ accountUsername }}</span>
             </div>
+            <p class="profile-hero__photo-hint" *ngIf="needsIdentityMedia">
+              <span class="material-icons">photo_camera</span>
+              {{ 'PROFILE.PHOTO_BELOW_HINT' | translate }}
+            </p>
           </div>
-        </div>
+        </section>
 
-        <div class="field-group">
-          <label class="field-label">{{ 'PROFILE.BIO' | translate }}</label>
-          <textarea class="pf-input pf-textarea" rows="4" formControlName="bio"
-                    [placeholder]="'PROFILE.BIO' | translate"></textarea>
-        </div>
-
-        <div class="registry-block" *ngIf="showLinkedRegistry">
-          <div class="registry-head">
-            <span class="material-icons registry-ico">link</span>
+        <section class="app-card profile-card">
+          <div class="card-head">
+            <div class="card-head-icon-wrap">
+              <span class="material-icons">manage_accounts</span>
+            </div>
             <div>
-              <div class="field-label registry-title">{{ 'PROFILE.LINKED_REGISTRY_TITLE' | translate }}</div>
-              <p class="registry-hint">{{ 'PROFILE.LINKED_REGISTRY_HINT' | translate }}</p>
+              <div class="card-eyebrow">{{ 'PROFILE.SECTION_PROFILE' | translate }}</div>
+              <h3 class="card-title">{{ 'PROFILE.YOUR_DETAILS' | translate }}</h3>
             </div>
           </div>
 
-          <ng-container *ngIf="roleKey === 'OWNER'">
-            <div class="field-row">
+          <form [formGroup]="form" (ngSubmit)="save()" class="pf-form">
+
+            <div class="identity-section" *ngIf="needsIdentityMedia">
+              <app-identity-media-fields
+                [compact]="false"
+                [showCivilSection]="showCivilSection"
+                [labelProfileKey]="'PROFILE.IMAGE_UPLOAD'"
+                [labelCivilKey]="'OWNERS.CIVIL_ID_IMAGE'"
+                [labelUploadProfileKey]="'PROFILE.UPLOAD_PHOTO'"
+                [labelUploadCivilKey]="'PROFILE.UPLOAD_CIVIL_ID'"
+                [profileImageUrl]="form.get('profileImageUrl')?.value ?? ''"
+                (profileImageUrlChange)="onProfileImageUrlChange($event)"
+                [civilIdImageUrl]="civilIdImageUrl"
+                (civilIdImageUrlChange)="civilIdImageUrl = $event">
+              </app-identity-media-fields>
+            </div>
+
+            <div class="field-row field-row--triple">
               <div class="field-group">
-                <label class="field-label">{{ 'OWNERS.FULL_NAME_AR' | translate }}</label>
+                <label class="field-label">{{ 'PROFILE.FULL_NAME' | translate }}</label>
                 <div class="input-wrap">
-                  <span class="material-icons input-ico">translate</span>
-                  <input class="pf-input" type="text" formControlName="ownerFullNameAr"
-                         [placeholder]="'OWNERS.FULL_NAME_AR' | translate">
+                  <span class="material-icons input-ico">person_outline</span>
+                  <input class="pf-input" type="text" formControlName="fullName"
+                         [placeholder]="'PROFILE.FULL_NAME' | translate">
                 </div>
               </div>
+
               <div class="field-group">
-                <label class="field-label">{{ 'OWNERS.FULL_NAME_EN' | translate }}</label>
+                <label class="field-label">{{ 'PROFILE.ACCOUNT_EMAIL' | translate }}</label>
                 <div class="input-wrap">
-                  <span class="material-icons input-ico">translate</span>
-                  <input class="pf-input" type="text" formControlName="ownerFullNameEn"
-                         [placeholder]="'OWNERS.FULL_NAME_EN' | translate">
+                  <span class="material-icons input-ico">alternate_email</span>
+                  <input class="pf-input pf-input--readonly" type="email" [value]="accountEmail" readonly tabindex="-1"
+                         [attr.aria-label]="'PROFILE.ACCOUNT_EMAIL' | translate">
+                </div>
+              </div>
+
+              <div class="field-group">
+                <label class="field-label">{{ 'PROFILE.PHONE' | translate }}</label>
+                <div class="input-wrap">
+                  <span class="material-icons input-ico">phone_iphone</span>
+                  <input class="pf-input" type="text" formControlName="phone"
+                         [placeholder]="'PROFILE.PHONE' | translate">
                 </div>
               </div>
             </div>
-            <div class="field-row">
-              <div class="field-group">
-                <label class="field-label">{{ 'OWNERS.NATIONAL_ID' | translate }}</label>
-                <div class="input-wrap">
-                  <span class="material-icons input-ico">badge</span>
-                  <input class="pf-input" type="text" formControlName="ownerNationalId">
-                </div>
-              </div>
-            </div>
+
             <div class="field-group">
-              <label class="field-label">{{ 'OWNERS.ADDRESS' | translate }}</label>
-              <textarea class="pf-input pf-textarea" rows="2" formControlName="ownerAddress"></textarea>
+              <label class="field-label">{{ 'PROFILE.BIO' | translate }}</label>
+              <textarea class="pf-input pf-textarea" rows="3" formControlName="bio"
+                        [placeholder]="'PROFILE.BIO' | translate"></textarea>
             </div>
-            <div class="field-group">
-              <label class="field-label">{{ 'OWNERS.NOTES' | translate }}</label>
-              <textarea class="pf-input pf-textarea" rows="2" formControlName="ownerNotes"></textarea>
-            </div>
-          </ng-container>
 
-          <ng-container *ngIf="roleKey === 'TENANT'">
-            <div class="field-row">
-              <div class="field-group">
-                <label class="field-label">{{ 'TENANTS.NATIONAL_ID' | translate }}</label>
-                <div class="input-wrap">
-                  <span class="material-icons input-ico">badge</span>
-                  <input class="pf-input" type="text" formControlName="tenantNationalId">
+            <div class="registry-block" *ngIf="showLinkedRegistry">
+              <div class="registry-head">
+                <span class="material-icons registry-ico">link</span>
+                <div>
+                  <div class="field-label registry-title">{{ 'PROFILE.LINKED_REGISTRY_TITLE' | translate }}</div>
+                  <p class="registry-hint">{{ 'PROFILE.LINKED_REGISTRY_HINT' | translate }}</p>
                 </div>
               </div>
-            </div>
-            <div class="field-row">
-              <div class="field-group">
-                <label class="field-label">{{ 'TENANTS.LEASE_START' | translate }}</label>
-                <div class="input-wrap">
-                  <span class="material-icons input-ico">event</span>
-                  <input class="pf-input" type="date" formControlName="tenantLeaseStart">
-                </div>
-              </div>
-              <div class="field-group">
-                <label class="field-label">{{ 'TENANTS.LEASE_END' | translate }}</label>
-                <div class="input-wrap">
-                  <span class="material-icons input-ico">event</span>
-                  <input class="pf-input" type="date" formControlName="tenantLeaseEnd">
-                </div>
-              </div>
-            </div>
-            <div class="field-group">
-              <label class="field-label">{{ 'TENANTS.NOTES' | translate }}</label>
-              <textarea class="pf-input pf-textarea" rows="2" formControlName="tenantNotes"></textarea>
-            </div>
-          </ng-container>
 
-          <ng-container *ngIf="roleKey === 'PROPERTY_ADMIN' || roleKey === 'MAINTENANCE_OFFICER' || roleKey === 'CONTRACTS_OFFICER' || roleKey === 'ACCOUNTANT' || roleKey === 'HR_OFFICER'">
-            <div class="field-row">
-              <div class="field-group">
-                <label class="field-label">{{ 'HR.NATIONAL_ID' | translate }}</label>
-                <div class="input-wrap">
-                  <span class="material-icons input-ico">badge</span>
-                  <input class="pf-input" type="text" formControlName="employeeNationalId">
+              <ng-container *ngIf="roleKey === 'OWNER'">
+                <div class="field-row">
+                  <div class="field-group">
+                    <label class="field-label">{{ 'OWNERS.FULL_NAME_AR' | translate }}</label>
+                    <div class="input-wrap">
+                      <span class="material-icons input-ico">translate</span>
+                      <input class="pf-input" type="text" formControlName="ownerFullNameAr"
+                             [placeholder]="'OWNERS.FULL_NAME_AR' | translate">
+                    </div>
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label">{{ 'OWNERS.FULL_NAME_EN' | translate }}</label>
+                    <div class="input-wrap">
+                      <span class="material-icons input-ico">translate</span>
+                      <input class="pf-input" type="text" formControlName="ownerFullNameEn"
+                             [placeholder]="'OWNERS.FULL_NAME_EN' | translate">
+                    </div>
+                  </div>
                 </div>
-              </div>
+                <div class="field-row">
+                  <div class="field-group">
+                    <label class="field-label">{{ 'OWNERS.NATIONAL_ID' | translate }}</label>
+                    <div class="input-wrap">
+                      <span class="material-icons input-ico">badge</span>
+                      <input class="pf-input" type="text" formControlName="ownerNationalId">
+                    </div>
+                  </div>
+                </div>
+                <div class="field-group">
+                  <label class="field-label">{{ 'OWNERS.ADDRESS' | translate }}</label>
+                  <textarea class="pf-input pf-textarea" rows="2" formControlName="ownerAddress"></textarea>
+                </div>
+                <div class="field-group">
+                  <label class="field-label">{{ 'OWNERS.NOTES' | translate }}</label>
+                  <textarea class="pf-input pf-textarea" rows="2" formControlName="ownerNotes"></textarea>
+                </div>
+              </ng-container>
+
+              <ng-container *ngIf="roleKey === 'TENANT'">
+                <div class="field-row">
+                  <div class="field-group">
+                    <label class="field-label">{{ 'TENANTS.NATIONAL_ID' | translate }}</label>
+                    <div class="input-wrap">
+                      <span class="material-icons input-ico">badge</span>
+                      <input class="pf-input" type="text" formControlName="tenantNationalId">
+                    </div>
+                  </div>
+                </div>
+                <div class="field-row">
+                  <div class="field-group">
+                    <label class="field-label">{{ 'TENANTS.LEASE_START' | translate }}</label>
+                    <div class="input-wrap">
+                      <span class="material-icons input-ico">event</span>
+                      <input class="pf-input" type="date" formControlName="tenantLeaseStart">
+                    </div>
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label">{{ 'TENANTS.LEASE_END' | translate }}</label>
+                    <div class="input-wrap">
+                      <span class="material-icons input-ico">event</span>
+                      <input class="pf-input" type="date" formControlName="tenantLeaseEnd">
+                    </div>
+                  </div>
+                </div>
+                <div class="field-group">
+                  <label class="field-label">{{ 'TENANTS.NOTES' | translate }}</label>
+                  <textarea class="pf-input pf-textarea" rows="2" formControlName="tenantNotes"></textarea>
+                </div>
+              </ng-container>
+
+              <ng-container *ngIf="roleKey === 'GENERAL_MANAGER' || roleKey === 'MAINTENANCE_OFFICER' || roleKey === 'MAINTENANCE_CONTRACTOR' || roleKey === 'ACCOUNTANT' || roleKey === 'PROPERTY_GUARD' || roleKey === 'PROCEDURES_CLERK'">
+                <div class="field-row">
+                  <div class="field-group">
+                    <label class="field-label">{{ 'HR.NATIONAL_ID' | translate }}</label>
+                    <div class="input-wrap">
+                      <span class="material-icons input-ico">badge</span>
+                      <input class="pf-input" type="text" formControlName="employeeNationalId">
+                    </div>
+                  </div>
+                </div>
+                <div class="field-row">
+                  <div class="field-group">
+                    <label class="field-label">{{ 'HR.JOB_TITLE_AR' | translate }}</label>
+                    <div class="input-wrap">
+                      <span class="material-icons input-ico">work_outline</span>
+                      <input class="pf-input" type="text" formControlName="employeeJobTitleAr">
+                    </div>
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label">{{ 'HR.JOB_TITLE_EN' | translate }}</label>
+                    <div class="input-wrap">
+                      <span class="material-icons input-ico">work_outline</span>
+                      <input class="pf-input" type="text" formControlName="employeeJobTitleEn">
+                    </div>
+                  </div>
+                </div>
+              </ng-container>
             </div>
-            <div class="field-row">
-              <div class="field-group">
-                <label class="field-label">{{ 'HR.JOB_TITLE_AR' | translate }}</label>
-                <div class="input-wrap">
-                  <span class="material-icons input-ico">work_outline</span>
-                  <input class="pf-input" type="text" formControlName="employeeJobTitleAr">
-                </div>
-              </div>
-              <div class="field-group">
-                <label class="field-label">{{ 'HR.JOB_TITLE_EN' | translate }}</label>
-                <div class="input-wrap">
-                  <span class="material-icons input-ico">work_outline</span>
-                  <input class="pf-input" type="text" formControlName="employeeJobTitleEn">
-                </div>
-              </div>
+
+            <div class="form-actions">
+              <button mat-stroked-button type="button" [routerLink]="dashboardHomeRoute">{{ 'ACTIONS.CANCEL' | translate }}</button>
+              <button mat-flat-button type="submit" class="btn-save" [disabled]="form.invalid || saving">
+                <mat-spinner *ngIf="saving" diameter="18"></mat-spinner>
+                <ng-container *ngIf="!saving">
+                  <span class="material-icons btn-ico">save</span>
+                  {{ 'PROFILE.SAVE_BUTTON' | translate }}
+                </ng-container>
+              </button>
             </div>
-          </ng-container>
-        </div>
 
-        <div class="field-group">
-          <label class="field-label">{{ 'PROFILE.IMAGE_UPLOAD' | translate }}</label>
-          <div class="upload-frame">
-            <app-upload-zone
-              [multiple]="false"
-              [accept]="'image/*'"
-              [label]="'PROFILE.UPLOAD_LABEL' | translate"
-              (filesUploaded)="onImageUploaded($event)">
-            </app-upload-zone>
-          </div>
-        </div>
-
-        <div class="form-actions">
-          <button mat-stroked-button type="button" routerLink="/">{{ 'ACTIONS.CANCEL' | translate }}</button>
-          <button mat-flat-button type="submit" class="btn-save" [disabled]="form.invalid || saving">
-            <mat-spinner *ngIf="saving" diameter="18"></mat-spinner>
-            <ng-container *ngIf="!saving">
-              <span class="material-icons btn-ico">save</span>
-              {{ 'PROFILE.SAVE_BUTTON' | translate }}
-            </ng-container>
-          </button>
-        </div>
-
-      </form>
-    </section>
-    <!-- ─────────────────────── -->
-
-    <!-- ── SECURITY CARD ── -->
-    <section class="app-card security-card">
-      <div class="card-head">
-        <div class="card-head-icon-wrap security-ico-wrap">
-          <span class="material-icons">lock_outline</span>
-        </div>
-        <div>
-          <div class="card-eyebrow">{{ 'PROFILE.SECTION_SECURITY' | translate }}</div>
-          <h3 class="card-title">{{ 'PROFILE.CHANGE_PASSWORD' | translate }}</h3>
-        </div>
+          </form>
+        </section>
       </div>
 
-      <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" class="pf-form">
-
-        <div class="field-group">
-          <label class="field-label">{{ 'PROFILE.CURRENT_PASSWORD' | translate }}</label>
-          <div class="input-wrap">
-            <span class="material-icons input-ico">lock</span>
-            <input class="pf-input" type="password" formControlName="currentPassword">
+      <aside class="profile-aside">
+        <section class="app-card security-card">
+          <div class="card-head">
+            <div class="card-head-icon-wrap security-ico-wrap">
+              <span class="material-icons">lock_outline</span>
+            </div>
+            <div>
+              <div class="card-eyebrow">{{ 'PROFILE.SECTION_SECURITY' | translate }}</div>
+              <h3 class="card-title">{{ 'PROFILE.CHANGE_PASSWORD' | translate }}</h3>
+            </div>
           </div>
-        </div>
 
-        <div class="field-group">
-          <label class="field-label">{{ 'PROFILE.NEW_PASSWORD' | translate }}</label>
-          <div class="input-wrap">
-            <span class="material-icons input-ico">lock_open</span>
-            <input class="pf-input" type="password" formControlName="newPassword">
-          </div>
-        </div>
+          <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" class="pf-form">
 
-        <div class="field-group">
-          <label class="field-label">{{ 'PROFILE.CONFIRM_PASSWORD' | translate }}</label>
-          <div class="input-wrap">
-            <span class="material-icons input-ico">verified</span>
-            <input class="pf-input" type="password" formControlName="confirmPassword">
-          </div>
-        </div>
+            <div class="field-group">
+              <label class="field-label">{{ 'PROFILE.CURRENT_PASSWORD' | translate }}</label>
+              <div class="input-wrap">
+                <span class="material-icons input-ico">lock</span>
+                <input class="pf-input" type="password" formControlName="currentPassword" autocomplete="current-password">
+              </div>
+            </div>
 
-        <div class="pw-hint">
-          <span class="material-icons">info_outline</span>
-          {{ 'PROFILE.PASSWORD_HINT' | translate }}
-        </div>
+            <div class="field-group">
+              <label class="field-label">{{ 'PROFILE.NEW_PASSWORD' | translate }}</label>
+              <div class="input-wrap">
+                <span class="material-icons input-ico">lock_open</span>
+                <input class="pf-input" type="password" formControlName="newPassword" autocomplete="new-password">
+              </div>
+            </div>
 
-        <div class="form-actions">
-          <button mat-flat-button type="submit" class="btn-security"
-                  [disabled]="passwordForm.invalid || changingPassword">
-            <mat-spinner *ngIf="changingPassword" diameter="18"></mat-spinner>
-            <ng-container *ngIf="!changingPassword">
-              <span class="material-icons btn-ico">key</span>
-              {{ 'PROFILE.CHANGE_PASSWORD_BUTTON' | translate }}
-            </ng-container>
-          </button>
-        </div>
+            <div class="field-group">
+              <label class="field-label">{{ 'PROFILE.CONFIRM_PASSWORD' | translate }}</label>
+              <div class="input-wrap">
+                <span class="material-icons input-ico">verified</span>
+                <input class="pf-input" type="password" formControlName="confirmPassword" autocomplete="new-password">
+              </div>
+            </div>
 
-      </form>
-    </section>
-    <!-- ────────────────── -->
+            <div class="pw-hint">
+              <span class="material-icons">info_outline</span>
+              {{ 'PROFILE.PASSWORD_HINT' | translate }}
+            </div>
 
-  </div>
+            <div class="form-actions form-actions--single">
+              <button mat-flat-button type="submit" class="btn-security"
+                      [disabled]="passwordForm.invalid || changingPassword">
+                <mat-spinner *ngIf="changingPassword" diameter="18"></mat-spinner>
+                <ng-container *ngIf="!changingPassword">
+                  <span class="material-icons btn-ico">key</span>
+                  {{ 'PROFILE.CHANGE_PASSWORD_BUTTON' | translate }}
+                </ng-container>
+              </button>
+            </div>
+
+          </form>
+        </section>
+      </aside>
+
+    </div>
+  </ng-container>
 </div>

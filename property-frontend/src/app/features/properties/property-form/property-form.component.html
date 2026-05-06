@@ -31,6 +31,14 @@
             <mat-label>{{ 'PROPERTY_FORM.TOTAL_FLOORS' | translate }}</mat-label>
             <input matInput formControlName="totalFloors" type="number" min="1">
           </mat-form-field>
+
+          <div class="planned-units-summary full-col">
+            <div class="planned-units-row">
+              <span class="planned-units-label">{{ 'PROPERTY_FORM.PLANNED_TOTAL_UNITS_LABEL' | translate }}</span>
+              <strong class="planned-units-value">{{ plannedTotalUnitsFromConfig() }}</strong>
+            </div>
+            <p class="planned-units-hint" *ngIf="!isViewMode">{{ 'PROPERTY_FORM.PLANNED_TOTAL_UNITS_HINT' | translate }}</p>
+          </div>
         </div>
       </div>
     </section>
@@ -141,7 +149,8 @@
                 <td>{{ owner.phone || '—' }}</td>
                 <td>{{ owner.email || '—' }}</td>
                 <td *ngIf="!isViewMode" class="col-action">
-                  <button mat-icon-button type="button" (click)="removeOwner(owner)" class="remove-owner-btn">
+                  <button mat-icon-button type="button" (click)="removeOwner(owner)" class="remove-owner-btn"
+                          [matTooltip]="'PROPERTY_FORM.REMOVE_TABLE_ROW' | translate">
                     <mat-icon>close</mat-icon>
                   </button>
                 </td>
@@ -223,7 +232,8 @@
                       : ('MAINTENANCE_ASSIGNMENT.PROVIDER_COMPANY' | translate) }}
                 </td>
                 <td *ngIf="!isViewMode" class="col-action">
-                  <button mat-icon-button type="button" (click)="removeMaintenanceProvider(provider)" class="remove-owner-btn">
+                  <button mat-icon-button type="button" (click)="removeMaintenanceProvider(provider)" class="remove-owner-btn"
+                          [matTooltip]="'PROPERTY_FORM.REMOVE_TABLE_ROW' | translate">
                     <mat-icon>close</mat-icon>
                   </button>
                 </td>
@@ -315,16 +325,16 @@
               <span class="att-size">{{ attachmentSize(att) }}</span>
             </div>
             <div class="att-actions">
-              <button mat-icon-button type="button" [title]="'ACTIONS.VIEW' | translate"
+              <button mat-icon-button type="button" [matTooltip]="'ACTIONS.VIEW' | translate"
                       (click)="viewAttachment(att)">
                 <span class="material-icons">visibility</span>
               </button>
-              <button mat-icon-button type="button" [title]="'ACTIONS.DOWNLOAD' | translate"
+              <button mat-icon-button type="button" [matTooltip]="'ACTIONS.DOWNLOAD' | translate"
                       (click)="downloadAttachment(att)">
                 <span class="material-icons">download</span>
               </button>
               <button mat-icon-button type="button" color="warn" *ngIf="!isViewMode"
-                      [title]="'ACTIONS.DELETE' | translate"
+                      [matTooltip]="'ACTIONS.DELETE' | translate"
                       (click)="deleteAttachment(att)">
                 <span class="material-icons">delete</span>
               </button>
@@ -413,6 +423,10 @@
             <strong>{{ propertyRecord.totalFloors || 0 }}</strong>
           </div>
           <div class="hero-stat">
+            <span>{{ 'PROPERTY_FORM.HERO_PLANNED_UNITS' | translate }}</span>
+            <strong>{{ plannedTotalUnitsForView() }}</strong>
+          </div>
+          <div class="hero-stat">
             <span>{{ 'PROPERTY_FORM.OWNER_DOCS' | translate }}</span>
             <strong>{{ ownerDocumentUrls.length }}</strong>
           </div>
@@ -449,6 +463,10 @@
             <div class="detail-item">
               <label>{{ 'PROPERTY_FORM.TOTAL_FLOORS' | translate }}</label>
               <span>{{ propertyRecord.totalFloors || 0 }}</span>
+            </div>
+            <div class="detail-item">
+              <label>{{ 'PROPERTY_FORM.PLANNED_TOTAL_UNITS_LABEL' | translate }}</label>
+              <span>{{ plannedTotalUnitsForView() }}</span>
             </div>
             <div class="detail-item full">
               <label>{{ 'PROPERTY_FORM.DESCRIPTION' | translate }}</label>
@@ -543,7 +561,7 @@
                     <tr *ngFor="let u of propertyUnits">
                       <td>{{ u.unitNumber || '—' }}</td>
                       <td>{{ u.unitType || '—' }}</td>
-                      <td>{{ u.floorId ?? '—' }}</td>
+                      <td>{{ u.floorNumber ?? u.floorId ?? '—' }}</td>
                       <td>{{ u.areaSqm != null ? u.areaSqm : '—' }}</td>
                       <td>{{ u.rentAmount != null ? (u.rentAmount | number) + (u.currency ? ' ' + u.currency : '') : '—' }}</td>
                       <td>{{ (u.rented ? 'UNITS.RENTED' : 'DASHBOARD.VACANT_UNITS') | translate }}</td>
@@ -785,7 +803,7 @@
                     <span class="invoice-count-badge" *ngIf="c.invoiceCount > 0">
                       {{ c.invoiceCount }} {{ 'MAINTENANCE_CONTRACT.INVOICES' | translate }}
                     </span>
-                    <button mat-icon-button type="button" [title]="'MAINTENANCE_CONTRACT.SHOW_INVOICES' | translate"
+                    <button mat-icon-button type="button" [matTooltip]="'MAINTENANCE_CONTRACT.SHOW_INVOICES' | translate"
                             (click)="toggleContractInvoices(c)">
                       <span class="material-icons">{{ expandedContractId === c.contractId ? 'expand_less' : 'receipt_long' }}</span>
                     </button>
@@ -820,13 +838,13 @@
                       <div class="invoice-actions" *ngIf="canManageAssignments">
                         <button mat-icon-button type="button"
                                 *ngIf="inv.status !== 'PAID' && inv.status !== 'CANCELLED'"
-                                [title]="'MAINTENANCE_CONTRACT.MARK_PAID' | translate"
+                                [matTooltip]="'MAINTENANCE_CONTRACT.MARK_PAID' | translate"
                                 (click)="markInvoicePaid(c.contractId, inv)">
                           <span class="material-icons">check_circle</span>
                         </button>
                         <button mat-icon-button type="button" color="warn"
                                 *ngIf="inv.status !== 'PAID' && inv.status !== 'CANCELLED'"
-                                [title]="'ACTIONS.CANCEL' | translate"
+                                [matTooltip]="'ACTIONS.CANCEL' | translate"
                                 (click)="cancelInvoice(c.contractId, inv)">
                           <span class="material-icons">cancel</span>
                         </button>
@@ -895,16 +913,16 @@
                   <span class="att-size">{{ attachmentSize(att) }}</span>
                 </div>
                 <div class="att-actions">
-                  <button mat-icon-button type="button" [title]="'ACTIONS.VIEW' | translate"
+                  <button mat-icon-button type="button" [matTooltip]="'ACTIONS.VIEW' | translate"
                           (click)="viewAttachment(att)">
                     <span class="material-icons">visibility</span>
                   </button>
-                  <button mat-icon-button type="button" [title]="'ACTIONS.DOWNLOAD' | translate"
+                  <button mat-icon-button type="button" [matTooltip]="'ACTIONS.DOWNLOAD' | translate"
                           (click)="downloadAttachment(att)">
                     <span class="material-icons">download</span>
                   </button>
                   <button mat-icon-button type="button" color="warn"
-                          [title]="'ACTIONS.DELETE' | translate"
+                          [matTooltip]="'ACTIONS.DELETE' | translate"
                           (click)="deleteAttachment(att)">
                     <span class="material-icons">delete</span>
                   </button>

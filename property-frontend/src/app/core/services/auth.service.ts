@@ -24,14 +24,19 @@ export class AuthService {
           if (res.data.refreshToken) this.tokenStorage.setRefreshToken(res.data.refreshToken);
           const userDto = res.data.user;
           if (!userDto) return;
+          const extraRoles = Array.isArray(userDto.extraRoles) ? (userDto.extraRoles as UserRole[]) : [];
           const user: CurrentUser = {
             id: userDto.id,
             username: userDto.username,
             email: userDto.email,
             fullName: userDto.fullName,
+            fullNameAr: userDto.fullNameAr,
+            fullNameEn: userDto.fullNameEn,
             profileImageUrl: userDto.profileImageUrl,
             bio: userDto.bio,
             role: userDto.role,
+            activeRole: userDto.role,
+            extraRoles,
             propertyId: userDto.propertyId,
             ownerId: userDto.ownerId,
             tenantId: userDto.tenantId,
@@ -42,7 +47,7 @@ export class AuthService {
             contractorCompanyId: userDto.contractorCompanyId,
             permissions: userDto.permissions,
             clientModules: userDto.clientModules,
-            initials: this.buildInitials(userDto.fullName)
+            initials: this.buildInitials(userDto.fullNameAr || userDto.fullNameEn || userDto.fullName)
           };
           this.tokenStorage.setUser(user);
         }
@@ -71,7 +76,35 @@ export class AuthService {
 
   getRole(): UserRole | null {
     const user = this.getCurrentUser();
-    return user?.role ?? null;
+    return user?.activeRole ?? user?.role ?? null;
+  }
+
+  /** Primary role first, then extras; unique. */
+  getEffectiveRoles(): UserRole[] {
+    const u = this.getCurrentUser();
+    if (!u) return [];
+    const out: UserRole[] = [];
+    const seen = new Set<UserRole>();
+    for (const r of [u.role, ...(u.extraRoles ?? [])]) {
+      if (r && !seen.has(r)) {
+        seen.add(r);
+        out.push(r);
+      }
+    }
+    return out;
+  }
+
+  hasRole(role: UserRole): boolean {
+    return this.getEffectiveRoles().includes(role);
+  }
+
+  /** UI role switching for multi-role users (does not change assigned roles). */
+  setActiveRole(role: UserRole): void {
+    const user = this.getCurrentUser();
+    if (!user) return;
+    const allowed = this.getEffectiveRoles();
+    if (!allowed.includes(role)) return;
+    this.tokenStorage.setUser({ ...user, activeRole: role });
   }
 
   getPermissions(): PermissionMap {
@@ -90,40 +123,53 @@ export class AuthService {
     this.tokenStorage.setUser({ ...user, clientModules });
   }
 
-  isSuperAdmin(): boolean { return this.getRole() === 'SUPER_ADMIN'; }
-  isPropertyAdmin(): boolean { return this.getRole() === 'PROPERTY_ADMIN'; }
-  isOfficer(): boolean { return this.getRole() === 'MAINTENANCE_OFFICER'; }
-  isTenant(): boolean { return this.getRole() === 'TENANT'; }
-  isContractsOfficer(): boolean { return this.getRole() === 'CONTRACTS_OFFICER'; }
-  isAccountant(): boolean { return this.getRole() === 'ACCOUNTANT'; }
-  isHrOfficer(): boolean { return this.getRole() === 'HR_OFFICER'; }
-  isOwner(): boolean { return this.getRole() === 'OWNER'; }
+  isSuperAdmin(): boolean { return this.hasRole('SUPER_ADMIN'); }
+  /** المدير العام */
+  isGeneralManager(): boolean { return this.hasRole('GENERAL_MANAGER'); }
+  /** @deprecated use {@link isGeneralManager} */
+  isPropertyAdmin(): boolean { return this.isGeneralManager(); }
+  isOfficer(): boolean {
+    return this.hasRole('MAINTENANCE_OFFICER') || this.hasRole('MAINTENANCE_CONTRACTOR');
+  }
+  isTenant(): boolean { return this.hasRole('TENANT'); }
+  isAccountant(): boolean { return this.hasRole('ACCOUNTANT'); }
+  isProceduresClerk(): boolean { return this.hasRole('PROCEDURES_CLERK'); }
+  isPropertyGuard(): boolean { return this.hasRole('PROPERTY_GUARD'); }
+  isOwner(): boolean { return this.hasRole('OWNER'); }
   isAdmin(): boolean {
     return this.isSuperAdmin()
-      || this.isPropertyAdmin()
-      || this.isContractsOfficer()
+      || this.isGeneralManager()
       || this.isAccountant()
-      || this.isHrOfficer()
+      || this.isOfficer()
+      || this.isPropertyGuard()
+      || this.isProceduresClerk()
       || this.isOwner();
   }
 
   getDashboardRoute(): string {
-    const role = this.getRole();
-    const candidates = this.roleLandingCandidates(role);
-    const firstAllowed = candidates.find((item) => this.hasPermission(item.permission, item.action));
+    const activeRole = this.getRole();
+    const roles = activeRole ? [activeRole] : this.getEffectiveRoles();
+    const seen = new Set<string>();
+    const merged: Array<{ route: string; permission: string; action: keyof NonNullable<PermissionMap[string]> }> = [];
+    for (const role of roles) {
+      for (const c of this.roleLandingCandidates(role)) {
+        if (!seen.has(c.route)) {
+          seen.add(c.route);
+          merged.push(c);
+        }
+      }
+    }
+    const firstAllowed = merged.find((item) => this.hasPermission(item.permission, item.action));
     if (firstAllowed) return firstAllowed.route;
 
-    switch (role) {
-      case 'SUPER_ADMIN':
-      case 'PROPERTY_ADMIN': return '/admin/home';
-      case 'MAINTENANCE_OFFICER': return '/officer/schedule';
-      case 'CONTRACTS_OFFICER': return '/admin/home';
-      case 'ACCOUNTANT': return '/admin/home';
-      case 'HR_OFFICER': return '/admin/home';
-      case 'OWNER': return '/admin/home';
-      case 'TENANT': return '/tenant/my-unit';
-      default: return '/auth/login';
+    if (roles.some((r) => ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'PROCEDURES_CLERK', 'PROPERTY_GUARD', 'OWNER'].includes(r))) {
+      return '/admin/home';
     }
+    if (roles.some((r) => r === 'MAINTENANCE_OFFICER' || r === 'MAINTENANCE_CONTRACTOR')) {
+      return '/officer/schedule';
+    }
+    if (roles.includes('TENANT')) return '/tenant/my-unit';
+    return '/auth/login';
   }
 
   clearExpiredTokens(): void {
@@ -164,7 +210,7 @@ export class AuthService {
   private roleLandingCandidates(role: UserRole | null): Array<{ route: string; permission: string; action: keyof NonNullable<PermissionMap[string]> }> {
     switch (role) {
       case 'SUPER_ADMIN':
-      case 'PROPERTY_ADMIN':
+      case 'GENERAL_MANAGER':
         return [
           { route: '/admin/home', permission: 'dashboard', action: 'view' },
           { route: '/admin/dashboard', permission: 'dashboard', action: 'view' },
@@ -173,37 +219,38 @@ export class AuthService {
           { route: '/admin/profile', permission: 'profile', action: 'view' }
         ];
       case 'MAINTENANCE_OFFICER':
+      case 'MAINTENANCE_CONTRACTOR':
         return [
           { route: '/officer/schedule', permission: 'schedule', action: 'view' },
           { route: '/officer/requests', permission: 'my_requests', action: 'view' },
           { route: '/officer/profile', permission: 'profile', action: 'view' }
         ];
-      case 'CONTRACTS_OFFICER':
-        return [
-          { route: '/admin/home', permission: 'contracts', action: 'view' },
-          { route: '/admin/contracts/dashboard', permission: 'contracts', action: 'view' },
-          { route: '/admin/contracts/list', permission: 'contracts', action: 'view' },
-          { route: '/admin/profile', permission: 'profile', action: 'view' }
-        ];
       case 'ACCOUNTANT':
         return [
           { route: '/admin/home', permission: 'finance', action: 'view' },
           { route: '/admin/finance/dashboard', permission: 'finance', action: 'view' },
-          { route: '/admin/contracts/payments', permission: 'contracts', action: 'view' },
+          { route: '/admin/contracts/list', permission: 'contracts', action: 'view' },
           { route: '/admin/profile', permission: 'profile', action: 'view' }
         ];
-      case 'HR_OFFICER':
+      case 'PROCEDURES_CLERK':
         return [
           { route: '/admin/home', permission: 'hr', action: 'view' },
           { route: '/admin/hr/employees', permission: 'hr', action: 'view' },
-          { route: '/admin/hr/payroll', permission: 'hr', action: 'view' },
+          { route: '/admin/profile', permission: 'profile', action: 'view' }
+        ];
+      case 'PROPERTY_GUARD':
+        return [
+          { route: '/admin/home', permission: 'dashboard', action: 'view' },
+          { route: '/admin/maintenance', permission: 'maintenance', action: 'view' },
           { route: '/admin/profile', permission: 'profile', action: 'view' }
         ];
       case 'OWNER':
         return [
-          { route: '/admin/home', permission: 'owner_portal', action: 'view' },
+          { route: '/admin/home', permission: 'dashboard', action: 'view' },
+          { route: '/admin/dashboard', permission: 'dashboard', action: 'view' },
+          { route: '/admin/properties', permission: 'properties', action: 'view' },
           { route: '/admin/owner-portal/dashboard', permission: 'owner_portal', action: 'view' },
-          { route: '/admin/owner-portal/statements', permission: 'owner_portal', action: 'view' },
+          { route: '/admin/owner-portal/contract-approvals', permission: 'owner_portal', action: 'view' },
           { route: '/admin/profile', permission: 'profile', action: 'view' }
         ];
       case 'TENANT':

@@ -24,7 +24,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/accountant-portal")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','ACCOUNTANT')")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT','OWNER')")
 public class AccountantPortalController {
 
     private final AccountantPortalService accountantPortalService;

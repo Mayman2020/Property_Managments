@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
@@ -24,8 +25,9 @@ public class NotificationController {
 
     @GetMapping("/my")
     public ResponseEntity<ApiResponse<Page<NotificationResponse>>> getMy(
-            @PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.ok(notificationService.getMyNotifications(pageable)));
+            @RequestParam(defaultValue = "recent") String scope,
+            @PageableDefault(size = 5) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.ok(notificationService.getMyNotifications(pageable, scope)));
     }
 
     @GetMapping("/my/unread-count")

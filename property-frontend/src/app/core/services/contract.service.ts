@@ -3,8 +3,8 @@ import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
 import {
   LeaseContract, ContractSummary, ContractTemplate,
-  CreateContractRequest, RenewContractRequest, TerminateContractRequest,
-  RentPaymentSchedule
+  CreateContractRequest, RenewContractRequest, ContractRenewalRequest, TerminateContractRequest,
+  RentPaymentSchedule, ContractRenewalContext
 } from '../models/contract.model';
 
 @Injectable({ providedIn: 'root' })
@@ -18,6 +18,10 @@ export class ContractService {
 
   getById(id: number): Observable<any> {
     return this.api.get<any>(`/contracts/${id}`);
+  }
+
+  getRenewalContext(id: number): Observable<any> {
+    return this.api.get<any>(`/contracts/${id}/renewal-context`);
   }
 
   getByTenant(tenantId: number): Observable<any> {
@@ -40,12 +44,28 @@ export class ContractService {
     return this.api.patch<any>(`/contracts/${id}/activate`);
   }
 
+  cancelDraft(id: number, reason?: string): Observable<any> {
+    return this.api.patch<any>(`/contracts/${id}/cancel`, reason != null && reason !== '' ? { reason } : {});
+  }
+
   terminate(id: number, body: TerminateContractRequest): Observable<any> {
     return this.api.patch<any>(`/contracts/${id}/terminate`, body);
   }
 
+  cancelTerminationRequest(id: number): Observable<any> {
+    return this.api.patch<any>(`/contracts/${id}/cancel-termination-request`);
+  }
+
   renew(id: number, body: RenewContractRequest): Observable<any> {
     return this.api.post<any>(`/contracts/${id}/renew`, body);
+  }
+
+  requestRenewal(id: number, body: ContractRenewalRequest): Observable<any> {
+    return this.api.post<any>(`/contracts/${id}/request-renewal`, body);
+  }
+
+  cancelRenewalRequest(id: number): Observable<any> {
+    return this.api.patch<any>(`/contracts/${id}/cancel-renewal-request`);
   }
 
   getPaymentSchedule(contractId: number): Observable<any> {

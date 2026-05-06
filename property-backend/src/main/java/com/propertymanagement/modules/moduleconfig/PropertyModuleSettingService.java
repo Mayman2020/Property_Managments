@@ -112,7 +112,7 @@ public class PropertyModuleSettingService {
         if (user.getRole() == UserRole.SUPER_ADMIN) {
             return;
         }
-        if (user.getRole() == UserRole.PROPERTY_ADMIN) {
+        if (user.getRole() == UserRole.GENERAL_MANAGER) {
             // Allow if user has no assigned property (global admin) or if their property matches
             if (user.getPropertyId() == null || Objects.equals(user.getPropertyId(), propertyId)) {
                 return;

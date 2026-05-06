@@ -10,7 +10,7 @@
         { label: ('NAV.DASHBOARD' | translate), route: '/admin/dashboard' },
         { label: ('NAV.MAINTENANCE' | translate) }
       ]">
-      <button mat-flat-button (click)="openNewRequest()">
+      <button mat-flat-button (click)="openNewRequest()" *ngIf="canCreateMaintenanceRequest()">
         <mat-icon>add</mat-icon>
         {{ 'NAV.NEW_REQUEST' | translate }}
       </button>

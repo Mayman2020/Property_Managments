@@ -5,6 +5,7 @@ import com.propertymanagement.modules.contractor.ContractorCompanyRepository;
 import com.propertymanagement.modules.maintenance.invoice.dto.MaintenanceInvoiceResponse;
 import com.propertymanagement.modules.maintenance.invoice.dto.ReviewInvoiceDto;
 import com.propertymanagement.modules.maintenance.invoice.dto.SubmitInvoiceDto;
+import com.propertymanagement.modules.owner.OwnerPropertyAccessService;
 import com.propertymanagement.modules.property.Property;
 import com.propertymanagement.modules.property.PropertyRepository;
 import com.propertymanagement.modules.unit.UnitRepository;
@@ -18,6 +19,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,6 +31,7 @@ public class MaintenanceInvoiceService {
     private final PropertyRepository propertyRepository;
     private final UnitRepository unitRepository;
     private final CodeGenerationService codeGenerationService;
+    private final OwnerPropertyAccessService ownerPropertyAccessService;
 
     // ── Contractor company officer submits invoice ──────────────────────────
 
@@ -72,6 +75,13 @@ public class MaintenanceInvoiceService {
                 ? invoiceRepository.findByPeriod(year, month)
                 : invoiceRepository.findByStatusOrderByCreatedAtDesc("PENDING");
 
+        Set<Long> ownerScope = ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner();
+        if (ownerScope != null) {
+            invoices = invoices.stream()
+                    .filter(i -> i.getPropertyId() != null && ownerScope.contains(i.getPropertyId()))
+                    .toList();
+        }
+
         Map<Long, ContractorCompany> companyMap = companyRepository.findAllById(
                 invoices.stream().map(MaintenanceInvoice::getContractorCompanyId).distinct().toList()
         ).stream().collect(Collectors.toMap(ContractorCompany::getId, c -> c));
@@ -93,6 +103,7 @@ public class MaintenanceInvoiceService {
 
     @Transactional
     public MaintenanceInvoiceResponse review(Long invoiceId, ReviewInvoiceDto dto, Long reviewerUserId) {
+        ownerPropertyAccessService.denyOwnerMutation("Owners cannot approve maintenance invoices");
         MaintenanceInvoice invoice = invoiceRepository.findById(invoiceId)
                 .orElseThrow(() -> AppException.notFound("Invoice not found: " + invoiceId));
 

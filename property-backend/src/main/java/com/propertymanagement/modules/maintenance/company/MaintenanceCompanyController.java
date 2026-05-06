@@ -27,7 +27,7 @@ public class MaintenanceCompanyController {
 
     /** GET /maintenance-companies */
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','MAINTENANCE_OFFICER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','MAINTENANCE_OFFICER','MAINTENANCE_CONTRACTOR')")
     public ResponseEntity<ApiResponse<List<ContractorCompanyResponse>>> list(
             @RequestParam(required = false) String q,
             @RequestParam(required = false, defaultValue = "false") boolean all) {
@@ -37,14 +37,14 @@ public class MaintenanceCompanyController {
 
     /** GET /maintenance-companies/{id} */
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','MAINTENANCE_OFFICER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','MAINTENANCE_OFFICER','MAINTENANCE_CONTRACTOR')")
     public ResponseEntity<ApiResponse<ContractorCompanyResponse>> get(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok(service.get(id)));
     }
 
     /** POST /maintenance-companies */
     @PostMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER')")
     public ResponseEntity<ApiResponse<ContractorCompanyResponse>> create(
             @Valid @RequestBody ContractorCompanyRequest dto) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -53,7 +53,7 @@ public class MaintenanceCompanyController {
 
     /** PUT /maintenance-companies/{id} */
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER')")
     public ResponseEntity<ApiResponse<ContractorCompanyResponse>> update(
             @PathVariable Long id, @Valid @RequestBody ContractorCompanyRequest dto) {
         return ResponseEntity.ok(ApiResponse.ok(service.update(id, dto)));

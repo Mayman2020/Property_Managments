@@ -25,6 +25,7 @@
           *ngFor="let item of section.items; trackBy: trackByRoute"
           [routerLink]="item.route"
           routerLinkActive="active"
+          [class.active]="isForcedActive(item)"
           (click)="onNavClick(item, $event)"
           [matTooltip]="collapsed ? (item.labelKey | translate) : ''"
           matTooltipPosition="after"
@@ -41,7 +42,7 @@
     <img class="user-avatar user-avatar-img" *ngIf="currentUser?.profileImageUrl" [src]="currentUser?.profileImageUrl" [attr.alt]="'PROFILE.AVATAR_ALT' | translate">
     <div class="user-avatar" *ngIf="!currentUser?.profileImageUrl">{{ currentUser?.initials || 'U' }}</div>
     <div class="user-info" *ngIf="!collapsed">
-      <span class="user-name">{{ currentUser?.fullName || '-' }}</span>
+      <span class="user-name">{{ currentUserDisplayName || '-' }}</span>
       <span class="user-role" *ngIf="roleKey">{{ roleKey | translate }}</span>
     </div>
   </div>

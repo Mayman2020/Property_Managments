@@ -48,4 +48,14 @@ public class CreateContractDto {
     private Boolean hasFreeMonth;
     private String rentDiscountReason;
     private String otherReasonText;
+
+    /**
+     * Staff audit when updating a draft: PRICE_ADJUSTMENT, TENANT_FREE, EMPLOYEE_DISCOUNT,
+     * DATA_CORRECTION, OTHER.
+     */
+    private String staffModificationReason;
+    /** When {@code staffModificationReason} is EMPLOYEE_DISCOUNT. */
+    private BigDecimal employeeDiscountPercent;
+    /** HR employee id when {@code staffModificationReason} is EMPLOYEE_DISCOUNT. */
+    private Long linkedEmployeeId;
 }

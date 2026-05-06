@@ -7,7 +7,7 @@
       { label: ('NAV.DASHBOARD' | translate), route: '/admin/dashboard' },
       { label: ('NAV.PROPERTIES' | translate) }
     ]">
-    <button mat-flat-button type="button" (click)="openAddDialog()">
+    <button mat-flat-button type="button" (click)="openAddDialog()" *ngIf="canCreateProperty()">
       <span class="material-icons">add</span>
       {{ 'PROPERTY_LIST.ADD_PROPERTY' | translate }}
     </button>
@@ -35,6 +35,14 @@
       <div class="stat-content">
         <div class="stat-label">{{ 'COMMON.INACTIVE' | translate }}</div>
         <div class="stat-value">{{ inactiveCount }}</div>
+      </div>
+    </article>
+
+    <article class="stat-card property-summary-card">
+      <div class="stat-icon"><span class="material-icons">meeting_room</span></div>
+      <div class="stat-content">
+        <div class="stat-label">{{ 'DASHBOARD.TOTAL_UNITS' | translate }}</div>
+        <div class="stat-value">{{ totalUnitsInSummary }}</div>
       </div>
     </article>
 
@@ -138,6 +146,7 @@
             </td>
             <td>
               <button
+                *ngIf="canEditProperty()"
                 type="button"
                 class="status-badge status-toggle-btn"
                 [attr.data-status]="property.isActive ? 'ACTIVE' : 'INACTIVE'"
@@ -145,6 +154,9 @@
                 [matTooltip]="(property.isActive ? 'PROPERTY_LIST.DEACTIVATE_HINT' : 'PROPERTY_LIST.ACTIVATE_HINT') | translate">
                 {{ statusLabel(property.isActive) }}
               </button>
+              <span *ngIf="!canEditProperty()" class="status-badge" [attr.data-status]="property.isActive ? 'ACTIVE' : 'INACTIVE'">
+                {{ statusLabel(property.isActive) }}
+              </span>
             </td>
             <td>
               <div class="row-actions">
@@ -156,6 +168,7 @@
                   <mat-icon>visibility</mat-icon>
                 </button>
                 <button
+                  *ngIf="canEditProperty()"
                   type="button"
                   class="app-icon-btn"
                   (click)="openEditDialog(property); $event.stopPropagation()"
@@ -169,10 +182,12 @@
                   target="_blank"
                   rel="noopener"
                   (click)="$event.stopPropagation()"
+                  [matTooltip]="'PROPERTY_LIST.OPEN_MAP' | translate"
                   [attr.aria-label]="'PROPERTY_LIST.OPEN_MAP' | translate">
                   <span class="material-icons">map</span>
                 </a>
                 <button
+                  *ngIf="canDeleteProperty()"
                   type="button"
                   class="app-icon-btn danger"
                   (click)="deleteProperty(property); $event.stopPropagation()"

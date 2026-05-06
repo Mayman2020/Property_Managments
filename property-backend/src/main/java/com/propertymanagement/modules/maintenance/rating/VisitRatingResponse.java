@@ -11,6 +11,8 @@ public class VisitRatingResponse {
     private Long id;
     private Long requestId;
     private Short rating;
+    private String ratingLabel;
+    private String ratingIcon;
     private String comment;
     private LocalDateTime createdAt;
 }

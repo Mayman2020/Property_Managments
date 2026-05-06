@@ -65,7 +65,7 @@
             </td>
             <td class="actions-col">
               <button type="button" class="app-icon-btn success"
-                      *ngIf="c.status !== 'RESOLVED' && c.status !== 'CLOSED'"
+                      *ngIf="canResolveComplaint() && c.status !== 'RESOLVED' && c.status !== 'CLOSED'"
                       (click)="resolve(c.id)"
                       [matTooltip]="'CONTRACTS.RESOLVE' | translate">
                 <mat-icon>check_circle_outline</mat-icon>

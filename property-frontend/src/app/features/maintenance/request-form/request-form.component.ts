@@ -14,12 +14,14 @@ import { TranslateModule } from '@ngx-translate/core';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { UploadZoneComponent, UploadedFile } from '../../../shared/components/upload-zone/upload-zone.component';
 import { MaintenanceService, RequestForm } from '../../../core/services/maintenance.service';
+import { TenantPortalService } from '../../../core/services/tenant-portal.service';
 import { SnackService } from '../../../core/services/snack.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { Property, PropertyService } from '../../../core/services/property.service';
 import { Unit, UnitService } from '../../../core/services/unit.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
+import { LeaseContract } from '../../../core/models/contract.model';
 
 @Component({
   selector: 'app-request-form',
@@ -46,6 +48,7 @@ export class RequestFormComponent implements OnInit, OnDestroy {
   properties: Property[] = [];
   units: Unit[] = [];
   selectedCategoryIds = new Set<number>();
+  tenantContract: LeaseContract | null = null;
 
   private readonly destroy$ = new Subject<void>();
 
@@ -59,6 +62,7 @@ export class RequestFormComponent implements OnInit, OnDestroy {
   constructor(
     private readonly fb: FormBuilder,
     private readonly maintSvc: MaintenanceService,
+    private readonly portalSvc: TenantPortalService,
     private readonly propertySvc: PropertyService,
     private readonly unitSvc: UnitService,
     private readonly snack: SnackService,
@@ -181,15 +185,17 @@ export class RequestFormComponent implements OnInit, OnDestroy {
 
     forkJoin({
       categoriesRes: this.maintSvc.getCategories(),
-      propertiesRes: this.propertySvc.getAll(0, 200)
+      propertiesRes: this.propertySvc.getAll(0, 200),
+      contractRes: this.auth.isTenant() ? this.portalSvc.getMyContract() : of({ data: null })
     }).subscribe({
-      next: ({ categoriesRes, propertiesRes }) => {
+      next: ({ categoriesRes, propertiesRes, contractRes }) => {
         this.categories = categoriesRes.data ?? [];
         this.properties = propertiesRes.data?.content ?? [];
+        this.tenantContract = contractRes.data ?? null;
 
-        const currentPropertyId = this.auth.getCurrentUser()?.propertyId;
-        if (currentPropertyId && this.properties.some((p) => p.id === currentPropertyId)) {
-          this.form.patchValue({ propertyId: currentPropertyId });
+        const preferredPropertyId = this.tenantContract?.propertyId ?? this.auth.getCurrentUser()?.propertyId;
+        if (preferredPropertyId && this.properties.some((p) => p.id === preferredPropertyId)) {
+          this.form.patchValue({ propertyId: preferredPropertyId });
         }
 
         this.loading = false;
@@ -206,6 +212,9 @@ export class RequestFormComponent implements OnInit, OnDestroy {
     this.unitSvc.getByProperty(propertyId, 0, 500).subscribe({
       next: (res) => {
         this.units = (res.data?.content ?? []).filter((u) => u.active);
+        if (this.tenantContract?.unitId && this.units.some((u) => u.id === this.tenantContract?.unitId)) {
+          this.form.patchValue({ unitId: this.tenantContract.unitId });
+        }
         this.loadingUnits = false;
       },
       error: () => {

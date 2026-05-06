@@ -18,7 +18,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/contract-templates")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','CONTRACTS_OFFICER')")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
 public class ContractTemplateController {
 
     private final ContractTemplateService templateService;
@@ -40,7 +40,7 @@ public class ContractTemplateController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER')")
     public ResponseEntity<ApiResponse<ContractTemplateResponse>> create(
             @Valid @RequestBody ContractTemplateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -48,7 +48,7 @@ public class ContractTemplateController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER')")
     public ResponseEntity<ApiResponse<ContractTemplateResponse>> update(
             @PathVariable Long id, @Valid @RequestBody ContractTemplateRequest request) {
         return ResponseEntity.ok(ApiResponse.ok(templateService.update(id, request)));

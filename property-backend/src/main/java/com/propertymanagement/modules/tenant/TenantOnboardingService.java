@@ -8,7 +8,6 @@ import com.propertymanagement.modules.tenant.dto.TenantFullOnboardRequest;
 import com.propertymanagement.modules.tenant.dto.TenantOnboardingResponse;
 import com.propertymanagement.modules.tenant.dto.TenantRequest;
 import com.propertymanagement.modules.tenant.dto.TenantResponse;
-import com.propertymanagement.modules.unit.UnitService;
 import com.propertymanagement.modules.user.UserRole;
 import com.propertymanagement.modules.user.UserService;
 import com.propertymanagement.modules.user.dto.TenantProfileLinkDto;
@@ -27,11 +26,13 @@ public class TenantOnboardingService {
     private final UserService userService;
     private final TenantService tenantService;
     private final LeaseContractService leaseContractService;
-    private final UnitService unitService;
+
+    /** Default initial password for tenant logins when the admin does not provide one. */
+    private static final String DEFAULT_TENANT_PASSWORD = "12345";
 
     /**
      * Creates TENANT user (with stub tenant row), fills tenant details, creates DRAFT lease contract,
-     * and marks the unit as rented — in one transaction so partial failures do not leave orphan users/tenants.
+     * and lease creation syncs unit occupancy — in one transaction so partial failures do not leave orphan users/tenants.
      */
     @Transactional
     public TenantOnboardingResponse onboard(TenantFullOnboardRequest req) {
@@ -41,17 +42,21 @@ public class TenantOnboardingService {
         UserRequest userRequest = new UserRequest();
         userRequest.setEmail(email);
         userRequest.setUsername(email);
+        // Stay aligned with UserService.create() and TenantService.ensureTenantPortalUser():
+        // default to "12345" when no password is supplied so admins get a predictable initial login.
         String pwd = (req.getPassword() != null && !req.getPassword().isBlank())
                 ? req.getPassword()
-                : nationalId;
+                : DEFAULT_TENANT_PASSWORD;
         userRequest.setPassword(pwd);
-        userRequest.setFullName(firstNonBlank(req.getFullNameEn(), req.getFullNameAr()));
+        userRequest.setFullName(firstNonBlank(req.getFullNameAr(), req.getFullNameEn()));
         userRequest.setPhone(req.getPhone().trim());
         userRequest.setProfileImageUrl(trimToNull(req.getProfileImageUrl()));
         userRequest.setRole(UserRole.TENANT);
         userRequest.setPropertyId(req.getPropertyId());
 
         TenantProfileLinkDto link = new TenantProfileLinkDto();
+        link.setFullNameAr(trimToNull(req.getFullNameAr()));
+        link.setFullNameEn(trimToNull(req.getFullNameEn()));
         link.setNationalId(nationalId);
         link.setLeaseStart(req.getLeaseStart());
         link.setLeaseEnd(req.getLeaseEnd());
@@ -72,6 +77,7 @@ public class TenantOnboardingService {
         tenantRequest.setLeaseStart(req.getLeaseStart());
         tenantRequest.setLeaseEnd(req.getLeaseEnd());
         tenantRequest.setProfileImage(trimToNull(req.getProfileImage() != null ? req.getProfileImage() : req.getProfileImageUrl()));
+        tenantRequest.setCivilIdImageUrl(trimToNull(req.getCivilIdImageUrl()));
         tenantRequest.setLeaseContractFiles(req.getLeaseContractFiles());
         tenantRequest.setNotes(trimToNull(req.getNotes()));
 
@@ -93,8 +99,6 @@ public class TenantOnboardingService {
         contractDto.setNotes(trimToNull(req.getNotes()));
 
         ContractResponse contract = leaseContractService.create(contractDto);
-
-        unitService.setRentalStatus(req.getUnitId(), true);
 
         return TenantOnboardingResponse.builder()
                 .userId(user.getId())

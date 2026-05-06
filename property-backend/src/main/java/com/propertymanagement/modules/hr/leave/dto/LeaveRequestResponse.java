@@ -9,10 +9,14 @@ import java.time.LocalDate;
 @Builder
 public class LeaveRequestResponse {
     private Long id;
+    private Long employeeId;
+    private Long leaveTypeId;
     private String employeeName;
     private String leaveTypeName;
     private LocalDate startDate;
     private LocalDate endDate;
     private Integer daysCount;
     private String status;
+    private String reason;
+    private String rejectionReason;
 }

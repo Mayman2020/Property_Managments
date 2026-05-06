@@ -1,12 +1,34 @@
 export type UserRole =
   | 'SUPER_ADMIN'
-  | 'PROPERTY_ADMIN'
-  | 'MAINTENANCE_OFFICER'
-  | 'CONTRACTS_OFFICER'
+  | 'GENERAL_MANAGER'
   | 'ACCOUNTANT'
-  | 'HR_OFFICER'
+  | 'MAINTENANCE_CONTRACTOR'
+  | 'MAINTENANCE_OFFICER'
+  | 'PROPERTY_GUARD'
+  | 'PROCEDURES_CLERK'
   | 'OWNER'
   | 'TENANT';
+
+/** Mirror of backend {@code UserRole} — for validation only; labels/order for UI come from lookups. */
+export const USER_ROLE_VALUES: readonly UserRole[] = [
+  'SUPER_ADMIN',
+  'GENERAL_MANAGER',
+  'ACCOUNTANT',
+  'MAINTENANCE_CONTRACTOR',
+  'MAINTENANCE_OFFICER',
+  'PROPERTY_GUARD',
+  'PROCEDURES_CLERK',
+  'OWNER',
+  'TENANT'
+];
+
+const USER_ROLE_CODE_SET = new Set<string>(USER_ROLE_VALUES as readonly string[]);
+
+/** True if {@code code} is a known portal/system role (same as backend enum name). */
+export function isUserRoleCode(code: string | null | undefined): code is UserRole {
+  return !!code && USER_ROLE_CODE_SET.has(code);
+}
+
 export type MaintenanceOfficerType = 'INTERNAL_PROPERTY' | 'CONTRACTOR_COMPANY';
 export type PermissionAction =
   | 'enabled'
@@ -39,8 +61,19 @@ export interface OwnerProfileLink {
   notes?: string;
 }
 
+/** Active properties linked to an owner (from backend merge). */
+export interface OwnerPropertyBrief {
+  id: number;
+  propertyName?: string;
+  propertyNameAr?: string;
+  propertyNameEn?: string;
+  propertyCode?: string;
+}
+
 /** Registry fields for TENANT users — synced with `tenants` row. */
 export interface TenantProfileLink {
+  fullNameAr?: string;
+  fullNameEn?: string;
   nationalId?: string;
   leaseStart?: string | null;
   leaseEnd?: string | null;
@@ -59,10 +92,14 @@ export interface User {
   username: string;
   email: string;
   fullName: string;
+  fullNameAr?: string;
+  fullNameEn?: string;
   phone?: string;
   profileImageUrl?: string;
   bio?: string;
   role: UserRole;
+  /** Additional portal roles merged with the primary role. */
+  extraRoles?: UserRole[];
   propertyId?: number;
   /** Backend: owners.id when this login is an owner user linked to an owners row */
   ownerId?: number;
@@ -73,6 +110,8 @@ export interface User {
   /** From tenant record: lease contract URLs */
   leaseContractFiles?: string[];
   ownerLink?: OwnerProfileLink;
+  /** Populated for OWNER: properties where this owner is primary or co-owner. */
+  ownerProperties?: OwnerPropertyBrief[];
   tenantLink?: TenantProfileLink;
   employeeLink?: EmployeeProfileLink;
   maintenanceOfficerType?: MaintenanceOfficerType;
@@ -95,10 +134,15 @@ export interface CurrentUser {
   username: string;
   email: string;
   fullName: string;
+  fullNameAr?: string;
+  fullNameEn?: string;
   phone?: string;
   profileImageUrl?: string;
   bio?: string;
   role: UserRole;
+  /** Role currently selected in UI context (defaults to primary role on login). */
+  activeRole?: UserRole;
+  extraRoles?: UserRole[];
   propertyId?: number;
   ownerId?: number;
   tenantId?: number;
@@ -127,9 +171,12 @@ export interface LoginResponse {
     email: string;
     username: string;
     fullName: string;
+    fullNameAr?: string;
+    fullNameEn?: string;
     profileImageUrl?: string;
     bio?: string;
     role: UserRole;
+    extraRoles?: UserRole[];
     propertyId?: number;
     ownerId?: number;
     tenantId?: number;

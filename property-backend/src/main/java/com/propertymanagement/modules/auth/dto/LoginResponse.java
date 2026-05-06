@@ -22,9 +22,13 @@ public class LoginResponse {
         private String email;
         private String username;
         private String fullName;
+        private String fullNameAr;
+        private String fullNameEn;
         private String profileImageUrl;
         private String bio;
         private String role;
+        /** Additional portal roles (enum names) merged with {@link #role}. */
+        private List<String> extraRoles;
         private Long propertyId;
         private String maintenanceOfficerType;
         private String maintenanceCompanyName;

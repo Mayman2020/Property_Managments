@@ -135,7 +135,8 @@
             <div class="action-panel" *ngIf="canAssign">
               <div class="action-title-row">
                 <strong>{{ 'MAINTENANCE.ASSIGN_OFFICER' | translate }}</strong>
-                <button mat-icon-button type="button" (click)="showAssignPanel = !showAssignPanel">
+                <button mat-icon-button type="button" (click)="showAssignPanel = !showAssignPanel"
+                        [matTooltip]="'REQUEST_DETAIL.TOGGLE_SECTION' | translate">
                   <mat-icon>{{ showAssignPanel ? 'expand_less' : 'expand_more' }}</mat-icon>
                 </button>
               </div>
@@ -155,7 +156,8 @@
             <div class="action-panel" *ngIf="canSchedule">
               <div class="action-title-row">
                 <strong>{{ 'MAINTENANCE.SCHEDULE_VISIT' | translate }}</strong>
-                <button mat-icon-button type="button" (click)="showSchedulePanel = !showSchedulePanel">
+                <button mat-icon-button type="button" (click)="showSchedulePanel = !showSchedulePanel"
+                        [matTooltip]="'REQUEST_DETAIL.TOGGLE_SECTION' | translate">
                   <mat-icon>{{ showSchedulePanel ? 'expand_less' : 'expand_more' }}</mat-icon>
                 </button>
               </div>
@@ -213,14 +215,23 @@
             <div class="action-panel accent" *ngIf="canRate">
               <div class="action-title-row">
                 <strong>{{ 'RATING.TITLE' | translate }}</strong>
-                <button mat-icon-button type="button" (click)="showRatingPanel = !showRatingPanel">
+                <button mat-icon-button type="button" (click)="showRatingPanel = !showRatingPanel"
+                        [matTooltip]="'REQUEST_DETAIL.TOGGLE_SECTION' | translate">
                   <mat-icon>{{ showRatingPanel ? 'expand_less' : 'expand_more' }}</mat-icon>
                 </button>
               </div>
               <div *ngIf="showRatingPanel" [formGroup]="ratingForm" class="action-form-shell">
-                <div class="stars-row">
-                  <button *ngFor="let s of ratingStars" mat-icon-button type="button" (click)="setRating(s)">
-                    <mat-icon [class.star-filled]="(ratingForm.value.rating ?? 0) >= s">star</mat-icon>
+                <div class="rating-options-row">
+                  <button
+                    *ngFor="let option of ratingOptions"
+                    type="button"
+                    class="rating-option-btn"
+                    [class.is-selected]="isRatingSelected(option.value)"
+                    [class]="option.colorClass"
+                    (click)="setRating(option.value)"
+                    [matTooltip]="'RATING.TOOLTIP_SET' | translate:{ label: (option.labelKey | translate) }">
+                    <mat-icon>{{ option.icon }}</mat-icon>
+                    <span>{{ option.labelKey | translate }}</span>
                   </button>
                 </div>
                 <mat-form-field appearance="outline" class="full-width">

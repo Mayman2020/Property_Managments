@@ -5,15 +5,21 @@ import com.propertymanagement.modules.hr.employee.Employee;
 import com.propertymanagement.modules.hr.employee.EmployeeRepository;
 import com.propertymanagement.modules.owner.Owner;
 import com.propertymanagement.modules.owner.OwnerRepository;
+import com.propertymanagement.modules.property.Property;
+import com.propertymanagement.modules.property.PropertyRepository;
 import com.propertymanagement.modules.tenant.Tenant;
 import com.propertymanagement.modules.tenant.TenantRepository;
 import com.propertymanagement.modules.user.dto.EmployeeProfileLinkDto;
+import com.propertymanagement.modules.user.dto.OwnerPropertyBriefDto;
 import com.propertymanagement.modules.user.dto.OwnerProfileLinkDto;
 import com.propertymanagement.modules.user.dto.TenantProfileLinkDto;
 import com.propertymanagement.modules.user.dto.UserResponse;
+import com.propertymanagement.shared.i18n.LocalizedNameResolver;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -26,18 +32,23 @@ import java.util.Set;
 public class PortalProfileBridge {
 
     private static final Set<UserRole> EMPLOYEE_ROLES = Set.of(
-            UserRole.ACCOUNTANT, UserRole.HR_OFFICER, UserRole.CONTRACTS_OFFICER,
-            UserRole.MAINTENANCE_OFFICER, UserRole.PROPERTY_ADMIN);
+            UserRole.ACCOUNTANT,
+            UserRole.PROCEDURES_CLERK,
+            UserRole.GENERAL_MANAGER,
+            UserRole.MAINTENANCE_OFFICER,
+            UserRole.MAINTENANCE_CONTRACTOR,
+            UserRole.PROPERTY_GUARD);
 
     private final OwnerRepository ownerRepository;
     private final TenantRepository tenantRepository;
     private final EmployeeRepository employeeRepository;
+    private final PropertyRepository propertyRepository;
 
     public UserResponse mergeRoleRecordIntoResponse(UserResponse base, User user) {
         return switch (user.getRole()) {
             case OWNER -> ownerRepository.findByUserId(user.getId())
                     .map(o -> mergeOwner(base, user, o))
-                    .orElse(base);
+                    .orElseGet(() -> mergeOwnerPropertiesWithoutRegistryRow(base, user));
             case TENANT -> tenantRepository.findByUserId(user.getId())
                     .map(t -> mergeTenant(base, user, t))
                     .orElse(base);
@@ -75,9 +86,24 @@ public class PortalProfileBridge {
         };
     }
 
+    /**
+     * Owner login exists but no {@code owners.user_id} link — still list properties whose
+     * denormalized {@code owner_email} matches this user (common when property was saved before linking).
+     */
+    private UserResponse mergeOwnerPropertiesWithoutRegistryRow(UserResponse b, User user) {
+        List<OwnerPropertyBriefDto> props = resolveOwnerPropertyBriefs(null, user.getEmail());
+        if (props.isEmpty()) {
+            return b;
+        }
+        return b.toBuilder().ownerProperties(props).build();
+    }
+
     private UserResponse mergeOwner(UserResponse b, User user, Owner o) {
+        List<OwnerPropertyBriefDto> ownerProps = resolveOwnerPropertyBriefs(o.getId(), user.getEmail());
         return b.toBuilder()
-                .fullName(firstNonBlank(user.getFullName(), o.getFullName()))
+                .fullName(LocalizedNameResolver.resolve(o.getFullNameAr(), o.getFullNameEn(), firstNonBlank(user.getFullName(), o.getFullName())))
+                .fullNameAr(firstNonBlank(o.getFullNameAr(), user.getFullName()))
+                .fullNameEn(firstNonBlank(o.getFullNameEn(), user.getFullName()))
                 .phone(firstNonBlank(user.getPhone(), o.getPhone()))
                 .profileImageUrl(firstNonBlank(user.getProfileImageUrl(), o.getProfileImageUrl()))
                 .civilIdImageUrl(o.getCivilIdImageUrl())
@@ -85,7 +111,46 @@ public class PortalProfileBridge {
                 .ownerLink(toOwnerLink(o))
                 .tenantLink(null)
                 .employeeLink(null)
+                .ownerProperties(ownerProps.isEmpty() ? null : ownerProps)
                 .build();
+    }
+
+    /**
+     * Resolves active properties for an owner user: {@code properties.owner_id} / co-owner table,
+     * plus any row whose {@code owner_email} matches the portal user's email.
+     */
+    private List<OwnerPropertyBriefDto> resolveOwnerPropertyBriefs(Long ownerRecordId, String userEmail) {
+        LinkedHashSet<Long> ids = new LinkedHashSet<>();
+        if (ownerRecordId != null) {
+            propertyRepository.findByOwnerIdAndActiveTrue(ownerRecordId).forEach(p -> ids.add(p.getId()));
+            for (Long pid : propertyRepository.findPropertyIdsByCoOwner(ownerRecordId)) {
+                if (pid != null) {
+                    ids.add(pid);
+                }
+            }
+        }
+        String em = userEmail == null ? "" : userEmail.trim();
+        if (!em.isBlank()) {
+            for (Property p : propertyRepository.findAllActiveByOwnerEmailNormalized(em)) {
+                ids.add(p.getId());
+            }
+        }
+        if (ids.isEmpty()) {
+            return List.of();
+        }
+        List<OwnerPropertyBriefDto> out = new ArrayList<>();
+        for (Long propertyId : ids) {
+            propertyRepository.findById(propertyId)
+                    .filter(Property::isActive)
+                    .ifPresent(p -> out.add(OwnerPropertyBriefDto.builder()
+                            .id(p.getId())
+                            .propertyName(p.getPropertyName())
+                            .propertyNameAr(p.getPropertyNameAr())
+                            .propertyNameEn(p.getPropertyNameEn())
+                            .propertyCode(p.getPropertyCode())
+                            .build()));
+        }
+        return out;
     }
 
     private UserResponse mergeTenant(UserResponse b, User user, Tenant t) {
@@ -93,10 +158,12 @@ public class PortalProfileBridge {
                 ? null
                 : List.copyOf(t.getLeaseContractFiles());
         return b.toBuilder()
-                .fullName(firstNonBlank(user.getFullName(), t.getFullName()))
+                .fullName(LocalizedNameResolver.resolve(t.getFullNameAr(), t.getFullNameEn(), firstNonBlank(user.getFullName(), t.getFullName())))
+                .fullNameAr(firstNonBlank(t.getFullNameAr(), user.getFullName()))
+                .fullNameEn(firstNonBlank(t.getFullNameEn(), user.getFullName()))
                 .phone(firstNonBlank(user.getPhone(), t.getPhone()))
                 .profileImageUrl(firstNonBlank(user.getProfileImageUrl(), t.getProfileImage()))
-                .civilIdImageUrl(null)
+                .civilIdImageUrl(t.getCivilIdImageUrl())
                 .leaseContractFiles(leases)
                 .ownerLink(null)
                 .tenantLink(toTenantLink(t))
@@ -106,7 +173,9 @@ public class PortalProfileBridge {
 
     private UserResponse mergeEmployee(UserResponse b, User user, Employee e) {
         return b.toBuilder()
-                .fullName(firstNonBlank(user.getFullName(), e.getFullName()))
+                .fullName(LocalizedNameResolver.resolve(e.getFullNameAr(), e.getFullNameEn(), firstNonBlank(user.getFullName(), e.getFullName())))
+                .fullNameAr(firstNonBlank(e.getFullNameAr(), user.getFullName()))
+                .fullNameEn(firstNonBlank(e.getFullNameEn(), user.getFullName()))
                 .phone(firstNonBlank(user.getPhone(), e.getPhone()))
                 .profileImageUrl(firstNonBlank(user.getProfileImageUrl(), e.getProfileImageUrl()))
                 .civilIdImageUrl(e.getCivilIdImageUrl())
@@ -119,7 +188,9 @@ public class PortalProfileBridge {
 
     private LoginResponse.UserDto mergeOwnerLogin(LoginResponse.UserDto b, User user, Owner o) {
         return b.toBuilder()
-                .fullName(firstNonBlank(user.getFullName(), o.getFullName()))
+                .fullName(LocalizedNameResolver.resolve(o.getFullNameAr(), o.getFullNameEn(), firstNonBlank(user.getFullName(), o.getFullName())))
+                .fullNameAr(firstNonBlank(o.getFullNameAr(), user.getFullName()))
+                .fullNameEn(firstNonBlank(o.getFullNameEn(), user.getFullName()))
                 .profileImageUrl(firstNonBlank(user.getProfileImageUrl(), o.getProfileImageUrl()))
                 .civilIdImageUrl(o.getCivilIdImageUrl())
                 .leaseContractFiles(null)
@@ -131,16 +202,20 @@ public class PortalProfileBridge {
                 ? null
                 : List.copyOf(t.getLeaseContractFiles());
         return b.toBuilder()
-                .fullName(firstNonBlank(user.getFullName(), t.getFullName()))
+                .fullName(LocalizedNameResolver.resolve(t.getFullNameAr(), t.getFullNameEn(), firstNonBlank(user.getFullName(), t.getFullName())))
+                .fullNameAr(firstNonBlank(t.getFullNameAr(), user.getFullName()))
+                .fullNameEn(firstNonBlank(t.getFullNameEn(), user.getFullName()))
                 .profileImageUrl(firstNonBlank(user.getProfileImageUrl(), t.getProfileImage()))
-                .civilIdImageUrl(null)
+                .civilIdImageUrl(t.getCivilIdImageUrl())
                 .leaseContractFiles(leases)
                 .build();
     }
 
     private LoginResponse.UserDto mergeEmployeeLogin(LoginResponse.UserDto b, User user, Employee e) {
         return b.toBuilder()
-                .fullName(firstNonBlank(user.getFullName(), e.getFullName()))
+                .fullName(LocalizedNameResolver.resolve(e.getFullNameAr(), e.getFullNameEn(), firstNonBlank(user.getFullName(), e.getFullName())))
+                .fullNameAr(firstNonBlank(e.getFullNameAr(), user.getFullName()))
+                .fullNameEn(firstNonBlank(e.getFullNameEn(), user.getFullName()))
                 .profileImageUrl(firstNonBlank(user.getProfileImageUrl(), e.getProfileImageUrl()))
                 .civilIdImageUrl(e.getCivilIdImageUrl())
                 .leaseContractFiles(null)
@@ -169,6 +244,8 @@ public class PortalProfileBridge {
 
     private static TenantProfileLinkDto toTenantLink(Tenant t) {
         return TenantProfileLinkDto.builder()
+                .fullNameAr(t.getFullNameAr())
+                .fullNameEn(t.getFullNameEn())
                 .nationalId(t.getNationalId())
                 .leaseStart(t.getLeaseStart())
                 .leaseEnd(t.getLeaseEnd())

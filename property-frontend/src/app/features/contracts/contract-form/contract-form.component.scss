@@ -7,6 +7,128 @@
   max-width: 780px;
 }
 
+.form-shell--dialog {
+  max-width: none;
+  width: 100%;
+}
+
+.contract-dialog-body {
+  max-height: 85vh;
+  overflow: auto;
+  display: block;
+  padding-top: 4px;
+  min-height: 200px;
+}
+
+.contract-dialog-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 220px;
+  color: var(--text-muted);
+
+  p {
+    margin: 0;
+    font-size: 0.9rem;
+  }
+}
+
+.staff-amendment-panel {
+  margin-bottom: 18px;
+  padding: 16px 18px 18px;
+  border-radius: var(--radius-xl, 20px);
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+}
+
+.staff-amendment-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text-main);
+  mat-icon { font-size: 22px; width: 22px; height: 22px; color: var(--navy-800, #1a2744); }
+}
+
+.staff-amendment-hint {
+  margin: 6px 0 14px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.staff-amendment-warn {
+  margin: 0 0 12px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #b45309;
+}
+
+.staff-amendment-error {
+  margin-bottom: 12px;
+}
+
+.emp-code {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.price-compare {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 12px 0 4px;
+}
+
+.price-compare-item {
+  flex: 1;
+  min-width: 120px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  &.highlight {
+    border-color: rgba(26, 39, 68, 0.35);
+    background: rgba(26, 39, 68, 0.06);
+  }
+}
+
+.pcl {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.pcv {
+  font-size: 1.05rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.price-arrow {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+:host-context([dir='rtl']) .price-arrow {
+  transform: scaleX(-1);
+}
+
+.price-compare-note {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
 .contract-stepper {
   border-radius: var(--radius-xl, 20px);
   overflow: hidden;

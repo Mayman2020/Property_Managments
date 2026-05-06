@@ -26,7 +26,11 @@ public class AppException extends RuntimeException {
     }
 
     public static AppException badRequest(String message) {
-        return new AppException(message, HttpStatus.BAD_REQUEST, "BAD_REQUEST");
+        return badRequest(message, "BAD_REQUEST");
+    }
+
+    public static AppException badRequest(String message, String errorCode) {
+        return new AppException(message, HttpStatus.BAD_REQUEST, errorCode);
     }
 
     public static AppException forbidden(String message) {
@@ -35,5 +39,9 @@ public class AppException extends RuntimeException {
 
     public static AppException conflict(String message) {
         return new AppException(message, HttpStatus.CONFLICT, "CONFLICT");
+    }
+
+    public static AppException conflict(String message, String errorCode) {
+        return new AppException(message, HttpStatus.CONFLICT, errorCode);
     }
 }

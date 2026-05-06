@@ -24,7 +24,7 @@ public class TenantController {
     private final TenantOnboardingService tenantOnboardingService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT','OWNER')")
     public ResponseEntity<ApiResponse<Page<TenantResponse>>> getAll(
             @RequestParam(required = false) String q,
             @RequestParam(required = false) Long propertyId,
@@ -48,7 +48,7 @@ public class TenantController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
     public ResponseEntity<ApiResponse<TenantResponse>> create(@Valid @RequestBody TenantRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.ok(tenantService.create(request)));
@@ -58,7 +58,7 @@ public class TenantController {
      * Atomic admin onboarding: user + tenant + draft contract + unit marked rented in one transaction.
      */
     @PostMapping("/onboard")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
     public ResponseEntity<ApiResponse<TenantOnboardingResponse>> onboard(
             @Valid @RequestBody TenantFullOnboardRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -66,20 +66,20 @@ public class TenantController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
     public ResponseEntity<ApiResponse<TenantResponse>> update(
             @PathVariable Long id, @Valid @RequestBody TenantRequest request) {
         return ResponseEntity.ok(ApiResponse.ok(tenantService.update(id, request)));
     }
 
     @PatchMapping("/{id}/unlink-unit")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ACCOUNTANT')")
     public ResponseEntity<ApiResponse<TenantResponse>> unlinkUnit(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok(tenantService.unlinkUnit(id)));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'PROPERTY_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ACCOUNTANT')")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         tenantService.delete(id);
         return ResponseEntity.ok(ApiResponse.ok(null));

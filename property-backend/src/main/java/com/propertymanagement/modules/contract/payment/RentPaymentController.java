@@ -2,7 +2,9 @@ package com.propertymanagement.modules.contract.payment;
 
 import com.propertymanagement.modules.contract.payment.dto.PaymentResponse;
 import com.propertymanagement.modules.contract.payment.dto.RecordPaymentDto;
+import com.propertymanagement.modules.contract.payment.dto.ReviewPaymentProofRequest;
 import com.propertymanagement.modules.contract.payment.dto.ScheduleItemResponse;
+import com.propertymanagement.modules.contract.payment.dto.AccountantMarkPaidRequest;
 import com.propertymanagement.shared.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +20,7 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('SUPER_ADMIN','PROPERTY_ADMIN','CONTRACTS_OFFICER','ACCOUNTANT')")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
 public class RentPaymentController {
 
     private final RentPaymentService paymentService;
@@ -41,9 +43,29 @@ public class RentPaymentController {
     }
 
     @GetMapping("/contracts/{contractId}/payment-schedule")
-    public ResponseEntity<ApiResponse<List<ScheduleItemResponse>>> getSchedule(
-            @PathVariable Long contractId) {
-        return ResponseEntity.ok(ApiResponse.ok(paymentService.getSchedule(contractId)));
+    public ResponseEntity<ApiResponse<Page<ScheduleItemResponse>>> getSchedule(
+            @PathVariable Long contractId,
+            @PageableDefault(size = 5, sort = "dueDate") Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.ok(paymentService.getSchedule(contractId, pageable)));
+    }
+
+    @GetMapping("/payments/proofs/pending")
+    public ResponseEntity<ApiResponse<List<ScheduleItemResponse>>> getPendingProofs() {
+        return ResponseEntity.ok(ApiResponse.ok(paymentService.getPendingProofs()));
+    }
+
+    @PatchMapping("/payment-schedule/{scheduleId}/proof/review")
+    public ResponseEntity<ApiResponse<ScheduleItemResponse>> reviewProof(
+            @PathVariable Long scheduleId,
+            @Valid @RequestBody ReviewPaymentProofRequest req) {
+        return ResponseEntity.ok(ApiResponse.ok(paymentService.reviewProof(scheduleId, req, currentUserId())));
+    }
+
+    @PostMapping("/payment-schedule/{scheduleId}/mark-paid")
+    public ResponseEntity<ApiResponse<ScheduleItemResponse>> markPaid(
+            @PathVariable Long scheduleId,
+            @RequestBody(required = false) AccountantMarkPaidRequest req) {
+        return ResponseEntity.ok(ApiResponse.ok(paymentService.markPaidByAccountant(scheduleId, req, currentUserId())));
     }
 
     @PostMapping("/payments")
@@ -51,5 +73,13 @@ public class RentPaymentController {
             @Valid @RequestBody RecordPaymentDto dto) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.ok(paymentService.recordPayment(dto)));
+    }
+
+    private Long currentUserId() {
+        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof com.propertymanagement.modules.user.User user && user.getId() != null) {
+            return user.getId();
+        }
+        throw com.propertymanagement.shared.exception.AppException.forbidden("Authenticated user is required");
     }
 }

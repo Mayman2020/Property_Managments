@@ -23,6 +23,7 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
 import { ExportColumn, TableExportToolbarComponent } from '../../../shared/components/table-export-toolbar/table-export-toolbar.component';
 import { FilterBarComponent, FilterSpec } from '../../../shared/components/filter-bar/filter-bar.component';
 import { PropertyFormComponent } from '../property-form/property-form.component';
+import { PermissionService } from '../../../core/services/permission.service';
 
 @Component({
   selector: 'app-property-list',
@@ -70,8 +71,21 @@ export class PropertyListComponent implements OnInit {
     private readonly snack: SnackService,
     private readonly deleteConfirm: DeleteConfirmService,
     private readonly lookupCache: LookupCacheService,
-    readonly i18n: I18nService
+    readonly i18n: I18nService,
+    private readonly permissions: PermissionService
   ) {}
+
+  canCreateProperty(): boolean {
+    return this.permissions.can('properties', 'create');
+  }
+
+  canEditProperty(): boolean {
+    return this.permissions.can('properties', 'edit');
+  }
+
+  canDeleteProperty(): boolean {
+    return this.permissions.can('properties', 'delete');
+  }
 
   ngOnInit(): void {
     this.loadFilterLookups();
@@ -149,6 +163,14 @@ export class PropertyListComponent implements OnInit {
     if (!this.filteredProperties.length) return 0;
     const total = this.filteredProperties.reduce((sum, property) => sum + this.occupancy(property), 0);
     return Math.round(total / this.filteredProperties.length);
+  }
+
+  /** Sum of unit counts for properties on the current list (after client filters). */
+  get totalUnitsInSummary(): number {
+    return this.filteredProperties.reduce(
+      (sum, p) => sum + (this.occupancyByPropertyId[p.id]?.total ?? p.totalUnits ?? 0),
+      0
+    );
   }
 
   get totalPages(): number {

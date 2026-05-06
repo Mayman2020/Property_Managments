@@ -7,7 +7,10 @@ export interface DashboardStats {
   totalProperties: number;
   totalUnits: number;
   rentedUnits: number;
+  reservedUnits?: number;
   vacantUnits: number;
+  /** Vacant + reserved (no active lease). */
+  unrentedUnits?: number;
   pendingRequests: number;
   inProgressRequests: number;
   completedThisMonth: number;
@@ -16,9 +19,10 @@ export interface DashboardStats {
   totalInventoryItems: number;
   activeContracts?: number;
   draftContracts?: number;
+  pendingOwnerContracts?: number;
+  cancelledContracts?: number;
   expiringIn30Days?: number;
   overduePayments?: number;
-  openViolations?: number;
   openComplaints?: number;
   requestsByStatus?: Record<string, number>;
   requestsByCategory?: Record<string, number>;

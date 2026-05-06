@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -15,6 +16,8 @@ public class UserResponse {
     private String username;
     private String email;
     private String fullName;
+    private String fullNameAr;
+    private String fullNameEn;
     private String phone;
     private String profileImageUrl;
     /** From linked owner / employee when the user row has no civil ID image. */
@@ -23,6 +26,9 @@ public class UserResponse {
     private List<String> leaseContractFiles;
     private String bio;
     private UserRole role;
+    /** Additional portal roles merged with {@link #role} for access control. */
+    @Builder.Default
+    private List<UserRole> extraRoles = new ArrayList<>();
     private Long propertyId;
     private MaintenanceOfficerType maintenanceOfficerType;
     private String maintenanceCompanyName;
@@ -42,4 +48,7 @@ public class UserResponse {
     private TenantProfileLinkDto tenantLink;
     /** Populated for staff roles linked to an employee row. */
     private EmployeeProfileLinkDto employeeLink;
+
+    /** Active properties linked to this owner (primary owner_id and property_owners). */
+    private List<OwnerPropertyBriefDto> ownerProperties;
 }

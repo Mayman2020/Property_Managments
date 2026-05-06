@@ -9,6 +9,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTableModule } from '@angular/material/table';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
 import { catchError, of } from 'rxjs';
 
@@ -24,7 +25,7 @@ import { ContractTemplate, TemplateType } from '../../../core/models/contract.mo
     NgIf, NgFor, FormsModule, ReactiveFormsModule,
     MatCardModule, MatButtonModule, MatIconModule,
     MatInputModule, MatSelectModule, MatCheckboxModule,
-    MatProgressSpinnerModule, MatTableModule,
+    MatProgressSpinnerModule, MatTableModule, MatTooltipModule,
     TranslateModule, PageHeaderComponent, TablePagerComponent
   ],
   templateUrl: './contract-templates.component.html',
