@@ -249,6 +249,8 @@ export const ADMIN_ROUTES: Routes = [
       // Accountant Portal
       {
         path: 'accountant-portal',
+        canActivate: [permissionGuard],
+        data: { permission: 'contracts', permissionAction: 'view' },
         children: [
           {
             path: 'rent-confirmation',
@@ -267,6 +269,8 @@ export const ADMIN_ROUTES: Routes = [
       // Owner Approval Portal
       {
         path: 'owner-portal/contract-approvals',
+        canActivate: [moduleGuard, ownerGuard],
+        data: { module: 'owner_portal' },
         loadComponent: () => import('../owner/contract-approvals/contract-approvals.component').then((m) => m.ContractApprovalsComponent)
       },
       // Contracts & Rentals Module

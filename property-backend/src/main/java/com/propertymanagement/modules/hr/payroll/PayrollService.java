@@ -8,6 +8,7 @@ import com.propertymanagement.modules.hr.employee.EmployeeRepository;
 import com.propertymanagement.modules.hr.payroll.dto.*;
 import com.propertymanagement.modules.notification.NotificationService;
 import com.propertymanagement.modules.notification.NotificationType;
+import com.propertymanagement.modules.owner.OwnerPropertyAccessService;
 import com.propertymanagement.modules.property.PropertyOwnerPortalRecipientService;
 import com.propertymanagement.modules.user.User;
 import com.propertymanagement.modules.user.UserRepository;
@@ -45,14 +46,26 @@ public class PayrollService {
     private final NotificationService notificationService;
     private final UserRepository userRepository;
     private final PropertyOwnerPortalRecipientService propertyOwnerPortalRecipientService;
+    private final OwnerPropertyAccessService ownerPropertyAccessService;
 
     public Page<PayrollRunResponse> getAll(Pageable pageable) {
+        User actor = currentUser();
+        Set<Long> ownerScope = ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner();
+        if (ownerScope != null) {
+            if (ownerScope.isEmpty()) return Page.empty(pageable);
+            return repository.findAllByPropertyIdInOrderByPayPeriodYearDescPayPeriodMonthDesc(ownerScope, pageable)
+                    .map(this::toResponse);
+        }
+        if (actor.getPropertyId() != null && actor.getRole() == UserRole.ACCOUNTANT) {
+            return repository.findAllByPropertyIdOrderByPayPeriodYearDescPayPeriodMonthDesc(actor.getPropertyId(), pageable)
+                    .map(this::toResponse);
+        }
         return repository.findAllByOrderByPayPeriodYearDescPayPeriodMonthDesc(pageable)
                 .map(this::toResponse);
     }
 
     public PayrollRunDetailResponse getById(Long id) {
-        PayrollRun run = find(id);
+        PayrollRun run = findScoped(id);
         return toDetailResponse(run);
     }
 
@@ -110,7 +123,7 @@ public class PayrollService {
 
     @Transactional
     public PayrollRunDetailResponse adjustPayslip(Long payrollRunId, Long payslipId, PayslipAdjustRequest request) {
-        PayrollRun run = find(payrollRunId);
+        PayrollRun run = findScoped(payrollRunId);
         ensureEditable(run);
 
         Payslip slip = payslipRepository.findByIdAndPayrollRunId(payslipId, payrollRunId)
@@ -133,7 +146,7 @@ public class PayrollService {
 
     @Transactional
     public PayrollRunDetailResponse addBonus(Long payrollRunId, BonusRequest request) {
-        PayrollRun run = find(payrollRunId);
+        PayrollRun run = findScoped(payrollRunId);
         ensureEditable(run);
         Employee employee = employeeRepository.findById(request.getEmployeeId())
                 .orElseThrow(() -> AppException.notFound("Employee not found: " + request.getEmployeeId()));
@@ -181,7 +194,7 @@ public class PayrollService {
 
     @Transactional
     public PayrollRunDetailResponse approve(Long id) {
-        PayrollRun run = find(id);
+        PayrollRun run = findScoped(id);
         if (!"SUBMITTED".equalsIgnoreCase(run.getStatus())) {
             throw AppException.badRequest("Only submitted payroll can be approved");
         }
@@ -201,7 +214,7 @@ public class PayrollService {
 
     @Transactional
     public PayrollRunDetailResponse markPaid(Long id, PayrollPaidRequest request) {
-        PayrollRun run = find(id);
+        PayrollRun run = findScoped(id);
         if (!"APPROVED".equalsIgnoreCase(run.getStatus()) && !"PAID".equalsIgnoreCase(run.getStatus())) {
             throw AppException.badRequest("Payroll must be approved before marking as paid");
         }
@@ -227,6 +240,23 @@ public class PayrollService {
     private PayrollRun find(Long id) {
         return repository.findById(id)
                 .orElseThrow(() -> AppException.notFound("Payroll run not found: " + id));
+    }
+
+    private PayrollRun findScoped(Long id) {
+        User actor = currentUser();
+        Set<Long> ownerScope = ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner();
+        if (ownerScope != null) {
+            if (ownerScope.isEmpty()) {
+                throw AppException.forbidden("You do not have access to this payroll run");
+            }
+            return repository.findByIdAndPropertyIdIn(id, ownerScope)
+                    .orElseThrow(() -> AppException.notFound("Payroll run not found: " + id));
+        }
+        if (actor.getPropertyId() != null && actor.getRole() == UserRole.ACCOUNTANT) {
+            return repository.findByIdAndPropertyId(id, actor.getPropertyId())
+                    .orElseThrow(() -> AppException.notFound("Payroll run not found: " + id));
+        }
+        return find(id);
     }
 
     private PayrollRunResponse toResponse(PayrollRun run) {

@@ -4,9 +4,9 @@ import { test, expect } from '@playwright/test';
  * End-to-end API checks against a running Spring Boot instance.
  * Set E2E_API_URL (default http://localhost:8080/api/v1), E2E_ADMIN_EMAIL, E2E_ADMIN_PASSWORD.
  */
-const API_BASE = process.env.E2E_API_URL ?? 'http://localhost:8080/api/v1';
-const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL;
-const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD;
+const API_BASE = process.env['E2E_API_URL'] ?? 'http://localhost:8080/api/v1';
+const ADMIN_EMAIL = process.env['E2E_ADMIN_EMAIL'];
+const ADMIN_PASSWORD = process.env['E2E_ADMIN_PASSWORD'];
 
 test.describe('Backend API flow', () => {
   test('login then dashboard ratings-summary', async ({ request }) => {

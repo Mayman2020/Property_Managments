@@ -27,6 +27,9 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class AccountantPortalService {
+    private static final String STATUS_PENDING = "PENDING";
+    private static final String STATUS_APPROVED = "APPROVED";
+    private static final String STATUS_REJECTED = "REJECTED";
 
     private final RentReceiptRepository receiptRepository;
     private final ContractActionRequestRepository actionRequestRepository;
@@ -43,7 +46,7 @@ public class AccountantPortalService {
     public List<ReceiptWithTenantDto> getReceiptsForPeriod(Integer year, Integer month) {
         List<RentReceipt> receipts = (month != null)
                 ? receiptRepository.findByPeriodYearAndMonth(year, month)
-                : receiptRepository.findByStatusOrderByPeriodYearDescPeriodMonthDesc("PENDING");
+                : receiptRepository.findByStatusOrderByPeriodYearDescPeriodMonthDesc(STATUS_PENDING);
 
         Set<Long> ownerScope = ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner();
         if (ownerScope != null) {
@@ -68,7 +71,11 @@ public class AccountantPortalService {
         ownerPropertyAccessService.denyOwnerMutation("Owners cannot review rent receipts");
         RentReceipt receipt = receiptRepository.findById(receiptId)
                 .orElseThrow(() -> AppException.notFound("Receipt not found: " + receiptId));
-        receipt.setStatus(status);
+        String targetStatus = normalizeReviewStatus(status);
+        if (!STATUS_PENDING.equalsIgnoreCase(receipt.getStatus())) {
+            throw AppException.badRequest("Only pending receipts can be reviewed");
+        }
+        receipt.setStatus(targetStatus);
         receipt.setNotes(notes);
         receipt.setReviewedBy(reviewerUserId);
         receipt.setReviewedAt(LocalDateTime.now());
@@ -79,7 +86,7 @@ public class AccountantPortalService {
 
     public List<RenewalRequestWithDetailsDto> getPendingRenewalRequests() {
         Set<Long> ownerScope = ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner();
-        return actionRequestRepository.findByStatusOrderByCreatedAtDesc("PENDING")
+        return actionRequestRepository.findByStatusOrderByCreatedAtDesc(STATUS_PENDING)
                 .stream()
                 .filter(r -> "RENEWAL".equals(r.getActionType()))
                 .filter(r -> ownerScope == null || contractRepository.findById(r.getContractId())
@@ -98,14 +105,14 @@ public class AccountantPortalService {
         if (!"RENEWAL".equals(request.getActionType())) {
             throw AppException.badRequest("This request is not a renewal request");
         }
-        if (!"PENDING".equals(request.getStatus())) {
+        if (!STATUS_PENDING.equalsIgnoreCase(request.getStatus())) {
             throw AppException.badRequest("Request already processed");
         }
 
         ContractResponse newContract = renewalService.renew(request.getContractId(), dto, accountantUserId);
 
         // Mark the action request as approved
-        request.setStatus("APPROVED");
+        request.setStatus(STATUS_APPROVED);
         request.setReviewedBy(accountantUserId);
         request.setReviewedAt(LocalDateTime.now());
         String noteAr = appMessages.get(AppMessages.LOCALE_AR, "accountant.renewal.processed_note", newContract.getContractNumber());
@@ -161,5 +168,13 @@ public class AccountantPortalService {
                 .status(req.getStatus())
                 .createdAt(req.getCreatedAt())
                 .build();
+    }
+
+    private String normalizeReviewStatus(String status) {
+        String normalized = status == null ? "" : status.trim().toUpperCase();
+        if (!STATUS_APPROVED.equals(normalized) && !STATUS_REJECTED.equals(normalized)) {
+            throw AppException.badRequest("Invalid review status. Expected APPROVED or REJECTED");
+        }
+        return normalized;
     }
 }

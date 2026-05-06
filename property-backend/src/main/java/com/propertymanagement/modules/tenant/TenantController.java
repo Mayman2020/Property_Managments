@@ -33,16 +33,19 @@ public class TenantController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT','OWNER')")
     public ResponseEntity<ApiResponse<TenantResponse>> getById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok(tenantService.getById(id)));
     }
 
     @GetMapping("/by-user/{userId}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT','OWNER')")
     public ResponseEntity<ApiResponse<TenantResponse>> getByUserId(@PathVariable Long userId) {
         return ResponseEntity.ok(ApiResponse.ok(tenantService.getByUserId(userId)));
     }
 
     @GetMapping("/by-unit/{unitId}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT','OWNER')")
     public ResponseEntity<ApiResponse<TenantResponse>> getByUnitId(@PathVariable Long unitId) {
         return ResponseEntity.ok(ApiResponse.ok(tenantService.getByUnitId(unitId)));
     }

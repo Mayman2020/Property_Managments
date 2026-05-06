@@ -55,7 +55,7 @@ public class FinanceController {
     }
 
     @PostMapping("/expenses")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT','OWNER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
     public ResponseEntity<ApiResponse<ExpenseResponse>> createExpense(
             @Valid @RequestBody CreateExpenseRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -63,7 +63,7 @@ public class FinanceController {
     }
 
     @PostMapping("/revenues")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT','OWNER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
     public ResponseEntity<ApiResponse<OtherRevenueResponse>> createRevenue(
             @Valid @RequestBody CreateRevenueRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)

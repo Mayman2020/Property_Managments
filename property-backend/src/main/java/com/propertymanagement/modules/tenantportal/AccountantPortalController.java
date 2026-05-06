@@ -38,6 +38,7 @@ public class AccountantPortalController {
     }
 
     @PatchMapping("/receipts/{id}/review")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
     public ResponseEntity<ApiResponse<ReceiptResponse>> reviewReceipt(
             @PathVariable Long id,
             @Valid @RequestBody ReviewReceiptDto dto) {
@@ -51,6 +52,7 @@ public class AccountantPortalController {
     }
 
     @PostMapping("/renewal-requests/{requestId}/process")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
     public ResponseEntity<ApiResponse<ContractResponse>> processRenewal(
             @PathVariable Long requestId,
             @Valid @RequestBody RenewContractDto dto) {
@@ -68,6 +70,7 @@ public class AccountantPortalController {
     }
 
     @PatchMapping("/maintenance-invoices/{id}/review")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
     public ResponseEntity<ApiResponse<MaintenanceInvoiceResponse>> reviewMaintenanceInvoice(
             @PathVariable Long id,
             @Valid @RequestBody ReviewInvoiceDto dto) {

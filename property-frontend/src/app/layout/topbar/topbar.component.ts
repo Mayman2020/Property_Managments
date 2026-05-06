@@ -16,6 +16,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { SnackService } from '../../core/services/snack.service';
 import { UserRole } from '../../core/models/user.model';
+import { PermissionService } from '../../core/services/permission.service';
 
 @Component({
   selector: 'app-topbar',
@@ -36,6 +37,7 @@ export class TopbarComponent implements OnInit, OnDestroy {
     readonly theme: ThemeService,
     readonly i18n: I18nService,
     readonly auth: AuthService,
+    private readonly permissions: PermissionService,
     private readonly notificationService: NotificationService,
     private readonly router: Router,
     private readonly snack: SnackService
@@ -86,8 +88,13 @@ export class TopbarComponent implements OnInit, OnDestroy {
   switchRole(role: UserRole): void {
     if (this.isRoleActive(role)) return;
     this.auth.setActiveRole(role);
-    void this.router.navigateByUrl(this.auth.getDashboardRoute()).then(() => {
-      window.location.reload();
+    this.permissions.loadMine().subscribe({
+      next: () => {
+        void this.router.navigateByUrl(this.auth.getDashboardRoute());
+      },
+      error: () => {
+        void this.router.navigateByUrl(this.auth.getDashboardRoute());
+      }
     });
   }
 

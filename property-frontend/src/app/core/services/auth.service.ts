@@ -95,6 +95,10 @@ export class AuthService {
   }
 
   hasRole(role: UserRole): boolean {
+    return this.getRole() === role;
+  }
+
+  hasAssignedRole(role: UserRole): boolean {
     return this.getEffectiveRoles().includes(role);
   }
 

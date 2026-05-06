@@ -1,6 +1,6 @@
 import { expect, test, Page } from '@playwright/test';
 
-const APP_BASE = process.env.E2E_WEB_URL ?? 'http://localhost:4500';
+const APP_BASE = process.env['E2E_WEB_URL'] ?? 'http://localhost:4500';
 
 async function login(page: Page, email: string, password = '12345') {
   await page.goto(`${APP_BASE}/auth/login`);

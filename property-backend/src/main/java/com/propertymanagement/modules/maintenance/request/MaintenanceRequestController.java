@@ -44,6 +44,7 @@ public class MaintenanceRequestController {
     }
 
     @GetMapping("/property/{propertyId}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'OWNER', 'PROPERTY_GUARD', 'MAINTENANCE_OFFICER','MAINTENANCE_CONTRACTOR')")
     public ResponseEntity<ApiResponse<Page<MaintenanceRequestResponse>>> getByProperty(
             @PathVariable Long propertyId,
             @RequestParam(required = false) RequestStatus status,
@@ -56,6 +57,7 @@ public class MaintenanceRequestController {
     }
 
     @GetMapping("/tenant/{tenantId}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'OWNER', 'TENANT')")
     public ResponseEntity<ApiResponse<Page<MaintenanceRequestResponse>>> getByTenant(
             @PathVariable Long tenantId,
             @PageableDefault(size = 10) Pageable pageable) {
@@ -63,11 +65,13 @@ public class MaintenanceRequestController {
     }
 
     @GetMapping("/officer/{officerId}/open-count")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'OWNER', 'MAINTENANCE_OFFICER','MAINTENANCE_CONTRACTOR')")
     public ResponseEntity<ApiResponse<Long>> getOfficerOpenCount(@PathVariable Long officerId) {
         return ResponseEntity.ok(ApiResponse.ok(requestService.countOpenAssignedToOfficerSecured(officerId)));
     }
 
     @GetMapping("/officer/{officerId}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'OWNER', 'MAINTENANCE_OFFICER','MAINTENANCE_CONTRACTOR')")
     public ResponseEntity<ApiResponse<Page<MaintenanceRequestResponse>>> getByOfficer(
             @PathVariable Long officerId,
             @PageableDefault(size = 10) Pageable pageable) {
@@ -82,11 +86,13 @@ public class MaintenanceRequestController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'OWNER', 'PROPERTY_GUARD', 'MAINTENANCE_OFFICER','MAINTENANCE_CONTRACTOR','TENANT')")
     public ResponseEntity<ApiResponse<MaintenanceRequestResponse>> getById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok(requestService.getById(id)));
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'PROPERTY_GUARD', 'MAINTENANCE_OFFICER','MAINTENANCE_CONTRACTOR','TENANT')")
     public ResponseEntity<ApiResponse<MaintenanceRequestResponse>> create(
             @Valid @RequestBody CreateRequestDto dto) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -114,6 +120,7 @@ public class MaintenanceRequestController {
     }
 
     @PatchMapping("/{id}/cancel")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'PROPERTY_GUARD', 'MAINTENANCE_OFFICER','MAINTENANCE_CONTRACTOR','TENANT')")
     public ResponseEntity<ApiResponse<MaintenanceRequestResponse>> cancel(
             @PathVariable Long id, @RequestBody(required = false) CancelRequestDto dto) {
         return ResponseEntity.ok(ApiResponse.ok(
@@ -142,6 +149,7 @@ public class MaintenanceRequestController {
     }
 
     @GetMapping("/{id}/visit-report")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'OWNER', 'PROPERTY_GUARD', 'MAINTENANCE_OFFICER','MAINTENANCE_CONTRACTOR','TENANT')")
     public ResponseEntity<ApiResponse<VisitReportResponse>> getVisitReport(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok(requestService.getVisitReport(id)));
     }
@@ -155,16 +163,19 @@ public class MaintenanceRequestController {
     }
 
     @GetMapping("/{id}/rating")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'OWNER', 'PROPERTY_GUARD', 'MAINTENANCE_OFFICER','MAINTENANCE_CONTRACTOR','TENANT')")
     public ResponseEntity<ApiResponse<VisitRatingResponse>> getRating(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok(ratingService.getRating(id)));
     }
 
     @GetMapping("/{id}/attachments")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'OWNER', 'PROPERTY_GUARD', 'MAINTENANCE_OFFICER','MAINTENANCE_CONTRACTOR','TENANT')")
     public ResponseEntity<ApiResponse<List<RequestAttachment>>> getAttachments(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok(attachmentRepository.findByRequestId(id)));
     }
 
     @PostMapping("/{id}/attachments")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'PROPERTY_GUARD', 'MAINTENANCE_OFFICER','MAINTENANCE_CONTRACTOR','TENANT')")
     public ResponseEntity<ApiResponse<RequestAttachment>> addAttachment(
             @PathVariable Long id,
             @Valid @RequestBody AttachmentRequest dto) {
@@ -182,6 +193,7 @@ public class MaintenanceRequestController {
     }
 
     @DeleteMapping("/{id}/attachments/{attachmentId}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'PROPERTY_GUARD', 'MAINTENANCE_OFFICER','MAINTENANCE_CONTRACTOR','TENANT')")
     public ResponseEntity<ApiResponse<Void>> deleteAttachment(
             @PathVariable Long id,
             @PathVariable Long attachmentId) {

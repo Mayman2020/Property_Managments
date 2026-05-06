@@ -28,6 +28,11 @@ import java.util.Objects;
 @Service
 @RequiredArgsConstructor
 public class TenantPortalService {
+    private static final String STATUS_PENDING = "PENDING";
+    private static final String STATUS_APPROVED = "APPROVED";
+    private static final String STATUS_REJECTED = "REJECTED";
+    private static final String ACTION_RENEWAL = "RENEWAL";
+    private static final String ACTION_TERMINATION = "TERMINATION";
 
     private final TenantRepository tenantRepository;
     private final LeaseContractRepository contractRepository;
@@ -108,7 +113,7 @@ public class TenantPortalService {
                 .amount(req.getAmount())
                 .fileUrl(req.getFileUrl())
                 .notes(req.getNotes())
-                .status("PENDING")
+                .status(STATUS_PENDING)
                 .uploadSource("TENANT")
                 .build();
 
@@ -186,15 +191,16 @@ public class TenantPortalService {
 
     @Transactional
     public ActionRequestResponse createActionRequest(Long tenantId, ContractActionRequestDto req) {
+        String actionType = normalizeActionType(req.getActionType());
         ContractActionRequest request = ContractActionRequest.builder()
                 .tenantId(tenantId)
                 .contractId(req.getContractId())
-                .actionType(req.getActionType())
+                .actionType(actionType)
                 .requestedDate(req.getRequestedDate())
                 .reason(req.getReason())
                 .notes(req.getNotes())
                 .attachmentUrl(req.getAttachmentUrl())
-                .status("PENDING")
+                .status(STATUS_PENDING)
                 .build();
 
         return toActionResponse(actionRequestRepository.save(request));
@@ -202,7 +208,7 @@ public class TenantPortalService {
 
     // Admin: list all pending action requests
     public List<ActionRequestResponse> getPendingActionRequests() {
-        return actionRequestRepository.findByStatusOrderByCreatedAtDesc("PENDING")
+        return actionRequestRepository.findByStatusOrderByCreatedAtDesc(STATUS_PENDING)
                 .stream().map(this::toActionResponse).toList();
     }
 
@@ -210,7 +216,10 @@ public class TenantPortalService {
     public ActionRequestResponse reviewActionRequest(Long requestId, String status, String adminNotes, Long reviewerUserId) {
         ContractActionRequest request = actionRequestRepository.findById(requestId)
                 .orElseThrow(() -> AppException.notFound("Request not found: " + requestId));
-        request.setStatus(status);
+        if (!STATUS_PENDING.equalsIgnoreCase(request.getStatus())) {
+            throw AppException.badRequest("Only pending requests can be reviewed");
+        }
+        request.setStatus(normalizeReviewStatus(status));
         request.setAdminNotes(adminNotes);
         request.setReviewedBy(reviewerUserId);
         request.setReviewedAt(java.time.LocalDateTime.now());
@@ -227,7 +236,10 @@ public class TenantPortalService {
     public ReceiptResponse reviewReceipt(Long receiptId, String status, Long reviewerUserId) {
         RentReceipt receipt = receiptRepository.findById(receiptId)
                 .orElseThrow(() -> AppException.notFound("Receipt not found: " + receiptId));
-        receipt.setStatus(status);
+        if (!STATUS_PENDING.equalsIgnoreCase(receipt.getStatus())) {
+            throw AppException.badRequest("Only pending receipts can be reviewed");
+        }
+        receipt.setStatus(normalizeReviewStatus(status));
         receipt.setReviewedBy(reviewerUserId);
         receipt.setReviewedAt(java.time.LocalDateTime.now());
         return toReceiptResponse(receiptRepository.save(receipt));
@@ -267,5 +279,21 @@ public class TenantPortalService {
                 .adminNotes(r.getAdminNotes())
                 .createdAt(r.getCreatedAt())
                 .build();
+    }
+
+    private String normalizeReviewStatus(String status) {
+        String normalized = status == null ? "" : status.trim().toUpperCase();
+        if (!STATUS_APPROVED.equals(normalized) && !STATUS_REJECTED.equals(normalized)) {
+            throw AppException.badRequest("Invalid review status. Expected APPROVED or REJECTED");
+        }
+        return normalized;
+    }
+
+    private String normalizeActionType(String actionType) {
+        String normalized = actionType == null ? "" : actionType.trim().toUpperCase();
+        if (!ACTION_RENEWAL.equals(normalized) && !ACTION_TERMINATION.equals(normalized)) {
+            throw AppException.badRequest("Invalid action type. Expected RENEWAL or TERMINATION");
+        }
+        return normalized;
     }
 }

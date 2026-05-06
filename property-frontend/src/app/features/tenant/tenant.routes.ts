@@ -35,6 +35,12 @@ export const TENANT_ROUTES: Routes = [
         loadComponent: () => import('./tenant-contract-detail/tenant-contract-detail.component').then((m) => m.TenantContractDetailComponent)
       },
       {
+        canActivate: [permissionGuard],
+        data: { permission: 'my_unit', permissionAction: 'view' },
+        path: 'rent-receipts',
+        loadComponent: () => import('./rent-receipts/rent-receipts.component').then((m) => m.RentReceiptsComponent)
+      },
+      {
         path: 'notifications',
         loadComponent: () => import('../notifications/notifications-page.component').then((m) => m.NotificationsPageComponent)
       },

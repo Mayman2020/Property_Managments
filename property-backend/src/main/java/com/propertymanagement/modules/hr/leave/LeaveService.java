@@ -8,6 +8,7 @@ import com.propertymanagement.modules.hr.employee.Employee;
 import com.propertymanagement.modules.hr.employee.EmployeeRepository;
 import com.propertymanagement.modules.notification.NotificationService;
 import com.propertymanagement.modules.notification.NotificationType;
+import com.propertymanagement.modules.owner.OwnerPropertyAccessService;
 import com.propertymanagement.modules.property.PropertyOwnerPortalRecipientService;
 import com.propertymanagement.modules.user.User;
 import com.propertymanagement.modules.user.UserRepository;
@@ -40,8 +41,18 @@ public class LeaveService {
     private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final PropertyOwnerPortalRecipientService propertyOwnerPortalRecipientService;
+    private final OwnerPropertyAccessService ownerPropertyAccessService;
 
     public Page<LeaveRequestResponse> getAll(Pageable pageable) {
+        User actor = currentUser();
+        Set<Long> ownerScope = ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner();
+        if (ownerScope != null) {
+            if (ownerScope.isEmpty()) return Page.empty(pageable);
+            return queryRepository.findAllRowsByPropertyIds(ownerScope, pageable).map(this::toResponse);
+        }
+        if (actor.getPropertyId() != null && (actor.getRole() == UserRole.ACCOUNTANT || actor.getRole() == UserRole.PROCEDURES_CLERK)) {
+            return queryRepository.findAllRowsByPropertyId(actor.getPropertyId(), pageable).map(this::toResponse);
+        }
         return queryRepository.findAllRows(pageable).map(this::toResponse);
     }
 
@@ -51,6 +62,7 @@ public class LeaveService {
         if (targetPropertyId == null) {
             throw AppException.badRequest("propertyId is required");
         }
+        assertUserCanAccessProperty(targetPropertyId, user);
         int targetYear = year != null ? year : LocalDate.now().getYear();
         List<Employee> employees = employeeRepository.findByPropertyIdAndStatusOrderByFullNameAsc(targetPropertyId, "ACTIVE");
         return employees.stream()
@@ -62,6 +74,7 @@ public class LeaveService {
     public LeaveRequestResponse create(CreateLeaveRequest request) {
         Employee employee = employeeRepository.findById(request.getEmployeeId())
                 .orElseThrow(() -> AppException.badRequest("Employee not found: " + request.getEmployeeId()));
+        assertUserCanAccessProperty(employee.getPropertyId(), currentUser());
         validateRange(request.getStartDate(), request.getEndDate());
         if (repository.existsOverlappingActiveRequest(employee.getId(), request.getStartDate(), request.getEndDate())) {
             throw AppException.badRequest("There is an overlapping leave request for this employee");
@@ -93,10 +106,11 @@ public class LeaveService {
         }
         User actor = currentUser();
         if (actor.getRole() != UserRole.OWNER && actor.getRole() != UserRole.SUPER_ADMIN && actor.getRole() != UserRole.GENERAL_MANAGER) {
-            throw AppException.forbidden("Only owners can approve leave requests");
+            throw AppException.forbidden("Only owner, super admin, or general manager can approve leave requests");
         }
         Employee employee = employeeRepository.findById(entity.getEmployeeId())
                 .orElseThrow(() -> AppException.badRequest("Employee not found"));
+        assertUserCanAccessProperty(employee.getPropertyId(), actor);
         int usedDays = repository.sumApprovedDaysByEmployeeAndYear(employee.getId(), entity.getStartDate().getYear());
         if (usedDays + entity.getDaysCount() > ANNUAL_ENTITLED_DAYS) {
             throw AppException.badRequest("Insufficient annual leave balance");
@@ -118,10 +132,11 @@ public class LeaveService {
         }
         User actor = currentUser();
         if (actor.getRole() != UserRole.OWNER && actor.getRole() != UserRole.SUPER_ADMIN && actor.getRole() != UserRole.GENERAL_MANAGER) {
-            throw AppException.forbidden("Only owners can reject leave requests");
+            throw AppException.forbidden("Only owner, super admin, or general manager can reject leave requests");
         }
         Employee employee = employeeRepository.findById(entity.getEmployeeId())
                 .orElseThrow(() -> AppException.badRequest("Employee not found"));
+        assertUserCanAccessProperty(employee.getPropertyId(), actor);
         entity.setStatus("REJECTED");
         entity.setApprovedBy(actor.getId());
         entity.setApprovedAt(LocalDateTime.now());
@@ -247,5 +262,28 @@ public class LeaveService {
         if (value == null) return null;
         String t = value.trim();
         return t.isEmpty() ? null : t;
+    }
+
+    private void assertUserCanAccessProperty(Long propertyId, User user) {
+        if (propertyId == null || user == null) return;
+        if (user.getRole() == UserRole.SUPER_ADMIN || user.getRole() == UserRole.GENERAL_MANAGER) {
+            return;
+        }
+        Set<Long> ownerScope = ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner();
+        if (ownerScope != null) {
+            if (!ownerScope.contains(propertyId)) {
+                throw AppException.forbidden("You do not have access to this property");
+            }
+            return;
+        }
+        if ((user.getRole() == UserRole.ACCOUNTANT || user.getRole() == UserRole.PROCEDURES_CLERK)
+                && user.getPropertyId() != null
+                && user.getPropertyId().equals(propertyId)) {
+            return;
+        }
+        // Other scoped roles are blocked from cross-property leave access.
+        if (user.getRole() == UserRole.ACCOUNTANT || user.getRole() == UserRole.PROCEDURES_CLERK || user.getRole() == UserRole.OWNER) {
+            throw AppException.forbidden("You do not have access to this property");
+        }
     }
 }

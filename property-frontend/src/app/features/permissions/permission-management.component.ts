@@ -589,7 +589,7 @@ export class PermissionManagementComponent implements OnInit {
       next: (res) => {
         const updated = this.clonePermissions(res.data?.permissions ?? permissions);
         this.rolePermissions[role] = updated;
-        if (this.auth.hasRole(role)) {
+        if (this.auth.hasAssignedRole(role)) {
           this.permissionService.loadMine().subscribe({ error: () => {} });
         }
         this.snack.success(this.i18n.instant('PERMISSIONS.SAVE_SUCCESS'));
