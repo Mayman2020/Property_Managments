@@ -2,6 +2,7 @@ package com.propertymanagement.modules.notification;
 
 import com.propertymanagement.modules.notification.dto.NotificationResponse;
 import com.propertymanagement.modules.user.User;
+import com.propertymanagement.modules.user.UserRepository;
 import com.propertymanagement.shared.exception.AppException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -13,14 +14,19 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
+    private final UserRepository userRepository;
 
     public void createForRecipients(Collection<Long> recipientIds,
                                     Long actorUserId,
@@ -119,11 +125,17 @@ public class NotificationService {
     public Page<NotificationResponse> getMyNotifications(Pageable pageable, String scope) {
         Long userId = currentUserId();
         LocalDateTime cutoff = LocalDateTime.now().minusDays(14);
-        String s = scope == null ? "recent" : scope.trim().toLowerCase();
-        Page<Notification> page = "older".equals(s)
-                ? notificationRepository.findByRecipientUserIdAndCreatedAtLessThanOrderByCreatedAtDesc(userId, cutoff, pageable)
-                : notificationRepository.findByRecipientUserIdAndCreatedAtGreaterThanEqualOrderByCreatedAtDesc(userId, cutoff, pageable);
-        return page.map(this::toResponse);
+        String s = scope == null ? "all" : scope.trim().toLowerCase();
+        Page<Notification> page;
+        if ("older".equals(s)) {
+            page = notificationRepository.findByRecipientUserIdAndCreatedAtLessThanOrderByCreatedAtDesc(userId, cutoff, pageable);
+        } else if ("recent".equals(s)) {
+            page = notificationRepository.findByRecipientUserIdAndCreatedAtGreaterThanEqualOrderByCreatedAtDesc(userId, cutoff, pageable);
+        } else {
+            page = notificationRepository.findByRecipientUserIdOrderByCreatedAtDesc(userId, pageable);
+        }
+        Map<Long, String> actorNames = resolveActorNames(page.getContent());
+        return page.map(n -> toResponse(n, actorDisplayNameFor(actorNames, n.getActorUserId())));
     }
 
     public long getMyUnreadCount() {
@@ -138,7 +150,9 @@ public class NotificationService {
         if (notification.getReadAt() == null) {
             notification.setReadAt(LocalDateTime.now());
         }
-        return toResponse(notificationRepository.save(notification));
+        Notification saved = notificationRepository.save(notification);
+        Map<Long, String> actorNames = resolveActorNames(List.of(saved));
+        return toResponse(saved, actorDisplayNameFor(actorNames, saved.getActorUserId()));
     }
 
     @Transactional
@@ -155,12 +169,14 @@ public class NotificationService {
         notificationRepository.saveAll(page.getContent());
     }
 
-    private NotificationResponse toResponse(Notification n) {
+    private NotificationResponse toResponse(Notification n, String actorDisplayName) {
         return NotificationResponse.builder()
                 .id(n.getId())
                 .type(n.getType())
                 .title(n.getTitle())
                 .message(n.getMessage())
+                .actorUserId(n.getActorUserId())
+                .actorDisplayName(actorDisplayName)
                 .propertyId(n.getPropertyId())
                 .requestId(n.getRequestId())
                 .read(n.getReadAt() != null)
@@ -168,6 +184,41 @@ public class NotificationService {
                 .createdAt(n.getCreatedAt())
                 .params(emptyToNull(n.getParams()))
                 .build();
+    }
+
+    private Map<Long, String> resolveActorNames(List<Notification> notifications) {
+        Set<Long> actorIds = notifications.stream()
+                .map(Notification::getActorUserId)
+                .filter(id -> id != null && id > 0)
+                .collect(Collectors.toSet());
+        if (actorIds.isEmpty()) {
+            return Map.of();
+        }
+
+        Map<Long, String> namesById = new HashMap<>();
+        userRepository.findAllById(actorIds).forEach(user ->
+                namesById.put(user.getId(), pickDisplayName(user)));
+        return namesById;
+    }
+
+    private static String actorDisplayNameFor(Map<Long, String> actorNames, Long actorUserId) {
+        if (actorUserId == null || actorNames == null || actorNames.isEmpty()) {
+            return null;
+        }
+        return actorNames.get(actorUserId);
+    }
+
+    private static String pickDisplayName(User user) {
+        if (user.getFullName() != null && !user.getFullName().isBlank()) {
+            return user.getFullName().trim();
+        }
+        if (user.getEmail() != null && !user.getEmail().isBlank()) {
+            return user.getEmail().trim();
+        }
+        if (user.getUsername() != null && !user.getUsername().isBlank()) {
+            return user.getUsername().trim();
+        }
+        return null;
     }
 
     private static Map<String, Object> emptyToNull(Map<String, Object> params) {

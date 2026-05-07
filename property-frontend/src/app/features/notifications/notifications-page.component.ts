@@ -63,7 +63,13 @@ import { resolveNotificationTargetUrl } from '../../core/utils/notification-navi
                   </span>
                 </span>
                 <span class="notification-message">{{ notificationMessage(item) }}</span>
-                <span class="notification-time">{{ item.createdAt | date:'dd/MM/yyyy' }}</span>
+                <span class="notification-meta">
+                  {{ 'NOTIFICATIONS.BY' | translate }} {{ notificationActor(item) }}
+                  <span aria-hidden="true">•</span>
+                  {{ 'NOTIFICATIONS.DATE' | translate }} {{ item.createdAt | date:'dd/MM/yyyy' }}
+                  <span aria-hidden="true">•</span>
+                  {{ 'NOTIFICATIONS.TIME' | translate }} {{ item.createdAt | date:'HH:mm' }}
+                </span>
               </span>
               <span class="app-icon-btn accent notification-open" [matTooltip]="'NOTIFICATIONS.OPEN_LINK' | translate"><span class="material-icons">arrow_forward</span></span>
             </button>
@@ -141,7 +147,14 @@ import { resolveNotificationTargetUrl } from '../../core/utils/notification-navi
     }
     .notification-row-head strong { color: var(--text-main); font-size: 0.95rem; }
     .notification-message { color: var(--text-muted); line-height: 1.6; overflow-wrap: anywhere; }
-    .notification-time { color: var(--text-subtle); font-size: 0.78rem; }
+    .notification-meta {
+      color: var(--text-subtle);
+      font-size: 0.78rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
     .notification-open { pointer-events: none; }
     [dir='rtl'] .notification-open .material-icons { transform: rotate(180deg); }
     @media (max-width: 640px) {
@@ -196,7 +209,10 @@ export class NotificationsPageComponent implements OnInit {
   }
 
   markAllRead(): void {
-    this.service.markAllRead().subscribe(() => this.load());
+    this.service.markAllRead().subscribe(() => {
+      this.service.setUnreadCount(0);
+      this.load();
+    });
   }
 
   open(item: AppNotification): void {
@@ -323,6 +339,12 @@ export class NotificationsPageComponent implements OnInit {
     if (notification.type.includes('TENANT')) return 'person';
     if (notification.type.includes('OWNER')) return 'account_balance';
     return 'notifications';
+  }
+
+  notificationActor(notification: AppNotification): string {
+    const name = notification.actorDisplayName?.trim();
+    if (name) return name;
+    return this.i18n.instant('NOTIFICATIONS.SYSTEM');
   }
 
   private extractRequestNo(message: string): string {

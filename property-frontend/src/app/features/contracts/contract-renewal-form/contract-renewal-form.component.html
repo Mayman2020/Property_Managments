@@ -1,153 +1,145 @@
-<app-page-header
-  [title]="'CONTRACT.RENEWAL.DIALOG.TITLE' | translate"
-  [subtitle]="contract?.contractNumber ?? ''"
-  [showBack]="true"
-  (backClick)="goBack()">
-</app-page-header>
-
-<p class="page-lead" *ngIf="contract">{{ contract.tenantName }} · {{ contract.propertyName }} · {{ contract.unitNumber }}</p>
-<p class="page-lead muted" *ngIf="contract">{{ 'CONTRACT.RENEWAL.DIALOG.HINT' | translate }}</p>
-
-<div *ngIf="loading" class="loading-wrap"><mat-spinner diameter="40"></mat-spinner></div>
-
-<div *ngIf="!loading && !ctx" class="error-msg">{{ 'CONTRACTS.RENEW_LOAD_ERROR' | translate }}</div>
-
-<div class="renewal-layout" *ngIf="!loading && ctx">
-  <div class="renewal-main">
-    <mat-card class="panel">
-      <mat-card-title>{{ 'CONTRACTS.RENEW_SECTION_UNIT' | translate }}</mat-card-title>
-      <mat-card-content>
-        <div class="unit-grid" *ngIf="ctx.unit as u">
-          <div class="cell"><span class="k">{{ 'CONTRACTS.RENEW_PROPERTY' | translate }}</span><span class="v">{{ contract?.propertyName ?? '—' }}</span></div>
-          <div class="cell"><span class="k">{{ 'CONTRACTS.UNIT' | translate }}</span><span class="v">{{ u.unitNumber }}</span></div>
-          <div class="cell"><span class="k">{{ 'CONTRACTS.RENEW_UNIT_TYPE' | translate }}</span><span class="v">{{ u.unitType ?? '—' }}</span></div>
-          <div class="cell"><span class="k">{{ 'CONTRACTS.RENEW_AREA' | translate }}</span><span class="v">{{ u.areaSqm != null ? (u.areaSqm | number:'1.0-2') + ' m²' : '—' }}</span></div>
-          <div class="cell"><span class="k">{{ 'CONTRACTS.RENEW_BEDS_BATHS' | translate }}</span><span class="v">{{ (u.bedrooms ?? '—') + ' / ' + (u.bathrooms ?? '—') }}</span></div>
-          <div class="cell"><span class="k">{{ 'CONTRACTS.RENEW_FURNISHED' | translate }}</span><span class="v">{{ u.furnishedStatus ?? '—' }}</span></div>
-          <div class="cell"><span class="k">{{ 'CONTRACTS.RENEW_LIST_RENT' | translate }}</span><span class="v">{{ u.rentAmount != null ? (u.rentAmount | number) + ' ' + (u.currency ?? '') : '—' }}</span></div>
-          <div class="cell"><span class="k">{{ 'CONTRACTS.RENEW_OCCUPIED' | translate }}</span><span class="v">{{ (u.rented ? 'CONTRACTS.RENEW_VAL_YES' : 'CONTRACTS.RENEW_VAL_NO') | translate }}</span></div>
-          <div class="cell span-2" *ngIf="u.notes"><span class="k">{{ 'CONTRACTS.NOTES' | translate }}</span><span class="v pre">{{ u.notes }}</span></div>
-        </div>
-        <p *ngIf="!ctx.unit" class="muted">{{ 'CONTRACTS.RENEW_NO_UNIT' | translate }}</p>
-      </mat-card-content>
-    </mat-card>
-
-    <mat-card class="panel">
-      <mat-card-title>{{ 'CONTRACTS.RENEW_SECTION_HISTORY' | translate }}</mat-card-title>
-      <mat-card-content>
-        <div class="stat-row">
-          <div class="stat">
-            <span class="stat-label">{{ 'CONTRACTS.RENEW_PRIOR_COUNT' | translate }}</span>
-            <span class="stat-value">{{ ctx.priorRenewalCount }}</span>
-          </div>
-          <div class="stat">
-            <span class="stat-label">{{ 'CONTRACTS.RENEW_FIRST_START' | translate }}</span>
-            <span class="stat-value">{{ ctx.rootContractStartDate | date:'mediumDate' }}</span>
-          </div>
-          <div class="stat">
-            <span class="stat-label">{{ 'CONTRACTS.RENEW_LAST_END' | translate }}</span>
-            <span class="stat-value">{{ ctx.currentContractEndDate | date:'mediumDate' }}</span>
-          </div>
-        </div>
-        <div class="free-badge" [class.on]="ctx.currentContractHasFreeMonth">
-          <mat-icon>{{ ctx.currentContractHasFreeMonth ? 'check_circle' : 'cancel' }}</mat-icon>
-          <span *ngIf="ctx.currentContractHasFreeMonth">{{ 'CONTRACTS.RENEW_FREE_CURRENT_YES' | translate: { months: ctx.currentContractFreeMonths ?? 0 } }}</span>
-          <span *ngIf="!ctx.currentContractHasFreeMonth">{{ 'CONTRACTS.RENEW_FREE_CURRENT_NO' | translate }}</span>
-        </div>
-        <h4 class="chain-title">{{ 'CONTRACTS.RENEW_CHAIN' | translate }}</h4>
-        <div class="chain-table">
-          <div class="chain-head">
-            <span>{{ 'CONTRACTS.CONTRACT_NUMBER' | translate }}</span>
-            <span>{{ 'CONTRACTS.PERIOD' | translate }}</span>
-            <span>{{ 'CONTRACTS.STATUS' | translate }}</span>
-            <span>{{ 'CONTRACTS.FREE_MONTHS' | translate }}</span>
-          </div>
-          <div class="chain-row" *ngFor="let link of ctx.renewalChain">
-            <span class="mono">{{ link.contractNumber }}</span>
-            <span>{{ link.startDate | date:'mediumDate' }} — {{ link.endDate | date:'mediumDate' }}</span>
-            <span>{{ ('CONTRACTS.STATUS_' + link.status) | translate }}</span>
-            <span>{{ link.freeMonths != null && link.freeMonths > 0 ? link.freeMonths : '—' }}</span>
-          </div>
-        </div>
-      </mat-card-content>
-    </mat-card>
-
-    <mat-card class="panel maint-panel" [class.warn]="ctx.openMaintenanceRequestCount > 0">
-      <mat-card-title>
-        <mat-icon>build</mat-icon>
-        {{ 'CONTRACTS.RENEW_SECTION_MAINT' | translate }}
-      </mat-card-title>
-      <mat-card-content>
-        <p class="maint-summary">
-          {{ 'CONTRACTS.RENEW_MAINT_OPEN' | translate: { count: ctx.openMaintenanceRequestCount } }}
-          ·
-          {{ 'CONTRACTS.RENEW_MAINT_VISITS_LINE' | translate: { count: ctx.scheduledOrActiveMaintenanceCount } }}
-        </p>
-        <ul class="maint-list" *ngIf="ctx.openMaintenanceSamples.length">
-          <li *ngFor="let m of ctx.openMaintenanceSamples">
-            <span class="mn">{{ m.requestNumber }}</span>
-            {{ m.title }}
-            <span class="ms">({{ ('CONTRACTS.RENEW_MAINT_' + m.status) | translate }})</span>
-            <span class="sd" *ngIf="m.scheduledDate">{{ m.scheduledDate | date:'mediumDate' }}</span>
-          </li>
-        </ul>
-        <p *ngIf="!ctx.openMaintenanceRequestCount" class="muted ok">{{ 'CONTRACTS.RENEW_MAINT_NONE' | translate }}</p>
-      </mat-card-content>
-    </mat-card>
+<div class="app-page contract-renew-page">
+  <div *ngIf="loading" class="loading-wrap">
+    <mat-spinner diameter="48"></mat-spinner>
   </div>
 
-    <mat-card class="form-card">
-    <mat-card-title>{{ 'CONTRACT.RENEWAL.DIALOG.SUBTITLE' | translate }}</mat-card-title>
-    <mat-card-content>
-      <div class="current-info">
-        <div class="info-row">
-          <span class="label">{{ 'CONTRACTS.CURRENT_END_DATE' | translate }}</span>
-          <span class="value">{{ contract?.endDate }}</span>
+  <ng-container *ngIf="!loading && ctx">
+    <app-page-header
+      [title]="'CONTRACT.RENEWAL.DIALOG.TITLE' | translate"
+      [subtitle]="(contract?.contractNumber ?? '') + ' — ' + (contract?.tenantName ?? '')"
+      [showBack]="true"
+      (backClick)="goBack()">
+    </app-page-header>
+
+    <div class="contract-hero-grid">
+      <article class="contract-stat-card navy">
+        <div class="csc-icon"><mat-icon>event_upcoming</mat-icon></div>
+        <div class="csc-body">
+          <div class="csc-label">{{ 'CONTRACTS.CURRENT_END_DATE' | translate }}</div>
+          <div class="csc-value">{{ contract?.endDate | date:'dd/MM/yyyy' }}</div>
+          <div class="csc-foot">{{ contract?.contractNumber }}</div>
         </div>
-        <div class="info-row">
-          <span class="label">{{ 'CONTRACTS.CURRENT_RENT' | translate }}</span>
-          <span class="value">{{ contract?.monthlyRent | number }} {{ contract?.currency }}</span>
+      </article>
+      <article class="contract-stat-card gold">
+        <div class="csc-icon"><mat-icon>payments</mat-icon></div>
+        <div class="csc-body">
+          <div class="csc-label">{{ 'CONTRACTS.CURRENT_RENT' | translate }}</div>
+          <div class="csc-value">{{ contract?.monthlyRent | number }}</div>
+          <div class="csc-foot">{{ contract?.currency }}</div>
+        </div>
+      </article>
+      <article class="contract-stat-card teal">
+        <div class="csc-icon"><mat-icon>history</mat-icon></div>
+        <div class="csc-body">
+          <div class="csc-label">{{ 'CONTRACTS.RENEW_PRIOR_COUNT' | translate }}</div>
+          <div class="csc-value">{{ ctx.priorRenewalCount }}</div>
+          <div class="csc-foot">{{ 'CONTRACTS.RENEW_SECTION_HISTORY' | translate }}</div>
+        </div>
+      </article>
+      <article class="contract-stat-card" [class.danger]="ctx.openMaintenanceRequestCount > 0">
+        <div class="csc-icon"><mat-icon>build</mat-icon></div>
+        <div class="csc-body">
+          <div class="csc-label">{{ 'CONTRACTS.RENEW_MAINT_OPEN' | translate: { count: ctx.openMaintenanceRequestCount } }}</div>
+          <div class="csc-value">{{ ctx.openMaintenanceRequestCount }}</div>
+          <div class="csc-foot">{{ 'CONTRACTS.RENEW_MAINT_VISITS_LINE' | translate: { count: ctx.scheduledOrActiveMaintenanceCount } }}</div>
+        </div>
+      </article>
+    </div>
+
+    <div class="action-bar app-card">
+      <div class="ab-meta">
+        <span class="ab-meta-item"><mat-icon>apartment</mat-icon>{{ contract?.propertyName }} · {{ contract?.unitNumber }}</span>
+        <span class="ab-meta-item"><mat-icon>person</mat-icon>{{ contract?.tenantName }}</span>
+        <span class="ab-meta-item"><mat-icon>info</mat-icon>{{ 'CONTRACT.RENEWAL.DIALOG.HINT' | translate }}</span>
+      </div>
+    </div>
+
+    <div class="renewal-layout">
+      <div class="renewal-main">
+        <div class="app-card info-section">
+          <div class="app-card-header">
+            <span class="app-card-title"><mat-icon class="section-icon">home</mat-icon>{{ 'CONTRACTS.RENEW_SECTION_UNIT' | translate }}</span>
+          </div>
+          <div class="info-grid app-card-body" *ngIf="ctx.unit as u">
+            <div class="info-cell"><div class="ic-label">{{ 'CONTRACTS.RENEW_PROPERTY' | translate }}</div><div class="ic-value">{{ contract?.propertyName ?? '—' }}</div></div>
+            <div class="info-cell"><div class="ic-label">{{ 'CONTRACTS.UNIT' | translate }}</div><div class="ic-value">{{ u.unitNumber }}</div></div>
+            <div class="info-cell"><div class="ic-label">{{ 'CONTRACTS.RENEW_UNIT_TYPE' | translate }}</div><div class="ic-value">{{ unitTypeLabel(u.unitType) }}</div></div>
+            <div class="info-cell"><div class="ic-label">{{ 'CONTRACTS.RENEW_AREA' | translate }}</div><div class="ic-value">{{ u.areaSqm != null ? (u.areaSqm | number:'1.0-2') + ' m²' : '—' }}</div></div>
+            <div class="info-cell"><div class="ic-label">{{ 'CONTRACTS.RENEW_FURNISHED' | translate }}</div><div class="ic-value">{{ furnishedLabel(u.furnishedStatus) }}</div></div>
+          </div>
+          <div class="app-card-body" *ngIf="!ctx.unit"><p class="legacy-hint">{{ 'CONTRACTS.RENEW_NO_UNIT' | translate }}</p></div>
+        </div>
+
+        <div class="app-card info-section">
+          <div class="app-card-header">
+            <span class="app-card-title"><mat-icon class="section-icon">history</mat-icon>{{ 'CONTRACTS.RENEW_SECTION_HISTORY' | translate }}</span>
+          </div>
+          <div class="app-card-body">
+            <div class="history-grid">
+              <div class="history-item">
+                <div class="ic-label">{{ 'CONTRACTS.RENEW_FIRST_START' | translate }}</div>
+                <div class="ic-value">{{ ctx.rootContractStartDate | date:'dd/MM/yyyy' }}</div>
+              </div>
+              <div class="history-item">
+                <div class="ic-label">{{ 'CONTRACTS.RENEW_LAST_END' | translate }}</div>
+                <div class="ic-value">{{ ctx.currentContractEndDate | date:'dd/MM/yyyy' }}</div>
+              </div>
+              <div class="history-item">
+                <div class="ic-label">{{ 'CONTRACTS.FREE_MONTHS' | translate }}</div>
+                <div class="ic-value">{{ ctx.currentContractHasFreeMonth ? (ctx.currentContractFreeMonths ?? 0) : '—' }}</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <form [formGroup]="form" class="renewal-form">
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>{{ 'CONTRACT.RENEWAL.DIALOG.PROPOSED_START_DATE' | translate }}</mat-label>
-          <input matInput [matDatepicker]="startPicker" formControlName="newStartDate" required>
-          <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
-          <mat-datepicker #startPicker></mat-datepicker>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>{{ 'CONTRACT.RENEWAL.DIALOG.PROPOSED_END_DATE' | translate }}</mat-label>
-          <input matInput [matDatepicker]="endPicker" formControlName="newEndDate" required>
-          <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
-          <mat-datepicker #endPicker></mat-datepicker>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>{{ 'CONTRACT.RENEWAL.DIALOG.PROPOSED_RENT' | translate }}</mat-label>
-          <input matInput type="number" formControlName="newMonthlyRent" required>
-          <mat-hint *ngIf="rentIncreasePercent !== 0" [class.increase]="rentIncreasePercent > 0" [class.decrease]="rentIncreasePercent < 0">
-            {{ rentIncreasePercent > 0 ? '+' : '' }}{{ rentIncreasePercent | number:'1.1-1' }}%
-          </mat-hint>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>{{ 'CONTRACT.RENEWAL.DIALOG.NOTE' | translate }}</mat-label>
-          <textarea matInput formControlName="notes" rows="3"></textarea>
-        </mat-form-field>
-
-        <div *ngIf="errorMsg" class="error-msg">{{ errorMsg | translate }}</div>
-
-        <div class="form-actions">
-          <button mat-stroked-button type="button" (click)="cancel()">{{ 'CONTRACT.RENEWAL.DIALOG.CANCEL' | translate }}</button>
-          <button mat-flat-button color="primary" [disabled]="form.invalid || saving" (click)="submit()">
-            <mat-spinner diameter="16" *ngIf="saving"></mat-spinner>
-            {{ 'CONTRACT.RENEWAL.DIALOG.SUBMIT' | translate }}
-          </button>
+      <div class="app-card form-card">
+        <div class="app-card-header">
+          <span class="app-card-title"><mat-icon class="section-icon">edit_note</mat-icon>{{ 'CONTRACT.RENEWAL.DIALOG.SUBTITLE' | translate }}</span>
         </div>
-      </form>
-    </mat-card-content>
-  </mat-card>
+        <div class="app-card-body">
+          <form [formGroup]="form" class="renewal-form">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>{{ 'CONTRACT.RENEWAL.DIALOG.PROPOSED_START_DATE' | translate }}</mat-label>
+              <input matInput [matDatepicker]="startPicker" formControlName="newStartDate" required>
+              <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+              <mat-datepicker #startPicker></mat-datepicker>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>{{ 'CONTRACT.RENEWAL.DIALOG.PROPOSED_END_DATE' | translate }}</mat-label>
+              <input matInput [matDatepicker]="endPicker" formControlName="newEndDate" required>
+              <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+              <mat-datepicker #endPicker></mat-datepicker>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>{{ 'CONTRACT.RENEWAL.DIALOG.PROPOSED_RENT' | translate }}</mat-label>
+              <input matInput type="number" formControlName="newMonthlyRent" required>
+              <mat-hint *ngIf="rentIncreasePercent !== 0" [class.increase]="rentIncreasePercent > 0" [class.decrease]="rentIncreasePercent < 0">
+                {{ rentIncreasePercent > 0 ? '+' : '' }}{{ rentIncreasePercent | number:'1.1-1' }}%
+              </mat-hint>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>{{ 'CONTRACT.RENEWAL.DIALOG.NOTE' | translate }}</mat-label>
+              <textarea matInput formControlName="notes" rows="3"></textarea>
+            </mat-form-field>
+
+            <div *ngIf="errorMsg" class="error-msg">{{ errorMsg | translate }}</div>
+
+            <div class="form-actions">
+              <button mat-stroked-button type="button" (click)="cancel()">{{ 'CONTRACT.RENEWAL.DIALOG.CANCEL' | translate }}</button>
+              <button mat-flat-button color="primary" [disabled]="form.invalid || saving" (click)="submit()">
+                <mat-spinner diameter="16" *ngIf="saving"></mat-spinner>
+                {{ 'CONTRACT.RENEWAL.DIALOG.SUBMIT' | translate }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <div *ngIf="!loading && !ctx" class="error-msg">{{ 'CONTRACTS.RENEW_LOAD_ERROR' | translate }}</div>
 </div>

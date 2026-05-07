@@ -37,6 +37,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -318,6 +319,11 @@ public class LeaseContractService {
         Long unitId = contract.getUnitId();
         LeaseContract saved = contractRepository.save(contract);
         syncUnitRentedFromContracts(unitId);
+        notifyLifecycleEvent(saved, actorUserId,
+                "NOTIFICATIONS.CONTRACT_CANCELLED_TITLE",
+                "NOTIFICATIONS.CONTRACT_CANCELLED_BODY",
+                detail,
+                NotificationType.GENERAL);
         return toResponse(saved);
     }
 
@@ -461,6 +467,7 @@ public class LeaseContractService {
         LeaseContract source = findById(id);
         tenantPortalWelcomeService.notifyTenantRenewalDecided(source, true, ownerNotes, approved.getId());
         tenantPortalWelcomeService.notifyAccountantsOfRenewalDecision(source, true, ownerNotes, approved.getId());
+        notifyOwnersOfRenewalDecision(source, ownerUserId, true, ownerNotes);
         return approved;
     }
 
@@ -481,7 +488,19 @@ public class LeaseContractService {
         LeaseContract saved = contractRepository.save(contract);
         tenantPortalWelcomeService.notifyTenantRenewalDecided(saved, false, ownerNotes, null);
         tenantPortalWelcomeService.notifyAccountantsOfRenewalDecision(saved, false, ownerNotes, null);
+        notifyOwnersOfRenewalDecision(saved, ownerUserId, false, ownerNotes);
         return toResponse(saved);
+    }
+
+    /**
+     * Scheduler hook: when an ACTIVE contract rolls to EXPIRED, fan-out to tenant + owner + accountants.
+     */
+    public void notifyContractExpired(LeaseContract contract) {
+        notifyLifecycleEvent(contract, null,
+                "NOTIFICATIONS.CONTRACT_EXPIRED_TITLE",
+                "NOTIFICATIONS.CONTRACT_EXPIRED_BODY",
+                null,
+                NotificationType.CONTRACT_EXPIRING);
     }
 
     public void notifyOwnersOfRenewalRequest(LeaseContract contract) {
@@ -680,6 +699,96 @@ public class LeaseContractService {
         } catch (Exception ignored) {
             // Notification side-effect must not roll back the termination request transaction.
         }
+    }
+
+    private void notifyOwnersOfRenewalDecision(LeaseContract contract,
+                                               Long actorOwnerUserId,
+                                               boolean approved,
+                                               String ownerNotes) {
+        if (contract == null || contract.getPropertyId() == null) return;
+        try {
+            List<Long> recipients = propertyOwnerPortalRecipientService.portalRecipientUserIds(contract.getPropertyId())
+                    .stream()
+                    .filter(id -> id != null && !Objects.equals(id, actorOwnerUserId))
+                    .toList();
+            if (recipients.isEmpty()) return;
+
+            Map<String, Object> vars = buildLifecycleVars(contract, ownerNotes);
+            String bodyKey = approved
+                    ? "NOTIFICATIONS.OWNER_CONTRACT_RENEWAL_APPROVED_BODY"
+                    : "NOTIFICATIONS.OWNER_CONTRACT_RENEWAL_REJECTED_BODY";
+            Map<String, Object> hints = new LinkedHashMap<>();
+            hints.put("contractId", contract.getId());
+            notificationService.createLocalized(
+                    recipients,
+                    actorOwnerUserId,
+                    contract.getPropertyId(),
+                    null,
+                    approved ? NotificationType.CONTRACT_RENEWAL_APPROVED : NotificationType.CONTRACT_RENEWAL_REJECTED,
+                    "NOTIFICATIONS.OWNER_CONTRACT_RENEWAL_DECISION_TITLE",
+                    bodyKey,
+                    vars,
+                    hints);
+        } catch (Exception ignored) {
+            // Notification side-effect must not block decision persistence.
+        }
+    }
+
+    private void notifyLifecycleEvent(LeaseContract contract,
+                                      Long actorUserId,
+                                      String titleKey,
+                                      String bodyKey,
+                                      String notes,
+                                      NotificationType type) {
+        if (contract == null) return;
+        try {
+            Set<Long> recipients = new LinkedHashSet<>();
+            Long tenantUserId = resolveTenantUserId(contract);
+            if (tenantUserId != null) recipients.add(tenantUserId);
+            recipients.addAll(tenantPortalWelcomeService.collectAccountantUserIds(contract.getPropertyId()));
+            if (contract.getPropertyId() != null) {
+                recipients.addAll(propertyOwnerPortalRecipientService.portalRecipientUserIds(contract.getPropertyId()));
+            }
+            recipients.remove(null);
+            if (recipients.isEmpty()) return;
+
+            Map<String, Object> vars = buildLifecycleVars(contract, notes);
+            Map<String, Object> hints = new LinkedHashMap<>();
+            hints.put("contractId", contract.getId());
+            notificationService.createLocalized(
+                    recipients.stream().toList(),
+                    actorUserId,
+                    contract.getPropertyId(),
+                    null,
+                    type,
+                    titleKey,
+                    bodyKey,
+                    vars,
+                    hints);
+        } catch (Exception ignored) {
+            // Notification side-effect must not block contract lifecycle updates.
+        }
+    }
+
+    private Map<String, Object> buildLifecycleVars(LeaseContract contract, String notes) {
+        Map<String, Object> vars = new LinkedHashMap<>();
+        vars.put("contractNumber", Objects.toString(contract.getContractNumber(), ""));
+        vars.put("unitNumber", contract.getUnitId() != null
+                ? unitRepository.findById(contract.getUnitId()).map(Unit::getUnitNumber).orElse("—")
+                : "—");
+        vars.put("propertyName", contract.getPropertyId() != null
+                ? propertyRepository.findById(contract.getPropertyId()).map(Property::getPropertyName).orElse("—")
+                : "—");
+        vars.put("tenantName", contract.getTenantId() != null
+                ? tenantRepository.findById(contract.getTenantId()).map(Tenant::getFullName).orElse("—")
+                : "—");
+        vars.put("notes", notes != null && !notes.isBlank() ? notes.trim() : "—");
+        return vars;
+    }
+
+    private Long resolveTenantUserId(LeaseContract contract) {
+        if (contract.getTenantId() == null) return null;
+        return tenantRepository.findById(contract.getTenantId()).map(Tenant::getUserId).orElse(null);
     }
 
     private static String safeReason(String reason) {

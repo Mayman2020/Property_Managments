@@ -45,6 +45,9 @@ public class User implements UserDetails {
     @Column(name = "profile_image_url", length = 600)
     private String profileImageUrl;
 
+    @Column(name = "civil_id_image_url", length = 600)
+    private String civilIdImageUrl;
+
     @Column(columnDefinition = "TEXT")
     private String bio;
 

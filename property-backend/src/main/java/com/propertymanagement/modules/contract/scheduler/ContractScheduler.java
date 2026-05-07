@@ -52,7 +52,8 @@ public class ContractScheduler {
         Set<Long> unitIds = new HashSet<>();
         for (LeaseContract contract : expired) {
             contract.setStatus(ContractStatus.EXPIRED);
-            contractRepository.save(contract);
+            LeaseContract saved = contractRepository.save(contract);
+            leaseContractService.notifyContractExpired(saved);
             if (contract.getUnitId() != null) {
                 unitIds.add(contract.getUnitId());
             }

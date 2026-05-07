@@ -10,12 +10,15 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatDialog } from '@angular/material/dialog';
 import { TranslateModule } from '@ngx-translate/core';
 import { catchError, of } from 'rxjs';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { ContractService } from '../../../core/services/contract.service';
 import { ContractRenewalContext, LeaseContract } from '../../../core/models/contract.model';
+import { I18nService } from '../../../core/i18n/i18n.service';
+import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-contract-renewal-form',
@@ -44,7 +47,9 @@ export class ContractRenewalFormComponent implements OnInit {
     private router: Router,
     private fb: FormBuilder,
     private contractSvc: ContractService,
-    private location: Location
+    private location: Location,
+    private dialog: MatDialog,
+    readonly i18n: I18nService
   ) {}
 
   get contract(): LeaseContract | null {
@@ -81,24 +86,40 @@ export class ContractRenewalFormComponent implements OnInit {
 
   submit(): void {
     if (this.form.invalid) return;
-    const proposedStartDate = this.toIsoDate(this.form.value.newStartDate);
-    const proposedEndDate = this.toIsoDate(this.form.value.newEndDate);
-    if (!proposedStartDate || !proposedEndDate) return;
-    this.saving = true;
-    const body = {
-      proposedStartDate,
-      proposedEndDate,
-      proposedRentAmount: Number(this.form.value.newMonthlyRent),
-      note: this.form.value.notes ?? ''
-    };
-    this.contractSvc.requestRenewal(this.contractId, body).subscribe({
-      next: (res) => {
-        this.router.navigate(['/admin/contracts', this.contractId]);
-      },
-      error: (err) => {
-        this.errorMsg = err?.error?.message ?? 'CONTRACT.RENEWAL.DIALOG.ERROR_SUBMIT';
-        this.saving = false;
-      }
+    this.dialog.open(ConfirmDialogComponent, {
+      width: '440px',
+      maxWidth: '95vw',
+      panelClass: 'app-dialog-panel',
+      data: {
+        title: this.i18n.currentLang === 'ar' ? 'تأكيد طلب التجديد' : 'Confirm Renewal Request',
+        message: this.i18n.currentLang === 'ar'
+          ? 'هل أنت متأكد من حفظ وإرسال طلب تجديد العقد؟'
+          : 'Are you sure you want to save and submit this renewal request?',
+        confirmLabel: this.i18n.currentLang === 'ar' ? 'موافق' : 'OK',
+        cancelLabel: this.i18n.currentLang === 'ar' ? 'إلغاء' : 'Cancel',
+        icon: 'warning'
+      } as ConfirmDialogData
+    }).afterClosed().subscribe((ok) => {
+      if (!ok) return;
+      const proposedStartDate = this.toIsoDate(this.form.value.newStartDate);
+      const proposedEndDate = this.toIsoDate(this.form.value.newEndDate);
+      if (!proposedStartDate || !proposedEndDate) return;
+      this.saving = true;
+      const body = {
+        proposedStartDate,
+        proposedEndDate,
+        proposedRentAmount: Number(this.form.value.newMonthlyRent),
+        note: this.form.value.notes ?? ''
+      };
+      this.contractSvc.requestRenewal(this.contractId, body).subscribe({
+        next: () => {
+          this.router.navigate(['/admin/contracts', this.contractId]);
+        },
+        error: (err) => {
+          this.errorMsg = err?.error?.message ?? 'CONTRACT.RENEWAL.DIALOG.ERROR_SUBMIT';
+          this.saving = false;
+        }
+      });
     });
   }
 
@@ -109,5 +130,20 @@ export class ContractRenewalFormComponent implements OnInit {
 
   cancel(): void {
     this.router.navigate(['/admin/contracts', this.contractId]);
+  }
+
+  unitTypeLabel(code?: string | null): string {
+    if (!code) return '—';
+    const key = `UNITS.UNIT_TYPES.${code}`;
+    const translated = this.i18n.instant(key);
+    return translated && translated !== key ? translated : code;
+  }
+
+  furnishedLabel(status?: string | null): string {
+    if (!status) return '—';
+    const normalized = status.trim().toUpperCase().replace(/[\s-]+/g, '_');
+    const key = `UNIT_DETAILS.${normalized}`;
+    const translated = this.i18n.instant(key);
+    return translated && translated !== key ? translated : status;
   }
 }

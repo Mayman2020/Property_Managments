@@ -24,6 +24,7 @@ import {
   OwnerRenewalDecisionDialogComponent,
   OwnerRenewalDecisionDialogResult
 } from '../owner-renewal-decision-dialog.component';
+import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-contract-approvals',
@@ -133,133 +134,196 @@ export class ContractApprovalsComponent implements OnInit {
   }
 
   activate(contract: LeaseContract): void {
-    this.activating[contract.id] = true;
-    this.contractSvc.activate(contract.id).subscribe({
-      next: () => {
-        this.activating[contract.id] = false;
-        this.snack.success(this.i18n.instant('CONTRACTS.ACTIVATED_SUCCESS'));
-        this.load();
-      },
-      error: (e: unknown) => {
-        this.activating[contract.id] = false;
-        const msg = (e as { error?: { message?: string } })?.error?.message;
-        this.snack.error(msg || this.i18n.instant('COMMON.ERROR'));
-      }
+    this.openActionConfirm(
+      this.i18n.currentLang === 'ar' ? 'تأكيد قبول العقد' : 'Confirm Contract Approval',
+      this.i18n.currentLang === 'ar'
+        ? 'هل أنت متأكد من قبول العقد وتفعيله؟'
+        : 'Are you sure you want to approve and activate this contract?'
+    ).subscribe((ok) => {
+      if (!ok) return;
+      this.activating[contract.id] = true;
+      this.contractSvc.activate(contract.id).subscribe({
+        next: () => {
+          this.activating[contract.id] = false;
+          this.snack.success(this.i18n.instant('CONTRACTS.ACTIVATED_SUCCESS'));
+          this.load();
+        },
+        error: (e: unknown) => {
+          this.activating[contract.id] = false;
+          const msg = (e as { error?: { message?: string } })?.error?.message;
+          this.snack.error(msg || this.i18n.instant('COMMON.ERROR'));
+        }
+      });
     });
   }
 
   openReject(c: LeaseContract): void {
     if (!this.isOwner) return;
-    this.dialog.open(OwnerDraftRejectDialogComponent, {
-      width: '440px',
-      data: { contractId: c.id, contractNumber: c.contractNumber }
-    }).afterClosed().subscribe((reason: string | null | undefined) => {
-      if (!reason) return;
-      this.busyReject[c.id] = true;
-      this.ownerPortal.rejectDraftContract(c.id, reason).subscribe({
-        next: () => {
-          this.busyReject[c.id] = false;
-          this.snack.success(this.i18n.instant('OWNER_PORTAL.REJECT_OK'));
-          this.load();
-        },
-        error: (e: unknown) => {
-          this.busyReject[c.id] = false;
-          const msg = (e as { error?: { message?: string } })?.error?.message;
-          this.snack.error(msg || this.i18n.instant('COMMON.ERROR'));
-        }
+    this.openActionConfirm(
+      this.i18n.currentLang === 'ar' ? 'تأكيد الإجراء' : 'Confirm Action',
+      this.i18n.currentLang === 'ar'
+        ? 'هل أنت متأكد من متابعة رفض العقد؟'
+        : 'Are you sure you want to continue with rejecting this contract?'
+    ).subscribe((ok) => {
+      if (!ok) return;
+      this.dialog.open(OwnerDraftRejectDialogComponent, {
+        width: '440px',
+        data: { contractId: c.id, contractNumber: c.contractNumber }
+      }).afterClosed().subscribe((reason: string | null | undefined) => {
+        if (!reason) return;
+        this.busyReject[c.id] = true;
+        this.ownerPortal.rejectDraftContract(c.id, reason).subscribe({
+          next: () => {
+            this.busyReject[c.id] = false;
+            this.snack.success(this.i18n.instant('OWNER_PORTAL.REJECT_OK'));
+            this.load();
+          },
+          error: (e: unknown) => {
+            this.busyReject[c.id] = false;
+            const msg = (e as { error?: { message?: string } })?.error?.message;
+            this.snack.error(msg || this.i18n.instant('COMMON.ERROR'));
+          }
+        });
       });
     });
   }
 
   openTerminationDecision(c: LeaseContract, decision: 'APPROVED' | 'REJECTED'): void {
     if (!this.isOwner && !this.auth.hasRole('SUPER_ADMIN') && !this.auth.hasRole('GENERAL_MANAGER')) return;
-    this.dialog.open(OwnerTerminationDecisionDialogComponent, {
-      width: '480px',
-      maxWidth: '95vw',
-      panelClass: 'app-dialog-panel',
-      disableClose: true,
-      data: {
-        contractId: c.id,
-        contractNumber: c.contractNumber,
-        decision,
-        terminationDate: c.terminationDate,
-        terminationReason: c.terminationReason
-      }
-    }).afterClosed().subscribe((result: OwnerTerminationDecisionDialogResult | null | undefined) => {
-      if (!result) return;
-      this.busyTerminationDecision[c.id] = true;
-      this.ownerPortal.decideTermination(c.id, { decision: result.decision, notes: result.notes }).subscribe({
-        next: () => {
-          this.busyTerminationDecision[c.id] = false;
-          const okKey = result.decision === 'APPROVED'
-            ? 'OWNER_PORTAL.TERMINATION_APPROVE_OK'
-            : 'OWNER_PORTAL.TERMINATION_REJECT_OK';
-          this.snack.success(this.i18n.instant(okKey));
-          this.loadPendingTerminations();
-        },
-        error: (e: unknown) => {
-          this.busyTerminationDecision[c.id] = false;
-          const msg = (e as { error?: { message?: string } })?.error?.message;
-          this.snack.error(msg || this.i18n.instant('COMMON.ERROR'));
+    const msgAr = decision === 'APPROVED'
+      ? 'هل أنت متأكد من متابعة الموافقة على إنهاء العقد؟'
+      : 'هل أنت متأكد من متابعة رفض طلب إنهاء العقد؟';
+    const msgEn = decision === 'APPROVED'
+      ? 'Are you sure you want to continue approving the contract termination?'
+      : 'Are you sure you want to continue rejecting the contract termination request?';
+    this.openActionConfirm(
+      this.i18n.currentLang === 'ar' ? 'تأكيد الإجراء' : 'Confirm Action',
+      this.i18n.currentLang === 'ar' ? msgAr : msgEn
+    ).subscribe((ok) => {
+      if (!ok) return;
+      this.dialog.open(OwnerTerminationDecisionDialogComponent, {
+        width: '480px',
+        maxWidth: '95vw',
+        panelClass: 'app-dialog-panel',
+        disableClose: true,
+        data: {
+          contractId: c.id,
+          contractNumber: c.contractNumber,
+          decision,
+          terminationDate: c.terminationDate,
+          terminationReason: c.terminationReason
         }
+      }).afterClosed().subscribe((result: OwnerTerminationDecisionDialogResult | null | undefined) => {
+        if (!result) return;
+        this.busyTerminationDecision[c.id] = true;
+        this.ownerPortal.decideTermination(c.id, { decision: result.decision, notes: result.notes }).subscribe({
+          next: () => {
+            this.busyTerminationDecision[c.id] = false;
+            const okKey = result.decision === 'APPROVED'
+              ? 'OWNER_PORTAL.TERMINATION_APPROVE_OK'
+              : 'OWNER_PORTAL.TERMINATION_REJECT_OK';
+            this.snack.success(this.i18n.instant(okKey));
+            this.loadPendingTerminations();
+          },
+          error: (e: unknown) => {
+            this.busyTerminationDecision[c.id] = false;
+            const msg = (e as { error?: { message?: string } })?.error?.message;
+            this.snack.error(msg || this.i18n.instant('COMMON.ERROR'));
+          }
+        });
       });
     });
   }
 
   openRenewalDecision(c: LeaseContract, decision: 'APPROVED' | 'REJECTED'): void {
     if (!this.isOwner && !this.auth.hasRole('SUPER_ADMIN') && !this.auth.hasRole('GENERAL_MANAGER')) return;
-    this.dialog.open(OwnerRenewalDecisionDialogComponent, {
-      width: '480px',
-      maxWidth: '95vw',
-      panelClass: 'app-dialog-panel',
-      disableClose: true,
-      data: { contractId: c.id, contractNumber: c.contractNumber, decision }
-    }).afterClosed().subscribe((result: OwnerRenewalDecisionDialogResult | null | undefined) => {
-      if (!result) return;
-      this.busyRenewalDecision[c.id] = true;
-      this.ownerPortal.decideRenewal(c.id, { decision: result.decision, notes: result.notes }).subscribe({
-        next: () => {
-          this.busyRenewalDecision[c.id] = false;
-          this.snack.success(this.i18n.instant(
-            result.decision === 'APPROVED'
-              ? 'OWNER_PORTAL.RENEWALS.APPROVE_OK'
-              : 'OWNER_PORTAL.RENEWALS.REJECT_OK'));
-          this.loadPendingRenewals();
-        },
-        error: (e: unknown) => {
-          this.busyRenewalDecision[c.id] = false;
-          const msg = (e as { error?: { message?: string } })?.error?.message;
-          this.snack.error(msg || this.i18n.instant('COMMON.ERROR'));
-        }
+    const msgAr = decision === 'APPROVED'
+      ? 'هل أنت متأكد من متابعة الموافقة على التجديد؟'
+      : 'هل أنت متأكد من متابعة رفض طلب التجديد؟';
+    const msgEn = decision === 'APPROVED'
+      ? 'Are you sure you want to continue approving this renewal?'
+      : 'Are you sure you want to continue rejecting this renewal request?';
+    this.openActionConfirm(
+      this.i18n.currentLang === 'ar' ? 'تأكيد الإجراء' : 'Confirm Action',
+      this.i18n.currentLang === 'ar' ? msgAr : msgEn
+    ).subscribe((ok) => {
+      if (!ok) return;
+      this.dialog.open(OwnerRenewalDecisionDialogComponent, {
+        width: '480px',
+        maxWidth: '95vw',
+        panelClass: 'app-dialog-panel',
+        disableClose: true,
+        data: { contractId: c.id, contractNumber: c.contractNumber, decision }
+      }).afterClosed().subscribe((result: OwnerRenewalDecisionDialogResult | null | undefined) => {
+        if (!result) return;
+        this.busyRenewalDecision[c.id] = true;
+        this.ownerPortal.decideRenewal(c.id, { decision: result.decision, notes: result.notes }).subscribe({
+          next: () => {
+            this.busyRenewalDecision[c.id] = false;
+            this.snack.success(this.i18n.instant(
+              result.decision === 'APPROVED'
+                ? 'OWNER_PORTAL.RENEWALS.APPROVE_OK'
+                : 'OWNER_PORTAL.RENEWALS.REJECT_OK'));
+            this.loadPendingRenewals();
+          },
+          error: (e: unknown) => {
+            this.busyRenewalDecision[c.id] = false;
+            const msg = (e as { error?: { message?: string } })?.error?.message;
+            this.snack.error(msg || this.i18n.instant('COMMON.ERROR'));
+          }
+        });
       });
     });
   }
 
   openAmend(c: LeaseContract): void {
     if (!this.isOwner) return;
-    this.dialog.open(OwnerDraftAmendDialogComponent, {
-      width: '480px',
-      data: {
-        contractId: c.id,
-        contractNumber: c.contractNumber,
-        currentUnitId: c.unitId,
-        currentRent: c.monthlyRent
-      }
-    }).afterClosed().subscribe((payload: { unitId?: number; monthlyRent?: number; reason: string } | null | undefined) => {
-      if (!payload) return;
-      this.busyAmend[c.id] = true;
-      this.ownerPortal.amendDraftContract(c.id, payload).subscribe({
-        next: () => {
-          this.busyAmend[c.id] = false;
-          this.snack.success(this.i18n.instant('OWNER_PORTAL.AMEND_OK'));
-          this.load();
-        },
-        error: (e: unknown) => {
-          this.busyAmend[c.id] = false;
-          const msg = (e as { error?: { message?: string } })?.error?.message;
-          this.snack.error(msg || this.i18n.instant('COMMON.ERROR'));
+    this.openActionConfirm(
+      this.i18n.currentLang === 'ar' ? 'تأكيد الإجراء' : 'Confirm Action',
+      this.i18n.currentLang === 'ar'
+        ? 'هل أنت متأكد من متابعة تعديل العقد؟'
+        : 'Are you sure you want to continue amending this contract?'
+    ).subscribe((ok) => {
+      if (!ok) return;
+      this.dialog.open(OwnerDraftAmendDialogComponent, {
+        width: '480px',
+        data: {
+          contractId: c.id,
+          contractNumber: c.contractNumber,
+          currentUnitId: c.unitId,
+          currentRent: c.monthlyRent
         }
+      }).afterClosed().subscribe((payload: { unitId?: number; monthlyRent?: number; reason: string } | null | undefined) => {
+        if (!payload) return;
+        this.busyAmend[c.id] = true;
+        this.ownerPortal.amendDraftContract(c.id, payload).subscribe({
+          next: () => {
+            this.busyAmend[c.id] = false;
+            this.snack.success(this.i18n.instant('OWNER_PORTAL.AMEND_OK'));
+            this.load();
+          },
+          error: (e: unknown) => {
+            this.busyAmend[c.id] = false;
+            const msg = (e as { error?: { message?: string } })?.error?.message;
+            this.snack.error(msg || this.i18n.instant('COMMON.ERROR'));
+          }
+        });
       });
     });
+  }
+
+  private openActionConfirm(title: string, message: string) {
+    return this.dialog.open(ConfirmDialogComponent, {
+      width: '440px',
+      maxWidth: '95vw',
+      panelClass: 'app-dialog-panel',
+      data: {
+        title,
+        message,
+        confirmLabel: this.i18n.currentLang === 'ar' ? 'موافق' : 'OK',
+        cancelLabel: this.i18n.currentLang === 'ar' ? 'إلغاء' : 'Cancel',
+        icon: 'warning'
+      } as ConfirmDialogData
+    }).afterClosed();
   }
 }

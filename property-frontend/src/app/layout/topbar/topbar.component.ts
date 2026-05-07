@@ -36,6 +36,7 @@ export class TopbarComponent implements OnInit, OnDestroy {
   notifications: AppNotification[] = [];
   unreadCount = 0;
   private pollSub?: Subscription;
+  private unreadSyncSub?: Subscription;
   propertyOptions: Property[] = [];
   selectedPropertyId: number | null = null;
 
@@ -107,10 +108,15 @@ export class TopbarComponent implements OnInit, OnDestroy {
       this.loadNotifications();
       this.loadUnreadCount();
     });
+    this.unreadSyncSub = this.notificationService.unreadCount$.subscribe((count) => {
+      if (count == null) return;
+      this.unreadCount = count;
+    });
   }
 
   ngOnDestroy(): void {
     this.pollSub?.unsubscribe();
+    this.unreadSyncSub?.unsubscribe();
   }
 
   switchLang(lang: LanguageOption): void { this.i18n.setLang(lang.code).subscribe(); }
@@ -176,6 +182,7 @@ export class TopbarComponent implements OnInit, OnDestroy {
       this.notificationService.markRead(notification.id).subscribe(() => {
         notification.read = true;
         this.unreadCount = Math.max(0, this.unreadCount - 1);
+        this.notificationService.setUnreadCount(this.unreadCount);
       });
     }
     void this.router.navigateByUrl(this.notificationsInboxRoute());
@@ -185,6 +192,7 @@ export class TopbarComponent implements OnInit, OnDestroy {
     this.notificationService.markAllRead().subscribe(() => {
       this.notifications = this.notifications.map((n) => ({ ...n, read: true }));
       this.unreadCount = 0;
+      this.notificationService.setUnreadCount(0);
       this.snack.success(this.i18n.instant('NOTIFICATIONS.MARK_ALL_READ_SUCCESS'));
     });
   }
@@ -259,7 +267,7 @@ export class TopbarComponent implements OnInit, OnDestroy {
   }
 
   private loadNotifications(): void {
-    this.notificationService.getMy({ page: 0, size: 8, scope: 'recent' }).subscribe({
+    this.notificationService.getMy({ page: 0, size: 8, scope: 'all' }).subscribe({
       next: (res) => { this.notifications = res.data?.content ?? []; },
       error: () => {}
     });
@@ -267,7 +275,10 @@ export class TopbarComponent implements OnInit, OnDestroy {
 
   private loadUnreadCount(): void {
     this.notificationService.getUnreadCount().subscribe({
-      next: (res) => { this.unreadCount = res.data?.unreadCount ?? 0; },
+      next: (res) => {
+        this.unreadCount = res.data?.unreadCount ?? 0;
+        this.notificationService.setUnreadCount(this.unreadCount);
+      },
       error: () => {}
     });
   }

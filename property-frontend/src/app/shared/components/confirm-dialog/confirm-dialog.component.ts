@@ -22,19 +22,19 @@ export interface ConfirmDialogData {
   standalone: true,
   imports: [NgIf, NgClass, MatDialogModule, MatButtonModule, MatIconModule, TranslateModule],
   template: `
-    <h2 mat-dialog-title>{{ data.title }}</h2>
+    <h2 mat-dialog-title>{{ data.title | translate }}</h2>
     <mat-dialog-content class="dialog-body confirm-body">
       <div class="dialog-intro">
         <span class="material-icons dialog-type-icon" [ngClass]="introIconClass">{{ introIconName }}</span>
-        <p class="dialog-msg">{{ data.message }}</p>
+        <p class="dialog-msg">{{ data.message | translate }}</p>
       </div>
     </mat-dialog-content>
     <mat-dialog-actions align="end" class="app-dialog-actions">
       <button *ngIf="!data.alertOnly" mat-stroked-button type="button" class="btn-dialog-cancel" (click)="ref.close(false)">
-        {{ data.cancelLabel || ('ACTIONS.CANCEL' | translate) }}
+        {{ (data.cancelLabel || 'ACTIONS.CANCEL') | translate }}
       </button>
       <button mat-flat-button type="button" class="btn-dialog-confirm" [class.btn-dialog-danger]="data.danger && !data.alertOnly" (click)="ref.close(true)">
-        {{ data.confirmLabel || ('COMMON.CONFIRM' | translate) }}
+        {{ (data.confirmLabel || 'COMMON.CONFIRM') | translate }}
       </button>
     </mat-dialog-actions>
   `,
@@ -46,6 +46,9 @@ export interface ConfirmDialogData {
     .dialog-type-icon.is-warn { color: #e65100; background: rgba(230, 81, 0, 0.1); }
     .dialog-type-icon.is-error { color: #c62828; background: rgba(198, 40, 40, 0.1); }
     .dialog-type-icon.is-info { color: #0277bd; background: rgba(2, 119, 189, 0.1); }
+    :host-context([dir='rtl']) .dialog-type-icon {
+      transform: none !important;
+    }
     .dialog-msg { margin: 0; flex: 1; min-width: 0; line-height: 1.45; white-space: pre-wrap; word-break: break-word; }
   `]
 })

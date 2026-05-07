@@ -59,6 +59,8 @@ export interface AppNotification {
   type: NotificationType;
   title: string;
   message: string;
+  actorUserId?: number;
+  actorDisplayName?: string;
   propertyId?: number;
   requestId?: number;
   read: boolean;

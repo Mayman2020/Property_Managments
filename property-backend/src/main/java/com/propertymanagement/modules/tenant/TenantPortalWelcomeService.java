@@ -262,6 +262,54 @@ public class TenantPortalWelcomeService {
         }
     }
 
+    /** Owner rejected a draft from owner portal: mirror to accountants for follow-up. */
+    public void notifyAccountantsOfOwnerRejectedLease(LeaseContract contract, String ownerNotes) {
+        notifyAccountantsOfDraftRejected(contract, ownerNotes);
+    }
+
+    /** Owner amended a draft from owner portal: notify accountants with change summary. */
+    public void notifyAccountantsOfOwnerAmendedLease(LeaseContract contract,
+                                                     String changesAr,
+                                                     String changesEn,
+                                                     String ownerReason) {
+        if (contract == null) {
+            return;
+        }
+        try {
+            List<Long> recipients = collectAccountantUserIds(contract.getPropertyId());
+            if (recipients.isEmpty()) {
+                return;
+            }
+            Map<String, Object> vars = new LinkedHashMap<>();
+            vars.put("contractNumber", Objects.toString(contract.getContractNumber(), ""));
+            vars.put("unitNumber", currentUnitNumber(contract));
+            vars.put("propertyName", propertyCompositeLabel(contract));
+            vars.put("changes", BilingualNotificationText.composite(changesAr, changesEn, changesEn));
+            vars.put("reason", ownerReason != null && !ownerReason.isBlank() ? ownerReason.trim() : "—");
+            if (contract.getTenantId() != null) {
+                tenantRepository.findById(contract.getTenantId()).ifPresent(t -> {
+                    String tenantName = firstNonBlank(t.getFullNameAr(), t.getFullNameEn(), t.getFullName());
+                    vars.put("tenantName", tenantName != null && !tenantName.isBlank() ? tenantName : "—");
+                });
+            }
+            if (!vars.containsKey("tenantName")) {
+                vars.put("tenantName", "—");
+            }
+            notificationService.createLocalized(
+                    recipients,
+                    null,
+                    contract.getPropertyId(),
+                    null,
+                    NotificationType.TENANT_LEASE_AMENDED_BY_OWNER,
+                    "NOTIFICATIONS.ACCOUNTANT_OWNER_AMENDED_DRAFT_TITLE",
+                    "NOTIFICATIONS.ACCOUNTANT_OWNER_AMENDED_DRAFT_BODY",
+                    vars,
+                    hintsContract(contract.getId()));
+        } catch (Exception ignored) {
+            // Notification side-effect must not block persistence.
+        }
+    }
+
     /**
      * Tenant is informed that staff submitted a termination/handover request to the owner;
      * contract effectively stays ACTIVE until the owner decides.
@@ -572,10 +620,12 @@ public class TenantPortalWelcomeService {
      * {@code params} so the frontend renders the final localized text from {@code i18n/*.json}.</p>
      */
     public void notifyLeaseActivated(LeaseContract contract) {
-        if (contract == null || contract.getTenantId() == null) {
+        if (contract == null) {
             return;
         }
-        Tenant tenant = tenantRepository.findById(contract.getTenantId()).orElse(null);
+        Tenant tenant = contract.getTenantId() != null
+                ? tenantRepository.findById(contract.getTenantId()).orElse(null)
+                : null;
         LocalDate approvalDate = LocalDate.now();
 
         if (tenant != null && tenant.getUserId() != null) {

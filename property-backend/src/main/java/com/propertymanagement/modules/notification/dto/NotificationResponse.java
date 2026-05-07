@@ -15,6 +15,8 @@ public class NotificationResponse {
     private NotificationType type;
     private String title;
     private String message;
+    private Long actorUserId;
+    private String actorDisplayName;
     private String recipientType;
     private NotificationChannel channel;
     private Long propertyId;

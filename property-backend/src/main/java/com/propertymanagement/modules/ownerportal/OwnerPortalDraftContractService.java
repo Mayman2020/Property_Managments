@@ -122,6 +122,11 @@ public class OwnerPortalDraftContractService {
         } catch (Exception ignored) {
             // ignore
         }
+        try {
+            tenantPortalWelcomeService.notifyAccountantsOfOwnerRejectedLease(c, reason.trim());
+        } catch (Exception ignored) {
+            // ignore
+        }
         return leaseContractService.toResponse(c);
     }
 
@@ -198,6 +203,12 @@ public class OwnerPortalDraftContractService {
         String changesEn = partsEn.isEmpty() ? "—" : String.join(" ", partsEn);
         try {
             tenantPortalWelcomeService.notifyTenantOwnerAmendedLease(
+                    c, changesAr, changesEn, dto.getReason().trim());
+        } catch (Exception ignored) {
+            // ignore
+        }
+        try {
+            tenantPortalWelcomeService.notifyAccountantsOfOwnerAmendedLease(
                     c, changesAr, changesEn, dto.getReason().trim());
         } catch (Exception ignored) {
             // ignore

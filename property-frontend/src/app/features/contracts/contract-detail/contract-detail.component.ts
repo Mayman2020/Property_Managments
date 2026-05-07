@@ -25,6 +25,7 @@ import {
 } from '../cancel-draft-contract-dialog/cancel-draft-contract-dialog.component';
 import { OwnerDraftAmendDialogComponent } from '../../owner/owner-draft-amend-dialog.component';
 import { OwnerDraftRejectDialogComponent } from '../../owner/owner-draft-reject-dialog.component';
+import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { ContractService } from '../../../core/services/contract.service';
 import { OwnerPortalService } from '../../../core/services/owner-portal.service';
 import { SnackService } from '../../../core/services/snack.service';
@@ -129,17 +130,25 @@ export class ContractDetailComponent implements OnInit {
 
   activate(): void {
     if (!this.contract) return;
-    this.actionLoading = true;
-    this.contractSvc.activate(this.contractId).subscribe({
-      next: () => {
-        this.actionLoading = false;
-        this.snack.success(this.i18n.instant('CONTRACTS.ACTIVATED_SUCCESS'));
-        this.loadAll();
-      },
-      error: (err: Error) => {
-        this.actionLoading = false;
-        this.snack.error(err?.message || this.i18n.instant('COMMON.ERROR'));
-      }
+    this.openActionConfirm(
+      this.i18n.currentLang === 'ar' ? 'تأكيد قبول العقد' : 'Confirm Contract Approval',
+      this.i18n.currentLang === 'ar'
+        ? 'هل أنت متأكد من قبول العقد وتفعيله؟'
+        : 'Are you sure you want to approve and activate this contract?'
+    ).subscribe((ok) => {
+      if (!ok) return;
+      this.actionLoading = true;
+      this.contractSvc.activate(this.contractId).subscribe({
+        next: () => {
+          this.actionLoading = false;
+          this.snack.success(this.i18n.instant('CONTRACTS.ACTIVATED_SUCCESS'));
+          this.loadAll();
+        },
+        error: (err: Error) => {
+          this.actionLoading = false;
+          this.snack.error(err?.message || this.i18n.instant('COMMON.ERROR'));
+        }
+      });
     });
   }
 
@@ -176,6 +185,13 @@ export class ContractDetailComponent implements OnInit {
 
   openEditDraft(): void {
     if (!this.canShowEditDraft()) return;
+    this.openActionConfirm(
+      this.i18n.currentLang === 'ar' ? 'تأكيد الإجراء' : 'Confirm Action',
+      this.i18n.currentLang === 'ar'
+        ? 'هل أنت متأكد من متابعة تعديل العقد؟'
+        : 'Are you sure you want to continue editing this contract?'
+    ).subscribe((ok) => {
+      if (!ok) return;
     if (this.auth.isOwner()) {
       if (!this.contract) return;
       this.dialog.open(OwnerDraftAmendDialogComponent, {
@@ -217,10 +233,18 @@ export class ContractDetailComponent implements OnInit {
     }).afterClosed().subscribe((saved) => {
       if (saved) this.loadAll();
     });
+    });
   }
 
   openRejectDraft(): void {
     if (!this.canShowRejectDraft()) return;
+    this.openActionConfirm(
+      this.i18n.currentLang === 'ar' ? 'تأكيد الإجراء' : 'Confirm Action',
+      this.i18n.currentLang === 'ar'
+        ? 'هل أنت متأكد من متابعة إلغاء/رفض العقد؟'
+        : 'Are you sure you want to continue cancelling/rejecting this contract?'
+    ).subscribe((ok) => {
+      if (!ok) return;
     if (this.auth.isOwner()) {
       if (!this.contract) return;
       this.dialog.open(OwnerDraftRejectDialogComponent, {
@@ -259,10 +283,19 @@ export class ContractDetailComponent implements OnInit {
         this.loadAll();
       }
     });
+    });
   }
 
   goToRenew(): void {
-    this.router.navigate(['/admin/contracts', this.contractId, 'renew']);
+    this.openActionConfirm(
+      this.i18n.currentLang === 'ar' ? 'تأكيد طلب التجديد' : 'Confirm Renewal Request',
+      this.i18n.currentLang === 'ar'
+        ? 'هل أنت متأكد من بدء طلب تجديد العقد؟'
+        : 'Are you sure you want to start a contract renewal request?'
+    ).subscribe((ok) => {
+      if (!ok) return;
+      this.router.navigate(['/admin/contracts', this.contractId, 'renew']);
+    });
   }
 
   canTerminate(): boolean {
@@ -299,52 +332,92 @@ export class ContractDetailComponent implements OnInit {
 
   openTerminateDialog(): void {
     if (!this.contract || !this.canTerminate()) return;
-    const data: TerminateContractDialogData = {
-      contractId: this.contractId,
-      currency: this.contract.currency ?? 'OMR'
-    };
-    this.dialog.open(TerminateContractDialogComponent, {
-      width: '720px',
-      maxWidth: '96vw',
-      maxHeight: '90vh',
-      panelClass: 'app-dialog-panel',
-      disableClose: true,
-      data
-    }).afterClosed().subscribe(done => {
-      if (done) this.loadAll();
+    const contract = this.contract;
+    this.openActionConfirm(
+      this.i18n.currentLang === 'ar' ? 'تأكيد الإجراء' : 'Confirm Action',
+      this.i18n.currentLang === 'ar'
+        ? 'هل أنت متأكد من متابعة إنهاء العقد؟'
+        : 'Are you sure you want to continue with contract termination?'
+    ).subscribe((ok) => {
+      if (!ok) return;
+      const data: TerminateContractDialogData = {
+        contractId: this.contractId,
+        currency: contract.currency ?? 'OMR'
+      };
+      this.dialog.open(TerminateContractDialogComponent, {
+        width: '720px',
+        maxWidth: '96vw',
+        maxHeight: '90vh',
+        panelClass: 'app-dialog-panel',
+        disableClose: true,
+        data
+      }).afterClosed().subscribe(done => {
+        if (done) this.loadAll();
+      });
     });
   }
 
   cancelTerminationRequest(): void {
     if (!this.contract || !this.canCancelTerminationRequest()) return;
-    this.actionLoading = true;
-    this.contractSvc.cancelTerminationRequest(this.contractId).subscribe({
-      next: () => {
-        this.actionLoading = false;
-        this.snack.success(this.i18n.instant('CONTRACTS.TERMINATION_REQUEST_CANCELLED_OK'));
-        this.loadAll();
-      },
-      error: (e: { error?: { message?: string } }) => {
-        this.actionLoading = false;
-        this.snack.error(e?.error?.message || this.i18n.instant('COMMON.ERROR'));
-      }
+    this.openActionConfirm(
+      this.i18n.currentLang === 'ar' ? 'تأكيد الإجراء' : 'Confirm Action',
+      this.i18n.currentLang === 'ar'
+        ? 'هل أنت متأكد من إلغاء طلب إنهاء العقد؟'
+        : 'Are you sure you want to cancel the termination request?'
+    ).subscribe((ok) => {
+      if (!ok) return;
+      this.actionLoading = true;
+      this.contractSvc.cancelTerminationRequest(this.contractId).subscribe({
+        next: () => {
+          this.actionLoading = false;
+          this.snack.success(this.i18n.instant('CONTRACTS.TERMINATION_REQUEST_CANCELLED_OK'));
+          this.loadAll();
+        },
+        error: (e: { error?: { message?: string } }) => {
+          this.actionLoading = false;
+          this.snack.error(e?.error?.message || this.i18n.instant('COMMON.ERROR'));
+        }
+      });
     });
   }
 
   cancelRenewalRequest(): void {
     if (!this.contract || !this.canCancelRenewalRequest()) return;
-    this.actionLoading = true;
-    this.contractSvc.cancelRenewalRequest(this.contractId).subscribe({
-      next: () => {
-        this.actionLoading = false;
-        this.snack.success(this.i18n.instant('CONTRACT.RENEWAL.PENDING_BANNER.CANCEL_OK'));
-        this.loadAll();
-      },
-      error: (e: { error?: { message?: string } }) => {
-        this.actionLoading = false;
-        this.snack.error(e?.error?.message || this.i18n.instant('COMMON.ERROR'));
-      }
+    this.openActionConfirm(
+      this.i18n.currentLang === 'ar' ? 'تأكيد الإجراء' : 'Confirm Action',
+      this.i18n.currentLang === 'ar'
+        ? 'هل أنت متأكد من إلغاء طلب تجديد العقد؟'
+        : 'Are you sure you want to cancel the renewal request?'
+    ).subscribe((ok) => {
+      if (!ok) return;
+      this.actionLoading = true;
+      this.contractSvc.cancelRenewalRequest(this.contractId).subscribe({
+        next: () => {
+          this.actionLoading = false;
+          this.snack.success(this.i18n.instant('CONTRACT.RENEWAL.PENDING_BANNER.CANCEL_OK'));
+          this.loadAll();
+        },
+        error: (e: { error?: { message?: string } }) => {
+          this.actionLoading = false;
+          this.snack.error(e?.error?.message || this.i18n.instant('COMMON.ERROR'));
+        }
+      });
     });
+  }
+
+  private openActionConfirm(title: string, message: string) {
+    return this.dialog.open(ConfirmDialogComponent, {
+      width: '440px',
+      maxWidth: '95vw',
+      panelClass: 'app-dialog-panel',
+      data: {
+        title,
+        message,
+        confirmLabel: this.i18n.currentLang === 'ar' ? 'موافق' : 'OK',
+        cancelLabel: this.i18n.currentLang === 'ar' ? 'إلغاء' : 'Cancel',
+        icon: 'warning'
+      } as ConfirmDialogData
+    }).afterClosed();
   }
 
   getStatusClass(status: string): string {
