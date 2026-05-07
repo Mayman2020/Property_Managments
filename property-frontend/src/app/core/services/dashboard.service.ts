@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
+import { AppConstants } from '../constants/app-constants';
 import { ApiResponse } from '../models/api-response.model';
 
 export interface DashboardStats {
@@ -65,31 +66,31 @@ export class DashboardService {
   constructor(private readonly api: ApiService) {}
 
   getStats(): Observable<ApiResponse<DashboardStats>> {
-    return this.api.get('/dashboard/stats');
+    return this.api.get(AppConstants.API.DASHBOARD_STATS);
   }
 
   getStatsByProperty(propertyId: number): Observable<ApiResponse<DashboardStats>> {
-    return this.api.get(`/dashboard/stats/property/${propertyId}`);
+    return this.api.get(AppConstants.API.DASHBOARD_STATS_PROPERTY(propertyId));
   }
 
   getRequestsByStatus(): Observable<ApiResponse<ChartDataPoint[]>> {
-    return this.api.get('/dashboard/requests-by-status');
+    return this.api.get(AppConstants.API.DASHBOARD_REQUESTS_BY_STATUS);
   }
 
   getRequestsByCategory(): Observable<ApiResponse<ChartDataPoint[]>> {
-    return this.api.get('/dashboard/requests-by-category');
+    return this.api.get(AppConstants.API.DASHBOARD_REQUESTS_BY_CATEGORY);
   }
 
   getMonthlyTrend(propertyId?: number): Observable<ApiResponse<ChartDataPoint[]>> {
     const query = propertyId ? `?propertyId=${propertyId}` : '';
-    return this.api.get(`/dashboard/monthly-trend${query}`);
+    return this.api.get(`${AppConstants.API.DASHBOARD_MONTHLY_TREND}${query}`);
   }
 
   getRatingsSummary(): Observable<ApiResponse<RatingsSummary>> {
-    return this.api.get('/dashboard/ratings-summary');
+    return this.api.get(AppConstants.API.DASHBOARD_RATINGS_SUMMARY);
   }
 
   getRatingsDetails(): Observable<ApiResponse<RatingDashboardItem[]>> {
-    return this.api.get('/dashboard/ratings-details');
+    return this.api.get(AppConstants.API.DASHBOARD_RATINGS_DETAILS);
   }
 }

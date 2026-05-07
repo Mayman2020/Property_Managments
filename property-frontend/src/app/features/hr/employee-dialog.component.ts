@@ -11,7 +11,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
 import { TranslateModule } from '@ngx-translate/core';
 
-import { HrService } from '../../core/services/hr.service';
+import { EmployeeItem, HrService } from '../../core/services/hr.service';
 import { isUserRoleCode } from '../../core/models/user.model';
 import { LookupItem, LookupService } from '../../core/services/lookup.service';
 import { Property } from '../../core/services/property.service';
@@ -22,6 +22,15 @@ import { IdentityMediaFieldsComponent } from '../../shared/components/identity-m
 export interface EmployeeDialogData {
   properties: Property[];
   defaultPropertyId?: number;
+  employee?: EmployeeItem | null;
+  readOnly?: boolean;
+}
+
+function parseYmd(value?: string | null): Date | null {
+  if (!value) return null;
+  const [year, month, day] = value.split('-').map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(year, month - 1, day);
 }
 
 @Component({
@@ -45,7 +54,7 @@ export interface EmployeeDialogData {
   template: `
     <h2 mat-dialog-title class="dialog-title">
       <mat-icon class="dialog-title-icon">badge</mat-icon>
-      {{ 'HR.NEW_EMPLOYEE_TITLE' | translate }}
+      {{ titleKey | translate }}
     </h2>
     <mat-dialog-content class="dialog-body">
       <form [formGroup]="form" class="employee-dialog-form">
@@ -58,7 +67,7 @@ export interface EmployeeDialogData {
           </mat-select>
         </mat-form-field>
 
-        <section class="identity-wrap full">
+        <section class="identity-wrap full" [class.media-readonly]="data.readOnly">
           <app-identity-media-fields
             [compact]="true"
             [(profileImageUrl)]="profileImageUrl"
@@ -66,10 +75,16 @@ export interface EmployeeDialogData {
           </app-identity-media-fields>
         </section>
 
-        <mat-form-field appearance="outline" class="full" subscriptSizing="dynamic">
-          <mat-label>{{ 'HR.FULL_NAME' | translate }}</mat-label>
-          <input matInput formControlName="fullName" />
-          <mat-error *ngIf="form.get('fullName')?.hasError('required')">{{ 'COMMON.REQUIRED' | translate }}</mat-error>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>{{ 'HR.FULL_NAME_AR' | translate }}</mat-label>
+          <input matInput formControlName="fullNameAr" dir="rtl" />
+          <mat-error *ngIf="form.get('fullNameAr')?.hasError('required')">{{ 'COMMON.REQUIRED' | translate }}</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>{{ 'HR.FULL_NAME_EN' | translate }}</mat-label>
+          <input matInput formControlName="fullNameEn" dir="ltr" />
+          <mat-error *ngIf="form.get('fullNameEn')?.hasError('required')">{{ 'COMMON.REQUIRED' | translate }}</mat-error>
         </mat-form-field>
 
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
@@ -112,14 +127,15 @@ export interface EmployeeDialogData {
           <mat-error *ngIf="form.get('phone')?.hasError('required')">{{ 'COMMON.REQUIRED' | translate }}</mat-error>
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="full" subscriptSizing="dynamic">
+        <mat-form-field appearance="outline" class="full" subscriptSizing="dynamic" *ngIf="!data.employee && !data.readOnly">
           <mat-label>{{ 'HR.SYSTEM_ROLE' | translate }}</mat-label>
           <mat-select formControlName="systemRole">
             <mat-option [value]="null">{{ 'HR.SYSTEM_ROLE_NONE' | translate }}</mat-option>
             <mat-option value="ACCOUNTANT">{{ 'ROLE.ACCOUNTANT' | translate }}</mat-option>
             <mat-option value="GENERAL_MANAGER">{{ 'ROLE.GENERAL_MANAGER' | translate }}</mat-option>
-            <mat-option value="MAINTENANCE_OFFICER">{{ 'ROLE.MAINTENANCE_OFFICER' | translate }}</mat-option>
-            <mat-option value="MAINTENANCE_CONTRACTOR">{{ 'ROLE.MAINTENANCE_CONTRACTOR' | translate }}</mat-option>
+            <mat-option value="MAINTENANCE_OFFICER_INTERNAL">{{ 'ROLE.MAINTENANCE_OFFICER_INTERNAL' | translate }}</mat-option>
+            <mat-option value="MAINTENANCE_OFFICER_COMPANY">{{ 'ROLE.MAINTENANCE_OFFICER_COMPANY' | translate }}</mat-option>
+            <mat-option value="MAINTENANCE_COMPANY">{{ 'ROLE.MAINTENANCE_COMPANY' | translate }}</mat-option>
             <mat-option value="PROPERTY_GUARD">{{ 'ROLE.PROPERTY_GUARD' | translate }}</mat-option>
             <mat-option value="PROCEDURES_CLERK">{{ 'ROLE.PROCEDURES_CLERK' | translate }}</mat-option>
           </mat-select>
@@ -128,8 +144,10 @@ export interface EmployeeDialogData {
       </form>
     </mat-dialog-content>
     <mat-dialog-actions align="end" class="dialog-actions">
-      <button mat-stroked-button type="button" class="btn-dialog-cancel" (click)="ref.close(false)">{{ 'ACTIONS.CANCEL' | translate }}</button>
-      <button mat-flat-button type="button" class="btn-dialog-confirm" (click)="save()" [disabled]="saving">
+      <button mat-stroked-button type="button" class="btn-dialog-cancel" (click)="ref.close(false)">
+        {{ (data.readOnly ? 'ACTIONS.CLOSE' : 'ACTIONS.CANCEL') | translate }}
+      </button>
+      <button mat-flat-button type="button" class="btn-dialog-confirm" *ngIf="!data.readOnly" (click)="save()" [disabled]="saving">
         <mat-spinner *ngIf="saving" diameter="18"></mat-spinner>
         <span *ngIf="!saving">{{ 'ACTIONS.SAVE' | translate }}</span>
       </button>
@@ -152,6 +170,7 @@ export interface EmployeeDialogData {
       justify-content: flex-end;
     }
     .btn-dialog-confirm { background: var(--navy-800) !important; color: #fff !important; }
+    .media-readonly { pointer-events: none; opacity: 0.92; }
     @media (max-width: 600px) { .employee-dialog-form { grid-template-columns: 1fr; } }
   `]
 })
@@ -161,9 +180,15 @@ export class EmployeeDialogComponent {
   profileImageUrl = '';
   civilIdImageUrl = '';
 
+  get titleKey(): string {
+    if (this.data.readOnly && this.data.employee) return 'HR.EMPLOYEE_DETAIL_TITLE';
+    return this.data.employee ? 'ACTIONS.EDIT' : 'HR.NEW_EMPLOYEE_TITLE';
+  }
+
   readonly form = this.fb.nonNullable.group({
     propertyId: [this.data.defaultPropertyId ?? ((this.data.properties[0]?.id ?? null) as number | null), Validators.required],
-    fullName: ['', Validators.required],
+    fullNameAr: ['', Validators.required],
+    fullNameEn: ['', Validators.required],
     jobTitleId: [null as number | null, Validators.required],
     basicSalary: [null as number | null, [Validators.required, Validators.min(1)]],
     hireDate: [new Date(), Validators.required],
@@ -182,17 +207,53 @@ export class EmployeeDialogComponent {
     private readonly snack: SnackService,
     readonly i18n: I18nService
   ) {
+    this.patchEmployee();
     this.lookupSvc.getByType('JOB_TITLE').subscribe({
       next: (res) => {
         // JOB_TITLE rows whose code is a portal UserRole are for user-access labels; keep ACCOUNTANT (HR + role).
         this.jobTitles = (res.data ?? []).filter(
           (t) => !isUserRoleCode(t.code) || t.code === 'ACCOUNTANT'
         );
+        this.patchJobTitle();
       },
       error: () => { this.jobTitles = []; }
     });
     this.form.get('systemRole')?.valueChanges.subscribe(() => this.applyPortalEmailRules());
     this.applyPortalEmailRules();
+    if (this.data.readOnly) {
+      this.form.disable();
+    }
+  }
+
+  private patchEmployee(): void {
+    const employee = this.data.employee;
+    if (!employee) return;
+    this.form.patchValue({
+      propertyId: employee.propertyId ?? this.data.defaultPropertyId ?? null,
+      fullNameAr: employee.fullNameAr ?? employee.fullName ?? '',
+      fullNameEn: employee.fullNameEn ?? employee.fullName ?? '',
+      basicSalary: employee.basicSalary ?? null,
+      hireDate: parseYmd(employee.hireDate) ?? new Date(),
+      phone: employee.phone ?? '',
+      email: employee.email ?? '',
+      nationalId: employee.nationalId ?? ''
+    });
+    this.profileImageUrl = employee.profileImageUrl ?? '';
+    this.civilIdImageUrl = employee.civilIdImageUrl ?? '';
+  }
+
+  private patchJobTitle(): void {
+    const employee = this.data.employee;
+    if (!employee || this.form.get('jobTitleId')?.value) return;
+    const match = this.jobTitles.find((title) =>
+      title.nameAr === employee.jobTitleAr ||
+      title.nameEn === employee.jobTitleEn ||
+      title.nameAr === employee.jobTitle ||
+      title.nameEn === employee.jobTitle
+    );
+    if (match) {
+      this.form.patchValue({ jobTitleId: match.id });
+    }
   }
 
   private applyPortalEmailRules(): void {
@@ -234,9 +295,13 @@ export class EmployeeDialogComponent {
     this.saving = true;
     const v = this.form.getRawValue();
     const selectedTitle = this.jobTitles.find((item) => item.id === v.jobTitleId);
-    this.svc.createEmployee({
+    const fullNameAr = v.fullNameAr.trim();
+    const fullNameEn = v.fullNameEn.trim();
+    const payload = {
       propertyId: v.propertyId!,
-      fullName: v.fullName,
+      fullName: fullNameAr || fullNameEn,
+      fullNameAr,
+      fullNameEn,
       jobTitleAr: selectedTitle?.nameAr,
       jobTitleEn: selectedTitle?.nameEn,
       basicSalary: v.basicSalary!,
@@ -247,7 +312,11 @@ export class EmployeeDialogComponent {
       phone: v.phone.trim(),
       email: v.email || undefined,
       systemRole: v.systemRole || undefined
-    }).subscribe({
+    };
+    const req$ = this.data.employee
+      ? this.svc.updateEmployee(this.data.employee.id, payload)
+      : this.svc.createEmployee(payload);
+    req$.subscribe({
       next: () => {
         this.saving = false;
         this.snack.success(this.i18n.instant('COMMON.SAVED'));

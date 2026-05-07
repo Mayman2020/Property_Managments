@@ -160,6 +160,12 @@ export class InventoryListComponent implements OnInit {
     return !!this.filterPropertyId;
   }
 
+  get filterValues(): Record<string, unknown> {
+    return {
+      filterPropertyId: this.filterPropertyId
+    };
+  }
+
   onPropertyChange(): void {
     this.pageIndex = 0;
     this.load();

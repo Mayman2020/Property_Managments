@@ -17,20 +17,20 @@
   <div class="inventory-search-shell" *ngIf="!loading && (items.length > 0 || searchTerm || hasFiltersBar())">
     <span class="material-icons">search</span>
     <input [value]="searchTerm" (input)="onSearch($any($event.target).value)" [placeholder]="'ACTIONS.SEARCH' | translate">
-    <app-filter-bar [filters]="pageFilters" (filtersChange)="onFilterBarChange($event)"></app-filter-bar>
+    <app-filter-bar [filters]="pageFilters" [filterValues]="filterValues" (filtersChange)="onFilterBarChange($event)"></app-filter-bar>
     <button mat-icon-button class="clear-filters-btn" (click)="clearFiltersFromBar()" *ngIf="hasFiltersBar()" [matTooltip]="'ACTIONS.CLEAR_FILTERS' | translate">
       <mat-icon>filter_alt_off</mat-icon>
     </button>
   </div>
 
   <app-empty-state
-    *ngIf="!loading && items.length === 0"
+    *ngIf="!loading && items.length === 0 && !searchTerm && !hasFiltersBar()"
     icon="inventory_2"
     [title]="'INVENTORY.EMPTY_TITLE' | translate"
     [message]="'INVENTORY.EMPTY_MESSAGE' | translate">
   </app-empty-state>
 
-  <section class="app-card inventory-table-card" *ngIf="!loading && items.length > 0">
+  <section class="app-card inventory-table-card" *ngIf="!loading && (items.length > 0 || searchTerm || hasFiltersBar())">
     <app-table-export-toolbar
       permissionKey="inventory"
       [title]="'INVENTORY.TITLE' | translate"
@@ -83,6 +83,9 @@
                 </button>
               </div>
             </td>
+          </tr>
+          <tr *ngIf="items.length === 0">
+            <td colspan="7" class="empty-row">{{ 'COMMON.NO_DATA' | translate }}</td>
           </tr>
         </tbody>
       </table>

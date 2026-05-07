@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
+import { AppConstants } from '../constants/app-constants';
 import { ApiResponse } from '../models/api-response.model';
 import { LeaseContract } from '../models/contract.model';
 
@@ -43,38 +44,38 @@ export class OwnerPortalService {
   constructor(private readonly api: ApiService) {}
 
   getDashboard(): Observable<ApiResponse<OwnerDashboardDto>> {
-    return this.api.get('/owner-portal/dashboard');
+    return this.api.get(AppConstants.API.OWNER_PORTAL_DASHBOARD);
   }
 
   getStatements(): Observable<ApiResponse<OwnerStatementItem[]>> {
-    return this.api.get('/owner-portal/statements');
+    return this.api.get(AppConstants.API.OWNER_PORTAL_STATEMENTS);
   }
 
   getProperties(): Observable<ApiResponse<OwnerPropertyItem[]>> {
-    return this.api.get('/owner-portal/properties');
+    return this.api.get(AppConstants.API.OWNER_PORTAL_PROPERTIES);
   }
 
   getDraftContracts(): Observable<ApiResponse<LeaseContract[]>> {
-    return this.api.get('/owner-portal/draft-contracts');
+    return this.api.get(AppConstants.API.OWNER_PORTAL_DRAFT_CONTRACTS);
   }
 
   getDraftAmendUnitOptions(contractId: number): Observable<ApiResponse<DraftUnitOption[]>> {
-    return this.api.get(`/owner-portal/draft-contracts/${contractId}/unit-options`);
+    return this.api.get(AppConstants.API.OWNER_PORTAL_DRAFT_CONTRACT_UNIT_OPTIONS(contractId));
   }
 
   rejectDraftContract(id: number, reason: string): Observable<ApiResponse<LeaseContract>> {
-    return this.api.patch(`/owner-portal/draft-contracts/${id}/reject`, { reason });
+    return this.api.patch(AppConstants.API.OWNER_PORTAL_DRAFT_CONTRACT_REJECT(id), { reason });
   }
 
   amendDraftContract(
     id: number,
     body: { unitId?: number; monthlyRent?: number; reason: string }
   ): Observable<ApiResponse<LeaseContract>> {
-    return this.api.patch(`/owner-portal/draft-contracts/${id}/amend`, body);
+    return this.api.patch(AppConstants.API.OWNER_PORTAL_DRAFT_CONTRACT_AMEND(id), body);
   }
 
   getPendingTerminations(ownerId?: number): Observable<ApiResponse<LeaseContract[]>> {
-    return this.api.get('/owner-portal/pending-terminations',
+    return this.api.get(AppConstants.API.OWNER_PORTAL_PENDING_TERMINATIONS,
       ownerId != null ? { ownerId } : undefined);
   }
 
@@ -82,11 +83,11 @@ export class OwnerPortalService {
     contractId: number,
     body: { decision: 'APPROVED' | 'REJECTED'; notes?: string }
   ): Observable<ApiResponse<LeaseContract>> {
-    return this.api.post(`/owner-portal/contracts/${contractId}/termination-decision`, body);
+    return this.api.post(AppConstants.API.OWNER_PORTAL_CONTRACT_TERMINATION_DECISION(contractId), body);
   }
 
   getPendingRenewals(ownerId?: number): Observable<ApiResponse<LeaseContract[]>> {
-    return this.api.get('/owner-portal/pending-renewals',
+    return this.api.get(AppConstants.API.OWNER_PORTAL_PENDING_RENEWALS,
       ownerId != null ? { ownerId } : undefined);
   }
 
@@ -94,6 +95,6 @@ export class OwnerPortalService {
     contractId: number,
     body: { decision: 'APPROVED' | 'REJECTED'; notes?: string }
   ): Observable<ApiResponse<LeaseContract>> {
-    return this.api.post(`/owner-portal/contracts/${contractId}/renewal-decision`, body);
+    return this.api.post(AppConstants.API.OWNER_PORTAL_CONTRACT_RENEWAL_DECISION(contractId), body);
   }
 }

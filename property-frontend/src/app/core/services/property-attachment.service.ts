@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
+import { AppConstants } from '../constants/app-constants';
 import { ApiResponse } from '../models/api-response.model';
 
 export interface PropertyAttachment {
@@ -20,7 +21,7 @@ export class PropertyAttachmentService {
 
   list(propertyId: number): Observable<ApiResponse<PropertyAttachment[]>> {
     return this.api.get<ApiResponse<PropertyAttachment[]>>(
-      `/properties/${propertyId}/attachments`
+      AppConstants.API.PROPERTY_ATTACHMENTS(propertyId)
     );
   }
 
@@ -28,23 +29,23 @@ export class PropertyAttachmentService {
     const fd = new FormData();
     fd.append('file', file);
     return this.api.postFormData<ApiResponse<PropertyAttachment>>(
-      `/properties/${propertyId}/attachments`,
+      AppConstants.API.PROPERTY_ATTACHMENTS(propertyId),
       fd
     );
   }
 
   delete(propertyId: number, attachmentId: number): Observable<ApiResponse<void>> {
     return this.api.delete<ApiResponse<void>>(
-      `/properties/${propertyId}/attachments/${attachmentId}`
+      AppConstants.API.PROPERTY_ATTACHMENT_BY_ID(propertyId, attachmentId)
     );
   }
 
   viewUrl(propertyId: number, attachmentId: number): string {
-    return this.api.buildUrl(`/properties/${propertyId}/attachments/${attachmentId}/view`);
+    return this.api.buildUrl(AppConstants.API.PROPERTY_ATTACHMENT_VIEW(propertyId, attachmentId));
   }
 
   downloadUrl(propertyId: number, attachmentId: number): string {
-    return this.api.buildUrl(`/properties/${propertyId}/attachments/${attachmentId}/download`);
+    return this.api.buildUrl(AppConstants.API.PROPERTY_ATTACHMENT_DOWNLOAD(propertyId, attachmentId));
   }
 
   isImage(mimeType: string | null): boolean {

@@ -44,7 +44,12 @@
   align-items: center;
   gap: 8px;
   justify-content: flex-start;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
+}
+
+.property-scope-field {
+  flex: 0 1 260px;
+  min-width: 200px;
 }
 
 .property-search {

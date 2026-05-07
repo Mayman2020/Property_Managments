@@ -13,7 +13,7 @@
   </app-page-header>
 
   <div class="toolbar" *ngIf="!loading && (complaints.length > 0 || hasFiltersBar())">
-    <app-filter-bar [filters]="pageFilters" (filtersChange)="onFilterBarChange($event)"></app-filter-bar>
+    <app-filter-bar [filters]="pageFilters" [filterValues]="filterValues" (filtersChange)="onFilterBarChange($event)"></app-filter-bar>
     <button mat-icon-button class="clear-filters-btn" (click)="clearFiltersFromBar()" *ngIf="hasFiltersBar()" [matTooltip]="'ACTIONS.CLEAR_FILTERS' | translate">
       <mat-icon>filter_alt_off</mat-icon>
     </button>

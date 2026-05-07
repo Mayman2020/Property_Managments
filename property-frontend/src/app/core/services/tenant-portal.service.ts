@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
+import { AppConstants } from '../constants/app-constants';
 import { ApiResponse, PagedResponse } from '../models/api-response.model';
 import { LeaseContract, PaymentMethod, RentPaymentSchedule } from '../models/contract.model';
 
@@ -74,22 +75,22 @@ export class TenantPortalService {
   constructor(private readonly api: ApiService) {}
 
   getMyContract(): Observable<ApiResponse<LeaseContract>> {
-    return this.api.get('/tenant-portal/my-contract');
+    return this.api.get(AppConstants.API.TENANT_PORTAL_MY_CONTRACT);
   }
 
   getMyContracts(): Observable<ApiResponse<LeaseContract[]>> {
-    return this.api.get('/tenant-portal/my-contracts');
+    return this.api.get(AppConstants.API.TENANT_PORTAL_MY_CONTRACTS);
   }
 
   getTenantContract(id: number): Observable<ApiResponse<LeaseContract>> {
-    return this.api.get(`/tenant-portal/contracts/${id}`);
+    return this.api.get(AppConstants.API.TENANT_PORTAL_CONTRACT_BY_ID(id));
   }
 
   getTenantContractSchedule(
     id: number,
     params?: Record<string, string | number | boolean>
   ): Observable<ApiResponse<PagedResponse<RentPaymentSchedule>>> {
-    return this.api.get(`/tenant-portal/contracts/${id}/payment-schedule`, params);
+    return this.api.get(AppConstants.API.TENANT_PORTAL_CONTRACT_PAYMENT_SCHEDULE(id), params);
   }
 
   uploadPaymentProof(
@@ -97,26 +98,26 @@ export class TenantPortalService {
     scheduleId: number,
     payload: UploadPaymentProofPayload
   ): Observable<ApiResponse<RentPaymentSchedule>> {
-    return this.api.post(`/tenant-portal/contracts/${contractId}/payment-schedule/${scheduleId}/proof`, payload);
+    return this.api.post(AppConstants.API.TENANT_PORTAL_PAYMENT_SCHEDULE_PROOF(contractId, scheduleId), payload);
   }
 
   getMyReceipts(): Observable<ApiResponse<RentReceipt[]>> {
-    return this.api.get('/tenant-portal/receipts');
+    return this.api.get(AppConstants.API.TENANT_PORTAL_RECEIPTS);
   }
 
   uploadReceipt(payload: UploadReceiptPayload): Observable<ApiResponse<RentReceipt>> {
-    return this.api.post('/tenant-portal/receipts', payload);
+    return this.api.post(AppConstants.API.TENANT_PORTAL_RECEIPTS, payload);
   }
 
   staffUploadReceiptForTenant(payload: StaffUploadReceiptPayload): Observable<ApiResponse<RentReceipt>> {
-    return this.api.post('/tenant-portal/admin/receipts/for-tenant', payload);
+    return this.api.post(AppConstants.API.TENANT_PORTAL_ADMIN_RECEIPTS_FOR_TENANT, payload);
   }
 
   getMyContractRequests(): Observable<ApiResponse<ContractActionRequest[]>> {
-    return this.api.get('/tenant-portal/contract-requests');
+    return this.api.get(AppConstants.API.TENANT_PORTAL_CONTRACT_REQUESTS);
   }
 
   createContractRequest(payload: ContractActionPayload): Observable<ApiResponse<ContractActionRequest>> {
-    return this.api.post('/tenant-portal/contract-requests', payload);
+    return this.api.post(AppConstants.API.TENANT_PORTAL_CONTRACT_REQUESTS, payload);
   }
 }

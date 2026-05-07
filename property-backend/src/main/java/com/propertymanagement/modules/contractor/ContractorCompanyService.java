@@ -6,6 +6,7 @@ import com.propertymanagement.modules.maintenance.assignment.MaintenanceContract
 import com.propertymanagement.modules.user.UserRepository;
 import com.propertymanagement.shared.exception.AppException;
 import com.propertymanagement.shared.i18n.LocalizedNameResolver;
+import com.propertymanagement.shared.security.PropertyScopeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -21,17 +23,56 @@ public class ContractorCompanyService {
     private final ContractorCompanyRepository repository;
     private final MaintenanceContractRepository maintenanceContractRepository;
     private final UserRepository userRepository;
+    private final PropertyScopeService propertyScopeService;
 
     public List<ContractorCompanyResponse> listActive(String q) {
-        return repository.searchActive(trimToNull(q)).stream().map(this::toResponse).toList();
+        return listActive(q, null);
+    }
+
+    public List<ContractorCompanyResponse> listActive(String q, Long propertyId) {
+        String trimmed = trimToNull(q);
+        Set<Long> scope = propertyScopeService.propertyIdsOrNullIfUnrestricted();
+        if (scope != null) {
+            if (scope.isEmpty()) return List.of();
+            if (propertyId != null) {
+                return scope.contains(propertyId)
+                        ? repository.searchActiveInPropertyId(trimmed, propertyId).stream().map(this::toResponse).toList()
+                        : List.of();
+            }
+            return repository.searchActiveInPropertyIds(trimmed, scope).stream().map(this::toResponse).toList();
+        }
+        if (propertyId != null) {
+            return repository.searchActiveInPropertyId(trimmed, propertyId).stream().map(this::toResponse).toList();
+        }
+        return repository.searchActive(trimmed).stream().map(this::toResponse).toList();
     }
 
     public List<ContractorCompanyResponse> listAll(String q) {
-        return repository.searchAll(trimToNull(q)).stream().map(this::toResponse).toList();
+        return listAll(q, null);
+    }
+
+    public List<ContractorCompanyResponse> listAll(String q, Long propertyId) {
+        String trimmed = trimToNull(q);
+        Set<Long> scope = propertyScopeService.propertyIdsOrNullIfUnrestricted();
+        if (scope != null) {
+            if (scope.isEmpty()) return List.of();
+            if (propertyId != null) {
+                return scope.contains(propertyId)
+                        ? repository.searchAllInPropertyId(trimmed, propertyId).stream().map(this::toResponse).toList()
+                        : List.of();
+            }
+            return repository.searchAllInPropertyIds(trimmed, scope).stream().map(this::toResponse).toList();
+        }
+        if (propertyId != null) {
+            return repository.searchAllInPropertyId(trimmed, propertyId).stream().map(this::toResponse).toList();
+        }
+        return repository.searchAll(trimmed).stream().map(this::toResponse).toList();
     }
 
     public ContractorCompanyResponse get(Long id) {
-        return toResponse(find(id));
+        ContractorCompany company = find(id);
+        assertCanAccessCompany(company.getId());
+        return toResponse(company);
     }
 
     @Transactional
@@ -109,6 +150,16 @@ public class ContractorCompanyService {
     private ContractorCompany find(Long id) {
         return repository.findById(id)
                 .orElseThrow(() -> AppException.notFound("Contractor company not found: " + id));
+    }
+
+    private void assertCanAccessCompany(Long companyId) {
+        Set<Long> scope = propertyScopeService.propertyIdsOrNullIfUnrestricted();
+        if (scope == null) {
+            return;
+        }
+        if (scope.isEmpty() || repository.countLinkedToPropertyIds(companyId, scope) == 0) {
+            throw AppException.forbidden("You do not have access to this contractor company");
+        }
     }
 
     private static String blankToNull(String s) {

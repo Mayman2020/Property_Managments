@@ -12,7 +12,6 @@ import com.propertymanagement.modules.tenant.dto.TenantRequest;
 import com.propertymanagement.modules.tenant.dto.TenantResponse;
 import com.propertymanagement.modules.notification.NotificationService;
 import com.propertymanagement.modules.notification.NotificationType;
-import com.propertymanagement.modules.owner.OwnerPropertyAccessService;
 import com.propertymanagement.modules.property.Property;
 import com.propertymanagement.modules.property.PropertyOwnerPortalRecipientService;
 import com.propertymanagement.modules.property.PropertyRepository;
@@ -25,6 +24,7 @@ import com.propertymanagement.modules.user.UserService;
 import com.propertymanagement.shared.exception.AppException;
 import com.propertymanagement.shared.i18n.BilingualNotificationText;
 import com.propertymanagement.shared.i18n.LocalizedNameResolver;
+import com.propertymanagement.shared.security.PropertyScopeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -59,30 +59,31 @@ public class TenantService {
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
     private final TenantPortalWelcomeService tenantPortalWelcomeService;
-    private final OwnerPropertyAccessService ownerPropertyAccessService;
+    private final PropertyScopeService propertyScopeService;
     private final NotificationService notificationService;
     private final PropertyOwnerPortalRecipientService propertyOwnerPortalRecipientService;
     private final PropertyRepository propertyRepository;
 
     public Page<TenantResponse> getAll(Pageable pageable, String q, Long propertyId) {
         String trimmed = trimToNull(q);
-        Set<Long> ownerScope = ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner();
-        if (ownerScope != null) {
-            if (ownerScope.isEmpty()) {
+        Set<Long> scope = propertyScopeService.propertyIdsOrNullIfUnrestricted();
+        if (scope != null) {
+            if (scope.isEmpty()) {
                 return Page.empty(pageable);
             }
             if (propertyId != null) {
-                ownerPropertyAccessService.assertOwnerCanAccessProperty(propertyId);
-                return tenantRepository.searchActive(trimmed, propertyId, pageable).map(this::toResponse);
+                return scope.contains(propertyId)
+                        ? tenantRepository.searchActive(trimmed, propertyId, pageable).map(this::toResponse)
+                        : Page.empty(pageable);
             }
-            return tenantRepository.searchActiveInPropertyIds(trimmed, ownerScope, pageable).map(this::toResponse);
+            return tenantRepository.searchActiveInPropertyIds(trimmed, scope, pageable).map(this::toResponse);
         }
         return tenantRepository.searchActive(trimmed, propertyId, pageable).map(this::toResponse);
     }
 
     public TenantResponse getById(Long id) {
         Tenant tenant = findActive(id);
-        ownerPropertyAccessService.assertOwnerCanAccessProperty(tenant.getPropertyId());
+        assertCanAccessProperty(tenant.getPropertyId());
         return toResponse(tenant);
     }
 
@@ -93,9 +94,10 @@ public class TenantService {
     }
 
     public TenantResponse getByUnitId(Long unitId) {
-        return tenantRepository.findByUnitIdAndActiveTrue(unitId)
-                .map(this::toResponse)
+        Tenant tenant = tenantRepository.findByUnitIdAndActiveTrue(unitId)
                 .orElseThrow(() -> AppException.notFound("No active tenant for unit: " + unitId));
+        assertCanAccessProperty(tenant.getPropertyId());
+        return toResponse(tenant);
     }
 
     @Transactional
@@ -103,6 +105,7 @@ public class TenantService {
         validateScope(request);
         validateLease(request);
         Long targetPropertyId = resolveTargetPropertyId(request);
+        assertCanAccessProperty(targetPropertyId);
         requirePropertyHasAccountant(targetPropertyId);
         String email = trimToNull(request.getEmail());
         Long userId = request.getUserId();
@@ -275,8 +278,10 @@ public class TenantService {
         validateScope(request);
         validateLease(request);
         Long targetPropertyId = resolveTargetPropertyId(request);
+        assertCanAccessProperty(targetPropertyId);
         requirePropertyHasAccountant(targetPropertyId);
         Tenant tenant = findActive(id);
+        assertCanAccessProperty(tenant.getPropertyId());
         Long previousUserId = tenant.getUserId();
 
         String email = trimToNull(request.getEmail());
@@ -340,6 +345,7 @@ public class TenantService {
     @Transactional
     public TenantResponse unlinkUnit(Long id) {
         Tenant tenant = findActive(id);
+        assertCanAccessProperty(tenant.getPropertyId());
         Long previousUnitId = tenant.getUnitId();
         tenant.setUnitId(null);
         Tenant saved = tenantRepository.save(tenant);
@@ -350,6 +356,7 @@ public class TenantService {
     @Transactional
     public void delete(Long id) {
         Tenant tenant = findActive(id);
+        assertCanAccessProperty(tenant.getPropertyId());
         if (leaseContractRepository.existsByTenantIdAndStatus(id, ContractStatus.ACTIVE)) {
             throw AppException.badRequest("Cannot delete tenant while an active lease contract exists");
         }
@@ -400,6 +407,10 @@ public class TenantService {
         boolean dirty = false;
         if (request.getProfileImage() != null && !request.getProfileImage().isBlank()) {
             user.setProfileImageUrl(request.getProfileImage().trim());
+            dirty = true;
+        }
+        if (request.getCivilIdImageUrl() != null && !request.getCivilIdImageUrl().isBlank()) {
+            user.setCivilIdImageUrl(request.getCivilIdImageUrl().trim());
             dirty = true;
         }
         if (request.getPropertyId() != null) {
@@ -482,6 +493,12 @@ public class TenantService {
                     .orElseThrow(() -> AppException.badRequest("Unit not found: " + request.getUnitId()));
         }
         return null;
+    }
+
+    private void assertCanAccessProperty(Long propertyId) {
+        if (!propertyScopeService.canAccessProperty(propertyId)) {
+            throw AppException.forbidden("You do not have access to this property");
+        }
     }
 
     private void requirePropertyHasAccountant(Long propertyId) {

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
+import { AppConstants } from '../constants/app-constants';
 import { ApiResponse, PagedResponse } from '../models/api-response.model';
 
 export interface AuditLogItem {
@@ -21,6 +22,6 @@ export class AuditService {
   constructor(private readonly api: ApiService) {}
 
   getLogs(params: Record<string, string | number> = {}): Observable<ApiResponse<PagedResponse<AuditLogItem>>> {
-    return this.api.get('/audit-logs', params);
+    return this.api.get(AppConstants.API.AUDIT_LOGS, params);
   }
 }

@@ -20,8 +20,9 @@ public final class UserExtraRoles {
             UserRole.GENERAL_MANAGER,
             UserRole.ACCOUNTANT,
             UserRole.PROCEDURES_CLERK,
-            UserRole.MAINTENANCE_OFFICER,
-            UserRole.MAINTENANCE_CONTRACTOR,
+            UserRole.MAINTENANCE_OFFICER_INTERNAL,
+            UserRole.MAINTENANCE_OFFICER_COMPANY,
+            UserRole.MAINTENANCE_COMPANY,
             UserRole.PROPERTY_GUARD
     );
 

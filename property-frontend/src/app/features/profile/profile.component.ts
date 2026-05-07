@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NgIf } from '@angular/common';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -8,6 +8,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Location } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
+import { Subscription } from 'rxjs';
 
 import { IdentityMediaFieldsComponent } from '../../shared/components/identity-media-fields/identity-media-fields.component';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
@@ -36,11 +37,12 @@ import { UserProfileUpdateRequest } from '../../core/services/user-profile.servi
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss'
 })
-export class ProfileComponent implements OnInit {
+export class ProfileComponent implements OnInit, OnDestroy {
   private static readonly PORTAL_EMPLOYEE_ROLES: UserRole[] = [
     'GENERAL_MANAGER',
-    'MAINTENANCE_OFFICER',
-    'MAINTENANCE_CONTRACTOR',
+    'MAINTENANCE_OFFICER_INTERNAL',
+    'MAINTENANCE_OFFICER_COMPANY',
+    'MAINTENANCE_COMPANY',
     'ACCOUNTANT',
     'PROPERTY_GUARD',
     'PROCEDURES_CLERK'
@@ -58,6 +60,7 @@ export class ProfileComponent implements OnInit {
   accountUsername = '';
   dashboardHomeRoute = '/';
   private loadedUser: User | null = null;
+  private roleSub?: Subscription;
 
   constructor(
     private readonly fb: FormBuilder,
@@ -95,7 +98,19 @@ export class ProfileComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.roleSub = this.auth.activeRoleChanged.subscribe(() => {
+      this.dashboardHomeRoute = this.resolveDashboardRoute();
+      this.loadProfile();
+    });
     this.dashboardHomeRoute = this.resolveDashboardRoute();
+    this.loadProfile();
+  }
+
+  ngOnDestroy(): void {
+    this.roleSub?.unsubscribe();
+  }
+
+  private loadProfile(): void {
     this.loading = true;
     this.profileService.getMyProfile().subscribe({
       next: (res) => {
@@ -127,7 +142,7 @@ export class ProfileComponent implements OnInit {
   }
 
   roleLabel(): string {
-    const r = this.auth.getCurrentUser()?.role as UserRole | undefined;
+    const r = this.auth.getRole() as UserRole | null;
     if (!r) return '';
     return this.i18n.instant(`ROLE.${r}`);
   }
@@ -247,7 +262,7 @@ export class ProfileComponent implements OnInit {
   }
 
   get needsIdentityMedia(): boolean {
-    const r = this.auth.getCurrentUser()?.role as UserRole | undefined;
+    const r = this.auth.getRole() as UserRole | null;
     if (!r) return false;
     return r === 'OWNER' || r === 'TENANT' || ProfileComponent.PORTAL_EMPLOYEE_ROLES.includes(r);
   }
@@ -257,11 +272,11 @@ export class ProfileComponent implements OnInit {
   }
 
   get roleKey(): string {
-    return this.auth.getCurrentUser()?.role ?? 'TENANT';
+    return (this.auth.getRole() as UserRole | null) ?? 'TENANT';
   }
 
   get showLinkedRegistry(): boolean {
-    const r = this.auth.getCurrentUser()?.role as UserRole | undefined;
+    const r = this.auth.getRole() as UserRole | null;
     if (!r) return false;
     return r === 'OWNER' || r === 'TENANT' || ProfileComponent.PORTAL_EMPLOYEE_ROLES.includes(r);
   }
@@ -296,7 +311,7 @@ export class ProfileComponent implements OnInit {
 
   private buildProfilePayload(): UserProfileUpdateRequest {
     const v = this.form.getRawValue() as Record<string, string>;
-    const role = this.auth.getCurrentUser()?.role as UserRole | undefined;
+    const role = this.auth.getRole() as UserRole | null;
     const base: UserProfileUpdateRequest = {
       fullName: v['fullName'],
       phone: v['phone']?.trim() ? v['phone'].trim() : undefined,

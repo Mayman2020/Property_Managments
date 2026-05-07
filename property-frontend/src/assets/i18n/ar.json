@@ -62,14 +62,16 @@
     "EMAIL": "البريد الإلكتروني",
     "PASSWORD": "كلمة المرور",
     "ENTER": "دخول",
-    "LOGIN_FAILED": "فشل تسجيل الدخول. يرجى التحقق من بياناتك."
+    "LOGIN_FAILED": "فشل تسجيل الدخول. يرجى التحقق من بياناتك.",
+    "INVALID_CREDENTIALS": "البريد الإلكتروني أو كلمة السر غير صحيحة. الرجاء المحاولة مرة أخرى."
   },
   "TOPBAR": {
     "TOGGLE_MENU": "تبديل القائمة",
     "LANGUAGE": "اللغة",
     "LIGHT_MODE": "الوضع الفاتح",
     "DARK_MODE": "الوضع الداكن",
-    "SEARCH_PLACEHOLDER": "ابحث عن عقار أو وحدة أو طلب..."
+    "SEARCH_PLACEHOLDER": "ابحث عن عقار أو وحدة أو طلب...",
+    "PROPERTY_SCOPE": "العقار"
   },
   "STATUS": {
     "PENDING": "قيد الانتظار",
@@ -101,8 +103,9 @@
     "SUPER_ADMIN": "مدير النظام",
     "GENERAL_MANAGER": "المدير العام",
     "ACCOUNTANT": "محاسب",
-    "MAINTENANCE_CONTRACTOR": "شركة صيانة (مقاول)",
-    "MAINTENANCE_OFFICER": "صيانة داخل العقار",
+    "MAINTENANCE_OFFICER_INTERNAL": "موظف صيانة",
+    "MAINTENANCE_OFFICER_COMPANY": "موظف صيانة تابع لشركة",
+    "MAINTENANCE_COMPANY": "شركة صيانة",
     "PROPERTY_GUARD": "حارس عقار",
     "PROCEDURES_CLERK": "مخلص إجراءات",
     "OWNER": "مالك",
@@ -458,7 +461,8 @@
     "DEACTIVATED": "تم إلغاء تفعيل العقار",
     "DELETED": "تم حذف العقار بنجاح",
     "ACTIVATE_HINT": "انقر لتفعيل العقار",
-    "DEACTIVATE_HINT": "انقر لإلغاء التفعيل"
+    "DEACTIVATE_HINT": "انقر لإلغاء التفعيل",
+    "SCOPE_PROPERTY": "العقار (نطاق صلاحيتك)"
   },
   "PROPERTY_FORM": {
     "TITLE": "إضافة عقار جديد",
@@ -573,6 +577,8 @@
     "DEFAULT_USER": "مستخدم",
     "HEADER_HINT": "تحديث صورة الملف الشخصي يظهر فوراً بعد الحفظ.",
     "FULL_NAME": "الاسم الكامل",
+    "FULL_NAME_AR": "الاسم الكامل بالعربية",
+    "FULL_NAME_EN": "الاسم الكامل بالإنجليزية",
     "PHONE": "الهاتف",
     "IMAGE_URL": "صورة الملف الشخصي",
     "IMAGE_UPLOAD": "صورة الملف الشخصي",
@@ -1679,6 +1685,8 @@
     "ADD_EMPLOYEE": "إضافة موظف",
     "ADD_EMPLOYEE_HINT": "إنشاء سجل موظف جديد وربطه بالعقار.",
     "FULL_NAME": "الاسم الكامل",
+    "FULL_NAME_AR": "الاسم الكامل (عربي)",
+    "FULL_NAME_EN": "الاسم الكامل (إنجليزي)",
     "JOB_TITLE_LABEL": "المسمى الوظيفي",
     "JOB_TITLE_AR": "المسمى الوظيفي (عربي)",
     "JOB_TITLE_EN": "المسمى الوظيفي (إنجليزي)",
@@ -1733,6 +1741,8 @@
     "DAYS_COL": "الأيام",
     "NO_DATA": "لا توجد بيانات موارد بشرية بعد",
     "NO_DATA_DESC": "ابدأ بإضافة موظفين، ثم أدر الرواتب والخصومات.",
+    "DELETE_SUCCESS": "تم حذف الموظف بنجاح",
+    "CONFIRM_DELETE": "هل أنت متأكد من حذف \"{{name}}\"؟",
     "PROPERTY_ID_LABEL": "رقم العقار",
     "EMPLOYEE_ID_LABEL": "رقم الموظف",
     "BONUS_TYPE_LABEL": "النوع",

@@ -29,6 +29,9 @@ export interface ContractDialogData {
   /** Pre-fill a specific tenant (from tenant list "Assign Unit" button). */
   tenantId?: number;
   tenantName?: string;
+  /** Open dialog with a pre-selected property and unit for assignment. */
+  propertyId?: number;
+  unitId?: number;
 }
 
 @Component({
@@ -419,10 +422,11 @@ export class ContractDialogComponent implements OnInit {
         next: () => {
           const pf = this.paymentFrequencyLookupItems[0]?.code ?? 'MONTHLY';
           const cur = this.currencyLookupItems.find((c) => c.code === 'OMR') ?? this.currencyLookupItems[0];
-          this.form.patchValue(
-            { paymentFrequency: pf, currency: cur?.code ?? 'OMR' },
-            { emitEvent: false }
-          );
+          const values: any = { paymentFrequency: pf, currency: cur?.code ?? 'OMR' };
+          if (this.data?.propertyId) {
+            values.propertyId = this.data.propertyId;
+          }
+          this.form.patchValue(values, { emitEvent: true });
           Promise.all([
             this.propertySvc.getAll(0, 200).toPromise(),
             this.tenantSvc.getAll(0, 500).toPromise()
@@ -540,6 +544,9 @@ export class ContractDialogComponent implements OnInit {
       this.units = (units?.data?.content ?? []).filter(
         (u: Unit) => u.active && !u.rented && !busyUnitIds.has(u.id)
       );
+      if (this.data?.unitId && this.units.some((u) => u.id === this.data.unitId)) {
+        this.form.get('unitId')?.setValue(this.data.unitId, { emitEvent: true });
+      }
     });
   }
 

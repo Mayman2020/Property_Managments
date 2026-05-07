@@ -101,7 +101,11 @@ public class RolePermissionService {
     }
 
     public Map<String, Map<String, Boolean>> getPermissionMap(UserRole role) {
-        return readPermissions(findOrCreate(role).getPermissionsJson());
+        Map<String, Map<String, Boolean>> stored = readPermissions(findOrCreate(role).getPermissionsJson());
+        if (role == UserRole.ACCOUNTANT) {
+            return mergePermissionMaps(List.of(stored, defaultPermissions(UserRole.ACCOUNTANT)));
+        }
+        return stored;
     }
 
     private RolePermission findOrCreate(UserRole role) {
@@ -195,7 +199,9 @@ public class RolePermissionService {
                 allow(permissions, "notifications", "enabled", "menu", "view");
                 allow(permissions, "audit", "enabled", "menu", "view", "export");
             }
-            case MAINTENANCE_OFFICER, MAINTENANCE_CONTRACTOR -> {
+            case MAINTENANCE_OFFICER_INTERNAL,
+                 MAINTENANCE_OFFICER_COMPANY,
+                 MAINTENANCE_COMPANY -> {
                 allow(permissions, "schedule", "enabled", "menu", "view", "start");
                 allow(permissions, "my_requests", "enabled", "menu", "view", "start", "submit", "schedule");
                 allow(permissions, "maintenance", "enabled", "view", "start", "submit", "schedule");

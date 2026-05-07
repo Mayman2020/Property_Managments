@@ -21,6 +21,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("""
             SELECT u FROM User u
             WHERE (:role IS NULL OR u.role = :role)
+              AND (:propertyIds IS NULL OR u.propertyId IN :propertyIds)
               AND (
                 :q IS NULL OR :q = '' OR
                 LOWER(COALESCE(u.fullName, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
@@ -30,7 +31,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
                 LOWER(COALESCE(u.maintenanceCompanyName, '')) LIKE LOWER(CONCAT('%', :q, '%'))
               )
             """)
-    Page<User> search(@Param("q") String q, @Param("role") UserRole role, Pageable pageable);
+    Page<User> search(@Param("q") String q, @Param("role") UserRole role, @Param("propertyIds") List<Long> propertyIds, Pageable pageable);
     List<User> findByRoleAndActiveTrue(UserRole role);
     List<User> findByPropertyIdAndRoleAndActiveTrue(Long propertyId, UserRole role);
 
@@ -52,8 +53,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
               AND u.propertyId = :propertyId
               AND u.contractorCompanyId = :companyId
               AND (
-                    u.role = com.propertymanagement.modules.user.UserRole.MAINTENANCE_CONTRACTOR
-                    OR (u.role = com.propertymanagement.modules.user.UserRole.MAINTENANCE_OFFICER
+                    u.role = com.propertymanagement.modules.user.UserRole.MAINTENANCE_COMPANY
+                    OR (u.role = com.propertymanagement.modules.user.UserRole.MAINTENANCE_OFFICER_COMPANY
                         AND u.maintenanceOfficerType = com.propertymanagement.modules.user.MaintenanceOfficerType.CONTRACTOR_COMPANY)
               )
             """)

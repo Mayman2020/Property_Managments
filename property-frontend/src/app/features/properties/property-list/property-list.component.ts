@@ -1,4 +1,5 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, DestroyRef, OnInit, ViewChild } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NgFor, NgIf } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { catchError, firstValueFrom, forkJoin, map, of } from 'rxjs';
@@ -8,9 +9,15 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { PropertyService, Property } from '../../../core/services/property.service';
+import { ApiService } from '../../../core/services/api.service';
+import { AuthService } from '../../../core/services/auth.service';
+import { AppConstants } from '../../../core/constants/app-constants';
+import { ApiResponse } from '../../../core/models/api-response.model';
 import { Owner, ownerDisplayName } from '../../../core/services/owner.service';
 import { SnackService } from '../../../core/services/snack.service';
 import { DeleteConfirmService } from '../../../core/services/delete-confirm.service';
@@ -25,6 +32,11 @@ import { FilterBarComponent, FilterSpec } from '../../../shared/components/filte
 import { PropertyFormComponent } from '../property-form/property-form.component';
 import { PermissionService } from '../../../core/services/permission.service';
 
+interface PropertyAccessSummaryDto {
+  unrestricted: boolean;
+  propertyIds: number[];
+}
+
 @Component({
   selector: 'app-property-list',
   standalone: true,
@@ -38,6 +50,8 @@ import { PermissionService } from '../../../core/services/permission.service';
     MatProgressSpinnerModule,
     MatPaginatorModule,
     MatTooltipModule,
+    MatFormFieldModule,
+    MatSelectModule,
     PageHeaderComponent,
     EmptyStateComponent,
     TableExportToolbarComponent,
@@ -64,6 +78,13 @@ export class PropertyListComponent implements OnInit {
   propertyTypes: LookupItem[] = [];
   propertyStatuses: LookupItem[] = [];
 
+  /** From {@code GET /users/me/property-access} — drives scoped filter UI. */
+  scopeSummary: PropertyAccessSummaryDto | null = null;
+  /** When scoped to multiple properties, narrowed list request uses this id (default: first in {@link scopeSummary#propertyIds}). */
+  selectedScopedPropertyId: number | null = null;
+  /** Labels for the scope dropdown (subset of all accessible properties). */
+  scopePropertyOptions: Property[] = [];
+
   constructor(
     private readonly dialog: MatDialog,
     private readonly propertySvc: PropertyService,
@@ -72,8 +93,16 @@ export class PropertyListComponent implements OnInit {
     private readonly deleteConfirm: DeleteConfirmService,
     private readonly lookupCache: LookupCacheService,
     readonly i18n: I18nService,
-    private readonly permissions: PermissionService
-  ) {}
+    private readonly permissions: PermissionService,
+    private readonly auth: AuthService,
+    private readonly api: ApiService,
+    private readonly destroyRef: DestroyRef
+  ) {
+    this.auth.activeRoleChanged.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.page = 0;
+      this.initPropertyAccessAndLoad();
+    });
+  }
 
   canCreateProperty(): boolean {
     return this.permissions.can('properties', 'create');
@@ -89,7 +118,62 @@ export class PropertyListComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadFilterLookups();
+    this.initPropertyAccessAndLoad();
+  }
+
+  showPropertyScopeFilter(): boolean {
+    return !!this.scopeSummary && !this.scopeSummary.unrestricted && this.scopeSummary.propertyIds.length > 1;
+  }
+
+  onScopedPropertyChange(propertyId: number): void {
+    this.selectedScopedPropertyId = propertyId;
+    this.page = 0;
     this.load();
+  }
+
+  private initPropertyAccessAndLoad(): void {
+    this.loading = true;
+    this.api.get<ApiResponse<PropertyAccessSummaryDto>>(AppConstants.API.USERS_ME_PROPERTY_ACCESS).subscribe({
+      next: (res) => {
+        const data = res.data ?? null;
+        this.scopeSummary = data;
+        this.scopePropertyOptions = [];
+        if (!data || data.unrestricted) {
+          this.selectedScopedPropertyId = null;
+          this.load();
+          return;
+        }
+        if (data.propertyIds.length > 1) {
+          this.selectedScopedPropertyId = data.propertyIds[0] ?? null;
+          this.propertySvc.getAll(0, 200, '').subscribe({
+            next: (r2) => {
+              const rows = r2.data?.content ?? [];
+              const order = new Map(data.propertyIds.map((id, i) => [id, i]));
+              this.scopePropertyOptions = rows
+                .filter((p) => data.propertyIds.includes(p.id))
+                .sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+              this.load();
+            },
+            error: () => this.load()
+          });
+          return;
+        }
+        this.selectedScopedPropertyId = null;
+        this.load();
+      },
+      error: () => {
+        this.scopeSummary = null;
+        this.selectedScopedPropertyId = null;
+        this.scopePropertyOptions = [];
+        this.load();
+      }
+    });
+  }
+
+  private narrowPropertyIdForRequest(): number | undefined {
+    if (!this.scopeSummary || this.scopeSummary.unrestricted) return undefined;
+    if (this.selectedScopedPropertyId != null) return this.selectedScopedPropertyId;
+    return undefined;
   }
 
   private setupFilters(): void {
@@ -141,6 +225,13 @@ export class PropertyListComponent implements OnInit {
 
   hasFiltersBar(): boolean {
     return this.filterType !== null || this.filterStatus !== null;
+  }
+
+  get filterValues(): Record<string, unknown> {
+    return {
+      filterType: this.filterType,
+      filterStatus: this.filterStatus
+    };
   }
 
   get filteredProperties(): Property[] {
@@ -200,7 +291,9 @@ export class PropertyListComponent implements OnInit {
 
   readonly loadExportProperties = async (): Promise<Property[]> => {
     const size = Math.max(this.totalElements || 0, this.pageSize, 500);
-    const res = await firstValueFrom(this.propertySvc.getAll(0, size, this.searchTerm));
+    const res = await firstValueFrom(
+      this.propertySvc.getAll(0, size, this.searchTerm, this.narrowPropertyIdForRequest() ?? null)
+    );
     const items = res.data?.content ?? [];
     return items.filter((property) => {
       const matchType = !this.filterType || property.propertyType === this.filterType;
@@ -211,7 +304,8 @@ export class PropertyListComponent implements OnInit {
 
   load(): void {
     this.loading = true;
-    this.propertySvc.getAll(this.page, this.pageSize, this.searchTerm).subscribe({
+    const narrowPid = this.narrowPropertyIdForRequest();
+    this.propertySvc.getAll(this.page, this.pageSize, this.searchTerm, narrowPid ?? null).subscribe({
       next: (res) => {
         this.properties = res.data?.content ?? [];
         this.totalElements = res.data?.totalElements ?? 0;

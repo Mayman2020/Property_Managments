@@ -27,7 +27,7 @@ public class MaintenanceCompanyController {
 
     /** GET /maintenance-companies */
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','MAINTENANCE_OFFICER','MAINTENANCE_CONTRACTOR')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','MAINTENANCE_OFFICER_INTERNAL','MAINTENANCE_OFFICER_COMPANY','MAINTENANCE_COMPANY')")
     public ResponseEntity<ApiResponse<List<ContractorCompanyResponse>>> list(
             @RequestParam(required = false) String q,
             @RequestParam(required = false, defaultValue = "false") boolean all) {
@@ -37,7 +37,7 @@ public class MaintenanceCompanyController {
 
     /** GET /maintenance-companies/{id} */
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','MAINTENANCE_OFFICER','MAINTENANCE_CONTRACTOR')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','MAINTENANCE_OFFICER_INTERNAL','MAINTENANCE_OFFICER_COMPANY','MAINTENANCE_COMPANY')")
     public ResponseEntity<ApiResponse<ContractorCompanyResponse>> get(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok(service.get(id)));
     }

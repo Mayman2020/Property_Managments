@@ -62,7 +62,7 @@ import { RevenueDialogComponent } from './revenue-dialog.component';
       </app-page-header>
 
       <div style="padding: 8px 0 0;" *ngIf="properties.length > 1">
-        <app-filter-bar [filters]="pageFilters" (filtersChange)="onFilterBarChange($event)"></app-filter-bar>
+        <app-filter-bar [filters]="pageFilters" [filterValues]="filterValues" (filtersChange)="onFilterBarChange($event)"></app-filter-bar>
       </div>
 
       <ng-container *ngIf="section === 'dashboard'">
@@ -233,6 +233,12 @@ export class FinanceWorkspaceComponent implements OnInit {
   get pagedExpenses(): ExpenseItem[] { return this.pageSlice(this.expenses, this.expensesPageIndex); }
   get pagedRevenues(): RevenueItem[] { return this.pageSlice(this.revenues, this.revenuesPageIndex); }
   get pagedBudgets(): BudgetItem[] { return this.pageSlice(this.budgets, this.budgetPageIndex); }
+
+  get filterValues(): Record<string, unknown> {
+    return {
+      selectedPropertyId: this.selectedPropertyId
+    };
+  }
 
   openAddExpense(): void {
     this.dialog.open(ExpenseDialogComponent, {

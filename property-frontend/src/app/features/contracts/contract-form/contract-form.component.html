@@ -77,7 +77,7 @@
             <mat-select formControlName="linkedEmployeeId">
               <mat-option [value]="null" disabled>{{ 'CONTRACTS.STAFF_MOD_EMPLOYEE_PLACEHOLDER' | translate }}</mat-option>
               <mat-option *ngFor="let e of hrEmployees" [value]="e.id">
-                {{ e.fullName }}<span *ngIf="e.employeeCode" class="emp-code"> · {{ e.employeeCode }}</span>
+                {{ employeeDisplayName(e) }}<span *ngIf="e.employeeCode" class="emp-code"> · {{ e.employeeCode }}</span>
               </mat-option>
             </mat-select>
           </mat-form-field>

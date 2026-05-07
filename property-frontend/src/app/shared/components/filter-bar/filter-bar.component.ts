@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
 import { NgForOf, CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -40,12 +40,29 @@ export interface FilterSpec {
     .filter-field { width: 240px; min-width: 180px; }
   `]
 })
-export class FilterBarComponent {
+export class FilterBarComponent implements OnChanges {
   @Input() filters: FilterSpec[] = [];
+  @Input() filterValues: { [key: string]: any } = {};
   @Output() filtersChange = new EventEmitter<any>();
 
   // Holds current values for all keys
   values: { [key: string]: any } = {};
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['filterValues'] || changes['filters']) {
+      const nextValues: { [key: string]: any } = {};
+      let changed = Object.keys(this.values).length !== this.filters.length;
+      for (const filter of this.filters) {
+        nextValues[filter.key] = this.filterValues?.[filter.key] ?? null;
+        if (this.values[filter.key] !== nextValues[filter.key]) {
+          changed = true;
+        }
+      }
+      if (changed) {
+        this.values = nextValues;
+      }
+    }
+  }
 
   emit() {
     this.filtersChange.emit({ ...this.values });

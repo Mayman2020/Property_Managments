@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
+import { AppConstants } from '../constants/app-constants';
 
-const TOKEN_KEY = 'pm_access_token';
-const REFRESH_KEY = 'pm_refresh_token';
-const USER_KEY = 'pm_current_user';
+const TOKEN_KEY = AppConstants.PERSISTED_KEYS.ACCESS_TOKEN;
+const REFRESH_KEY = AppConstants.PERSISTED_KEYS.REFRESH_TOKEN;
+const USER_KEY = AppConstants.PERSISTED_KEYS.CURRENT_USER;
 
 @Injectable({ providedIn: 'root' })
 export class TokenStorageService {

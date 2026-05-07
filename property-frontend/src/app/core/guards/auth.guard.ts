@@ -58,8 +58,9 @@ export const adminGuard: CanActivateFn = roleGuard([
   'SUPER_ADMIN',
   'GENERAL_MANAGER',
   'ACCOUNTANT',
-  'MAINTENANCE_CONTRACTOR',
-  'MAINTENANCE_OFFICER',
+  'MAINTENANCE_OFFICER_INTERNAL',
+  'MAINTENANCE_OFFICER_COMPANY',
+  'MAINTENANCE_COMPANY',
   'PROPERTY_GUARD',
   'PROCEDURES_CLERK',
   'OWNER'
@@ -67,8 +68,9 @@ export const adminGuard: CanActivateFn = roleGuard([
 export const officerGuard: CanActivateFn = roleGuard([
   'SUPER_ADMIN',
   'GENERAL_MANAGER',
-  'MAINTENANCE_OFFICER',
-  'MAINTENANCE_CONTRACTOR'
+  'MAINTENANCE_OFFICER_INTERNAL',
+  'MAINTENANCE_OFFICER_COMPANY',
+  'MAINTENANCE_COMPANY'
 ]);
 export const tenantGuard: CanActivateFn = roleGuard(['SUPER_ADMIN', 'GENERAL_MANAGER', 'TENANT']);
 export const ownerGuard: CanActivateFn = roleGuard(['OWNER']);
@@ -94,7 +96,14 @@ function resolveFallbackRoute(auth: AuthService, permissions: PermissionService)
       { route: '/admin/profile', permission: 'profile', action: 'view' }
     ]);
   }
-  if (roles.some((r) => r === 'MAINTENANCE_OFFICER' || r === 'MAINTENANCE_CONTRACTOR')) {
+  if (
+    roles.some(
+      (r) =>
+        r === 'MAINTENANCE_OFFICER_INTERNAL' ||
+        r === 'MAINTENANCE_OFFICER_COMPANY' ||
+        r === 'MAINTENANCE_COMPANY'
+    )
+  ) {
     blocks.push([
       { route: '/officer/schedule', permission: 'schedule', action: 'view' },
       { route: '/officer/requests', permission: 'my_requests', action: 'view' },

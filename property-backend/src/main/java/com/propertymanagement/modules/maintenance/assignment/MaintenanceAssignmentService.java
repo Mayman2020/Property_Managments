@@ -131,8 +131,8 @@ public class MaintenanceAssignmentService {
             User user = userRepo.findById(userId)
                     .orElseThrow(() -> AppException.notFound("User not found with id " + userId));
 
-            if (user.getRole() != UserRole.MAINTENANCE_OFFICER) {
-                throw AppException.badRequest("User must have MAINTENANCE_OFFICER role");
+            if (!UserRole.isMaintenanceOfficer(user.getRole())) {
+                throw AppException.badRequest("User must have a maintenance officer role");
             }
 
             return providerRepo.findByUserId(userId)

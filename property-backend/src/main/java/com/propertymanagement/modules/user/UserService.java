@@ -33,6 +33,7 @@ import com.propertymanagement.shared.exception.AppException;
 import com.propertymanagement.shared.i18n.AppMessages;
 import com.propertymanagement.shared.i18n.BilingualNotificationText;
 import com.propertymanagement.shared.i18n.LocalizedNameResolver;
+import com.propertymanagement.shared.security.PropertyScopeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -80,22 +81,32 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final NotificationService notificationService;
     private final AppMessages appMessages;
+    private final PropertyScopeService propertyScopeService;
 
     private static final Set<UserRole> EMPLOYEE_ROLES = Set.of(
             UserRole.ACCOUNTANT,
             UserRole.PROCEDURES_CLERK,
             UserRole.GENERAL_MANAGER,
-            UserRole.MAINTENANCE_OFFICER,
-            UserRole.MAINTENANCE_CONTRACTOR,
+            UserRole.MAINTENANCE_OFFICER_INTERNAL,
+            UserRole.MAINTENANCE_OFFICER_COMPANY,
+            UserRole.MAINTENANCE_COMPANY,
             UserRole.PROPERTY_GUARD);
 
     public Page<UserResponse> getAll(Pageable pageable, String q, UserRole role) {
-        return userRepository.search(trimToNull(q), role, pageable)
+        var propertyIds = propertyScopeService.propertyIdsOrNullIfUnrestricted();
+        if (propertyIds != null && propertyIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+        return userRepository.search(trimToNull(q), role, propertyIds == null ? null : new java.util.ArrayList<>(propertyIds), pageable)
                 .map(u -> localizeDisplayName(portalProfileBridge.mergeRoleRecordIntoResponse(toResponse(u), u)));
     }
 
     public UserResponse getById(Long id) {
         User u = find(id);
+        var propertyIds = propertyScopeService.propertyIdsOrNullIfUnrestricted();
+        if (propertyIds != null && !propertyIds.contains(u.getPropertyId())) {
+            throw AppException.forbidden("Access denied");
+        }
         return localizeDisplayName(portalProfileBridge.mergeRoleRecordIntoResponse(toResponse(u), u));
     }
 
@@ -752,7 +763,7 @@ public class UserService {
     }
 
     private void validateMaintenanceOfficerDetails(UserRequest request) {
-        if (request.getRole() == UserRole.MAINTENANCE_CONTRACTOR) {
+        if (request.getRole() == UserRole.MAINTENANCE_COMPANY) {
             if (request.getContractorCompanyId() == null) {
                 throw AppException.badRequest("contractorCompanyId is required for maintenance company users");
             }
@@ -761,7 +772,7 @@ public class UserService {
             }
             return;
         }
-        if (request.getRole() != UserRole.MAINTENANCE_OFFICER) {
+        if (!UserRole.isMaintenanceOfficer(request.getRole())) {
             return;
         }
         if (request.getMaintenanceOfficerType() == null) {
@@ -779,7 +790,7 @@ public class UserService {
 
     public List<UserResponse> findAssignableContractorOfficers(Long propertyId, Long contractorCompanyId) {
         User caller = requireCallerUser();
-        if (caller.getRole() == UserRole.MAINTENANCE_CONTRACTOR) {
+        if (caller.getRole() == UserRole.MAINTENANCE_COMPANY) {
             if (caller.getContractorCompanyId() == null
                     || caller.getPropertyId() == null
                     || !caller.getContractorCompanyId().equals(contractorCompanyId)
@@ -791,22 +802,27 @@ public class UserService {
         }
         return userRepository
                 .findAssignableContractorOfficers(
-                        UserRole.MAINTENANCE_CONTRACTOR, propertyId, contractorCompanyId)
+                        UserRole.MAINTENANCE_COMPANY, propertyId, contractorCompanyId)
                 .stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
     private void normalizeRoleSpecificFields(User user) {
-        if (user.getRole() == UserRole.MAINTENANCE_CONTRACTOR) {
+        if (user.getRole() == UserRole.MAINTENANCE_COMPANY) {
             user.setMaintenanceOfficerType(MaintenanceOfficerType.CONTRACTOR_COMPANY);
             return;
         }
-        if (user.getRole() != UserRole.MAINTENANCE_OFFICER) {
+        if (!UserRole.isMaintenanceOfficer(user.getRole())) {
             user.setMaintenanceOfficerType(null);
             user.setMaintenanceCompanyName(null);
             user.setContractorCompanyId(null);
             return;
+        }
+        if (user.getRole() == UserRole.MAINTENANCE_OFFICER_INTERNAL) {
+            user.setMaintenanceOfficerType(MaintenanceOfficerType.INTERNAL_PROPERTY);
+        } else if (user.getRole() == UserRole.MAINTENANCE_OFFICER_COMPANY) {
+            user.setMaintenanceOfficerType(MaintenanceOfficerType.CONTRACTOR_COMPANY);
         }
         if (user.getMaintenanceOfficerType() != MaintenanceOfficerType.CONTRACTOR_COMPANY) {
             user.setMaintenanceCompanyName(null);
@@ -815,8 +831,8 @@ public class UserService {
     }
 
     private void syncContractorDisplayName(User user) {
-        boolean contractorLogin = user.getRole() == UserRole.MAINTENANCE_CONTRACTOR
-                || (user.getRole() == UserRole.MAINTENANCE_OFFICER
+        boolean contractorLogin = UserRole.isMaintenanceCompany(user.getRole())
+                || (UserRole.isMaintenanceOfficer(user.getRole())
                     && user.getMaintenanceOfficerType() == MaintenanceOfficerType.CONTRACTOR_COMPANY);
         if (!contractorLogin || user.getContractorCompanyId() == null) {
             return;
@@ -850,8 +866,8 @@ public class UserService {
             return DEFAULT_TENANT_PASSWORD;
         }
         boolean contractor =
-                request.getRole() == UserRole.MAINTENANCE_CONTRACTOR
-                || (request.getRole() == UserRole.MAINTENANCE_OFFICER
+                request.getRole() == UserRole.MAINTENANCE_COMPANY
+                || (UserRole.isMaintenanceOfficer(request.getRole())
                         && request.getMaintenanceOfficerType() == MaintenanceOfficerType.CONTRACTOR_COMPANY);
         return contractor ? DEFAULT_CONTRACTOR_PASSWORD : DEFAULT_EMPLOYEE_PASSWORD;
     }

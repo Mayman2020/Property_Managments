@@ -31,7 +31,7 @@ public class MaintenanceContractController {
 
     /** GET /properties/{propertyId}/maintenance-contracts */
     @GetMapping("/properties/{propertyId}/maintenance-contracts")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','MAINTENANCE_OFFICER','MAINTENANCE_CONTRACTOR')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','MAINTENANCE_OFFICER_INTERNAL','MAINTENANCE_OFFICER_COMPANY','MAINTENANCE_COMPANY')")
     public ResponseEntity<ApiResponse<List<MaintenanceContractResponse>>> listByProperty(
             @PathVariable Long propertyId) {
         return ResponseEntity.ok(ApiResponse.ok(service.listByProperty(propertyId)));

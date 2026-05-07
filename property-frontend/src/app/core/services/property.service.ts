@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { ApiService } from './api.service';
+import { AppConstants } from '../constants/app-constants';
 import { ApiResponse, PagedResponse } from '../models/api-response.model';
 
 export interface OwnerSummary {
@@ -72,10 +73,11 @@ export interface PropertyForm {
 export class PropertyService {
   constructor(private readonly api: ApiService) {}
 
-  getAll(page = 0, size = 20, q?: string): Observable<ApiResponse<PagedResponse<Property>>> {
+  getAll(page = 0, size = 20, q?: string, propertyId?: number | null): Observable<ApiResponse<PagedResponse<Property>>> {
     const params: Record<string, string | number | boolean> = { page, size };
     if (q && q.trim()) params['q'] = q.trim();
-    return this.api.get<ApiResponse<PagedResponse<Property>>>('/properties', params).pipe(
+    if (propertyId != null && propertyId > 0) params['propertyId'] = propertyId;
+    return this.api.get<ApiResponse<PagedResponse<Property>>>(AppConstants.API.PROPERTIES, params).pipe(
       map((res) => ({
         ...res,
         data: res.data
@@ -89,31 +91,31 @@ export class PropertyService {
   }
 
   getById(id: number): Observable<ApiResponse<Property>> {
-    return this.api.get<ApiResponse<Property>>(`/properties/${id}`).pipe(
+    return this.api.get<ApiResponse<Property>>(AppConstants.API.PROPERTY_BY_ID(id)).pipe(
       map((res) => ({ ...res, data: res.data ? this.normalizeProperty(res.data) : res.data }))
     );
   }
 
   create(form: PropertyForm): Observable<ApiResponse<Property>> {
-    return this.api.post<ApiResponse<Property>>('/properties', form).pipe(
+    return this.api.post<ApiResponse<Property>>(AppConstants.API.PROPERTIES, form).pipe(
       map((res) => ({ ...res, data: res.data ? this.normalizeProperty(res.data) : res.data }))
     );
   }
 
   update(id: number, form: PropertyForm): Observable<ApiResponse<Property>> {
-    return this.api.put<ApiResponse<Property>>(`/properties/${id}`, form).pipe(
+    return this.api.put<ApiResponse<Property>>(AppConstants.API.PROPERTY_BY_ID(id), form).pipe(
       map((res) => ({ ...res, data: res.data ? this.normalizeProperty(res.data) : res.data }))
     );
   }
 
   toggleActive(id: number): Observable<ApiResponse<Property>> {
-    return this.api.patch<ApiResponse<Property>>(`/properties/${id}/toggle-active`).pipe(
+    return this.api.patch<ApiResponse<Property>>(AppConstants.API.PROPERTY_TOGGLE_ACTIVE(id)).pipe(
       map((res) => ({ ...res, data: res.data ? this.normalizeProperty(res.data) : res.data }))
     );
   }
 
   delete(id: number): Observable<ApiResponse<void>> {
-    return this.api.delete(`/properties/${id}`);
+    return this.api.delete(AppConstants.API.PROPERTY_BY_ID(id));
   }
 
   private normalizeProperty(property: Property & { active?: boolean }): Property {

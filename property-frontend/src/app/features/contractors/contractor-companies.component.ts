@@ -13,6 +13,7 @@ import { EmptyStateComponent } from '../../shared/components/empty-state/empty-s
 import { TablePagerComponent } from '../../shared/components/table-pager/table-pager.component';
 import { ExportColumn, TableExportToolbarComponent } from '../../shared/components/table-export-toolbar/table-export-toolbar.component';
 import { ContractorCompany, ContractorCompanyService } from '../../core/services/contractor-company.service';
+import { Property, PropertyService } from '../../core/services/property.service';
 import { AuthService } from '../../core/services/auth.service';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { SnackService } from '../../core/services/snack.service';
@@ -45,15 +46,18 @@ import {
 export class ContractorCompaniesComponent implements OnInit {
   companies: ContractorCompany[] = [];
   filteredCompanies: ContractorCompany[] = [];
-  readonly pageSize = 5;
+  properties: Property[] = [];
+  readonly pageSize = 10;
   pageIndex = 0;
   loading = true;
   searchTerm = '';
   filterActive: boolean | null = null;
+  filterPropertyId: number | null = null;
   pageFilters: FilterSpec[] = [];
 
   constructor(
     private readonly svc: ContractorCompanyService,
+    private readonly propertySvc: PropertyService,
     private readonly dialog: MatDialog,
     private readonly snack: SnackService,
     private readonly deleteConfirm: DeleteConfirmService,
@@ -81,17 +85,23 @@ export class ContractorCompaniesComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.setupFilters();
-    this.load();
+    this.loadProperties();
   }
 
   private setupFilters(): void {
-    this.pageFilters = [
-      {
-        key: 'searchTerm',
-        label: 'ACTIONS.SEARCH',
-        type: 'text'
-      },
+    const filters: FilterSpec[] = [];
+    if (this.properties.length > 1) {
+      filters.push({
+        key: 'filterPropertyId',
+        label: 'REQUEST_FORM.PROPERTY',
+        type: 'select',
+        options: this.properties.map((p) => ({
+          value: p.id,
+          label: this.i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName)
+        }))
+      });
+    }
+    filters.push(
       {
         key: 'filterActive',
         label: 'MAINTENANCE.STATUS',
@@ -101,12 +111,26 @@ export class ContractorCompaniesComponent implements OnInit {
           { value: false, label: this.i18n.instant('COMMON.INACTIVE') }
         ]
       }
-    ];
+    );
+    this.pageFilters = filters;
   }
 
   onFilterBarChange(values: any): void {
-    if (values?.searchTerm !== undefined) this.searchTerm = values.searchTerm ?? '';
+    const previousPropertyId = this.filterPropertyId;
+    if (values?.filterPropertyId !== undefined) {
+      this.filterPropertyId = values.filterPropertyId;
+    }
     if (values?.filterActive !== undefined) this.filterActive = values.filterActive;
+    this.pageIndex = 0;
+    if (previousPropertyId !== this.filterPropertyId) {
+      this.load();
+    } else {
+      this.applyFilters();
+    }
+  }
+
+  onSearch(term: string): void {
+    this.searchTerm = term;
     this.pageIndex = 0;
     this.applyFilters();
   }
@@ -114,12 +138,20 @@ export class ContractorCompaniesComponent implements OnInit {
   clearFiltersFromBar(): void {
     this.searchTerm = '';
     this.filterActive = null;
+    this.filterPropertyId = this.properties.length === 1 ? this.properties[0].id : null;
     this.pageIndex = 0;
-    this.applyFilters();
+    this.load();
   }
 
   hasFiltersBar(): boolean {
-    return !!(this.searchTerm || this.filterActive !== null);
+    return !!(this.searchTerm || this.filterActive !== null || (this.properties.length > 1 && this.filterPropertyId !== null));
+  }
+
+  get filterValues(): Record<string, unknown> {
+    return {
+      filterPropertyId: this.filterPropertyId,
+      filterActive: this.filterActive
+    };
   }
 
   private applyFilters(): void {
@@ -136,7 +168,7 @@ export class ContractorCompaniesComponent implements OnInit {
 
   load(): void {
     this.loading = true;
-    this.svc.list(true).subscribe({
+    this.svc.list(true, undefined, this.filterPropertyId).subscribe({
       next: (res) => {
         this.companies = res.data ?? [];
         this.applyFilters();
@@ -149,13 +181,44 @@ export class ContractorCompaniesComponent implements OnInit {
     });
   }
 
+  private loadProperties(): void {
+    this.propertySvc.getAll(0, 500).subscribe({
+      next: (res) => {
+        this.properties = res.data?.content ?? [];
+        if (this.properties.length === 1) {
+          this.filterPropertyId = this.properties[0].id;
+        }
+        this.setupFilters();
+        this.load();
+      },
+      error: () => {
+        this.properties = [];
+        this.setupFilters();
+        this.load();
+      }
+    });
+  }
+
   openDialog(company: ContractorCompany | null): void {
+    if (!company) {
+      this.openCompanyDialog(null, false);
+      return;
+    }
+    this.svc.getById(company.id).subscribe({
+      next: (res) => {
+        this.openCompanyDialog(res.data ?? company, false);
+      },
+      error: () => this.snack.error(this.i18n.instant('COMMON.ERROR'))
+    });
+  }
+
+  private openCompanyDialog(company: ContractorCompany | null, readOnly: boolean): void {
     this.dialog
       .open<ContractorCompanyDialogComponent, ContractorCompanyDialogData, boolean>(ContractorCompanyDialogComponent, {
         width: '560px',
         maxWidth: '95vw',
         panelClass: 'app-dialog-panel',
-        data: { company, readOnly: false }
+        data: { company, readOnly }
       })
       .afterClosed()
       .subscribe((saved) => {
@@ -164,11 +227,11 @@ export class ContractorCompaniesComponent implements OnInit {
   }
 
   openView(company: ContractorCompany): void {
-    this.dialog.open<ContractorCompanyDialogComponent, ContractorCompanyDialogData, boolean>(ContractorCompanyDialogComponent, {
-      width: '560px',
-      maxWidth: '95vw',
-      panelClass: 'app-dialog-panel',
-      data: { company, readOnly: true }
+    this.svc.getById(company.id).subscribe({
+      next: (res) => {
+        this.openCompanyDialog(res.data ?? company, true);
+      },
+      error: () => this.snack.error(this.i18n.instant('COMMON.ERROR'))
     });
   }
 
@@ -181,7 +244,7 @@ export class ContractorCompaniesComponent implements OnInit {
       if (!ok) return;
       this.svc.delete(c.id).subscribe({
         next: () => {
-          this.snack.success(this.i18n.instant('COMMON.SUCCESS'));
+        this.snack.success(this.i18n.instant('COMMON.SUCCESS'));
           this.load();
         },
         error: (err: Error) => this.deleteConfirm.handleDeleteError(err, this.snack)

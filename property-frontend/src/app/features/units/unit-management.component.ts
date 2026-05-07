@@ -28,6 +28,7 @@ import { Tenant, TenantService } from '../../core/services/tenant.service';
 import { UserService } from '../../core/services/user.service';
 import { ContractService } from '../../core/services/contract.service';
 import { LeaseContract } from '../../core/models/contract.model';
+import { ContractDialogComponent } from '../contracts/contract-dialog/contract-dialog.component';
 import { UnitDialogComponent } from '../units/unit-dialog.component';
 import { FilterBarComponent, FilterSpec } from '../../shared/components/filter-bar/filter-bar.component';
 import { LookupCacheService } from '../../core/services/lookup-cache.service';
@@ -57,7 +58,8 @@ import { PermissionService } from '../../core/services/permission.service';
     EmptyStateComponent,
     TablePagerComponent,
     TableExportToolbarComponent,
-    FilterBarComponent
+    FilterBarComponent,
+    ContractDialogComponent
   ],
   templateUrl: './unit-management.component.html',
   styleUrl: './unit-management.component.scss'
@@ -147,9 +149,11 @@ export class UnitManagementComponent implements OnInit {
   }
 
   private setupFilters(): void {
-    this.unitFilters = [
-      { key: 'filterUnitNumber', label: 'UNITS.UNIT_NUMBER', type: 'text' },
-      {
+    const filters: FilterSpec[] = [
+      { key: 'filterUnitNumber', label: 'UNITS.UNIT_NUMBER', type: 'text' }
+    ];
+    if (this.properties.length > 1) {
+      filters.push({
         key: 'selectedPropertyId',
         label: 'REQUEST_FORM.PROPERTY',
         type: 'select',
@@ -157,7 +161,9 @@ export class UnitManagementComponent implements OnInit {
           value: p.id,
           label: this.getPropertyLabel(p)
         }))
-      },
+      });
+    }
+    filters.push(
       { key: 'filterFloor', label: 'UNITS.FLOOR', type: 'number' },
       {
         key: 'filterUnitType',
@@ -177,7 +183,8 @@ export class UnitManagementComponent implements OnInit {
           label: this.i18n.instant(status.labelKey)
         }))
       }
-    ];
+    );
+    this.unitFilters = filters;
   }
 
   onFilterBarChange(values: any): void {
@@ -193,7 +200,7 @@ export class UnitManagementComponent implements OnInit {
   clearFiltersFromBar(): void {
     this.filterBar?.clear();
     this.filterUnitNumber = '';
-    this.selectedPropertyId = null;
+    this.selectedPropertyId = this.properties.length === 1 ? this.properties[0].id : null;
     this.filterFloor = null;
     this.filterUnitType = null;
     this.filterStatus = null;
@@ -202,7 +209,23 @@ export class UnitManagementComponent implements OnInit {
   }
 
   hasFiltersBar(): boolean {
-    return !!(this.filterUnitNumber || this.selectedPropertyId || this.filterFloor !== null || this.filterUnitType || this.filterStatus);
+    return !!(
+      this.filterUnitNumber ||
+      (this.properties.length > 1 && this.selectedPropertyId) ||
+      this.filterFloor !== null ||
+      this.filterUnitType ||
+      this.filterStatus
+    );
+  }
+
+  get filterValues(): Record<string, unknown> {
+    return {
+      filterUnitNumber: this.filterUnitNumber,
+      selectedPropertyId: this.selectedPropertyId,
+      filterFloor: this.filterFloor,
+      filterUnitType: this.filterUnitType,
+      filterStatus: this.filterStatus
+    };
   }
 
   private toNumberOrNull(value: unknown): number | null {
@@ -304,6 +327,19 @@ export class UnitManagementComponent implements OnInit {
         },
         error: (err: Error) => this.deleteConfirm.handleDeleteError(err, this.snack)
       });
+    });
+  }
+
+  openAssignTenant(unit: Unit): void {
+    this.dialog.open(ContractDialogComponent, {
+      width: '980px',
+      maxWidth: '95vw',
+      maxHeight: '95vh',
+      panelClass: 'app-dialog-panel',
+      disableClose: true,
+      data: { propertyId: unit.propertyId, unitId: unit.id }
+    }).afterClosed().subscribe((ok) => {
+      if (ok) this.loadAllUnits();
     });
   }
 
@@ -432,6 +468,9 @@ export class UnitManagementComponent implements OnInit {
 
         if (!this.properties.some((property) => property.id === this.selectedPropertyId)) {
           this.selectedPropertyId = null;
+        }
+        if (this.properties.length === 1) {
+          this.selectedPropertyId = this.properties[0].id;
         }
 
         this.loadAllUnits();

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
+import { AppConstants } from '../constants/app-constants';
 import { ApiResponse, PagedResponse } from '../models/api-response.model';
 
 export interface FinanceDashboardDto {
@@ -59,27 +60,27 @@ export class FinanceService {
   constructor(private readonly api: ApiService) {}
 
   getDashboard(propertyId?: number): Observable<ApiResponse<FinanceDashboardDto>> {
-    return this.api.get('/finance/dashboard', propertyId ? { propertyId } : {});
+    return this.api.get(AppConstants.API.FINANCE_DASHBOARD, propertyId ? { propertyId } : {});
   }
 
   createExpense(body: { propertyId: number; description: string; amount: number; currency?: string; expenseDate: string; categoryId?: number }): Observable<ApiResponse<ExpenseItem>> {
-    return this.api.post('/finance/expenses', body);
+    return this.api.post(AppConstants.API.FINANCE_EXPENSES, body);
   }
 
   createRevenue(body: { propertyId: number; description: string; amount: number; currency?: string; revenueDate: string; categoryId?: number }): Observable<ApiResponse<RevenueItem>> {
-    return this.api.post('/finance/revenues', body);
+    return this.api.post(AppConstants.API.FINANCE_REVENUES, body);
   }
 
   getExpenses(params: Record<string, string | number> = {}): Observable<ApiResponse<PagedResponse<ExpenseItem>>> {
-    return this.api.get('/finance/expenses', params);
+    return this.api.get(AppConstants.API.FINANCE_EXPENSES, params);
   }
 
   getRevenues(params: Record<string, string | number> = {}): Observable<ApiResponse<PagedResponse<RevenueItem>>> {
-    return this.api.get('/finance/revenues', params);
+    return this.api.get(AppConstants.API.FINANCE_REVENUES, params);
   }
 
   getBudgets(propertyId?: number): Observable<ApiResponse<BudgetItem[]>> {
-    return this.api.get('/finance/budgets', propertyId ? { propertyId } : {});
+    return this.api.get(AppConstants.API.FINANCE_BUDGETS, propertyId ? { propertyId } : {});
   }
 
   getPnl(propertyId?: number, yearFrom?: number, yearTo?: number): Observable<ApiResponse<FinancialReportRow[]>> {
@@ -87,14 +88,14 @@ export class FinanceService {
     if (propertyId) params['propertyId'] = propertyId;
     if (yearFrom) params['yearFrom'] = yearFrom;
     if (yearTo) params['yearTo'] = yearTo;
-    return this.api.get('/finance/reports/pnl', params);
+    return this.api.get(AppConstants.API.FINANCE_REPORTS_PNL, params);
   }
 
   getCashflow(propertyId?: number): Observable<ApiResponse<FinancialReportRow[]>> {
-    return this.api.get('/finance/reports/cashflow', propertyId ? { propertyId } : {});
+    return this.api.get(AppConstants.API.FINANCE_REPORTS_CASHFLOW, propertyId ? { propertyId } : {});
   }
 
   getOwnerStatements(propertyId?: number): Observable<ApiResponse<FinancialReportRow[]>> {
-    return this.api.get('/finance/reports/owner-statements', propertyId ? { propertyId } : {});
+    return this.api.get(AppConstants.API.FINANCE_REPORTS_OWNER_STATEMENTS, propertyId ? { propertyId } : {});
   }
 }

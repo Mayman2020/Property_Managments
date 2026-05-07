@@ -1,6 +1,7 @@
 ﻿import { Injectable } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { ApiService } from './api.service';
+import { AppConstants } from '../constants/app-constants';
 import { ApiResponse, PagedResponse } from '../models/api-response.model';
 import {
   EmployeeProfileLink,
@@ -16,6 +17,8 @@ export interface UserManageRequest {
   email: string;
   password?: string;
   fullName: string;
+  fullNameAr?: string;
+  fullNameEn?: string;
   phone?: string;
   profileImageUrl?: string;
   civilIdImageUrl?: string;
@@ -35,7 +38,7 @@ export class UserService {
   constructor(private readonly api: ApiService) {}
 
   getById(id: number): Observable<ApiResponse<User>> {
-    return this.api.get<ApiResponse<User>>(`/users/${id}`).pipe(
+    return this.api.get<ApiResponse<User>>(AppConstants.API.USER_BY_ID(id)).pipe(
       map((res) => ({ ...res, data: res.data ? this.normalizeUser(res.data) : res.data }))
     );
   }
@@ -44,7 +47,7 @@ export class UserService {
     const params: Record<string, string | number | boolean> = { page, size };
     if (q && q.trim()) params['q'] = q.trim();
     if (role) params['role'] = role;
-    return this.api.get<ApiResponse<PagedResponse<User>>>('/users', params).pipe(
+    return this.api.get<ApiResponse<PagedResponse<User>>>(AppConstants.API.USERS, params).pipe(
       map((res) => ({
         ...res,
         data: res.data
@@ -58,25 +61,25 @@ export class UserService {
   }
 
   create(payload: UserManageRequest): Observable<ApiResponse<User>> {
-    return this.api.post<ApiResponse<User>>('/users', payload).pipe(
+    return this.api.post<ApiResponse<User>>(AppConstants.API.USERS, payload).pipe(
       map((res) => ({ ...res, data: res.data ? this.normalizeUser(res.data) : res.data }))
     );
   }
 
   update(id: number, payload: UserManageRequest): Observable<ApiResponse<User>> {
-    return this.api.put<ApiResponse<User>>(`/users/${id}`, payload).pipe(
+    return this.api.put<ApiResponse<User>>(AppConstants.API.USER_BY_ID(id), payload).pipe(
       map((res) => ({ ...res, data: res.data ? this.normalizeUser(res.data) : res.data }))
     );
   }
 
   toggleActive(id: number): Observable<ApiResponse<User>> {
-    return this.api.patch<ApiResponse<User>>(`/users/${id}/toggle-active`).pipe(
+    return this.api.patch<ApiResponse<User>>(AppConstants.API.USERS_TOGGLE_ACTIVE(id)).pipe(
       map((res) => ({ ...res, data: res.data ? this.normalizeUser(res.data) : res.data }))
     );
   }
 
   delete(id: number): Observable<ApiResponse<void>> {
-    return this.api.delete<ApiResponse<void>>(`/users/${id}`);
+    return this.api.delete<ApiResponse<void>>(AppConstants.API.USER_BY_ID(id));
   }
 
   updateRole(id: number, role: UserRole): Observable<ApiResponse<User>> {
@@ -84,7 +87,7 @@ export class UserService {
   }
 
   updateRoles(id: number, roles: UserRole[]): Observable<ApiResponse<User>> {
-    return this.api.patch<ApiResponse<User>>(`/users/${id}/role`, { roles }).pipe(
+    return this.api.patch<ApiResponse<User>>(AppConstants.API.USERS_ROLE(id), { roles }).pipe(
       map((res) => ({ ...res, data: res.data ? this.normalizeUser(res.data) : res.data }))
     );
   }
@@ -93,7 +96,7 @@ export class UserService {
     propertyId: number,
     contractorCompanyId: number
   ): Observable<ApiResponse<User[]>> {
-    return this.api.get<ApiResponse<User[]>>('/users/maintenance-assignable-contractor', {
+    return this.api.get<ApiResponse<User[]>>(AppConstants.API.USERS_MAINTENANCE_ASSIGNABLE_CONTRACTOR, {
       propertyId,
       contractorCompanyId
     });

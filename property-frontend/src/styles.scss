@@ -1317,6 +1317,167 @@ a:hover {
   font-size: 13.5px;
 }
 
+.directory-table-card {
+  overflow: hidden;
+}
+
+.directory-toolbar {
+  gap: 0;
+  padding: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.directory-toolbar-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+}
+
+.directory-search {
+  flex: 0 1 260px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 180px;
+  height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-2);
+  transition: all 0.2s;
+}
+
+.directory-search:focus-within {
+  border-color: var(--navy-400);
+  background: var(--surface);
+}
+
+.directory-search .material-icons,
+.directory-search mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted);
+}
+
+.directory-search input {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text-main);
+  font-size: 0.82rem;
+}
+
+.directory-toolbar app-filter-bar {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.directory-toolbar app-filter-bar .estate-filter-bar {
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 0 !important;
+  width: auto;
+}
+
+.directory-toolbar app-filter-bar .filter-field {
+  flex: 0 1 auto;
+  width: 180px;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.directory-toolbar app-filter-bar .filter-field--filterPropertyId,
+.directory-toolbar app-filter-bar .filter-field--selectedPropertyId {
+  width: 230px;
+}
+
+.directory-toolbar app-filter-bar .filter-field--filterActive,
+.directory-toolbar app-filter-bar .filter-field--filterStatus {
+  width: 165px;
+}
+
+.directory-toolbar app-filter-bar .filter-field .mat-mdc-form-field-wrapper {
+  padding-bottom: 0;
+}
+
+.directory-toolbar app-filter-bar .filter-field .mat-mdc-text-field-wrapper {
+  height: 40px !important;
+  background: var(--surface-2) !important;
+  border-radius: 6px;
+}
+
+.directory-toolbar app-filter-bar .filter-field .mat-mdc-form-field-flex {
+  height: 40px !important;
+  align-items: center !important;
+}
+
+.directory-toolbar app-filter-bar .filter-field .mat-mdc-form-field-infix {
+  display: flex;
+  align-items: center;
+  min-height: 40px !important;
+  padding: 10px 0 6px !important;
+  font-size: 0.82rem;
+}
+
+.directory-toolbar app-filter-bar .filter-field .mat-mdc-form-field-subscript-wrapper {
+  display: none;
+}
+
+.directory-toolbar app-filter-bar .filter-field .mat-mdc-floating-label {
+  font-size: 0.72rem;
+}
+
+.directory-toolbar app-filter-bar .filter-field .mat-mdc-select-trigger {
+  height: 22px;
+  display: flex;
+  align-items: center;
+}
+
+.directory-toolbar app-filter-bar .filter-field .mat-mdc-select-value {
+  font-size: 0.82rem;
+  line-height: 20px;
+}
+
+.directory-toolbar .clear-filters-btn {
+  color: var(--text-muted);
+  transition: color 0.2s;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+}
+
+.directory-toolbar .clear-filters-btn:hover {
+  color: var(--bad);
+}
+
+.directory-toolbar .export-toolbar {
+  padding: 0 !important;
+}
+
+.directory-toolbar .export-toolbar button {
+  height: 40px;
+  font-size: 0.82rem;
+}
+
+@media (max-width: 900px) {
+  .directory-toolbar-top {
+    flex-wrap: wrap;
+  }
+
+  .directory-search,
+  .directory-toolbar app-filter-bar,
+  .directory-toolbar app-filter-bar .estate-filter-bar,
+  .directory-toolbar app-filter-bar .filter-field {
+    width: 100%;
+    flex: 1 1 100%;
+  }
+}
+
 .estate-property-select {
   height: 36px;
   padding: 0 10px;

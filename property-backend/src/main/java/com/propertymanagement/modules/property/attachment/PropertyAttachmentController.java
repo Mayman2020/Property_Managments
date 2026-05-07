@@ -23,7 +23,7 @@ public class PropertyAttachmentController {
     private final PropertyAttachmentService service;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','MAINTENANCE_OFFICER','MAINTENANCE_CONTRACTOR')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','MAINTENANCE_OFFICER_INTERNAL','MAINTENANCE_OFFICER_COMPANY','MAINTENANCE_COMPANY')")
     public ResponseEntity<ApiResponse<List<PropertyAttachmentResponse>>> list(
             @PathVariable Long propertyId) {
         return ResponseEntity.ok(ApiResponse.ok(service.list(propertyId)));
@@ -39,7 +39,7 @@ public class PropertyAttachmentController {
 
     /** View in browser (inline) */
     @GetMapping("/{attachmentId}/view")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','MAINTENANCE_OFFICER','MAINTENANCE_CONTRACTOR')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','MAINTENANCE_OFFICER_INTERNAL','MAINTENANCE_OFFICER_COMPANY','MAINTENANCE_COMPANY')")
     public ResponseEntity<Resource> view(
             @PathVariable Long propertyId,
             @PathVariable Long attachmentId) {
@@ -56,7 +56,7 @@ public class PropertyAttachmentController {
 
     /** Force download */
     @GetMapping("/{attachmentId}/download")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','MAINTENANCE_OFFICER','MAINTENANCE_CONTRACTOR')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','MAINTENANCE_OFFICER_INTERNAL','MAINTENANCE_OFFICER_COMPANY','MAINTENANCE_COMPANY')")
     public ResponseEntity<Resource> download(
             @PathVariable Long propertyId,
             @PathVariable Long attachmentId) {

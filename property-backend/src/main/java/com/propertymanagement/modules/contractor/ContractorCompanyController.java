@@ -20,16 +20,17 @@ public class ContractorCompanyController {
     private final ContractorCompanyService service;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT')")
     public ResponseEntity<ApiResponse<List<ContractorCompanyResponse>>> list(
             @RequestParam(required = false) String q,
+            @RequestParam(required = false) Long propertyId,
             @RequestParam(required = false, defaultValue = "false") boolean all) {
-        List<ContractorCompanyResponse> data = all ? service.listAll(q) : service.listActive(q);
+        List<ContractorCompanyResponse> data = all ? service.listAll(q, propertyId) : service.listActive(q, propertyId);
         return ResponseEntity.ok(ApiResponse.ok(data));
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT')")
     public ResponseEntity<ApiResponse<ContractorCompanyResponse>> get(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok(service.get(id)));
     }

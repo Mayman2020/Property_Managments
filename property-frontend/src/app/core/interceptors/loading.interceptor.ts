@@ -2,6 +2,7 @@ import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { finalize } from 'rxjs/operators';
 import { LoadingService } from '../services/loading.service';
+import { shouldSkipGlobalLoaderForUpload } from '../constants/app-constants';
 
 export const loadingInterceptor: HttpInterceptorFn = (req, next) => {
   // Keep full-screen loader for user-triggered/mutating requests only.
@@ -13,9 +14,7 @@ export const loadingInterceptor: HttpInterceptorFn = (req, next) => {
     url.includes('/assets/runtime-config.js');
   const isBackgroundGet = method === 'GET';
   /** Form uploads show their own spinners; global overlay here often feels “stuck” on small files. */
-  const isMultipartUpload =
-    url.includes('/files/upload') ||
-    (method === 'POST' && url.includes('/properties/') && url.includes('/attachments'));
+  const isMultipartUpload = shouldSkipGlobalLoaderForUpload(url, method);
 
   if (isStaticAsset || isBackgroundGet || isMultipartUpload) {
     return next(req);

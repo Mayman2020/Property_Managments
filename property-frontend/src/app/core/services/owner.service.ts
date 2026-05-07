@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { ApiService } from './api.service';
+import { AppConstants } from '../constants/app-constants';
 import { ApiResponse, PagedResponse } from '../models/api-response.model';
 import { User } from '../models/user.model';
 
@@ -60,35 +60,35 @@ export interface LinkUserRequest {
 
 @Injectable({ providedIn: 'root' })
 export class OwnerService {
-  private readonly apiUrl = `${environment.apiUrl}/owners`;
+  constructor(private readonly api: ApiService) {}
 
-  constructor(private readonly http: HttpClient) {}
-
-  getAll(page = 0, size = 20): Observable<ApiResponse<PagedResponse<Owner>>> {
-    return this.http.get<ApiResponse<PagedResponse<Owner>>>(`${this.apiUrl}?page=${page}&size=${size}`);
+  getAll(page = 0, size = 20, propertyId?: number | null): Observable<ApiResponse<PagedResponse<Owner>>> {
+    const params: Record<string, string | number> = { page, size };
+    if (propertyId != null) params['propertyId'] = propertyId;
+    return this.api.get<ApiResponse<PagedResponse<Owner>>>(AppConstants.API.OWNERS, params);
   }
 
   getById(id: number): Observable<ApiResponse<Owner>> {
-    return this.http.get<ApiResponse<Owner>>(`${this.apiUrl}/${id}`);
+    return this.api.get<ApiResponse<Owner>>(AppConstants.API.OWNER_BY_ID(id));
   }
 
   create(req: OwnerRequest): Observable<ApiResponse<Owner>> {
-    return this.http.post<ApiResponse<Owner>>(this.apiUrl, req);
+    return this.api.post<ApiResponse<Owner>>(AppConstants.API.OWNERS, req);
   }
 
   update(id: number, req: OwnerRequest): Observable<ApiResponse<Owner>> {
-    return this.http.put<ApiResponse<Owner>>(`${this.apiUrl}/${id}`, req);
+    return this.api.put<ApiResponse<Owner>>(AppConstants.API.OWNER_BY_ID(id), req);
   }
 
   delete(id: number): Observable<ApiResponse<void>> {
-    return this.http.delete<ApiResponse<void>>(`${this.apiUrl}/${id}`);
+    return this.api.delete<ApiResponse<void>>(AppConstants.API.OWNER_BY_ID(id));
   }
 
   linkUser(id: number, req: LinkUserRequest): Observable<ApiResponse<Owner>> {
-    return this.http.patch<ApiResponse<Owner>>(`${this.apiUrl}/${id}/link-user`, req);
+    return this.api.patch<ApiResponse<Owner>>(AppConstants.API.OWNER_LINK_USER(id), req);
   }
 
   getOwnerUsers(): Observable<ApiResponse<User[]>> {
-    return this.http.get<ApiResponse<User[]>>(`${this.apiUrl}/owner-users`);
+    return this.api.get<ApiResponse<User[]>>(AppConstants.API.OWNERS_OWNER_USERS);
   }
 }

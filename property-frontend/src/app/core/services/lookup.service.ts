@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
+import { AppConstants } from '../constants/app-constants';
 import { ApiResponse } from '../models/api-response.model';
 
 export type LookupType =
@@ -62,42 +63,42 @@ export class LookupService {
   constructor(private readonly api: ApiService) {}
 
   getCountries(): Observable<ApiResponse<LookupItem[]>> {
-    return this.api.get('/lookups/countries');
+    return this.api.get(AppConstants.API.LOOKUPS_COUNTRIES);
   }
 
   getOmanCountry(): Observable<ApiResponse<LookupItem>> {
-    return this.api.get('/lookups/countries/oman');
+    return this.api.get(AppConstants.API.LOOKUPS_COUNTRIES_OMAN);
   }
 
   getCities(countryId: number): Observable<ApiResponse<LookupItem[]>> {
-    return this.api.get('/lookups/cities', { countryId });
+    return this.api.get(AppConstants.API.LOOKUPS_CITIES, { countryId });
   }
 
   getByType(type: LookupType): Observable<ApiResponse<LookupItem[]>> {
-    return this.api.get('/lookups/by-type', { type });
+    return this.api.get(AppConstants.API.LOOKUPS_BY_TYPE, { type });
   }
 
   getAllByType(type: LookupType): Observable<ApiResponse<LookupItem[]>> {
-    return this.api.get('/lookups/classifications', { type });
+    return this.api.get(AppConstants.API.LOOKUPS_CLASSIFICATIONS, { type });
   }
 
   createCountry(payload: CreateCountryRequest): Observable<ApiResponse<LookupItem>> {
-    return this.api.post('/lookups/countries', payload);
+    return this.api.post(AppConstants.API.LOOKUPS_COUNTRIES, payload);
   }
 
   createCity(payload: CreateCityRequest): Observable<ApiResponse<LookupItem>> {
-    return this.api.post('/lookups/cities', payload);
+    return this.api.post(AppConstants.API.LOOKUPS_CITIES, payload);
   }
 
   createClassification(payload: CreateClassificationRequest): Observable<ApiResponse<LookupItem>> {
-    return this.api.post('/lookups/classifications', payload);
+    return this.api.post(AppConstants.API.LOOKUPS_CLASSIFICATIONS, payload);
   }
 
   update(id: number, payload: UpdateLookupRequest): Observable<ApiResponse<LookupItem>> {
-    return this.api.put(`/lookups/${id}`, payload);
+    return this.api.put(AppConstants.API.LOOKUP_BY_ID(id), payload);
   }
 
   delete(id: number): Observable<ApiResponse<void>> {
-    return this.api.delete(`/lookups/${id}`);
+    return this.api.delete(AppConstants.API.LOOKUP_BY_ID(id));
   }
 }

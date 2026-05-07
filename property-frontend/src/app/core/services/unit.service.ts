@@ -1,6 +1,7 @@
 ﻿import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
+import { AppConstants } from '../constants/app-constants';
 import { ApiResponse, PagedResponse } from '../models/api-response.model';
 
 export interface Unit {
@@ -51,23 +52,23 @@ export class UnitService {
   getByProperty(propertyId: number, page = 0, size = 200, q?: string): Observable<ApiResponse<PagedResponse<Unit>>> {
     const params: Record<string, string | number | boolean> = { page, size };
     if (q && q.trim()) params['q'] = q.trim();
-    return this.api.get(`/units/property/${propertyId}`, params);
+    return this.api.get(AppConstants.API.UNITS_BY_PROPERTY(propertyId), params);
   }
 
   create(payload: UnitRequest): Observable<ApiResponse<Unit>> {
-    return this.api.post('/units', payload);
+    return this.api.post(AppConstants.API.UNITS, payload);
   }
 
   update(id: number, payload: UnitRequest): Observable<ApiResponse<Unit>> {
-    return this.api.put(`/units/${id}`, payload);
+    return this.api.put(AppConstants.API.UNIT_BY_ID(id), payload);
   }
 
   /** Server recomputes {@code rented} from leases; {@code rented} query is ignored. */
   setRentalStatus(id: number, rented: boolean): Observable<ApiResponse<Unit>> {
-    return this.api.patch(`/units/${id}/rental-status?rented=${rented}`);
+    return this.api.patch(AppConstants.API.UNIT_RENTAL_STATUS(id, rented));
   }
 
   delete(id: number): Observable<ApiResponse<void>> {
-    return this.api.delete(`/units/${id}`);
+    return this.api.delete(AppConstants.API.UNIT_BY_ID(id));
   }
 }

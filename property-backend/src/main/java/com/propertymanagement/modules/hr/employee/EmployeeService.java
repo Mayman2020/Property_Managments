@@ -12,6 +12,7 @@ import com.propertymanagement.modules.user.UserRole;
 import com.propertymanagement.modules.user.UserService;
 import com.propertymanagement.shared.exception.AppException;
 import com.propertymanagement.shared.i18n.LocalizedNameResolver;
+import com.propertymanagement.shared.security.PropertyScopeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -36,8 +37,9 @@ public class EmployeeService {
             UserRole.ACCOUNTANT,
             UserRole.PROCEDURES_CLERK,
             UserRole.GENERAL_MANAGER,
-            UserRole.MAINTENANCE_OFFICER,
-            UserRole.MAINTENANCE_CONTRACTOR,
+            UserRole.MAINTENANCE_OFFICER_INTERNAL,
+            UserRole.MAINTENANCE_OFFICER_COMPANY,
+            UserRole.MAINTENANCE_COMPANY,
             UserRole.PROPERTY_GUARD
     );
 
@@ -47,27 +49,28 @@ public class EmployeeService {
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
     private final OwnerPropertyAccessService ownerPropertyAccessService;
+    private final PropertyScopeService propertyScopeService;
 
     public Page<EmployeeResponse> getAll(Pageable pageable, String q, Long propertyId) {
-        Set<Long> ownerScope = ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner();
-        if (ownerScope != null) {
-            if (ownerScope.isEmpty()) {
+        Set<Long> scope = propertyScopeService.propertyIdsOrNullIfUnrestricted();
+        if (scope != null) {
+            if (scope.isEmpty()) {
                 return Page.empty(pageable);
             }
             if (propertyId != null) {
-                ownerPropertyAccessService.assertOwnerCanAccessProperty(propertyId);
+                if (!scope.contains(propertyId)) {
+                    return Page.empty(pageable);
+                }
                 return repository.search(trimToNull(q), propertyId, pageable).map(this::toResponse);
             }
-            return repository.searchInPropertyIds(trimToNull(q), ownerScope, pageable).map(this::toResponse);
+            return repository.searchInPropertyIds(trimToNull(q), scope, pageable).map(this::toResponse);
         }
         return repository.search(trimToNull(q), propertyId, pageable).map(this::toResponse);
     }
 
     public EmployeeResponse getById(Long id) {
         Employee employee = find(id);
-        if (employee.getPropertyId() != null) {
-            ownerPropertyAccessService.assertOwnerCanAccessProperty(employee.getPropertyId());
-        } else if (ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner() != null) {
+        if (!propertyScopeService.canAccessProperty(employee.getPropertyId())) {
             throw AppException.forbidden("You do not have access to this employee record");
         }
         return toResponse(employee);
@@ -78,6 +81,9 @@ public class EmployeeService {
         ownerPropertyAccessService.denyOwnerMutation("Owners cannot create employees");
         User user = currentUser();
         Long propertyId = request.getPropertyId() != null ? request.getPropertyId() : user.getPropertyId();
+        if (!propertyScopeService.canAccessProperty(propertyId)) {
+            throw AppException.forbidden("You do not have access to this property");
+        }
         String email = trimToNull(request.getEmail());
         Employee employee = Employee.builder()
                 .employeeCode(generateCode())
@@ -110,11 +116,48 @@ public class EmployeeService {
     }
 
     @Transactional
+    public EmployeeResponse update(Long id, EmployeeRequest request) {
+        ownerPropertyAccessService.denyOwnerMutation("Owners cannot update employees");
+        Employee employee = find(id);
+        if (!propertyScopeService.canAccessProperty(employee.getPropertyId())) {
+            throw AppException.forbidden("You do not have access to this employee record");
+        }
+        Long propertyId = request.getPropertyId() != null ? request.getPropertyId() : employee.getPropertyId();
+        if (!propertyScopeService.canAccessProperty(propertyId)) {
+            throw AppException.forbidden("You do not have access to this property");
+        }
+        String fullNameAr = trimToNull(request.getFullNameAr());
+        String fullNameEn = trimToNull(request.getFullNameEn());
+        String legacyName = firstNonBlank(request.getFullName(), fullNameAr, fullNameEn);
+        if (legacyName == null) {
+            throw AppException.badRequest("Employee name is required");
+        }
+
+        employee.setPropertyId(propertyId);
+        employee.setFullName(legacyName);
+        employee.setFullNameAr(fullNameAr);
+        employee.setFullNameEn(fullNameEn);
+        employee.setPhone(trimToNull(request.getPhone()));
+        employee.setEmail(trimToNull(request.getEmail()));
+        employee.setNationalId(trimToNull(request.getNationalId()));
+        employee.setProfileImageUrl(trimToNull(request.getProfileImageUrl()));
+        employee.setCivilIdImageUrl(trimToNull(request.getCivilIdImageUrl()));
+        employee.setJobTitleAr(trimToNull(request.getJobTitleAr()));
+        employee.setJobTitleEn(trimToNull(request.getJobTitleEn()));
+        employee.setHireDate(request.getHireDate());
+        employee.setBasicSalary(request.getBasicSalary());
+
+        Employee saved = repository.save(employee);
+        syncLinkedUser(saved);
+        return toResponse(saved);
+    }
+
+    @Transactional
     public void delete(Long id) {
         ownerPropertyAccessService.denyOwnerMutation("Owners cannot delete employees");
         Employee employee = find(id);
-        if (employee.getPropertyId() != null) {
-            throw AppException.badRequest("Cannot delete employee assigned to a property. Clear the property assignment first.");
+        if (!propertyScopeService.canAccessProperty(employee.getPropertyId())) {
+            throw AppException.forbidden("You do not have access to this employee record");
         }
         Long portalUserId = employee.getLinkedUserId();
         if (portalUserId == null && employee.getEmail() != null && !employee.getEmail().isBlank()) {
@@ -170,11 +213,17 @@ public class EmployeeService {
     }
 
     private MaintenanceOfficerType resolveOfficerType(UserRole role, EmployeeRequest request) {
-        if (role == UserRole.MAINTENANCE_CONTRACTOR) {
+        if (role == UserRole.MAINTENANCE_COMPANY) {
             return MaintenanceOfficerType.CONTRACTOR_COMPANY;
         }
-        if (role != UserRole.MAINTENANCE_OFFICER) {
+        if (role != UserRole.MAINTENANCE_OFFICER_INTERNAL && role != UserRole.MAINTENANCE_OFFICER_COMPANY) {
             return null;
+        }
+        if (role == UserRole.MAINTENANCE_OFFICER_INTERNAL) {
+            return MaintenanceOfficerType.INTERNAL_PROPERTY;
+        }
+        if (role == UserRole.MAINTENANCE_OFFICER_COMPANY) {
+            return MaintenanceOfficerType.CONTRACTOR_COMPANY;
         }
         if (request.getMaintenanceOfficerType() != null) {
             return request.getMaintenanceOfficerType();
@@ -185,8 +234,8 @@ public class EmployeeService {
     }
 
     private Long resolveContractorCompanyId(UserRole role, MaintenanceOfficerType type, EmployeeRequest request) {
-        boolean requiresContractor = role == UserRole.MAINTENANCE_CONTRACTOR
-                || (role == UserRole.MAINTENANCE_OFFICER && type == MaintenanceOfficerType.CONTRACTOR_COMPANY);
+        boolean requiresContractor = role == UserRole.MAINTENANCE_COMPANY
+                || (role == UserRole.MAINTENANCE_OFFICER_COMPANY && type == MaintenanceOfficerType.CONTRACTOR_COMPANY);
         if (!requiresContractor) {
             return null;
         }
@@ -210,9 +259,31 @@ public class EmployeeService {
         return firstNonBlank(cc.getNameAr(), cc.getNameEn(), cc.getName());
     }
 
+    private void syncLinkedUser(Employee employee) {
+        if (employee.getLinkedUserId() == null) {
+            return;
+        }
+        userRepository.findById(employee.getLinkedUserId()).ifPresent(user -> {
+            String email = trimToNull(employee.getEmail());
+            if (email != null) {
+                userRepository.findByEmailIgnoreCase(email).ifPresent(other -> {
+                    if (!other.getId().equals(user.getId())) {
+                        throw AppException.conflict("Email already registered: " + email, "EMAIL_ALREADY_USED");
+                    }
+                });
+                user.setEmail(email);
+                user.setUsername(email);
+            }
+            user.setFullName(resolvedDisplayName(employee));
+            user.setPhone(trimToNull(employee.getPhone()));
+            user.setPropertyId(employee.getPropertyId());
+            userRepository.save(user);
+        });
+    }
+
     private String defaultPasswordFor(UserRole role, MaintenanceOfficerType type) {
-        boolean contractedMaintenance = role == UserRole.MAINTENANCE_CONTRACTOR
-                || (role == UserRole.MAINTENANCE_OFFICER && type == MaintenanceOfficerType.CONTRACTOR_COMPANY);
+        boolean contractedMaintenance = role == UserRole.MAINTENANCE_COMPANY
+                || (role == UserRole.MAINTENANCE_OFFICER_COMPANY && type == MaintenanceOfficerType.CONTRACTOR_COMPANY);
         return contractedMaintenance ? DEFAULT_CONTRACTOR_PASSWORD : DEFAULT_EMPLOYEE_PASSWORD;
     }
 

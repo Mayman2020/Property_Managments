@@ -115,6 +115,15 @@ export class ContractFormComponent implements OnInit {
     return this.i18n.currentLang === 'ar' ? item.nameAr : item.nameEn;
   }
 
+  employeeDisplayName(employee: HrEmployeeRow): string {
+    const ar = employee.fullNameAr?.trim();
+    const en = employee.fullNameEn?.trim();
+    const fallback = employee.fullName?.trim();
+    return this.i18n.currentLang === 'ar'
+      ? (ar || en || fallback || '-')
+      : (en || ar || fallback || '-');
+  }
+
   ngOnInit(): void {
     this.partyForm = this.fb.group({
       propertyId: [null, Validators.required],

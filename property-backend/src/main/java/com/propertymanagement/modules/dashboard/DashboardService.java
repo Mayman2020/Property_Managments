@@ -10,9 +10,10 @@ import com.propertymanagement.modules.contract.payment.dto.ScheduleItemResponse;
 import com.propertymanagement.modules.inventory.InventoryRepository;
 import com.propertymanagement.modules.maintenance.request.MaintenanceRequestRepository;
 import com.propertymanagement.modules.maintenance.request.RequestStatus;
-import com.propertymanagement.modules.owner.OwnerPropertyAccessService;
 import com.propertymanagement.modules.property.PropertyRepository;
 import com.propertymanagement.modules.unit.UnitRepository;
+import com.propertymanagement.shared.exception.AppException;
+import com.propertymanagement.shared.security.PropertyScopeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -37,15 +38,15 @@ public class DashboardService {
     private final LeaseContractRepository contractRepository;
     private final RentPaymentScheduleRepository scheduleRepository;
     private final TenantComplaintRepository complaintRepository;
-    private final OwnerPropertyAccessService ownerPropertyAccessService;
+    private final PropertyScopeService propertyScopeService;
 
     public DashboardStatsResponse getStats() {
-        Set<Long> ownerScope = ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner();
-        if (ownerScope != null) {
-            if (ownerScope.isEmpty()) {
+        Set<Long> scope = propertyScopeService.propertyIdsOrNullIfUnrestricted();
+        if (scope != null) {
+            if (scope.isEmpty()) {
                 return emptyDashboardStats();
             }
-            List<Long> ids = new ArrayList<>(ownerScope);
+            List<Long> ids = new ArrayList<>(scope);
             Collections.sort(ids);
             return aggregateStatsForPropertyIds(ids);
         }
@@ -195,13 +196,13 @@ public class DashboardService {
     }
 
     public List<ChartDataPoint> getRequestsByStatus() {
-        Set<Long> ownerScope = ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner();
-        if (ownerScope != null) {
-            if (ownerScope.isEmpty()) {
+        Set<Long> scope = propertyScopeService.propertyIdsOrNullIfUnrestricted();
+        if (scope != null) {
+            if (scope.isEmpty()) {
                 return List.of();
             }
             Map<String, Long> merged = new HashMap<>();
-            for (Long pid : ownerScope) {
+            for (Long pid : scope) {
                 for (Object[] row : requestRepository.countByStatusGroupedForProperty(pid)) {
                     merged.merge(row[0].toString(), (Long) row[1], Long::sum);
                 }
@@ -216,13 +217,13 @@ public class DashboardService {
     }
 
     public List<ChartDataPoint> getRequestsByCategory() {
-        Set<Long> ownerScope = ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner();
-        if (ownerScope != null) {
-            if (ownerScope.isEmpty()) {
+        Set<Long> scope = propertyScopeService.propertyIdsOrNullIfUnrestricted();
+        if (scope != null) {
+            if (scope.isEmpty()) {
                 return List.of();
             }
             Map<String, Long> merged = new HashMap<>();
-            for (Long pid : ownerScope) {
+            for (Long pid : scope) {
                 for (Object[] row : requestRepository.countByCategoryForProperty(pid)) {
                     merged.merge(String.valueOf(row[0]), (Long) row[1], Long::sum);
                 }
@@ -243,22 +244,27 @@ public class DashboardService {
     public List<ChartDataPoint> getMonthlyTrendByProperty(Long propertyId) {
         LocalDateTime since = LocalDateTime.now().minusMonths(6)
                 .withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
-        Set<Long> ownerScope = ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner();
-        if (ownerScope != null && propertyId == null) {
-            if (ownerScope.isEmpty()) {
+        Set<Long> scope = propertyScopeService.propertyIdsOrNullIfUnrestricted();
+        if (scope != null) {
+            if (scope.isEmpty()) {
                 return List.of();
             }
-            Map<String, Long> merged = new HashMap<>();
-            for (Long pid : ownerScope) {
-                for (Object[] row : requestRepository.countByMonthForProperty(since, pid)) {
-                    String label = row[0] + "-" + String.format("%02d", ((Number) row[1]).intValue());
-                    long count = ((Number) row[2]).longValue();
-                    merged.merge(label, count, Long::sum);
-                }
+            if (propertyId != null && !scope.contains(propertyId)) {
+                throw AppException.forbidden("You do not have access to this property");
             }
-            return merged.entrySet().stream()
-                    .map(e -> new ChartDataPoint(e.getKey(), e.getValue()))
-                    .collect(Collectors.toList());
+            if (propertyId == null) {
+                Map<String, Long> merged = new HashMap<>();
+                for (Long pid : scope) {
+                    for (Object[] row : requestRepository.countByMonthForProperty(since, pid)) {
+                        String label = row[0] + "-" + String.format("%02d", ((Number) row[1]).intValue());
+                        long count = ((Number) row[2]).longValue();
+                        merged.merge(label, count, Long::sum);
+                    }
+                }
+                return merged.entrySet().stream()
+                        .map(e -> new ChartDataPoint(e.getKey(), e.getValue()))
+                        .collect(Collectors.toList());
+            }
         }
         List<Object[]> rows = propertyId == null
                 ? requestRepository.countByMonth(since)
@@ -275,10 +281,10 @@ public class DashboardService {
 
     public List<ContractSummaryDto> getExpiringContracts(int days) {
         LocalDate cutoff = LocalDate.now().plusDays(days);
-        Set<Long> ownerScope = ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner();
+        Set<Long> scope = propertyScopeService.propertyIdsOrNullIfUnrestricted();
         return contractRepository.findExpiringBetween(LocalDate.now(), cutoff).stream()
-                .filter(c -> ownerScope == null
-                        || (c.getPropertyId() != null && ownerScope.contains(c.getPropertyId())))
+                .filter(c -> scope == null
+                        || (c.getPropertyId() != null && scope.contains(c.getPropertyId())))
                 .map(c -> ContractSummaryDto.builder()
                         .id(c.getId())
                         .contractNumber(c.getContractNumber())
@@ -295,11 +301,11 @@ public class DashboardService {
     }
 
     public List<ScheduleItemResponse> getOverduePayments() {
-        Set<Long> ownerScope = ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner();
+        Set<Long> scope = propertyScopeService.propertyIdsOrNullIfUnrestricted();
         return scheduleRepository.findByStatusAndDueDateBefore(PaymentScheduleStatus.OVERDUE, LocalDate.now().plusDays(1))
                 .stream()
-                .filter(s -> ownerScope == null || contractRepository.findById(s.getContractId())
-                        .map(c -> c.getPropertyId() != null && ownerScope.contains(c.getPropertyId()))
+                .filter(s -> scope == null || contractRepository.findById(s.getContractId())
+                        .map(c -> c.getPropertyId() != null && scope.contains(c.getPropertyId()))
                         .orElse(false))
                 .map(s -> ScheduleItemResponse.builder()
                         .id(s.getId())
@@ -316,6 +322,9 @@ public class DashboardService {
     }
 
     public DashboardStatsResponse getStatsByProperty(Long propertyId) {
+        if (!propertyScopeService.canAccessProperty(propertyId)) {
+            throw AppException.forbidden("You do not have access to this property");
+        }
         Map<String, Long> requestsByStatus = new HashMap<>();
         List<Object[]> statusGrouped = requestRepository.countByStatusGroupedForProperty(propertyId);
         for (Object[] row : statusGrouped) {

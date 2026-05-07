@@ -140,7 +140,6 @@ export const ADMIN_ROUTES: Routes = [
       },
       {
         path: 'hr',
-        canActivate: [moduleGuard],
         data: { module: 'hr' },
         children: [
           {
@@ -161,6 +160,16 @@ export const ADMIN_ROUTES: Routes = [
           {
             path: 'leaves',
             data: { section: 'leaves' },
+            loadComponent: () => import('../hr/hr-workspace.component').then((m) => m.HrWorkspaceComponent)
+          },
+          {
+            path: 'payroll',
+            data: { section: 'payroll-list' },
+            loadComponent: () => import('../hr/hr-workspace.component').then((m) => m.HrWorkspaceComponent)
+          },
+          {
+            path: 'payroll/:id',
+            data: { section: 'payroll-detail' },
             loadComponent: () => import('../hr/hr-workspace.component').then((m) => m.HrWorkspaceComponent)
           },
         ]

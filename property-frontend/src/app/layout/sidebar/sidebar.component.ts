@@ -52,6 +52,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
   private cacheUser: ReturnType<AuthService['getCurrentUser']> | undefined = undefined;
 
   private readonly subs = new Subscription();
+  private readonly badgeSubs = new Subscription();
   private maintenanceBadge = 0;
   private inventoryBadge = 0;
   private officerOpenBadge = 0;
@@ -81,9 +82,9 @@ export class SidebarComponent implements OnInit, OnDestroy {
     { icon: 'admin_panel_settings', labelKey: 'NAV.PERMISSIONS', route: '/admin/permissions', roles: ['SUPER_ADMIN'], permissionKey: 'permissions', sectionKey: 'NAV_SECTION.YOU' },
     { icon: 'widgets', labelKey: 'NAV.CLIENT_MODULES', route: '/admin/module-settings', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER'], permissionKey: 'permissions', sectionKey: 'NAV_SECTION.YOU', bypassPermission: true },
     { icon: 'public', labelKey: 'NAV.LOOKUPS', route: '/admin/lookups', roles: ['SUPER_ADMIN'], permissionKey: 'lookups', sectionKey: 'NAV_SECTION.YOU' },
-    { icon: 'calendar_month', labelKey: 'NAV.SCHEDULE', route: '/officer/schedule', roles: ['MAINTENANCE_OFFICER', 'MAINTENANCE_CONTRACTOR'], permissionKey: 'schedule', sectionKey: 'NAV_SECTION.OPERATIONS' },
-    { icon: 'assignment', labelKey: 'NAV.MY_REQUESTS', route: '/officer/requests', roles: ['MAINTENANCE_OFFICER', 'MAINTENANCE_CONTRACTOR'], permissionKey: 'my_requests', sectionKey: 'NAV_SECTION.OPERATIONS' },
-    { icon: 'person', labelKey: 'NAV.PROFILE', route: '/officer/profile', roles: ['MAINTENANCE_OFFICER', 'MAINTENANCE_CONTRACTOR'], permissionKey: 'profile', sectionKey: 'NAV_SECTION.YOU' },
+    { icon: 'calendar_month', labelKey: 'NAV.SCHEDULE', route: '/officer/schedule', roles: ['MAINTENANCE_OFFICER_INTERNAL', 'MAINTENANCE_OFFICER_COMPANY', 'MAINTENANCE_COMPANY'], permissionKey: 'schedule', sectionKey: 'NAV_SECTION.OPERATIONS' },
+    { icon: 'assignment', labelKey: 'NAV.MY_REQUESTS', route: '/officer/requests', roles: ['MAINTENANCE_OFFICER_INTERNAL', 'MAINTENANCE_OFFICER_COMPANY', 'MAINTENANCE_COMPANY'], permissionKey: 'my_requests', sectionKey: 'NAV_SECTION.OPERATIONS' },
+    { icon: 'person', labelKey: 'NAV.PROFILE', route: '/officer/profile', roles: ['MAINTENANCE_OFFICER_INTERNAL', 'MAINTENANCE_OFFICER_COMPANY', 'MAINTENANCE_COMPANY'], permissionKey: 'profile', sectionKey: 'NAV_SECTION.YOU' },
     { icon: 'home', labelKey: 'NAV.MY_UNIT', route: '/tenant/my-unit', roles: ['TENANT'], permissionKey: 'my_unit', sectionKey: 'NAV_SECTION.OVERVIEW' },
     { icon: 'library_books', labelKey: 'NAV.MY_CONTRACTS', route: '/tenant/my-contracts', roles: ['TENANT'], permissionKey: 'my_unit', sectionKey: 'NAV_SECTION.OVERVIEW', bypassPermission: true },
     { icon: 'autorenew', labelKey: 'NAV.CONTRACT_REQUEST', route: '/tenant/contract-request', roles: ['TENANT'], permissionKey: 'my_unit', sectionKey: 'NAV_SECTION.OVERVIEW', bypassPermission: true },
@@ -100,6 +101,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     { icon: 'bar_chart', labelKey: 'NAV.FINANCE_DASHBOARD', route: '/admin/finance/dashboard', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'OWNER'], permissionKey: 'finance', sectionKey: 'NAV_SECTION.OPERATIONS', bypassPermission: true },
     { icon: 'summarize', labelKey: 'NAV.FINANCIAL_REPORTS', route: '/admin/finance/reports/pnl', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'OWNER'], permissionKey: 'finance', sectionKey: 'NAV_SECTION.OPERATIONS', bypassPermission: true },
     { icon: 'badge', labelKey: 'NAV.EMPLOYEES', route: '/admin/hr/employees', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'OWNER'], permissionKey: 'hr', sectionKey: 'NAV_SECTION.DIRECTORY', bypassPermission: true },
+    { icon: 'payments', labelKey: 'NAV.PAYROLL', route: '/admin/hr/payroll', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT'], permissionKey: 'hr', sectionKey: 'NAV_SECTION.OPERATIONS', bypassPermission: true },
     { icon: 'event_available', labelKey: 'NAV.LEAVES', route: '/admin/hr/leaves', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'OWNER'], permissionKey: 'hr', sectionKey: 'NAV_SECTION.OPERATIONS', bypassPermission: true },
     { icon: 'notifications', labelKey: 'NAV.NOTIFICATIONS', route: '/admin/notifications', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'OWNER'], permissionKey: 'notifications', sectionKey: 'NAV_SECTION.YOU', bypassPermission: true },
     { icon: 'history', labelKey: 'NAV.AUDIT_LOG', route: '/admin/audit-log', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'OWNER'], permissionKey: 'audit', sectionKey: 'NAV_SECTION.YOU', bypassPermission: true },
@@ -109,7 +111,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     { icon: 'autorenew', labelKey: 'NAV.RENEWAL_REQUESTS', route: '/admin/accountant-portal/renewal-requests', roles: ['ACCOUNTANT', 'SUPER_ADMIN', 'GENERAL_MANAGER', 'OWNER'], permissionKey: 'contracts', sectionKey: 'NAV_SECTION.CONTRACTS', bypassPermission: true },
     { icon: 'receipt_long', labelKey: 'NAV.MAINTENANCE_INVOICES', route: '/admin/accountant-portal/maintenance-invoices', roles: ['ACCOUNTANT', 'SUPER_ADMIN', 'GENERAL_MANAGER', 'OWNER'], permissionKey: 'contracts', sectionKey: 'NAV_SECTION.CONTRACTS', bypassPermission: true },
     // Officer: invoice portal (contractor company only)
-    { icon: 'receipt', labelKey: 'NAV.MY_INVOICES', route: '/officer/invoices', roles: ['MAINTENANCE_OFFICER', 'MAINTENANCE_CONTRACTOR'], permissionKey: 'my_requests', sectionKey: 'NAV_SECTION.OPERATIONS', bypassPermission: true, officerType: 'CONTRACTOR_COMPANY' }
+    { icon: 'receipt', labelKey: 'NAV.MY_INVOICES', route: '/officer/invoices', roles: ['MAINTENANCE_OFFICER_INTERNAL', 'MAINTENANCE_OFFICER_COMPANY', 'MAINTENANCE_COMPANY'], permissionKey: 'my_requests', sectionKey: 'NAV_SECTION.OPERATIONS', bypassPermission: true, officerType: 'CONTRACTOR_COMPANY' }
   ];
 
   // Section-prefix map: routes whose detail pages should highlight a specific nav item
@@ -119,6 +121,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     { prefix: '/admin/units/',       highlight: '/admin/units' },
     { prefix: '/admin/tenants/',     highlight: '/admin/tenants' },
     { prefix: '/admin/maintenance/', highlight: '/admin/maintenance' },
+    { prefix: '/admin/hr/payroll/',  highlight: '/admin/hr/payroll' },
     { prefix: '/admin/inventory/',   highlight: '/admin/inventory' },
     { prefix: '/tenant/my-contracts', highlight: '/tenant/my-contracts' },
   ];
@@ -133,36 +136,16 @@ export class SidebarComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    const activeRole = this.auth.getRole();
-    const roles = activeRole ? [activeRole] : [];
-    const user = this.auth.getCurrentUser();
-    if (roles.some((r) => r === 'SUPER_ADMIN' || r === 'GENERAL_MANAGER')) {
-      this.subs.add(
-        this.dashboard.getStats().subscribe({
-          next: (res) => {
-            const s = res.data;
-            if (!s) return;
-            this.maintenanceBadge =
-              typeof s.openMaintenanceRequests === 'number'
-                ? s.openMaintenanceRequests
-                : this.sumOpenMaintenanceFromMap(s);
-            this.inventoryBadge =
-              typeof s.totalInventoryItems === 'number' ? s.totalInventoryItems : s.lowStockItems ?? 0;
-          }
-        })
-      );
-    } else if (roles.includes('MAINTENANCE_OFFICER') && user?.id) {
-      this.subs.add(
-        this.maintenance.getOfficerOpenCount(user.id).subscribe({
-          next: (res) => {
-            this.officerOpenBadge = res.data ?? 0;
-          }
-        })
-      );
-    }
+    this.refreshSidebarStateForRole();
+    this.subs.add(
+      this.auth.activeRoleChanged.subscribe(() => {
+        this.refreshSidebarStateForRole();
+      })
+    );
   }
 
   ngOnDestroy(): void {
+    this.badgeSubs.unsubscribe();
     this.subs.unsubscribe();
   }
 
@@ -193,7 +176,9 @@ export class SidebarComponent implements OnInit, OnDestroy {
       if (!item.bypassPermission && !this.permissionService.can(item.permissionKey, 'menu')) return false;
       if (item.officerType) {
         const effectiveOfficerType =
-          roles.includes('MAINTENANCE_CONTRACTOR') ? 'CONTRACTOR_COMPANY' : user?.maintenanceOfficerType;
+          roles.includes('MAINTENANCE_COMPANY') || roles.includes('MAINTENANCE_OFFICER_COMPANY')
+            ? 'CONTRACTOR_COMPANY'
+            : user?.maintenanceOfficerType;
         if (effectiveOfficerType !== item.officerType) return false;
       }
       return true;
@@ -278,5 +263,50 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
   onNavClick(item: NavItem, event: Event): void {
     this.navHistory.markFromMenu();
+  }
+
+  private refreshSidebarStateForRole(): void {
+    // Invalidate computed/menu cache when role switches.
+    this.cacheRole = undefined;
+    this.cacheSections = [];
+
+    // Reset and re-fetch role-specific badges.
+    this.badgeSubs.unsubscribe();
+    this.maintenanceBadge = 0;
+    this.inventoryBadge = 0;
+    this.officerOpenBadge = 0;
+
+    const activeRole = this.auth.getRole();
+    const roles = activeRole ? [activeRole] : [];
+    const user = this.auth.getCurrentUser();
+    if (roles.some((r) => r === 'SUPER_ADMIN' || r === 'GENERAL_MANAGER')) {
+      this.badgeSubs.add(
+        this.dashboard.getStats().subscribe({
+          next: (res) => {
+            const s = res.data;
+            if (!s) return;
+            this.maintenanceBadge =
+              typeof s.openMaintenanceRequests === 'number'
+                ? s.openMaintenanceRequests
+                : this.sumOpenMaintenanceFromMap(s);
+            this.inventoryBadge =
+              typeof s.totalInventoryItems === 'number' ? s.totalInventoryItems : s.lowStockItems ?? 0;
+          }
+        })
+      );
+    } else if (
+      (roles.includes('MAINTENANCE_OFFICER_INTERNAL') ||
+        roles.includes('MAINTENANCE_OFFICER_COMPANY') ||
+        roles.includes('MAINTENANCE_COMPANY')) &&
+      user?.id
+    ) {
+      this.badgeSubs.add(
+        this.maintenance.getOfficerOpenCount(user.id).subscribe({
+          next: (res) => {
+            this.officerOpenBadge = res.data ?? 0;
+          }
+        })
+      );
+    }
   }
 }

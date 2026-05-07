@@ -4,6 +4,7 @@ import { catchError, throwError } from 'rxjs';
 import { Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import { TokenStorageService } from '../auth/token-storage.service';
+import { AppConstants } from '../constants/app-constants';
 
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
@@ -12,7 +13,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     catchError((err: HttpErrorResponse) => {
-      if (err.status === 401 && !req.url.includes('/auth/login')) {
+      if (err.status === 401 && !req.url.includes(AppConstants.API.AUTH_LOGIN)) {
         tokenStorage.clearAll();
         void router.navigateByUrl('/auth/login');
       }

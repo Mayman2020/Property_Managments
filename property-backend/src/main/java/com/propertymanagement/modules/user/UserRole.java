@@ -12,10 +12,12 @@ public enum UserRole {
     GENERAL_MANAGER,
     /** المحاسب — properties, units, tenants, contracts, finance, receipts */
     ACCOUNTANT,
-    /** شركة الصيانة / مقاول — assigned maintenance work */
-    MAINTENANCE_CONTRACTOR,
-    /** موظف صيانة داخل العقار */
-    MAINTENANCE_OFFICER,
+    /** موظف صيانة (داخلي) */
+    MAINTENANCE_OFFICER_INTERNAL,
+    /** موظف صيانة تابع لشركة */
+    MAINTENANCE_OFFICER_COMPANY,
+    /** شركة صيانة */
+    MAINTENANCE_COMPANY,
     /** حارس العقار */
     PROPERTY_GUARD,
     /** مخلص إجراءات — registered mainly for payroll visibility */
@@ -25,6 +27,17 @@ public enum UserRole {
 
     /** Internal building technician or maintenance-company (contractor) login. */
     public static boolean isMaintenanceStaff(UserRole r) {
-        return r == MAINTENANCE_OFFICER || r == MAINTENANCE_CONTRACTOR;
+        return r == MAINTENANCE_OFFICER_INTERNAL
+                || r == MAINTENANCE_OFFICER_COMPANY
+                || r == MAINTENANCE_COMPANY;
+    }
+
+    public static boolean isMaintenanceOfficer(UserRole r) {
+        return r == MAINTENANCE_OFFICER_INTERNAL
+                || r == MAINTENANCE_OFFICER_COMPANY;
+    }
+
+    public static boolean isMaintenanceCompany(UserRole r) {
+        return r == MAINTENANCE_COMPANY;
     }
 }

@@ -22,6 +22,7 @@ import com.propertymanagement.modules.user.User;
 import com.propertymanagement.modules.user.UserRepository;
 import com.propertymanagement.modules.user.UserRole;
 import com.propertymanagement.shared.exception.AppException;
+import com.propertymanagement.shared.security.PropertyScopeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.data.domain.Page;
@@ -70,34 +71,37 @@ public class LeaseContractService {
     private final ObjectProvider<ContractRenewalService> contractRenewalService;
     private final TenantPortalWelcomeService tenantPortalWelcomeService;
     private final OwnerPropertyAccessService ownerPropertyAccessService;
+    private final PropertyScopeService propertyScopeService;
     private final NotificationService notificationService;
     private final PropertyOwnerPortalRecipientService propertyOwnerPortalRecipientService;
 
     public Page<ContractResponse> getAll(Pageable pageable) {
-        Set<Long> ownerScope = ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner();
-        if (ownerScope != null) {
-            if (ownerScope.isEmpty()) {
+        Set<Long> scope = propertyScopeService.propertyIdsOrNullIfUnrestricted();
+        if (scope != null) {
+            if (scope.isEmpty()) {
                 return Page.empty(pageable);
             }
-            return contractRepository.findByPropertyIdIn(ownerScope, pageable).map(this::toResponse);
+            return contractRepository.findByPropertyIdIn(scope, pageable).map(this::toResponse);
         }
         return contractRepository.findAll(pageable).map(this::toResponse);
     }
 
     public Page<ContractResponse> getByStatus(ContractStatus status, Pageable pageable) {
-        Set<Long> ownerScope = ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner();
-        if (ownerScope != null) {
-            if (ownerScope.isEmpty()) {
+        Set<Long> scope = propertyScopeService.propertyIdsOrNullIfUnrestricted();
+        if (scope != null) {
+            if (scope.isEmpty()) {
                 return Page.empty(pageable);
             }
-            return contractRepository.findByStatusAndPropertyIdIn(status, ownerScope, pageable).map(this::toResponse);
+            return contractRepository.findByStatusAndPropertyIdIn(status, scope, pageable).map(this::toResponse);
         }
         return contractRepository.findByStatus(status, pageable).map(this::toResponse);
     }
 
     public ContractResponse getById(Long id) {
         LeaseContract contract = findById(id);
-        ownerPropertyAccessService.assertOwnerCanAccessProperty(contract.getPropertyId());
+        if (!propertyScopeService.canAccessProperty(contract.getPropertyId())) {
+            throw AppException.forbidden("You do not have access to this property");
+        }
         return toResponse(contract);
     }
 
@@ -117,12 +121,12 @@ public class LeaseContractService {
     }
 
     private List<ContractSummaryDto> filterSummariesForOwner(List<ContractSummaryDto> list) {
-        Set<Long> ownerScope = ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner();
-        if (ownerScope == null) {
+        Set<Long> scope = propertyScopeService.propertyIdsOrNullIfUnrestricted();
+        if (scope == null) {
             return list;
         }
         return list.stream()
-                .filter(s -> s.getPropertyId() != null && ownerScope.contains(s.getPropertyId()))
+                .filter(s -> s.getPropertyId() != null && scope.contains(s.getPropertyId()))
                 .collect(Collectors.toList());
     }
 

@@ -10,11 +10,12 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { TranslateModule } from '@ngx-translate/core';
 
-import { MaintenanceOfficerType, User, UserRole } from '../../core/models/user.model';
+import { MaintenanceOfficerType, OwnerPropertyBrief, User, UserRole } from '../../core/models/user.model';
 import { Property } from '../../core/services/property.service';
 import { ContractorCompany } from '../../core/services/contractor-company.service';
 import { UserManageRequest, UserService } from '../../core/services/user.service';
 import { SnackService } from '../../core/services/snack.service';
+import { AuthService } from '../../core/services/auth.service';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { SearchableSelectComponent } from '../../shared/components/searchable-select/searchable-select.component';
 import { IdentityMediaFieldsComponent } from '../../shared/components/identity-media-fields/identity-media-fields.component';
@@ -48,6 +49,20 @@ export interface UserDialogData {
         <mat-spinner diameter="40"></mat-spinner>
       </div>
       <form *ngIf="!loadingDetail" [formGroup]="form" class="user-dialog-form">
+        <app-searchable-select
+          class="full"
+          formControlName="propertyId"
+          [items]="availableProperties"
+          [label]="'REQUEST_FORM.PROPERTY'">
+        </app-searchable-select>
+
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>{{ 'USER_MGMT.ROLE' | translate }}</mat-label>
+          <mat-select formControlName="role">
+            <mat-option *ngFor="let r of roleOptions" [value]="r">{{ roleLabel(r) }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
         <mat-form-field appearance="outline" class="full">
           <mat-label>{{ 'AUTH.EMAIL' | translate }}</mat-label>
           <input matInput formControlName="email" type="email">
@@ -58,6 +73,16 @@ export interface UserDialogData {
           <mat-label>{{ 'AUTH.PASSWORD' | translate }}</mat-label>
           <input matInput formControlName="password" type="password">
           <mat-hint>{{ data.user ? ('USER_MGMT.PASSWORD_HINT' | translate) : ('USER_MGMT.DEFAULT_PASSWORD_HINT' | translate) }}</mat-hint>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'PROFILE.FULL_NAME_AR' | translate }}</mat-label>
+          <input matInput formControlName="fullNameAr">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>{{ 'PROFILE.FULL_NAME_EN' | translate }}</mat-label>
+          <input matInput formControlName="fullNameEn">
         </mat-form-field>
 
         <mat-form-field appearance="outline">
@@ -136,20 +161,6 @@ export interface UserDialogData {
           </mat-form-field>
         </section>
 
-        <mat-form-field appearance="outline" class="full">
-          <mat-label>{{ 'USER_MGMT.ROLE' | translate }}</mat-label>
-          <mat-select formControlName="role">
-            <mat-option *ngFor="let r of roleOptions" [value]="r">{{ roleLabel(r) }}</mat-option>
-          </mat-select>
-        </mat-form-field>
-
-        <app-searchable-select
-          class="full"
-          *ngIf="needsProperty"
-          formControlName="propertyId"
-          [items]="data.properties"
-          [label]="'REQUEST_FORM.PROPERTY'">
-        </app-searchable-select>
 
         <mat-form-field appearance="outline" class="full" *ngIf="showMaintenanceOfficerType">
           <mat-label>{{ 'USER_MGMT.OFFICER_TYPE' | translate }}</mat-label>
@@ -232,17 +243,26 @@ export class UserDialogComponent implements OnInit {
   profileImageUrl = '';
   civilIdImageUrl = '';
 
-  readonly roleOptions: UserRole[] = [
+  private readonly allRoleOptions: UserRole[] = [
     'SUPER_ADMIN',
-    'GENERAL_MANAGER',
     'ACCOUNTANT',
-    'MAINTENANCE_CONTRACTOR',
-    'MAINTENANCE_OFFICER',
+    'MAINTENANCE_OFFICER_INTERNAL',
+    'MAINTENANCE_OFFICER_COMPANY',
+    'MAINTENANCE_COMPANY',
     'PROPERTY_GUARD',
     'PROCEDURES_CLERK',
     'OWNER',
     'TENANT'
   ];
+
+  get roleOptions(): UserRole[] {
+    const currentRole = this.auth.getRole();
+    if (currentRole === 'ACCOUNTANT') {
+      return this.allRoleOptions.filter((role) => role !== 'GENERAL_MANAGER');
+    }
+    return this.allRoleOptions;
+  }
+
   readonly officerTypeOptions: MaintenanceOfficerType[] = ['INTERNAL_PROPERTY', 'CONTRACTOR_COMPANY'];
 
   readonly form: FormGroup;
@@ -250,9 +270,9 @@ export class UserDialogComponent implements OnInit {
   get needsProperty(): boolean {
     const role = this.form.get('role')?.value as UserRole;
     return (
-      role === 'GENERAL_MANAGER' ||
-      role === 'MAINTENANCE_OFFICER' ||
-      role === 'MAINTENANCE_CONTRACTOR' ||
+      role === 'MAINTENANCE_OFFICER_INTERNAL' ||
+      role === 'MAINTENANCE_OFFICER_COMPANY' ||
+      role === 'MAINTENANCE_COMPANY' ||
       role === 'ACCOUNTANT' ||
       role === 'PROPERTY_GUARD' ||
       role === 'PROCEDURES_CLERK'
@@ -260,14 +280,15 @@ export class UserDialogComponent implements OnInit {
   }
 
   get showMaintenanceOfficerType(): boolean {
-    return this.form.get('role')?.value === 'MAINTENANCE_OFFICER';
+    const role = this.form.get('role')?.value as UserRole;
+    return role === 'MAINTENANCE_OFFICER_INTERNAL' || role === 'MAINTENANCE_OFFICER_COMPANY';
   }
 
   get needsContractorCompanySelect(): boolean {
     const role = this.form.get('role')?.value as UserRole;
-    if (role === 'MAINTENANCE_CONTRACTOR') return true;
+    if (role === 'MAINTENANCE_COMPANY') return true;
     return (
-      role === 'MAINTENANCE_OFFICER' &&
+      role === 'MAINTENANCE_OFFICER_COMPANY' &&
       this.form.get('maintenanceOfficerType')?.value === 'CONTRACTOR_COMPANY'
     );
   }
@@ -278,6 +299,7 @@ export class UserDialogComponent implements OnInit {
     private readonly fb: FormBuilder,
     private readonly userSvc: UserService,
     private readonly snack: SnackService,
+    private readonly auth: AuthService,
     readonly i18n: I18nService
   ) {
     const u = data.user;
@@ -285,6 +307,8 @@ export class UserDialogComponent implements OnInit {
       email: [u?.email ?? '', [Validators.required, Validators.email]],
       password: ['', [Validators.minLength(6)]],
       fullName: [u?.fullName ?? '', [Validators.required, Validators.maxLength(150)]],
+      fullNameAr: [u?.fullNameAr ?? '', [Validators.maxLength(150)]],
+      fullNameEn: [u?.fullNameEn ?? '', [Validators.maxLength(150)]],
       phone: [u?.phone ?? '', [Validators.maxLength(20)]],
       role: [u?.role ?? 'TENANT', Validators.required],
       propertyId: [u?.propertyId ?? null],
@@ -330,6 +354,8 @@ export class UserDialogComponent implements OnInit {
           this.form.patchValue(
             {
               fullName: u.fullName ?? '',
+              fullNameAr: u.fullNameAr ?? '',
+              fullNameEn: u.fullNameEn ?? '',
               phone: u.phone ?? '',
               ownerFullNameAr: u.ownerLink?.fullNameAr ?? '',
               ownerFullNameEn: u.ownerLink?.fullNameEn ?? '',
@@ -366,7 +392,34 @@ export class UserDialogComponent implements OnInit {
   }
 
   get showCivilSection(): boolean {
-    return this.form.get('role')?.value !== 'TENANT';
+    return this.needsIdentityMedia;
+  }
+
+  get availableProperties(): Property[] {
+    const currentUser = this.auth.getCurrentUser();
+    if (!currentUser) return this.data.properties;
+
+    if (this.auth.isSuperAdmin() || this.auth.isGeneralManager()) {
+      return this.data.properties;
+    }
+
+    const propertyIds = new Set<number>();
+    if (currentUser.propertyId) {
+      propertyIds.add(currentUser.propertyId);
+    }
+
+    const ownerProps = (currentUser as unknown as { ownerProperties?: OwnerPropertyBrief[] }).ownerProperties;
+    if (Array.isArray(ownerProps) && ownerProps.length) {
+      for (const op of ownerProps) {
+        if (op?.id) propertyIds.add(op.id);
+      }
+    }
+
+    if (propertyIds.size > 0) {
+      return this.data.properties.filter((p) => propertyIds.has(p.id));
+    }
+
+    return this.data.properties;
   }
 
   identityValid(): boolean {
@@ -384,8 +437,9 @@ export class UserDialogComponent implements OnInit {
   isEmployeeRole(role: UserRole | string | null | undefined): boolean {
     return (
       role === 'GENERAL_MANAGER' ||
-      role === 'MAINTENANCE_OFFICER' ||
-      role === 'MAINTENANCE_CONTRACTOR' ||
+      role === 'MAINTENANCE_OFFICER_INTERNAL' ||
+      role === 'MAINTENANCE_OFFICER_COMPANY' ||
+      role === 'MAINTENANCE_COMPANY' ||
       role === 'ACCOUNTANT' ||
       role === 'PROPERTY_GUARD' ||
       role === 'PROCEDURES_CLERK'
@@ -453,28 +507,29 @@ export class UserDialogComponent implements OnInit {
     const companyCtrl = this.form.get('maintenanceCompanyName');
     if (!propertyCtrl || !officerTypeCtrl || !companyCtrl) return;
 
-    if (
+    const propertyRequired = (
       role === 'GENERAL_MANAGER' ||
-      role === 'MAINTENANCE_OFFICER' ||
-      role === 'MAINTENANCE_CONTRACTOR' ||
+      role === 'MAINTENANCE_OFFICER_INTERNAL' ||
+      role === 'MAINTENANCE_OFFICER_COMPANY' ||
+      role === 'MAINTENANCE_COMPANY' ||
       role === 'ACCOUNTANT' ||
       role === 'PROPERTY_GUARD' ||
       role === 'PROCEDURES_CLERK'
-    ) {
+    );
+    if (propertyRequired) {
       propertyCtrl.setValidators([Validators.required]);
     } else {
       propertyCtrl.clearValidators();
-      propertyCtrl.setValue(null, { emitEvent: false });
     }
     propertyCtrl.updateValueAndValidity({ emitEvent: false });
 
-    if (role === 'MAINTENANCE_OFFICER') {
+    if (role === 'MAINTENANCE_OFFICER_INTERNAL' || role === 'MAINTENANCE_OFFICER_COMPANY') {
       officerTypeCtrl.setValidators([Validators.required]);
     } else {
       officerTypeCtrl.clearValidators();
       officerTypeCtrl.setValue(null, { emitEvent: false });
       companyCtrl.setValue('', { emitEvent: false });
-      if (role !== 'MAINTENANCE_CONTRACTOR') {
+      if (role !== 'MAINTENANCE_COMPANY') {
         this.form.get('contractorCompanyId')?.setValue(null, { emitEvent: false });
       }
     }
@@ -489,7 +544,7 @@ export class UserDialogComponent implements OnInit {
     const companyCtrl = this.form.get('maintenanceCompanyName');
     if (!contractorIdCtrl || !companyCtrl) return;
 
-    if (role === 'MAINTENANCE_CONTRACTOR' || (role === 'MAINTENANCE_OFFICER' && officerType === 'CONTRACTOR_COMPANY')) {
+    if (role === 'MAINTENANCE_COMPANY' || (role === 'MAINTENANCE_OFFICER_COMPANY' && officerType === 'CONTRACTOR_COMPANY')) {
       contractorIdCtrl.setValidators([Validators.required]);
     } else {
       contractorIdCtrl.clearValidators();
@@ -507,6 +562,8 @@ export class UserDialogComponent implements OnInit {
       username: raw.email,
       email: raw.email,
       fullName: raw.fullName,
+      fullNameAr: raw.fullNameAr?.trim() || undefined,
+      fullNameEn: raw.fullNameEn?.trim() || undefined,
       phone: raw.phone || undefined,
       role: raw.role,
       propertyId: raw.propertyId || undefined,
@@ -524,10 +581,14 @@ export class UserDialogComponent implements OnInit {
       if (p) payload.profileImageUrl = p;
     }
     if (raw.password) payload.password = raw.password;
-    if (payload.role === 'MAINTENANCE_CONTRACTOR') {
+    if (payload.role === 'MAINTENANCE_COMPANY') {
       payload.maintenanceOfficerType = 'CONTRACTOR_COMPANY';
     }
-    if (payload.role !== 'MAINTENANCE_OFFICER' && payload.role !== 'MAINTENANCE_CONTRACTOR') {
+    if (
+      payload.role !== 'MAINTENANCE_OFFICER_INTERNAL' &&
+      payload.role !== 'MAINTENANCE_OFFICER_COMPANY' &&
+      payload.role !== 'MAINTENANCE_COMPANY'
+    ) {
       payload.maintenanceOfficerType = undefined;
       payload.maintenanceCompanyName = undefined;
       payload.contractorCompanyId = undefined;
@@ -536,17 +597,7 @@ export class UserDialogComponent implements OnInit {
       payload.maintenanceCompanyName = undefined;
       payload.contractorCompanyId = undefined;
     }
-    const propertyRoles: UserRole[] = [
-      'GENERAL_MANAGER',
-      'MAINTENANCE_OFFICER',
-      'MAINTENANCE_CONTRACTOR',
-      'ACCOUNTANT',
-      'PROPERTY_GUARD',
-      'PROCEDURES_CLERK'
-    ];
-    if (!propertyRoles.includes(payload.role)) {
-      payload.propertyId = undefined;
-    }
+    // Keep propertyId for any user who selects one, including TENANT/OWNER.
 
     if (raw.role === 'OWNER') {
       payload.ownerLink = {

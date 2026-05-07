@@ -170,7 +170,9 @@ public class MaintenanceRequestService {
                         .filter(t -> t.getId().equals(request.getTenantId()))
                         .orElseThrow(() -> AppException.forbidden("Access denied"));
             }
-            case MAINTENANCE_OFFICER, MAINTENANCE_CONTRACTOR -> {
+            case MAINTENANCE_OFFICER_INTERNAL,
+                 MAINTENANCE_OFFICER_COMPANY,
+                 MAINTENANCE_COMPANY -> {
                 if (request.getAssignedTo() != null && request.getAssignedTo().equals(user.getId())) {
                     return;
                 }
@@ -305,8 +307,8 @@ public class MaintenanceRequestService {
     public Page<MaintenanceRequestResponse> getCompanyQueueForOfficer(User officer, Pageable pageable) {
         boolean contractorStaff = officer.getContractorCompanyId() != null
                 && officer.getPropertyId() != null
-                && (officer.getRole() == UserRole.MAINTENANCE_CONTRACTOR
-                    || (officer.getRole() == UserRole.MAINTENANCE_OFFICER
+                && (officer.getRole() == UserRole.MAINTENANCE_COMPANY
+                    || (officer.getRole() == UserRole.MAINTENANCE_OFFICER_COMPANY
                         && officer.getMaintenanceOfficerType() == MaintenanceOfficerType.CONTRACTOR_COMPANY));
         if (!contractorStaff) {
             return Page.empty(pageable);
@@ -661,7 +663,7 @@ public class MaintenanceRequestService {
     private void assertInternalOfficerForProperty(Long officerUserId, Long propertyId) {
         User officer = userRepository.findById(officerUserId)
                 .orElseThrow(() -> AppException.badRequest("Maintenance officer not found: " + officerUserId));
-        if (officer.getRole() != UserRole.MAINTENANCE_OFFICER || !officer.isActive()) {
+        if (officer.getRole() != UserRole.MAINTENANCE_OFFICER_INTERNAL || !officer.isActive()) {
             throw AppException.badRequest("Invalid maintenance officer");
         }
         if (officer.getMaintenanceOfficerType() != MaintenanceOfficerType.INTERNAL_PROPERTY) {
@@ -709,7 +711,7 @@ public class MaintenanceRequestService {
                     && officer.getContractorCompanyId().equals(request.getContractorCompanyId())
                     && officer.getPropertyId() != null
                     && officer.getPropertyId().equals(request.getPropertyId())
-                    && (officer.getRole() == UserRole.MAINTENANCE_CONTRACTOR
+                    && (officer.getRole() == UserRole.MAINTENANCE_COMPANY
                         || officer.getMaintenanceOfficerType() == MaintenanceOfficerType.CONTRACTOR_COMPANY);
             if (!contractorOk) {
                 throw AppException.badRequest("Officer must belong to the routing contractor company and this property");
@@ -729,7 +731,7 @@ public class MaintenanceRequestService {
                 && user.getContractorCompanyId().equals(request.getContractorCompanyId())
                 && user.getPropertyId() != null
                 && user.getPropertyId().equals(request.getPropertyId())
-                && (user.getRole() == UserRole.MAINTENANCE_CONTRACTOR
+                && (user.getRole() == UserRole.MAINTENANCE_COMPANY
                     || user.getMaintenanceOfficerType() == MaintenanceOfficerType.CONTRACTOR_COMPANY);
     }
 

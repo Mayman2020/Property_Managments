@@ -42,7 +42,7 @@ export class LoginComponent {
   ) {
     this.form = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(5)]]
+      password: ['', Validators.required]
     });
 
     if (this.auth.isAuthenticated()) {
@@ -65,9 +65,12 @@ export class LoginComponent {
         this.loading = false;
         void this.router.navigateByUrl(this.auth.getDashboardRoute());
       },
-      error: (err: Error) => {
+      error: (err: any) => {
         this.loading = false;
-        this.error = err.message || this.i18n.instant('AUTH.LOGIN_FAILED');
+        const isAuthError = err?.status === 401 || err?.status === 400;
+        this.error = isAuthError
+          ? this.i18n.instant('AUTH.INVALID_CREDENTIALS')
+          : err.message || this.i18n.instant('AUTH.LOGIN_FAILED');
         this.snack.error(this.error);
       }
     });

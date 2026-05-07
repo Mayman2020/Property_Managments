@@ -36,7 +36,11 @@ export function resolveNotificationTargetUrl(n: AppNotification, auth: AuthServi
 
   const reqId = n.requestId != null && n.requestId > 0 ? n.requestId : undefined;
   if (reqId != null) {
-    if (role === 'MAINTENANCE_OFFICER' || role === 'MAINTENANCE_CONTRACTOR') {
+    if (
+      role === 'MAINTENANCE_OFFICER_INTERNAL' ||
+      role === 'MAINTENANCE_OFFICER_COMPANY' ||
+      role === 'MAINTENANCE_COMPANY'
+    ) {
       return `/officer/requests/${reqId}`;
     }
     if (role === 'TENANT') {

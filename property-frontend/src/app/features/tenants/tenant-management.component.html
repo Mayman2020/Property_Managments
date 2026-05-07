@@ -23,16 +23,25 @@
     [message]="'TENANTS.EMPTY_MESSAGE' | translate">
   </app-empty-state>
 
-  <section class="app-card" *ngIf="!loading && (groupedTenants.length > 0 || searchTerm || hasFiltersBar())">
-    <div class="search-bar-shell">
-      <div class="search-input-box">
+  <section class="app-card directory-table-card" *ngIf="!loading && (groupedTenants.length > 0 || searchTerm || hasFiltersBar())">
+    <div class="estate-table-toolbar directory-toolbar">
+      <div class="directory-toolbar-top">
+      <div class="directory-search">
         <mat-icon>search</mat-icon>
         <input [value]="searchTerm" (input)="onSearch($any($event.target).value)" [placeholder]="'ACTIONS.SEARCH' | translate">
       </div>
-      <app-filter-bar [filters]="pageFilters" (filtersChange)="onFilterBarChange($event)"></app-filter-bar>
+      <app-filter-bar *ngIf="pageFilters.length" [filters]="pageFilters" [filterValues]="filterValues" (filtersChange)="onFilterBarChange($event)"></app-filter-bar>
       <button mat-icon-button class="clear-filters-btn" (click)="clearFiltersFromBar()" *ngIf="hasFiltersBar()" [matTooltip]="'ACTIONS.CLEAR_FILTERS' | translate">
         <mat-icon>filter_alt_off</mat-icon>
       </button>
+      <app-table-export-toolbar
+        permissionKey="tenants"
+        [title]="'NAV.TENANTS' | translate"
+        fileName="tenants"
+        [columns]="exportColumns"
+        [rows]="groupedTenants">
+      </app-table-export-toolbar>
+      </div>
     </div>
 
     <div class="app-table-wrap">

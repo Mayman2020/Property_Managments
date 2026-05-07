@@ -35,8 +35,9 @@ public class PortalProfileBridge {
             UserRole.ACCOUNTANT,
             UserRole.PROCEDURES_CLERK,
             UserRole.GENERAL_MANAGER,
-            UserRole.MAINTENANCE_OFFICER,
-            UserRole.MAINTENANCE_CONTRACTOR,
+            UserRole.MAINTENANCE_OFFICER_INTERNAL,
+            UserRole.MAINTENANCE_OFFICER_COMPANY,
+            UserRole.MAINTENANCE_COMPANY,
             UserRole.PROPERTY_GUARD);
 
     private final OwnerRepository ownerRepository;

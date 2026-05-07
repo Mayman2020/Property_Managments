@@ -6,6 +6,8 @@ import com.propertymanagement.modules.user.dto.ChangePasswordRequest;
 import com.propertymanagement.modules.user.dto.UserRoleUpdateRequest;
 import com.propertymanagement.modules.user.dto.UserResponse;
 import com.propertymanagement.shared.response.ApiResponse;
+import com.propertymanagement.shared.security.PropertyAccessSummary;
+import com.propertymanagement.shared.security.PropertyScopeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -22,9 +24,10 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+    private final PropertyScopeService propertyScopeService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'OWNER')")
     public ResponseEntity<ApiResponse<Page<UserResponse>>> getAll(
             @RequestParam(required = false) String q,
             @RequestParam(required = false) UserRole role,
@@ -33,7 +36,7 @@ public class UserController {
     }
 
     @GetMapping("/maintenance-assignable-contractor")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER', 'MAINTENANCE_OFFICER','MAINTENANCE_CONTRACTOR')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER', 'MAINTENANCE_OFFICER_INTERNAL','MAINTENANCE_OFFICER_COMPANY','MAINTENANCE_COMPANY')")
     public ResponseEntity<ApiResponse<java.util.List<UserResponse>>> maintenanceAssignableContractorOfficers(
             @RequestParam Long propertyId,
             @RequestParam Long contractorCompanyId) {
@@ -41,7 +44,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'OWNER')")
     public ResponseEntity<ApiResponse<UserResponse>> getById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok(userService.getById(id)));
     }
@@ -85,6 +88,13 @@ public class UserController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<UserResponse>> getMyProfile() {
         return ResponseEntity.ok(ApiResponse.ok(userService.getMyProfile()));
+    }
+
+    /** Property ids for the current {@code X-Active-Role} (or primary role); used for scoped UI filters. */
+    @GetMapping("/me/property-access")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<PropertyAccessSummary>> getMyPropertyAccess() {
+        return ResponseEntity.ok(ApiResponse.ok(propertyScopeService.getMyPropertyAccessSummary()));
     }
 
     @PutMapping("/me")

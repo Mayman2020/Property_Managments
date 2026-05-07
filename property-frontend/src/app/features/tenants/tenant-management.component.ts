@@ -21,6 +21,7 @@ import { Unit, UnitService } from '../../core/services/unit.service';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { TablePagerComponent } from '../../shared/components/table-pager/table-pager.component';
+import { ExportColumn, TableExportToolbarComponent } from '../../shared/components/table-export-toolbar/table-export-toolbar.component';
 import { TenantDialogComponent } from './tenant-dialog.component';
 import { TenantEditDialogComponent } from './tenant-edit-dialog.component';
 import { ContractDialogComponent } from '../contracts/contract-dialog/contract-dialog.component';
@@ -92,7 +93,7 @@ export class UnitPickerDialogComponent {
   imports: [
     NgFor, NgIf, DatePipe, FormsModule, TranslateModule,
     MatButtonModule, MatProgressSpinnerModule, MatIconModule, MatTooltipModule,
-    PageHeaderComponent, EmptyStateComponent, TablePagerComponent, FilterBarComponent
+    PageHeaderComponent, EmptyStateComponent, TablePagerComponent, FilterBarComponent, TableExportToolbarComponent
   ],
   templateUrl: './tenant-management.component.html',
   styleUrl: './tenant-management.component.scss'
@@ -183,6 +184,18 @@ export class TenantManagementComponent implements OnInit {
 
   get totalPages(): number {
     return Math.max(1, Math.ceil(this.groupedTenants.length / this.pageSize));
+  }
+
+  get exportColumns(): ExportColumn<TenantGroup>[] {
+    return [
+      { header: this.i18n.instant('PROFILE.FULL_NAME'), value: (row) => this.tenantDisplayName(row.representative) },
+      { header: this.i18n.instant('REQUEST_FORM.PROPERTY'), value: (row) => this.groupPropertyLabels(row) },
+      { header: this.i18n.instant('UNITS.UNIT_NUMBER'), value: (row) => this.groupUnitLabels(row) },
+      { header: this.i18n.instant('AUTH.EMAIL'), value: (row) => row.representative.email || '-' },
+      { header: this.i18n.instant('PROFILE.PHONE'), value: (row) => row.representative.phone || '-' },
+      { header: this.i18n.instant('TENANTS.PORTAL_LOGIN'), value: (row) => this.i18n.instant(this.tenantPortalLoginActive(row.representative) ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') },
+      { header: this.i18n.instant('COMMON.ACTIVE'), value: (row) => this.i18n.instant(this.tenantRowEffectiveActive(row.representative) ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') }
+    ];
   }
 
   // ── Contract Picker ─────────────────────────────────────────────────────────
@@ -299,7 +312,7 @@ export class TenantManagementComponent implements OnInit {
   }
 
   private setupFilters(): void {
-    this.pageFilters = [{
+    this.pageFilters = this.properties.length > 1 ? [{
       key: 'filterPropertyId',
       label: 'REQUEST_FORM.PROPERTY',
       type: 'select',
@@ -307,7 +320,7 @@ export class TenantManagementComponent implements OnInit {
         value: p.id,
         label: this.i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName)
       }))
-    }];
+    }] : [];
   }
 
   onFilterBarChange(values: any): void {
@@ -319,12 +332,18 @@ export class TenantManagementComponent implements OnInit {
   }
 
   clearFiltersFromBar(): void {
-    this.filterPropertyId = null;
+    this.filterPropertyId = this.properties.length === 1 ? this.properties[0].id : null;
     this.pageIndex = 0;
     this.loadTenants();
   }
 
-  hasFiltersBar(): boolean { return !!this.filterPropertyId; }
+  hasFiltersBar(): boolean { return this.properties.length > 1 && !!this.filterPropertyId; }
+
+  get filterValues(): Record<string, unknown> {
+    return {
+      filterPropertyId: this.filterPropertyId
+    };
+  }
 
   onSearch(term: string): void {
     this.searchTerm = term;
@@ -334,6 +353,20 @@ export class TenantManagementComponent implements OnInit {
 
   tenantDisplayName(t: Tenant): string {
     return this.isAr ? (t.fullNameAr || t.fullName) : (t.fullNameEn || t.fullName);
+  }
+
+  groupPropertyLabels(group: TenantGroup): string {
+    const labels = group.contracts.length > 0
+      ? group.contracts.map((contract) => contract.propertyName || this.propertyLabel(contract.propertyId))
+      : group.entries.map((entry) => this.propertyLabel(entry.propertyId));
+    return Array.from(new Set(labels.filter(Boolean))).join(', ') || '-';
+  }
+
+  groupUnitLabels(group: TenantGroup): string {
+    const labels = group.contracts.length > 0
+      ? group.contracts.map((contract) => contract.unitNumber || this.unitLabel(contract.unitId))
+      : group.entries.map((entry) => this.unitLabel(entry.unitId));
+    return Array.from(new Set(labels.filter(Boolean))).join(', ') || '-';
   }
 
   private applyFilters(): void {
@@ -384,6 +417,9 @@ export class TenantManagementComponent implements OnInit {
       .subscribe((res: any) => {
         this.properties = res.data?.content ?? [];
         this.propertyById = this.properties.reduce((acc: Record<number, Property>, p: Property) => { acc[p.id] = p; return acc; }, {} as Record<number, Property>);
+        if (this.properties.length === 1) {
+          this.filterPropertyId = this.properties[0].id;
+        }
         this.setupFilters();
         this.loadAllUnits();
         this.loadTenants();

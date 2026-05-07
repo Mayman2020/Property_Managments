@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
+import { AppConstants } from '../constants/app-constants';
 import { ApiResponse } from '../models/api-response.model';
 
 export interface MaintenanceInvoice {
@@ -46,7 +47,7 @@ export class MaintenanceInvoiceService {
 
   // Contractor company officer — submit invoice
   submitInvoice(payload: SubmitInvoicePayload): Observable<ApiResponse<MaintenanceInvoice>> {
-    return this.api.post('/maintenance-invoices', payload);
+    return this.api.post(AppConstants.API.MAINTENANCE_INVOICES, payload);
   }
 
   // Contractor company officer — view own invoices
@@ -54,12 +55,12 @@ export class MaintenanceInvoiceService {
     const params: Record<string, string> = {};
     if (year != null) params['year'] = String(year);
     if (month != null) params['month'] = String(month);
-    return this.api.get('/maintenance-invoices/my', params);
+    return this.api.get(AppConstants.API.MAINTENANCE_INVOICES_MY, params);
   }
 
   // Contractor company officer — get properties this company serves
   getMyProperties(): Observable<ApiResponse<CompanyProperty[]>> {
-    return this.api.get('/maintenance-invoices/my-properties');
+    return this.api.get(AppConstants.API.MAINTENANCE_INVOICES_MY_PROPERTIES);
   }
 
   // Accountant — view all maintenance invoices
@@ -67,11 +68,11 @@ export class MaintenanceInvoiceService {
     const params: Record<string, string> = {};
     if (year != null) params['year'] = String(year);
     if (month != null) params['month'] = String(month);
-    return this.api.get('/accountant-portal/maintenance-invoices', params);
+    return this.api.get(AppConstants.API.ACCOUNTANT_PORTAL_MAINTENANCE_INVOICES, params);
   }
 
   // Accountant — review invoice
   reviewInvoice(id: number, status: string, notes?: string): Observable<ApiResponse<MaintenanceInvoice>> {
-    return this.api.patch(`/accountant-portal/maintenance-invoices/${id}/review`, { status, notes });
+    return this.api.patch(AppConstants.API.ACCOUNTANT_PORTAL_MAINTENANCE_INVOICE_REVIEW(id), { status, notes });
   }
 }

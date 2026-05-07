@@ -1,6 +1,7 @@
 ﻿import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
+import { AppConstants } from '../constants/app-constants';
 import { ApiResponse, PagedResponse } from '../models/api-response.model';
 
 export interface Tenant {
@@ -43,6 +44,7 @@ export interface TenantRequest {
   leaseStart: string;
   leaseEnd: string;
   profileImage?: string;
+  civilIdImageUrl?: string;
   leaseContractFiles: string[];
   notes?: string;
 }
@@ -61,6 +63,7 @@ export interface TenantFullOnboardRequest {
   unitId: number;
   profileImageUrl?: string;
   profileImage?: string;
+  civilIdImageUrl?: string;
   leaseContractFiles: string[];
   notes?: string;
   monthlyRent: number;
@@ -87,35 +90,35 @@ export class TenantService {
     const params: Record<string, string | number | boolean> = { page, size };
     if (q && q.trim()) params['q'] = q.trim();
     if (propertyId != null && propertyId > 0) params['propertyId'] = propertyId;
-    return this.api.get('/tenants', params);
+    return this.api.get(AppConstants.API.TENANTS, params);
   }
 
   getById(id: number): Observable<ApiResponse<Tenant>> {
-    return this.api.get(`/tenants/${id}`);
+    return this.api.get(AppConstants.API.TENANT_BY_ID(id));
   }
 
   getByUnitId(unitId: number): Observable<ApiResponse<Tenant>> {
-    return this.api.get(`/tenants/by-unit/${unitId}`);
+    return this.api.get(AppConstants.API.TENANT_BY_UNIT(unitId));
   }
 
   create(payload: TenantRequest): Observable<ApiResponse<Tenant>> {
-    return this.api.post('/tenants', payload);
+    return this.api.post(AppConstants.API.TENANTS, payload);
   }
 
   /** One request: TENANT user + tenant row + draft lease + unit marked rented (server transaction). */
   onboard(payload: TenantFullOnboardRequest): Observable<ApiResponse<TenantOnboardingResponse>> {
-    return this.api.post('/tenants/onboard', payload);
+    return this.api.post(AppConstants.API.TENANTS_ONBOARD, payload);
   }
 
   update(id: number, payload: TenantRequest): Observable<ApiResponse<Tenant>> {
-    return this.api.put(`/tenants/${id}`, payload);
+    return this.api.put(AppConstants.API.TENANT_BY_ID(id), payload);
   }
 
   unlinkUnit(id: number): Observable<ApiResponse<Tenant>> {
-    return this.api.patch(`/tenants/${id}/unlink-unit`);
+    return this.api.patch(AppConstants.API.TENANT_UNLINK_UNIT(id));
   }
 
   delete(id: number): Observable<ApiResponse<void>> {
-    return this.api.delete(`/tenants/${id}`);
+    return this.api.delete(AppConstants.API.TENANT_BY_ID(id));
   }
 }

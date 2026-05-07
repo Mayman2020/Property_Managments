@@ -12,6 +12,7 @@ import com.propertymanagement.modules.user.UserService;
 import com.propertymanagement.shared.exception.AppException;
 import com.propertymanagement.shared.i18n.AppMessages;
 import com.propertymanagement.shared.i18n.BilingualNotificationText;
+import com.propertymanagement.shared.security.PropertyScopeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -33,13 +35,38 @@ public class OwnerService {
     private final PasswordEncoder passwordEncoder;
     private final NotificationService notificationService;
     private final AppMessages appMessages;
+    private final PropertyScopeService propertyScopeService;
 
-    public Page<OwnerResponse> getAll(Pageable pageable) {
+    public Page<OwnerResponse> getAll(Pageable pageable, Long propertyId) {
+        Set<Long> scope = propertyScopeService.propertyIdsOrNullIfUnrestricted();
+        if (scope != null) {
+            if (scope.isEmpty()) {
+                return Page.empty(pageable);
+            }
+            if (propertyId != null) {
+                return scope.contains(propertyId)
+                        ? ownerRepository.findActiveLinkedToPropertyId(propertyId, pageable).map(this::toResponse)
+                        : Page.empty(pageable);
+            }
+            return ownerRepository.findActiveLinkedToPropertyIds(scope, pageable).map(this::toResponse);
+        }
+        if (propertyId != null) {
+            return ownerRepository.findActiveLinkedToPropertyId(propertyId, pageable).map(this::toResponse);
+        }
         return ownerRepository.findByActiveTrue(pageable).map(this::toResponse);
     }
 
     public OwnerResponse getById(Long id) {
-        return toResponse(findActive(id));
+        Owner owner = findActive(id);
+        Set<Long> scope = propertyScopeService.propertyIdsOrNullIfUnrestricted();
+        if (scope != null) {
+            List<Long> ownerPropertyIds = ownerRepository.findActivePropertyIdsForOwner(owner.getId());
+            boolean allowed = ownerPropertyIds.stream().anyMatch(scope::contains);
+            if (!allowed) {
+                throw AppException.forbidden("You do not have access to this owner");
+            }
+        }
+        return toResponse(owner);
     }
 
     @Transactional

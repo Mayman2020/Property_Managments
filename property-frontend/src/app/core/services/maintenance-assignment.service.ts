@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
+import { AppConstants } from '../constants/app-constants';
 import { ApiResponse } from '../models/api-response.model';
 
 export interface ContractInfo {
@@ -64,20 +65,20 @@ export class MaintenanceAssignmentService {
 
   list(propertyId: number): Observable<ApiResponse<MaintenanceAssignment[]>> {
     return this.api.get<ApiResponse<MaintenanceAssignment[]>>(
-      `/properties/${propertyId}/maintenance-assignments`
+      AppConstants.API.PROPERTY_MAINTENANCE_ASSIGNMENTS(propertyId)
     );
   }
 
   assign(propertyId: number, req: AssignMaintenanceRequest): Observable<ApiResponse<MaintenanceAssignment>> {
     return this.api.post<ApiResponse<MaintenanceAssignment>>(
-      `/properties/${propertyId}/maintenance-assignments`,
+      AppConstants.API.PROPERTY_MAINTENANCE_ASSIGNMENTS(propertyId),
       req
     );
   }
 
   endAssignment(propertyId: number, assignmentId: number): Observable<ApiResponse<MaintenanceAssignment>> {
     return this.api.patch<ApiResponse<MaintenanceAssignment>>(
-      `/properties/${propertyId}/maintenance-assignments/${assignmentId}/end`
+      AppConstants.API.PROPERTY_MAINTENANCE_ASSIGNMENT_END(propertyId, assignmentId)
     );
   }
 }

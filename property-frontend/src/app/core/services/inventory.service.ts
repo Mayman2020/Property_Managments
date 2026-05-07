@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
+import { AppConstants } from '../constants/app-constants';
 import { ApiResponse, PagedResponse } from '../models/api-response.model';
 
 export interface InventoryItem {
@@ -36,33 +37,33 @@ export class InventoryService {
   constructor(private readonly api: ApiService) {}
 
   getItems(propertyId?: number, page = 0, size = 20, q?: string): Observable<ApiResponse<PagedResponse<InventoryItem>>> {
-    const url = propertyId ? `/inventory/property/${propertyId}` : '/inventory';
+    const url = propertyId ? AppConstants.API.INVENTORY_BY_PROPERTY(propertyId) : AppConstants.API.INVENTORY;
     const params: Record<string, string | number | boolean> = { page, size };
     if (q && q.trim()) params['q'] = q.trim();
     return this.api.get(url, params);
   }
 
   getLowStock(): Observable<ApiResponse<InventoryItem[]>> {
-    return this.api.get('/inventory/low-stock');
+    return this.api.get(AppConstants.API.INVENTORY_LOW_STOCK);
   }
 
   create(item: Partial<InventoryItem>): Observable<ApiResponse<InventoryItem>> {
-    return this.api.post('/inventory', item);
+    return this.api.post(AppConstants.API.INVENTORY, item);
   }
 
   update(id: number, item: Partial<InventoryItem>): Observable<ApiResponse<InventoryItem>> {
-    return this.api.put(`/inventory/${id}`, item);
+    return this.api.put(AppConstants.API.INVENTORY_BY_ID(id), item);
   }
 
   delete(id: number): Observable<ApiResponse<void>> {
-    return this.api.delete(`/inventory/${id}`);
+    return this.api.delete(AppConstants.API.INVENTORY_BY_ID(id));
   }
 
   addTransaction(transaction: { itemId: number; quantity: number; transactionType: 'IN' | 'OUT'; notes?: string }): Observable<ApiResponse<InventoryTransaction>> {
-    return this.api.post('/inventory/transactions', transaction);
+    return this.api.post(AppConstants.API.INVENTORY_TRANSACTIONS, transaction);
   }
 
   getTransactions(params?: Record<string, string | number>): Observable<ApiResponse<PagedResponse<InventoryTransaction>>> {
-    return this.api.get('/inventory/transactions', params);
+    return this.api.get(AppConstants.API.INVENTORY_TRANSACTIONS, params);
   }
 }

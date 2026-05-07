@@ -19,7 +19,7 @@ public class MaintenanceAssignmentController {
 
     /** GET /properties/{id}/maintenance-assignments */
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','MAINTENANCE_OFFICER','MAINTENANCE_CONTRACTOR')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','MAINTENANCE_OFFICER_INTERNAL','MAINTENANCE_OFFICER_COMPANY','MAINTENANCE_COMPANY')")
     public ResponseEntity<ApiResponse<List<MaintenanceAssignmentResponse>>> list(
             @PathVariable Long propertyId) {
         return ResponseEntity.ok(ApiResponse.ok(service.listByProperty(propertyId)));

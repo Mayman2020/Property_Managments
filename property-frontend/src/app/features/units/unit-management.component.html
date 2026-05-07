@@ -34,6 +34,7 @@
 
       <app-filter-bar
         [filters]="unitFilters"
+        [filterValues]="filterValues"
         (filtersChange)="onFilterBarChange($event)"> </app-filter-bar>
       <button mat-icon-button class="clear-filters-btn" (click)="clearFiltersFromBar()" *ngIf="hasFiltersBar()" [matTooltip]="'ACTIONS.CLEAR_FILTERS' | translate">
         <mat-icon>filter_alt_off</mat-icon>
@@ -110,8 +111,9 @@
                         (click)="viewContract(unit)" [matTooltip]="'CONTRACTS.VIEW_DETAILS' | translate">
                   <mat-icon>description</mat-icon>
                 </button>
-                <button *ngIf="canEditUnit()" class="app-icon-btn" [ngClass]="unit.rented || unit.reserved ? 'warning' : 'success'" type="button" (click)="toggleRented(unit)" [matTooltip]="(unit.rented || unit.reserved ? 'UNITS.MARK_VACANT' : 'UNITS.MARK_RENTED') | translate">
-                  <mat-icon>{{ unit.rented || unit.reserved ? 'event_busy' : 'event_available' }}</mat-icon>
+                <button *ngIf="canEditUnit() && !unit.rented && !unit.reserved" class="app-icon-btn success" type="button"
+                        (click)="openAssignTenant(unit)" [matTooltip]="'TENANTS.ASSIGN_UNIT' | translate">
+                  <mat-icon>person_add</mat-icon>
                 </button>
                 <button *ngIf="canDeleteUnit()" class="app-icon-btn danger" type="button" (click)="deleteUnit(unit)" [disabled]="unit.rented || unit.reserved" [matTooltip]="(unit.rented || unit.reserved ? 'UNITS.DELETE_RENTED_HINT' : 'ACTIONS.DELETE') | translate">
                   <mat-icon>delete</mat-icon>

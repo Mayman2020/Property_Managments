@@ -189,7 +189,7 @@
         <span class="material-icons" style="font-size: 18px; color: var(--ink-400)">search</span>
         <input [value]="searchTerm" (input)="onSearch($any($event.target).value)" [placeholder]="'ACTIONS.SEARCH' | translate">
       </div>
-      <app-filter-bar *ngIf="listContext === 'admin'" [filters]="pageFilters" (filtersChange)="onFilterBarChange($event)"></app-filter-bar>
+      <app-filter-bar *ngIf="listContext === 'admin'" [filters]="pageFilters" [filterValues]="filterValues" (filtersChange)="onFilterBarChange($event)"></app-filter-bar>
       <button mat-icon-button class="clear-filters-btn" (click)="clearFiltersFromBar()" *ngIf="listContext === 'admin' && hasFiltersBar()" [matTooltip]="'ACTIONS.CLEAR_FILTERS' | translate">
         <mat-icon>filter_alt_off</mat-icon>
       </button>

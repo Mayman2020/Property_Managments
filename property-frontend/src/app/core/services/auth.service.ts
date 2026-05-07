@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
-import { Observable, tap, map } from 'rxjs';
+import { Observable, Subject, tap, map } from 'rxjs';
 import { ApiService } from './api.service';
+import { AppConstants } from '../constants/app-constants';
 import { TokenStorageService } from '../auth/token-storage.service';
 import { JwtUtils } from '../utils/jwt-utils';
 import { ApiResponse } from '../models/api-response.model';
@@ -10,6 +11,10 @@ import { ClientModuleMap, CurrentUser, LoginRequest, LoginResponse, PermissionMa
 @Injectable({ providedIn: 'root' })
 export class AuthService {
 
+  private readonly activeRoleChanged$ = new Subject<void>();
+  /** Fires after {@link setActiveRole} so pages can reload data scoped to the new role. */
+  readonly activeRoleChanged = this.activeRoleChanged$.asObservable();
+
   constructor(
     private readonly api: ApiService,
     private readonly tokenStorage: TokenStorageService,
@@ -17,7 +22,7 @@ export class AuthService {
   ) {}
 
   login(request: LoginRequest): Observable<LoginResponse> {
-    return this.api.post<ApiResponse<LoginResponse>>('/auth/login', request).pipe(
+    return this.api.post<ApiResponse<LoginResponse>>(AppConstants.API.AUTH_LOGIN, request).pipe(
       tap((res) => {
         if (res.data?.accessToken) {
           this.tokenStorage.setToken(res.data.accessToken);
@@ -109,6 +114,7 @@ export class AuthService {
     const allowed = this.getEffectiveRoles();
     if (!allowed.includes(role)) return;
     this.tokenStorage.setUser({ ...user, activeRole: role });
+    this.activeRoleChanged$.next();
   }
 
   getPermissions(): PermissionMap {
@@ -133,7 +139,11 @@ export class AuthService {
   /** @deprecated use {@link isGeneralManager} */
   isPropertyAdmin(): boolean { return this.isGeneralManager(); }
   isOfficer(): boolean {
-    return this.hasRole('MAINTENANCE_OFFICER') || this.hasRole('MAINTENANCE_CONTRACTOR');
+    return (
+      this.hasRole('MAINTENANCE_OFFICER_INTERNAL') ||
+      this.hasRole('MAINTENANCE_OFFICER_COMPANY') ||
+      this.hasRole('MAINTENANCE_COMPANY')
+    );
   }
   isTenant(): boolean { return this.hasRole('TENANT'); }
   isAccountant(): boolean { return this.hasRole('ACCOUNTANT'); }
@@ -169,7 +179,14 @@ export class AuthService {
     if (roles.some((r) => ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'PROCEDURES_CLERK', 'PROPERTY_GUARD', 'OWNER'].includes(r))) {
       return '/admin/home';
     }
-    if (roles.some((r) => r === 'MAINTENANCE_OFFICER' || r === 'MAINTENANCE_CONTRACTOR')) {
+    if (
+      roles.some(
+        (r) =>
+          r === 'MAINTENANCE_OFFICER_INTERNAL' ||
+          r === 'MAINTENANCE_OFFICER_COMPANY' ||
+          r === 'MAINTENANCE_COMPANY'
+      )
+    ) {
       return '/officer/schedule';
     }
     if (roles.includes('TENANT')) return '/tenant/my-unit';
@@ -222,8 +239,9 @@ export class AuthService {
           { route: '/admin/properties', permission: 'properties', action: 'view' },
           { route: '/admin/profile', permission: 'profile', action: 'view' }
         ];
-      case 'MAINTENANCE_OFFICER':
-      case 'MAINTENANCE_CONTRACTOR':
+      case 'MAINTENANCE_OFFICER_INTERNAL':
+      case 'MAINTENANCE_OFFICER_COMPANY':
+      case 'MAINTENANCE_COMPANY':
         return [
           { route: '/officer/schedule', permission: 'schedule', action: 'view' },
           { route: '/officer/requests', permission: 'my_requests', action: 'view' },

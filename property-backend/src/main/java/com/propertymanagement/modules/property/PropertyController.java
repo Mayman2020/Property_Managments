@@ -23,8 +23,9 @@ public class PropertyController {
     @GetMapping
     public ResponseEntity<ApiResponse<Page<PropertyResponse>>> getAll(
             @RequestParam(required = false) String q,
+            @RequestParam(required = false) Long propertyId,
             @PageableDefault(size = 10) Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.ok(propertyService.getAll(pageable, q)));
+        return ResponseEntity.ok(ApiResponse.ok(propertyService.getAll(pageable, q, propertyId)));
     }
 
     @GetMapping("/{id}")

@@ -51,6 +51,7 @@ public class TenantOnboardingService {
         userRequest.setFullName(firstNonBlank(req.getFullNameAr(), req.getFullNameEn()));
         userRequest.setPhone(req.getPhone().trim());
         userRequest.setProfileImageUrl(trimToNull(req.getProfileImageUrl()));
+        userRequest.setCivilIdImageUrl(trimToNull(req.getCivilIdImageUrl()));
         userRequest.setRole(UserRole.TENANT);
         userRequest.setPropertyId(req.getPropertyId());
 

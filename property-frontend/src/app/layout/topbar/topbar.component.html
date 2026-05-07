@@ -7,6 +7,15 @@
   </div>
 
   <div class="topbar-end">
+    <mat-form-field *ngIf="showPropertySelector()" appearance="outline" class="tb-property-scope-field">
+      <mat-label>{{ 'TOPBAR.PROPERTY_SCOPE' | translate }}</mat-label>
+      <mat-select [value]="selectedPropertyId" (selectionChange)="onPropertyScopeChange($event.value)">
+        <mat-option *ngFor="let p of propertyOptions" [value]="p.id">
+          {{ propertyLabel(p) }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
     <button class="tb-action-btn" [matTooltip]="'TOPBAR.LANGUAGE' | translate" [matMenuTriggerFor]="langMenu">
       <img class="flag" [src]="activeLanguage.flagUrl" [attr.alt]="languageLabel(activeLanguage)">
       <span class="lang-name">{{ languageNativeLabel(activeLanguage) }}</span>

@@ -1034,7 +1034,7 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
   }
 
   private loadMaintenanceOfficers(): void {
-    this.userSvc.getAll(0, 200, undefined, 'MAINTENANCE_OFFICER').subscribe({
+    this.userSvc.getAll(0, 200, undefined, 'MAINTENANCE_OFFICER_INTERNAL').subscribe({
       next: (res) => {
         this.internalOfficerOptions = (res.data?.content ?? []).filter((u) => u.isActive !== false);
         this.cdr.markForCheck();

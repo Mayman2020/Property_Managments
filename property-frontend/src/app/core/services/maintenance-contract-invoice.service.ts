@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
+import { AppConstants } from '../constants/app-constants';
 import { ApiResponse } from '../models/api-response.model';
 
 export interface MaintenanceContractInvoiceResponse {
@@ -28,35 +29,35 @@ export class MaintenanceContractInvoiceService {
   constructor(private readonly api: ApiService) {}
 
   listAll(): Observable<ApiResponse<MaintenanceContractInvoiceResponse[]>> {
-    return this.api.get<ApiResponse<MaintenanceContractInvoiceResponse[]>>('/maintenance-invoices');
+    return this.api.get<ApiResponse<MaintenanceContractInvoiceResponse[]>>(AppConstants.API.MAINTENANCE_INVOICES);
   }
 
   getById(id: number): Observable<ApiResponse<MaintenanceContractInvoiceResponse>> {
-    return this.api.get<ApiResponse<MaintenanceContractInvoiceResponse>>(`/maintenance-invoices/${id}`);
+    return this.api.get<ApiResponse<MaintenanceContractInvoiceResponse>>(AppConstants.API.MAINTENANCE_INVOICE_BY_ID(id));
   }
 
   listByContract(contractId: number): Observable<ApiResponse<MaintenanceContractInvoiceResponse[]>> {
     return this.api.get<ApiResponse<MaintenanceContractInvoiceResponse[]>>(
-      `/maintenance-contracts/${contractId}/invoices`
+      AppConstants.API.MAINTENANCE_CONTRACT_INVOICES(contractId)
     );
   }
 
   generateMonthlyInvoices(contractId: number): Observable<ApiResponse<MaintenanceContractInvoiceResponse[]>> {
     return this.api.post<ApiResponse<MaintenanceContractInvoiceResponse[]>>(
-      `/maintenance-contracts/${contractId}/generate-monthly-invoices`,
+      AppConstants.API.MAINTENANCE_CONTRACT_GENERATE_MONTHLY_INVOICES(contractId),
       {}
     );
   }
 
   markPaid(id: number): Observable<ApiResponse<MaintenanceContractInvoiceResponse>> {
     return this.api.patch<ApiResponse<MaintenanceContractInvoiceResponse>>(
-      `/maintenance-invoices/${id}/mark-paid`
+      AppConstants.API.MAINTENANCE_INVOICE_MARK_PAID(id)
     );
   }
 
   cancel(id: number): Observable<ApiResponse<MaintenanceContractInvoiceResponse>> {
     return this.api.patch<ApiResponse<MaintenanceContractInvoiceResponse>>(
-      `/maintenance-invoices/${id}/cancel`
+      AppConstants.API.MAINTENANCE_INVOICE_CANCEL(id)
     );
   }
 

@@ -49,6 +49,7 @@ export class UserManagementComponent implements OnInit {
   properties: Property[] = [];
   contractorCompanies: ContractorCompany[] = [];
   searchTerm = '';
+  filterPropertyId: number | null = null;
   filterRole: string | null = null;
   filterStatus: boolean | null = null;
   pageFilters: FilterSpec[] = [];
@@ -79,34 +80,52 @@ export class UserManagementComponent implements OnInit {
   }
 
   private setupFilters(): void {
-    this.pageFilters = [
-      { key: 'searchTerm', label: 'ACTIONS.SEARCH', type: 'text' },
-      {
-        key: 'filterRole',
-        label: 'USER_MGMT.ROLE',
-        type: 'select',
-        options: [
-          { value: 'SUPER_ADMIN', label: this.i18n.instant('ROLE.SUPER_ADMIN') },
-          { value: 'GENERAL_MANAGER', label: this.i18n.instant('ROLE.GENERAL_MANAGER') },
-          { value: 'MAINTENANCE_OFFICER', label: this.i18n.instant('ROLE.MAINTENANCE_OFFICER') },
-          { value: 'TENANT', label: this.i18n.instant('ROLE.TENANT') },
-          { value: 'OWNER', label: this.i18n.instant('ROLE.OWNER') }
-        ]
-      },
-      {
-        key: 'filterStatus',
-        label: 'MAINTENANCE.STATUS',
-        type: 'select',
-        options: [
-          { value: true, label: this.i18n.instant('COMMON.ACTIVE') },
-          { value: false, label: this.i18n.instant('COMMON.INACTIVE') }
-        ]
-      }
+    const filters: FilterSpec[] = [
+      { key: 'searchTerm', label: 'ACTIONS.SEARCH', type: 'text' }
     ];
+
+    if (this.properties.length > 1) {
+      filters.push({
+        key: 'filterPropertyId',
+        label: 'REQUEST_FORM.PROPERTY',
+        type: 'select',
+        options: this.properties.map((p) => ({
+          value: p.id,
+          label: this.i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName)
+        }))
+      });
+    }
+
+    filters.push({
+      key: 'filterRole',
+      label: 'USER_MGMT.ROLE',
+      type: 'select',
+      options: [
+        { value: 'SUPER_ADMIN', label: this.i18n.instant('ROLE.SUPER_ADMIN') },
+        { value: 'MAINTENANCE_OFFICER_INTERNAL', label: this.i18n.instant('ROLE.MAINTENANCE_OFFICER_INTERNAL') },
+        { value: 'MAINTENANCE_OFFICER_COMPANY', label: this.i18n.instant('ROLE.MAINTENANCE_OFFICER_COMPANY') },
+        { value: 'MAINTENANCE_COMPANY', label: this.i18n.instant('ROLE.MAINTENANCE_COMPANY') },
+        { value: 'TENANT', label: this.i18n.instant('ROLE.TENANT') },
+        { value: 'OWNER', label: this.i18n.instant('ROLE.OWNER') }
+      ]
+    });
+
+    filters.push({
+      key: 'filterStatus',
+      label: 'MAINTENANCE.STATUS',
+      type: 'select',
+      options: [
+        { value: true, label: this.i18n.instant('COMMON.ACTIVE') },
+        { value: false, label: this.i18n.instant('COMMON.INACTIVE') }
+      ]
+    });
+
+    this.pageFilters = filters;
   }
 
   onFilterBarChange(values: any): void {
     if (values?.searchTerm !== undefined) this.searchTerm = values.searchTerm ?? '';
+    if (values?.filterPropertyId !== undefined) this.filterPropertyId = values.filterPropertyId;
     if (values?.filterRole !== undefined) this.filterRole = values.filterRole;
     if (values?.filterStatus !== undefined) this.filterStatus = values.filterStatus;
     this.pageIndex = 0;
@@ -114,17 +133,28 @@ export class UserManagementComponent implements OnInit {
 
   clearFiltersFromBar(): void {
     this.searchTerm = '';
+    this.filterPropertyId = null;
     this.filterRole = null;
     this.filterStatus = null;
     this.pageIndex = 0;
   }
 
   hasFiltersBar(): boolean {
-    return !!(this.searchTerm || this.filterRole || this.filterStatus !== null);
+    return !!(this.searchTerm || this.filterPropertyId !== null || this.filterRole || this.filterStatus !== null);
+  }
+
+  get filterValues(): Record<string, unknown> {
+    return {
+      searchTerm: this.searchTerm,
+      filterPropertyId: this.filterPropertyId,
+      filterRole: this.filterRole,
+      filterStatus: this.filterStatus
+    };
   }
 
   get filteredUsers(): User[] {
     return this.users.filter(u => {
+      if (this.filterPropertyId !== null && !this.userMatchesProperty(u, this.filterPropertyId)) return false;
       if (this.filterRole && u.role !== this.filterRole) return false;
       if (this.filterStatus !== null && u.isActive !== this.filterStatus) return false;
       const q = this.searchTerm.trim().toLowerCase();
@@ -135,6 +165,11 @@ export class UserManagementComponent implements OnInit {
       }
       return true;
     });
+  }
+
+  private userMatchesProperty(user: User, propertyId: number): boolean {
+    if (user.propertyId === propertyId) return true;
+    return user.ownerProperties?.some((op) => op.id === propertyId) ?? false;
   }
 
   get pagedUsers(): User[] {
@@ -163,8 +198,14 @@ export class UserManagementComponent implements OnInit {
   loadData(): void {
     this.loadUsers();
     this.propertyService.getAll(0, 200).subscribe({
-      next: res => { this.properties = res.data?.content ?? []; },
-      error: () => { this.properties = []; }
+      next: res => {
+        this.properties = res.data?.content ?? [];
+        this.setupFilters();
+      },
+      error: () => {
+        this.properties = [];
+        this.setupFilters();
+      }
     });
     this.contractorCompanyService.list(true).subscribe({
       next: res => { this.contractorCompanies = (res.data ?? []).filter(c => c.active); },

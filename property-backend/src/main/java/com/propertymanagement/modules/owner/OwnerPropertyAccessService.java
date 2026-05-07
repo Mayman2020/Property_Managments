@@ -5,6 +5,7 @@ import com.propertymanagement.modules.property.PropertyRepository;
 import com.propertymanagement.modules.user.User;
 import com.propertymanagement.modules.user.UserRole;
 import com.propertymanagement.shared.exception.AppException;
+import com.propertymanagement.shared.security.PropertyScopeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -24,19 +25,14 @@ public class OwnerPropertyAccessService {
 
     private final OwnerRepository ownerRepository;
     private final PropertyRepository propertyRepository;
+    private final PropertyScopeService propertyScopeService;
 
     /**
-     * @return {@code null} if the current user is not an owner (no property list restriction here);
-     * otherwise the set of property ids they may access (possibly empty).
+     * @return {@code null} for unrestricted roles (SUPER_ADMIN/GENERAL_MANAGER by active role),
+     * otherwise the effective scoped property ids (possibly empty).
      */
     public Set<Long> ownerPropertyIdsOrNullIfNotOwner() {
-        Optional<User> u = currentUser();
-        if (u.isEmpty() || u.get().getRole() != UserRole.OWNER) {
-            return null;
-        }
-        return ownerRepository.findByUserId(u.get().getId())
-                .map(o -> propertyIdsForOwnerRecord(o.getId()))
-                .orElseGet(Set::of);
+        return propertyScopeService.propertyIdsOrNullIfUnrestricted();
     }
 
     public void assertOwnerCanAccessProperty(Long propertyId) {

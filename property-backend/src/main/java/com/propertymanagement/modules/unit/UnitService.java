@@ -6,7 +6,6 @@ import com.propertymanagement.modules.unit.dto.UnitResponse;
 import com.propertymanagement.modules.contract.lease.LeaseContractService;
 import com.propertymanagement.modules.notification.NotificationService;
 import com.propertymanagement.modules.notification.NotificationType;
-import com.propertymanagement.modules.owner.OwnerPropertyAccessService;
 import com.propertymanagement.modules.property.Floor;
 import com.propertymanagement.modules.property.FloorRepository;
 import com.propertymanagement.modules.property.Property;
@@ -16,6 +15,7 @@ import com.propertymanagement.modules.user.User;
 import com.propertymanagement.modules.user.UserRepository;
 import com.propertymanagement.shared.exception.AppException;
 import com.propertymanagement.shared.i18n.BilingualNotificationText;
+import com.propertymanagement.shared.security.PropertyScopeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -40,7 +40,7 @@ public class UnitService {
     private final UnitRepository unitRepository;
     private final PropertyRepository propertyRepository;
     private final FloorRepository floorRepository;
-    private final OwnerPropertyAccessService ownerPropertyAccessService;
+    private final PropertyScopeService propertyScopeService;
     private final UserRepository userRepository;
     private final CodeGenerationService codeGenerationService;
     private final LeaseContractService leaseContractService;
@@ -48,7 +48,7 @@ public class UnitService {
     private final PropertyOwnerPortalRecipientService propertyOwnerPortalRecipientService;
 
     public Page<UnitResponse> getByProperty(Long propertyId, Pageable pageable, String q) {
-        ownerPropertyAccessService.assertOwnerCanAccessProperty(propertyId);
+        assertCanAccessProperty(propertyId);
         Page<Unit> page = unitRepository.searchByProperty(propertyId, trimToNull(q), pageable);
         Map<Long, Integer> floorNumbers = loadFloorNumbersForUnits(page.getContent());
         return page.map(u -> toResponse(u, floorNumbers));
@@ -56,7 +56,7 @@ public class UnitService {
 
     public UnitResponse getById(Long id) {
         Unit unit = findActive(id);
-        ownerPropertyAccessService.assertOwnerCanAccessProperty(unit.getPropertyId());
+        assertCanAccessProperty(unit.getPropertyId());
         return toResponse(unit, loadFloorNumbersForUnits(List.of(unit)));
     }
 
@@ -71,6 +71,7 @@ public class UnitService {
 
     @Transactional
     public UnitResponse create(UnitRequest request) {
+        assertCanAccessProperty(request.getPropertyId());
         validatePropertyTotalUnitCapacity(request.getPropertyId());
         validateFloorCapacity(request.getPropertyId(), request.getFloorId(), null);
         String generatedUnitNumber = codeGenerationService.generate("UNIT");
@@ -146,6 +147,8 @@ public class UnitService {
     @Transactional
     public UnitResponse update(Long id, UnitRequest request) {
         Unit unit = findActive(id);
+        assertCanAccessProperty(unit.getPropertyId());
+        assertCanAccessProperty(request.getPropertyId());
         validateFloorCapacity(unit.getPropertyId(), request.getFloorId(), id);
         // unitNumber is generated on create and must not be changed on update
         unit.setUnitType(request.getUnitType());
@@ -167,7 +170,8 @@ public class UnitService {
      */
     @Transactional
     public UnitResponse setRentalStatus(Long id, boolean rented) {
-        findActive(id);
+        Unit unit = findActive(id);
+        assertCanAccessProperty(unit.getPropertyId());
         leaseContractService.syncUnitRentedFromContracts(id);
         return getById(id);
     }
@@ -175,6 +179,7 @@ public class UnitService {
     @Transactional
     public void delete(Long id) {
         Unit unit = findActive(id);
+        assertCanAccessProperty(unit.getPropertyId());
         if (unit.isRented() || unit.isReserved()) {
             throw new AppException("Cannot delete a unit with an active or pending lease. Cancel the lease or wait until the unit is vacant.", org.springframework.http.HttpStatus.CONFLICT, "UNIT_IS_RENTED");
         }
@@ -186,6 +191,12 @@ public class UnitService {
         return unitRepository.findById(id)
                 .filter(Unit::isActive)
                 .orElseThrow(() -> AppException.notFound("Unit not found: " + id));
+    }
+
+    private void assertCanAccessProperty(Long propertyId) {
+        if (!propertyScopeService.canAccessProperty(propertyId)) {
+            throw AppException.forbidden("You do not have access to this property");
+        }
     }
 
     private Map<Long, Integer> loadFloorNumbersForUnits(List<Unit> units) {

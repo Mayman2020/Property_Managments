@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { forkJoin, map, Observable, of, tap } from 'rxjs';
 import { ApiService } from './api.service';
+import { AppConstants } from '../constants/app-constants';
 import { AuthService } from './auth.service';
 import { PermissionAction, PermissionMap, UserRole } from '../models/user.model';
 import { ApiResponse } from '../models/api-response.model';
@@ -64,9 +65,9 @@ export class PermissionService {
     if (!this.auth.isAuthenticated()) return of(null);
     const activeRole = this.auth.getRole();
     return forkJoin({
-      permissionRes: this.api.get<ApiResponse<RolePermissionDto>>('/role-permissions/me', activeRole ? { role: activeRole } : undefined),
-      screenRes: this.api.get<ApiResponse<ScreenSettingDto[]>>('/screen-settings'),
-      propertyModuleRes: this.api.get<ApiResponse<PropertyModuleSettingDto[]>>('/property-modules/me')
+      permissionRes: this.api.get<ApiResponse<RolePermissionDto>>(AppConstants.API.ROLE_PERMISSIONS_ME, activeRole ? { role: activeRole } : undefined),
+      screenRes: this.api.get<ApiResponse<ScreenSettingDto[]>>(AppConstants.API.SCREEN_SETTINGS),
+      propertyModuleRes: this.api.get<ApiResponse<PropertyModuleSettingDto[]>>(AppConstants.API.PROPERTY_MODULES_ME)
     }).pipe(
       tap(({ permissionRes, screenRes, propertyModuleRes }) => {
         const permissions = permissionRes.data?.permissions ?? {};
@@ -81,19 +82,19 @@ export class PermissionService {
   }
 
   getAll(): Observable<ApiResponse<RolePermissionDto[]>> {
-    return this.api.get<ApiResponse<RolePermissionDto[]>>('/role-permissions');
+    return this.api.get<ApiResponse<RolePermissionDto[]>>(AppConstants.API.ROLE_PERMISSIONS);
   }
 
   update(role: UserRole, payload: RolePermissionUpdateRequest): Observable<ApiResponse<RolePermissionDto>> {
-    return this.api.put<ApiResponse<RolePermissionDto>>(`/role-permissions/${role}`, payload);
+    return this.api.put<ApiResponse<RolePermissionDto>>(AppConstants.API.ROLE_PERMISSIONS_BY_ROLE(role), payload);
   }
 
   getScreenSettings(): Observable<ApiResponse<ScreenSettingDto[]>> {
-    return this.api.get<ApiResponse<ScreenSettingDto[]>>('/screen-settings');
+    return this.api.get<ApiResponse<ScreenSettingDto[]>>(AppConstants.API.SCREEN_SETTINGS);
   }
 
   updateScreenSetting(screenKey: string, globallyEnabled: boolean): Observable<ApiResponse<ScreenSettingDto>> {
-    return this.api.put<ApiResponse<ScreenSettingDto>>(`/screen-settings/${screenKey}`, { globallyEnabled }).pipe(
+    return this.api.put<ApiResponse<ScreenSettingDto>>(AppConstants.API.SCREEN_SETTING_BY_KEY(screenKey), { globallyEnabled }).pipe(
       tap((res) => {
         if (res.data?.screenKey) {
           this.screenSettings[res.data.screenKey] = !!res.data.globallyEnabled;
@@ -103,23 +104,23 @@ export class PermissionService {
   }
 
   getMyPropertyModules(): Observable<ApiResponse<PropertyModuleSettingDto[]>> {
-    return this.api.get<ApiResponse<PropertyModuleSettingDto[]>>('/property-modules/me');
+    return this.api.get<ApiResponse<PropertyModuleSettingDto[]>>(AppConstants.API.PROPERTY_MODULES_ME);
   }
 
   getModuleDefinitions(): Observable<ApiResponse<ModuleDefinitionDto[]>> {
-    return this.api.get<ApiResponse<ModuleDefinitionDto[]>>('/module-catalog/definitions');
+    return this.api.get<ApiResponse<ModuleDefinitionDto[]>>(AppConstants.API.MODULE_CATALOG_DEFINITIONS);
   }
 
   getModulePresets(): Observable<ApiResponse<ModulePresetDto[]>> {
-    return this.api.get<ApiResponse<ModulePresetDto[]>>('/module-catalog/presets');
+    return this.api.get<ApiResponse<ModulePresetDto[]>>(AppConstants.API.MODULE_CATALOG_PRESETS);
   }
 
   getPropertyModules(propertyId: number): Observable<ApiResponse<PropertyModuleSettingDto[]>> {
-    return this.api.get<ApiResponse<PropertyModuleSettingDto[]>>(`/property-modules/property/${propertyId}`);
+    return this.api.get<ApiResponse<PropertyModuleSettingDto[]>>(AppConstants.API.PROPERTY_MODULES_BY_PROPERTY(propertyId));
   }
 
   updatePropertyModules(propertyId: number, modules: Record<string, boolean>): Observable<ApiResponse<PropertyModuleSettingDto[]>> {
-    return this.api.put<ApiResponse<PropertyModuleSettingDto[]>>(`/property-modules/property/${propertyId}`, { modules }).pipe(
+    return this.api.put<ApiResponse<PropertyModuleSettingDto[]>>(AppConstants.API.PROPERTY_MODULES_BY_PROPERTY(propertyId), { modules }).pipe(
       tap((res) => {
         const currentUser = this.auth.getCurrentUser();
         if (currentUser?.propertyId === propertyId) {

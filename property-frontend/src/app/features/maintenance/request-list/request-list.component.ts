@@ -266,6 +266,14 @@ export class RequestListComponent implements OnInit {
     return !!(this.filterPropertyId || this.filterStatus || this.filterPriority || this.searchTerm);
   }
 
+  get filterValues(): Record<string, unknown> {
+    return {
+      filterPropertyId: this.filterPropertyId,
+      filterStatus: this.filterStatus || null,
+      filterPriority: this.filterPriority || null
+    };
+  }
+
   applyFilter(): void {
     this.totalElements = this.filteredRequests.length;
     this.resetPagerIndexes();

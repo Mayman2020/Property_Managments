@@ -6,8 +6,8 @@
       { label: ('NAV.DASHBOARD' | translate), route: '/admin/dashboard' },
       { label: ('NAV.CONTRACTOR_COMPANIES' | translate) }
     ]">
-    <button mat-flat-button type="button" (click)="openDialog(null)">
-      <span class="material-icons">add</span>
+    <button mat-flat-button class="navy-btn" type="button" (click)="openDialog(null)">
+      <mat-icon>add</mat-icon>
       {{ 'CONTRACTORS.ADD' | translate }}
     </button>
   </app-page-header>
@@ -15,30 +15,37 @@
   <div class="loading-center" *ngIf="loading"><mat-spinner diameter="40"></mat-spinner></div>
 
   <app-empty-state
-    *ngIf="!loading && companies.length === 0"
+    *ngIf="!loading && companies.length === 0 && !hasFiltersBar()"
     icon="engineering"
     [title]="'CONTRACTORS.EMPTY_TITLE' | translate"
     [message]="'CONTRACTORS.EMPTY_MSG' | translate">
   </app-empty-state>
 
-  <div class="app-card table-card" *ngIf="!loading && companies.length > 0">
-    <div class="search-bar-shell" style="padding: 8px 0;">
-      <app-filter-bar [filters]="pageFilters" (filtersChange)="onFilterBarChange($event)"></app-filter-bar>
-      <button mat-icon-button class="clear-filters-btn" (click)="clearFiltersFromBar()" *ngIf="hasFiltersBar()" [matTooltip]="'ACTIONS.CLEAR_FILTERS' | translate">
-        <mat-icon>filter_alt_off</mat-icon>
-      </button>
+  <div class="app-card table-card directory-table-card" *ngIf="!loading && (companies.length > 0 || hasFiltersBar())">
+    <div class="estate-table-toolbar directory-toolbar">
+      <div class="directory-toolbar-top">
+        <div class="directory-search">
+          <mat-icon>search</mat-icon>
+          <input [value]="searchTerm" (input)="onSearch($any($event.target).value)" [placeholder]="'ACTIONS.SEARCH' | translate">
+        </div>
+        <app-filter-bar [filters]="pageFilters" [filterValues]="filterValues" (filtersChange)="onFilterBarChange($event)"></app-filter-bar>
+        <button mat-icon-button class="clear-filters-btn" (click)="clearFiltersFromBar()" *ngIf="hasFiltersBar()" [matTooltip]="'ACTIONS.CLEAR_FILTERS' | translate">
+          <mat-icon>filter_alt_off</mat-icon>
+        </button>
+        <app-table-export-toolbar
+          permissionKey="contractors"
+          [title]="'CONTRACTORS.TITLE' | translate"
+          fileName="contractors"
+          [columns]="exportColumns"
+          [rows]="filteredCompanies">
+        </app-table-export-toolbar>
+      </div>
     </div>
-    <app-table-export-toolbar
-      permissionKey="contractors"
-      [title]="'CONTRACTORS.TITLE' | translate"
-      fileName="contractors"
-      [columns]="exportColumns"
-      [rows]="filteredCompanies">
-    </app-table-export-toolbar>
     <div class="app-table-wrap">
       <table class="app-data-table">
         <thead>
           <tr>
+            <th>#</th>
             <th>{{ 'CONTRACTORS.NAME' | translate }}</th>
             <th>{{ 'CONTRACTORS.CONTRACT_START' | translate }}</th>
             <th>{{ 'CONTRACTORS.CONTRACT_END' | translate }}</th>
@@ -50,26 +57,40 @@
         </thead>
         <tbody>
           <tr *ngFor="let c of pagedCompanies">
-            <td><strong>{{ companyName(c) }}</strong></td>
+            <td>{{ c.id }}</td>
+            <td>
+              <div class="company-name-cell">
+                <img *ngIf="c.profileImageUrl" [src]="c.profileImageUrl" class="company-avatar" alt="">
+                <span class="avatar-placeholder" *ngIf="!c.profileImageUrl">
+                  {{ companyName(c).charAt(0).toUpperCase() }}
+                </span>
+                <strong>{{ companyName(c) }}</strong>
+              </div>
+            </td>
             <td>{{ formatDate(c.contractStart) }}</td>
             <td>{{ formatDate(c.contractEnd) }}</td>
             <td>{{ c.phone || '--' }}</td>
             <td>{{ c.email || '--' }}</td>
-            <td>{{ (c.active ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') | translate }}</td>
             <td>
+              <span class="badge" [class.badge-success]="c.active" [class.badge-muted]="!c.active">
+                <mat-icon>{{ c.active ? 'check_circle' : 'cancel' }}</mat-icon>
+                {{ (c.active ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') | translate }}
+              </span>
+            </td>
+            <td class="actions-cell">
               <button type="button" class="app-icon-btn accent" (click)="openView(c)" [matTooltip]="'ACTIONS.VIEW' | translate">
-                <span class="material-icons">visibility</span>
+                <mat-icon>visibility</mat-icon>
               </button>
               <button type="button" class="app-icon-btn" (click)="openDialog(c)" [matTooltip]="'ACTIONS.EDIT' | translate">
-                <span class="material-icons">edit</span>
+                <mat-icon>edit</mat-icon>
               </button>
               <button type="button" class="app-icon-btn danger" *ngIf="canHardDelete" (click)="remove(c)" [matTooltip]="'ACTIONS.DELETE' | translate">
-                <span class="material-icons">delete</span>
+                <mat-icon>delete</mat-icon>
               </button>
             </td>
           </tr>
           <tr *ngIf="filteredCompanies.length === 0">
-            <td colspan="7" class="empty-row">{{ 'COMMON.NO_DATA' | translate }}</td>
+            <td colspan="8" class="empty-row">{{ 'COMMON.NO_DATA' | translate }}</td>
           </tr>
         </tbody>
       </table>

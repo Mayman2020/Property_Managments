@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
+import { AppConstants } from '../constants/app-constants';
 import { ApiResponse, PagedResponse } from '../models/api-response.model';
 
 export type RequestStatus =
@@ -107,79 +108,79 @@ export class MaintenanceService {
   constructor(private readonly api: ApiService) {}
 
   getRequests(params?: Record<string, string | number | boolean>): Observable<ApiResponse<PagedResponse<MaintenanceRequest>>> {
-    return this.api.get('/maintenance/requests', params);
+    return this.api.get(AppConstants.API.MAINTENANCE_REQUESTS, params);
   }
 
   getByTenant(tenantId: number, params?: Record<string, string | number | boolean>): Observable<ApiResponse<PagedResponse<MaintenanceRequest>>> {
-    return this.api.get(`/maintenance/requests/tenant/${tenantId}`, params);
+    return this.api.get(AppConstants.API.MAINTENANCE_REQUESTS_TENANT(tenantId), params);
   }
 
   getByOfficer(officerId: number, params?: Record<string, string | number | boolean>): Observable<ApiResponse<PagedResponse<MaintenanceRequest>>> {
-    return this.api.get(`/maintenance/requests/officer/${officerId}`, params);
+    return this.api.get(AppConstants.API.MAINTENANCE_REQUESTS_OFFICER(officerId), params);
   }
 
   getCompanyQueue(params?: Record<string, string | number | boolean>): Observable<ApiResponse<PagedResponse<MaintenanceRequest>>> {
-    return this.api.get('/maintenance/requests/company-queue', params);
+    return this.api.get(AppConstants.API.MAINTENANCE_REQUESTS_COMPANY_QUEUE, params);
   }
 
   getOfficerOpenCount(officerId: number): Observable<ApiResponse<number>> {
-    return this.api.get(`/maintenance/requests/officer/${officerId}/open-count`);
+    return this.api.get(AppConstants.API.MAINTENANCE_REQUESTS_OFFICER_OPEN_COUNT(officerId));
   }
 
   getById(id: number): Observable<ApiResponse<MaintenanceRequest>> {
-    return this.api.get(`/maintenance/requests/${id}`);
+    return this.api.get(AppConstants.API.MAINTENANCE_REQUEST_BY_ID(id));
   }
 
   create(form: RequestForm): Observable<ApiResponse<MaintenanceRequest>> {
-    return this.api.post('/maintenance/requests', form);
+    return this.api.post(AppConstants.API.MAINTENANCE_REQUESTS, form);
   }
 
   assign(id: number, officerId: number): Observable<ApiResponse<MaintenanceRequest>> {
-    return this.api.patch(`/maintenance/requests/${id}/assign`, { officerId });
+    return this.api.patch(AppConstants.API.MAINTENANCE_REQUEST_ASSIGN(id), { officerId });
   }
 
   schedule(id: number, form: ScheduleForm): Observable<ApiResponse<MaintenanceRequest>> {
-    return this.api.patch(`/maintenance/requests/${id}/schedule`, form);
+    return this.api.patch(AppConstants.API.MAINTENANCE_REQUEST_SCHEDULE(id), form);
   }
 
   cancel(id: number): Observable<ApiResponse<MaintenanceRequest>> {
-    return this.api.patch(`/maintenance/requests/${id}/cancel`);
+    return this.api.patch(AppConstants.API.MAINTENANCE_REQUEST_CANCEL(id));
   }
 
   submitVisitReport(requestId: number, form: VisitReportForm): Observable<ApiResponse<VisitReport>> {
-    return this.api.post(`/maintenance/requests/${requestId}/visit-report`, form);
+    return this.api.post(AppConstants.API.MAINTENANCE_VISIT_REPORT(requestId), form);
   }
 
   getVisitReport(requestId: number): Observable<ApiResponse<VisitReport>> {
-    return this.api.get(`/maintenance/requests/${requestId}/visit-report`);
+    return this.api.get(AppConstants.API.MAINTENANCE_VISIT_REPORT(requestId));
   }
 
   startWork(id: number): Observable<ApiResponse<MaintenanceRequest>> {
-    return this.api.patch(`/maintenance/requests/${id}/start`);
+    return this.api.patch(AppConstants.API.MAINTENANCE_REQUEST_START(id));
   }
 
   acceptSchedule(id: number): Observable<ApiResponse<MaintenanceRequest>> {
-    return this.api.patch(`/maintenance/requests/${id}/accept-schedule`);
+    return this.api.patch(AppConstants.API.MAINTENANCE_REQUEST_ACCEPT_SCHEDULE(id));
   }
 
   rejectSchedule(id: number, rejectionNote: string): Observable<ApiResponse<MaintenanceRequest>> {
-    return this.api.patch(`/maintenance/requests/${id}/reject-schedule`, { rejectionNote });
+    return this.api.patch(AppConstants.API.MAINTENANCE_REQUEST_REJECT_SCHEDULE(id), { rejectionNote });
   }
 
   submitRating(requestId: number, form: RatingForm): Observable<ApiResponse<VisitRating>> {
-    return this.api.post(`/maintenance/requests/${requestId}/rating`, form);
+    return this.api.post(AppConstants.API.MAINTENANCE_RATING(requestId), form);
   }
 
   getRating(requestId: number): Observable<ApiResponse<VisitRating>> {
-    return this.api.get(`/maintenance/requests/${requestId}/rating`);
+    return this.api.get(AppConstants.API.MAINTENANCE_RATING(requestId));
   }
 
   getOfficers(): Observable<ApiResponse<PagedResponse<{ id: number; fullName: string; username: string }>>> {
-    return this.api.get('/users', { role: 'MAINTENANCE_OFFICER', size: 100 });
+    return this.api.get(AppConstants.API.USERS, { role: 'MAINTENANCE_OFFICER_INTERNAL', size: 100 });
   }
 
   getCategories(): Observable<ApiResponse<{ id: number; nameAr: string; nameEn: string; icon: string }[]>> {
-    return this.api.get('/maintenance/categories');
+    return this.api.get(AppConstants.API.MAINTENANCE_CATEGORIES);
   }
 
   addAttachment(requestId: number, payload: {
@@ -189,6 +190,6 @@ export class MaintenanceService {
     fileSizeKb?: number;
     uploadedBy?: number;
   }): Observable<ApiResponse<unknown>> {
-    return this.api.post(`/maintenance/requests/${requestId}/attachments`, payload);
+    return this.api.post(AppConstants.API.MAINTENANCE_REQUEST_ATTACHMENTS(requestId), payload);
   }
 }

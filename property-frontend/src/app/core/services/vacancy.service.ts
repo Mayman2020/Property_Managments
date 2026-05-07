@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
+import { AppConstants } from '../constants/app-constants';
 import { ApiResponse, PagedResponse } from '../models/api-response.model';
 
 export interface VacancyItem {
@@ -29,10 +30,10 @@ export class VacancyService {
   constructor(private readonly api: ApiService) {}
 
   getListings(params: Record<string, string | number> = {}): Observable<ApiResponse<PagedResponse<VacancyItem>>> {
-    return this.api.get('/vacancies', params);
+    return this.api.get(AppConstants.API.VACANCIES, params);
   }
 
   getInquiries(listingId: number): Observable<ApiResponse<VacancyInquiryItem[]>> {
-    return this.api.get(`/vacancies/${listingId}/inquiries`);
+    return this.api.get(AppConstants.API.VACANCY_INQUIRIES(listingId));
   }
 }

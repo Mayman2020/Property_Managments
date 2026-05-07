@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
+import { AppConstants } from '../constants/app-constants';
 import { ApiResponse } from '../models/api-response.model';
 
 export interface ContractorCompany {
@@ -44,21 +45,26 @@ export interface ContractorCompanyForm {
 export class ContractorCompanyService {
   constructor(private readonly api: ApiService) {}
 
-  list(all = false, q?: string): Observable<ApiResponse<ContractorCompany[]>> {
+  list(all = false, q?: string, propertyId?: number | null): Observable<ApiResponse<ContractorCompany[]>> {
     const params: Record<string, string | number | boolean> = { all };
     if (q && q.trim()) params['q'] = q.trim();
-    return this.api.get('/contractor-companies', params);
+    if (propertyId != null) params['propertyId'] = propertyId;
+    return this.api.get(AppConstants.API.CONTRACTOR_COMPANIES, params);
+  }
+
+  getById(id: number): Observable<ApiResponse<ContractorCompany>> {
+    return this.api.get(AppConstants.API.CONTRACTOR_COMPANY_BY_ID(id));
   }
 
   create(body: ContractorCompanyForm): Observable<ApiResponse<ContractorCompany>> {
-    return this.api.post('/contractor-companies', body);
+    return this.api.post(AppConstants.API.CONTRACTOR_COMPANIES, body);
   }
 
   update(id: number, body: ContractorCompanyForm): Observable<ApiResponse<ContractorCompany>> {
-    return this.api.put(`/contractor-companies/${id}`, body);
+    return this.api.put(AppConstants.API.CONTRACTOR_COMPANY_BY_ID(id), body);
   }
 
   delete(id: number): Observable<ApiResponse<null>> {
-    return this.api.delete(`/contractor-companies/${id}`);
+    return this.api.delete(AppConstants.API.CONTRACTOR_COMPANY_BY_ID(id));
   }
 }

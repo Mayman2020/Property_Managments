@@ -144,6 +144,13 @@ export class ComplaintsListComponent implements OnInit {
     return !!(this.filterPropertyId || this.filterStatus);
   }
 
+  get filterValues(): Record<string, unknown> {
+    return {
+      filterPropertyId: this.filterPropertyId,
+      filterStatus: this.filterStatus || null
+    };
+  }
+
   onFilterChange(): void {
     this.pageIndex = 0;
     this.load();

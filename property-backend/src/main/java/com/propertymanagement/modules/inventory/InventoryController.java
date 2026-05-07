@@ -72,7 +72,7 @@ public class InventoryController {
     }
 
     @PostMapping("/{id}/stock")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER', 'MAINTENANCE_OFFICER','MAINTENANCE_CONTRACTOR')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER', 'MAINTENANCE_OFFICER_INTERNAL','MAINTENANCE_OFFICER_COMPANY','MAINTENANCE_COMPANY')")
     public ResponseEntity<ApiResponse<InventoryItemResponse>> adjustStock(
             @PathVariable Long id, @Valid @RequestBody StockTransactionRequest request) {
         return ResponseEntity.ok(ApiResponse.ok(inventoryService.adjustStock(id, request)));
@@ -86,7 +86,7 @@ public class InventoryController {
     }
 
     @PostMapping("/transactions")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER', 'MAINTENANCE_OFFICER','MAINTENANCE_CONTRACTOR')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER', 'MAINTENANCE_OFFICER_INTERNAL','MAINTENANCE_OFFICER_COMPANY','MAINTENANCE_COMPANY')")
     public ResponseEntity<ApiResponse<InventoryItemResponse>> createTransaction(
             @Valid @RequestBody BulkTransactionRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)

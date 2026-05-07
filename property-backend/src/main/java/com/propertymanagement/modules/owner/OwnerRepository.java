@@ -14,6 +14,80 @@ import java.util.Optional;
 @Repository
 public interface OwnerRepository extends JpaRepository<Owner, Long> {
     Page<Owner> findByActiveTrue(Pageable pageable);
+
+    @Query(value = """
+            SELECT DISTINCT o.*
+            FROM property_mgmt.owners o
+                     LEFT JOIN property_mgmt.properties p_primary
+                               ON p_primary.owner_id = o.id
+                              AND p_primary.is_active = TRUE
+                     LEFT JOIN property_mgmt.property_owners po
+                               ON po.owner_id = o.id
+                     LEFT JOIN property_mgmt.properties p_co
+                               ON p_co.id = po.property_id
+                              AND p_co.is_active = TRUE
+            WHERE o.is_active = TRUE
+              AND (
+                p_primary.id IN (:propertyIds)
+                OR p_co.id IN (:propertyIds)
+              )
+            """,
+            countQuery = """
+            SELECT COUNT(DISTINCT o.id)
+            FROM property_mgmt.owners o
+                     LEFT JOIN property_mgmt.properties p_primary
+                               ON p_primary.owner_id = o.id
+                              AND p_primary.is_active = TRUE
+                     LEFT JOIN property_mgmt.property_owners po
+                               ON po.owner_id = o.id
+                     LEFT JOIN property_mgmt.properties p_co
+                               ON p_co.id = po.property_id
+                              AND p_co.is_active = TRUE
+            WHERE o.is_active = TRUE
+              AND (
+                p_primary.id IN (:propertyIds)
+                OR p_co.id IN (:propertyIds)
+              )
+            """,
+            nativeQuery = true)
+    Page<Owner> findActiveLinkedToPropertyIds(@Param("propertyIds") Collection<Long> propertyIds, Pageable pageable);
+
+    @Query(value = """
+            SELECT DISTINCT o.*
+            FROM property_mgmt.owners o
+                     LEFT JOIN property_mgmt.properties p_primary
+                               ON p_primary.owner_id = o.id
+                              AND p_primary.is_active = TRUE
+                     LEFT JOIN property_mgmt.property_owners po
+                               ON po.owner_id = o.id
+                     LEFT JOIN property_mgmt.properties p_co
+                               ON p_co.id = po.property_id
+                              AND p_co.is_active = TRUE
+            WHERE o.is_active = TRUE
+              AND (
+                p_primary.id = :propertyId
+                OR p_co.id = :propertyId
+              )
+            """,
+            countQuery = """
+            SELECT COUNT(DISTINCT o.id)
+            FROM property_mgmt.owners o
+                     LEFT JOIN property_mgmt.properties p_primary
+                               ON p_primary.owner_id = o.id
+                              AND p_primary.is_active = TRUE
+                     LEFT JOIN property_mgmt.property_owners po
+                               ON po.owner_id = o.id
+                     LEFT JOIN property_mgmt.properties p_co
+                               ON p_co.id = po.property_id
+                              AND p_co.is_active = TRUE
+            WHERE o.is_active = TRUE
+              AND (
+                p_primary.id = :propertyId
+                OR p_co.id = :propertyId
+              )
+            """,
+            nativeQuery = true)
+    Page<Owner> findActiveLinkedToPropertyId(@Param("propertyId") Long propertyId, Pageable pageable);
     boolean existsByNationalId(String nationalId);
 
     /** True if another row (different id) already uses this national ID. */
@@ -47,4 +121,20 @@ public interface OwnerRepository extends JpaRepository<Owner, Long> {
             ORDER BY sid
             """, nativeQuery = true)
     List<String> findActivePropertyLabelsForOwner(@Param("ownerId") Long ownerId);
+
+    @Query(value = """
+            SELECT id FROM (
+                SELECT p.id
+                FROM property_mgmt.properties p
+                         INNER JOIN property_mgmt.property_owners po ON po.property_id = p.id
+                WHERE po.owner_id = :ownerId
+                  AND p.is_active = TRUE
+                UNION
+                SELECT p.id
+                FROM property_mgmt.properties p
+                WHERE p.owner_id = :ownerId
+                  AND p.is_active = TRUE
+            ) u
+            """, nativeQuery = true)
+    List<Long> findActivePropertyIdsForOwner(@Param("ownerId") Long ownerId);
 }

@@ -3,7 +3,6 @@ package com.propertymanagement.modules.property;
 import com.propertymanagement.modules.notification.NotificationService;
 import com.propertymanagement.modules.notification.NotificationType;
 import com.propertymanagement.modules.owner.Owner;
-import com.propertymanagement.modules.owner.OwnerPropertyAccessService;
 import com.propertymanagement.modules.owner.OwnerRepository;
 import com.propertymanagement.modules.property.dto.PropertyRequest;
 import com.propertymanagement.modules.property.dto.PropertyResponse;
@@ -12,6 +11,7 @@ import com.propertymanagement.modules.user.UserRepository;
 import com.propertymanagement.modules.user.UserRole;
 import com.propertymanagement.modules.contractor.ContractorCompanyRepository;
 import com.propertymanagement.shared.exception.AppException;
+import com.propertymanagement.shared.security.PropertyScopeService;
 import com.propertymanagement.shared.i18n.BilingualNotificationText;
 import com.propertymanagement.codegen.CodeGenerationService;
 import com.propertymanagement.shared.i18n.AppMessages;
@@ -43,7 +43,7 @@ public class PropertyService {
     private final ContractorCompanyRepository contractorCompanyRepository;
     private final CodeGenerationService codeGenerationService;
     private final OwnerRepository ownerRepository;
-    private final OwnerPropertyAccessService ownerPropertyAccessService;
+    private final PropertyScopeService propertyScopeService;
     private final NotificationService notificationService;
     private final com.propertymanagement.modules.unit.UnitRepository unitRepository;
     private final AppMessages appMessages;
@@ -51,21 +51,30 @@ public class PropertyService {
     @PersistenceContext
     private EntityManager em;
 
-    public Page<PropertyResponse> getAll(Pageable pageable, String q) {
+    public Page<PropertyResponse> getAll(Pageable pageable, String q, Long propertyId) {
         String trimmed = trimToNull(q);
-        Set<Long> ownerScope = ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner();
-        if (ownerScope != null) {
-            if (ownerScope.isEmpty()) {
+        Set<Long> scope = propertyScopeService.propertyIdsOrNullIfUnrestricted();
+        if (scope != null) {
+            if (scope.isEmpty()) {
                 return Page.empty(pageable);
             }
-            return propertyRepository.searchActiveInIds(ownerScope, trimmed, pageable).map(this::toResponse);
+            Set<Long> effectiveScope = scope;
+            if (propertyId != null) {
+                if (!scope.contains(propertyId)) {
+                    throw AppException.forbidden("You do not have access to this property");
+                }
+                effectiveScope = Set.of(propertyId);
+            }
+            return propertyRepository.searchActiveInIds(effectiveScope, trimmed, pageable).map(this::toResponse);
         }
         return propertyRepository.searchActive(trimmed, pageable).map(this::toResponse);
     }
 
     public PropertyResponse getById(Long id) {
         Property p = findActive(id);
-        ownerPropertyAccessService.assertOwnerCanAccessProperty(p);
+        if (!propertyScopeService.canAccessProperty(p.getId())) {
+            throw AppException.forbidden("You do not have access to this property");
+        }
         return toResponseFull(p);
     }
 
@@ -401,7 +410,7 @@ public class PropertyService {
             if ("USER".equals(providerType)) {
                 User user = userRepository.findById(pid)
                         .orElseThrow(() -> AppException.badRequest("User not found: " + pid));
-                if (user.getRole() != UserRole.MAINTENANCE_OFFICER || !user.isActive()) {
+                if (user.getRole() != UserRole.MAINTENANCE_OFFICER_INTERNAL || !user.isActive()) {
                     throw AppException.badRequest("Provider must be an active maintenance officer: " + pid);
                 }
             } else {

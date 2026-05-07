@@ -55,8 +55,9 @@ export interface TenantDialogData {
         <section class="form-section full">
           <app-identity-media-fields
             [compact]="true"
-            [showCivilSection]="false"
-            [(profileImageUrl)]="profileImageUrl">
+            [showCivilSection]="true"
+            [(profileImageUrl)]="profileImageUrl"
+            [(civilIdImageUrl)]="civilIdImageUrl">
           </app-identity-media-fields>
         </section>
 
@@ -291,6 +292,7 @@ export class TenantDialogComponent implements OnInit {
   units: Unit[] = [];
   leaseContractUrls: string[] = [];
   profileImageUrl = '';
+  civilIdImageUrl = '';
   selectedUnit: Unit | null = null;
   form: FormGroup;
 
@@ -468,6 +470,7 @@ export class TenantDialogComponent implements OnInit {
         unitId: raw.unitId as number,
         profileImageUrl: this.profileImageUrl.trim() || undefined,
         profileImage: this.profileImageUrl.trim(),
+        civilIdImageUrl: this.civilIdImageUrl.trim() || undefined,
         leaseContractFiles: [...this.leaseContractUrls],
         notes: raw.notes || undefined,
         monthlyRent: Number(raw.monthlyRent),
@@ -528,7 +531,8 @@ export class TenantDialogComponent implements OnInit {
           leaseEnd,
           leaseContractFiles: [...this.leaseContractUrls],
           notes:      raw.notes || undefined,
-          profileImage: this.profileImageUrl.trim()
+          profileImage: this.profileImageUrl.trim(),
+          civilIdImageUrl: this.civilIdImageUrl.trim() || undefined
         };
         return this.tenantSvc.create(tenantPayload);
       }),

@@ -23,7 +23,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/owners")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER')")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT')")
 public class OwnerController {
 
     private final OwnerService ownerService;
@@ -31,8 +31,9 @@ public class OwnerController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<Page<OwnerResponse>>> getAll(
+            @RequestParam(required = false) Long propertyId,
             @PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.ok(ownerService.getAll(pageable)));
+        return ResponseEntity.ok(ApiResponse.ok(ownerService.getAll(pageable, propertyId)));
     }
 
     @GetMapping("/{id}")

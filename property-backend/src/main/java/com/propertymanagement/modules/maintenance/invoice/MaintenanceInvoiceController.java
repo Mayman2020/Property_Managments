@@ -20,7 +20,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/maintenance-invoices")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('MAINTENANCE_OFFICER','MAINTENANCE_CONTRACTOR')")
+@PreAuthorize("hasAnyRole('MAINTENANCE_OFFICER_INTERNAL','MAINTENANCE_OFFICER_COMPANY','MAINTENANCE_COMPANY')")
 public class MaintenanceInvoiceController {
 
     private final MaintenanceInvoiceService invoiceService;

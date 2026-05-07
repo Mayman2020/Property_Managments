@@ -25,7 +25,7 @@
 
   <section class="app-card" *ngIf="!loading && (filteredUsers.length > 0 || hasFiltersBar())">
     <div class="search-bar-shell">
-      <app-filter-bar [filters]="pageFilters" (filtersChange)="onFilterBarChange($event)"></app-filter-bar>
+      <app-filter-bar [filters]="pageFilters" [filterValues]="filterValues" (filtersChange)="onFilterBarChange($event)"></app-filter-bar>
       <button mat-icon-button class="clear-filters-btn" (click)="clearFiltersFromBar()" *ngIf="hasFiltersBar()" [matTooltip]="'ACTIONS.CLEAR_FILTERS' | translate">
         <mat-icon>filter_alt_off</mat-icon>
       </button>
@@ -57,6 +57,10 @@
                 <div class="user-avatar">{{ userInitials(user) }}</div>
                 <div class="user-info">
                   <div class="user-name">{{ user.fullName }}</div>
+                  <div class="user-meta">
+                    <span *ngIf="user.fullNameAr">{{ user.fullNameAr }}</span>
+                    <span *ngIf="user.fullNameEn">{{ user.fullNameEn }}</span>
+                  </div>
                   <div class="user-email">{{ user.email }}</div>
                 </div>
               </div>

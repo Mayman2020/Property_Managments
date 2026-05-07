@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
+import { AppConstants } from '../constants/app-constants';
 import { ApiResponse } from '../models/api-response.model';
 import { EmployeeProfileLink, OwnerProfileLink, TenantProfileLink, User } from '../models/user.model';
 
@@ -27,14 +28,14 @@ export class UserProfileService {
   constructor(private readonly api: ApiService) {}
 
   getMyProfile(): Observable<ApiResponse<User>> {
-    return this.api.get('/users/me');
+    return this.api.get(AppConstants.API.USERS_ME);
   }
 
   updateMyProfile(payload: UserProfileUpdateRequest): Observable<ApiResponse<User>> {
-    return this.api.put('/users/me', payload);
+    return this.api.put(AppConstants.API.USERS_ME, payload);
   }
 
   changeMyPassword(payload: ChangePasswordRequest): Observable<ApiResponse<null>> {
-    return this.api.put('/users/me/change-password', payload);
+    return this.api.put(AppConstants.API.USERS_ME_CHANGE_PASSWORD, payload);
   }
 }

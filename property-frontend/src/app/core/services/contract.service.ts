@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
+import { AppConstants } from '../constants/app-constants';
 import {
   LeaseContract, ContractSummary, ContractTemplate,
   CreateContractRequest, RenewContractRequest, ContractRenewalRequest, TerminateContractRequest,
@@ -13,78 +14,78 @@ export class ContractService {
   constructor(private api: ApiService) {}
 
   getAll(params?: Record<string, string | number | boolean>): Observable<any> {
-    return this.api.get<any>('/contracts', params);
+    return this.api.get<any>(AppConstants.API.CONTRACTS, params);
   }
 
   getById(id: number): Observable<any> {
-    return this.api.get<any>(`/contracts/${id}`);
+    return this.api.get<any>(AppConstants.API.CONTRACT_BY_ID(id));
   }
 
   getRenewalContext(id: number): Observable<any> {
-    return this.api.get<any>(`/contracts/${id}/renewal-context`);
+    return this.api.get<any>(AppConstants.API.CONTRACT_RENEWAL_CONTEXT(id));
   }
 
   getByTenant(tenantId: number): Observable<any> {
-    return this.api.get<any>(`/contracts/tenant/${tenantId}`);
+    return this.api.get<any>(AppConstants.API.CONTRACTS_BY_TENANT(tenantId));
   }
 
   getExpiring(days = 30): Observable<any> {
-    return this.api.get<any>('/contracts/expiring', { days });
+    return this.api.get<any>(AppConstants.API.CONTRACTS_EXPIRING, { days });
   }
 
   create(body: CreateContractRequest): Observable<any> {
-    return this.api.post<any>('/contracts', body);
+    return this.api.post<any>(AppConstants.API.CONTRACTS, body);
   }
 
   update(id: number, body: CreateContractRequest): Observable<any> {
-    return this.api.put<any>(`/contracts/${id}`, body);
+    return this.api.put<any>(AppConstants.API.CONTRACT_BY_ID(id), body);
   }
 
   activate(id: number): Observable<any> {
-    return this.api.patch<any>(`/contracts/${id}/activate`);
+    return this.api.patch<any>(AppConstants.API.CONTRACT_ACTIVATE(id));
   }
 
   cancelDraft(id: number, reason?: string): Observable<any> {
-    return this.api.patch<any>(`/contracts/${id}/cancel`, reason != null && reason !== '' ? { reason } : {});
+    return this.api.patch<any>(AppConstants.API.CONTRACT_CANCEL(id), reason != null && reason !== '' ? { reason } : {});
   }
 
   terminate(id: number, body: TerminateContractRequest): Observable<any> {
-    return this.api.patch<any>(`/contracts/${id}/terminate`, body);
+    return this.api.patch<any>(AppConstants.API.CONTRACT_TERMINATE(id), body);
   }
 
   cancelTerminationRequest(id: number): Observable<any> {
-    return this.api.patch<any>(`/contracts/${id}/cancel-termination-request`);
+    return this.api.patch<any>(AppConstants.API.CONTRACT_CANCEL_TERMINATION_REQUEST(id));
   }
 
   renew(id: number, body: RenewContractRequest): Observable<any> {
-    return this.api.post<any>(`/contracts/${id}/renew`, body);
+    return this.api.post<any>(AppConstants.API.CONTRACT_RENEW(id), body);
   }
 
   requestRenewal(id: number, body: ContractRenewalRequest): Observable<any> {
-    return this.api.post<any>(`/contracts/${id}/request-renewal`, body);
+    return this.api.post<any>(AppConstants.API.CONTRACT_REQUEST_RENEWAL(id), body);
   }
 
   cancelRenewalRequest(id: number): Observable<any> {
-    return this.api.patch<any>(`/contracts/${id}/cancel-renewal-request`);
+    return this.api.patch<any>(AppConstants.API.CONTRACT_CANCEL_RENEWAL_REQUEST(id));
   }
 
   getPaymentSchedule(contractId: number): Observable<any> {
-    return this.api.get<any>(`/contracts/${contractId}/payment-schedule`);
+    return this.api.get<any>(AppConstants.API.CONTRACT_PAYMENT_SCHEDULE(contractId));
   }
 
   getTemplates(): Observable<any> {
-    return this.api.get<any>('/contract-templates/active');
+    return this.api.get<any>(AppConstants.API.CONTRACT_TEMPLATES_ACTIVE);
   }
 
   getAllTemplates(params?: Record<string, string | number | boolean>): Observable<any> {
-    return this.api.get<any>('/contract-templates', params);
+    return this.api.get<any>(AppConstants.API.CONTRACT_TEMPLATES, params);
   }
 
   createTemplate(body: Partial<ContractTemplate>): Observable<any> {
-    return this.api.post<any>('/contract-templates', body);
+    return this.api.post<any>(AppConstants.API.CONTRACT_TEMPLATES, body);
   }
 
   updateTemplate(id: number, body: Partial<ContractTemplate>): Observable<any> {
-    return this.api.put<any>(`/contract-templates/${id}`, body);
+    return this.api.put<any>(AppConstants.API.CONTRACT_TEMPLATE_BY_ID(id), body);
   }
 }

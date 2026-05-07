@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
+import { AppConstants } from '../constants/app-constants';
 import { ApiResponse, PagedResponse } from '../models/api-response.model';
 
 export interface EmployeeItem {
@@ -8,6 +9,8 @@ export interface EmployeeItem {
   propertyId?: number;
   employeeCode: string;
   fullName: string;
+  fullNameAr?: string;
+  fullNameEn?: string;
   nationalId?: string;
   profileImageUrl?: string;
   civilIdImageUrl?: string;
@@ -25,6 +28,8 @@ export interface EmployeeItem {
 export interface EmployeePayload {
   propertyId?: number;
   fullName: string;
+  fullNameAr?: string;
+  fullNameEn?: string;
   nationalId?: string;
   profileImageUrl?: string;
   civilIdImageUrl?: string;
@@ -169,70 +174,78 @@ export class HrService {
   constructor(private readonly api: ApiService) {}
 
   getEmployees(params: Record<string, string | number> = {}): Observable<ApiResponse<PagedResponse<EmployeeItem>>> {
-    return this.api.get('/hr/employees', params);
+    return this.api.get(AppConstants.API.HR_EMPLOYEES, params);
   }
 
   getEmployee(id: number): Observable<ApiResponse<EmployeeItem>> {
-    return this.api.get(`/hr/employees/${id}`);
+    return this.api.get(AppConstants.API.HR_EMPLOYEE_BY_ID(id));
   }
 
   createEmployee(payload: EmployeePayload): Observable<ApiResponse<EmployeeItem>> {
-    return this.api.post('/hr/employees', payload);
+    return this.api.post(AppConstants.API.HR_EMPLOYEES, payload);
+  }
+
+  updateEmployee(id: number, payload: EmployeePayload): Observable<ApiResponse<EmployeeItem>> {
+    return this.api.put(AppConstants.API.HR_EMPLOYEE_BY_ID(id), payload);
+  }
+
+  deleteEmployee(id: number): Observable<ApiResponse<void>> {
+    return this.api.delete(AppConstants.API.HR_EMPLOYEE_BY_ID(id));
   }
 
   getPayrollRuns(params: Record<string, string | number> = {}): Observable<ApiResponse<PagedResponse<PayrollRunItem>>> {
-    return this.api.get('/hr/payroll', params);
+    return this.api.get(AppConstants.API.HR_PAYROLL, params);
   }
 
   getPayrollRun(id: number): Observable<ApiResponse<PayrollRunDetail>> {
-    return this.api.get(`/hr/payroll/${id}`);
+    return this.api.get(AppConstants.API.HR_PAYROLL_BY_ID(id));
   }
 
   generatePayroll(payload: GeneratePayrollPayload): Observable<ApiResponse<PayrollRunDetail>> {
-    return this.api.post('/hr/payroll/generate', payload);
+    return this.api.post(AppConstants.API.HR_PAYROLL_GENERATE, payload);
   }
 
   createSalaryAdvance(payload: SalaryAdvancePayload): Observable<ApiResponse<number>> {
-    return this.api.post('/hr/payroll/advances', payload);
+    return this.api.post(AppConstants.API.HR_PAYROLL_ADVANCES, payload);
   }
 
   addBonus(payrollId: number, payload: BonusPayload): Observable<ApiResponse<PayrollRunDetail>> {
-    return this.api.post(`/hr/payroll/${payrollId}/bonuses`, payload);
+    return this.api.post(AppConstants.API.HR_PAYROLL_BONUSES(payrollId), payload);
   }
 
   updatePayslip(payrollId: number, payslipId: number, payload: PayslipAdjustPayload): Observable<ApiResponse<PayrollRunDetail>> {
-    return this.api.patch(`/hr/payroll/${payrollId}/payslips/${payslipId}`, payload);
+    return this.api.patch(AppConstants.API.HR_PAYROLL_PAYSLIP(payrollId, payslipId), payload);
   }
 
   approvePayroll(payrollId: number): Observable<ApiResponse<PayrollRunDetail>> {
-    return this.api.post(`/hr/payroll/${payrollId}/approve`, {});
+    return this.api.post(AppConstants.API.HR_PAYROLL_APPROVE(payrollId), {});
   }
 
   markPayrollPaid(payrollId: number, payload: PayrollMarkPaidPayload): Observable<ApiResponse<PayrollRunDetail>> {
-    return this.api.post(`/hr/payroll/${payrollId}/mark-paid`, payload);
+    return this.api.post(AppConstants.API.HR_PAYROLL_MARK_PAID(payrollId), payload);
   }
 
   getLeaveRequests(params: Record<string, string | number> = {}): Observable<ApiResponse<PagedResponse<LeaveRequestItem>>> {
-    return this.api.get('/hr/leaves', params);
+    return this.api.get(AppConstants.API.HR_LEAVES, params);
   }
 
   getLeaveBalances(params: Record<string, string | number> = {}): Observable<ApiResponse<LeaveBalanceItem[]>> {
-    return this.api.get('/hr/leaves/balances', params);
+    return this.api.get(AppConstants.API.HR_LEAVES_BALANCES, params);
   }
 
   createLeave(payload: CreateLeavePayload): Observable<ApiResponse<LeaveRequestItem>> {
-    return this.api.post('/hr/leaves', payload);
+    return this.api.post(AppConstants.API.HR_LEAVES, payload);
   }
 
   approveLeave(id: number, note?: string): Observable<ApiResponse<LeaveRequestItem>> {
-    return this.api.post(`/hr/leaves/${id}/approve`, { note });
+    return this.api.post(AppConstants.API.HR_LEAVE_APPROVE(id), { note });
   }
 
   rejectLeave(id: number, note?: string): Observable<ApiResponse<LeaveRequestItem>> {
-    return this.api.post(`/hr/leaves/${id}/reject`, { note });
+    return this.api.post(AppConstants.API.HR_LEAVE_REJECT(id), { note });
   }
 
   getAttendance(params: Record<string, string | number> = {}): Observable<ApiResponse<PagedResponse<AttendanceItem>>> {
-    return this.api.get('/hr/attendance', params);
+    return this.api.get(AppConstants.API.HR_ATTENDANCE, params);
   }
 }
