@@ -1,6 +1,7 @@
 import { expect, test, Page } from '@playwright/test';
 
 const APP_BASE = process.env['E2E_WEB_URL'] ?? 'http://localhost:4500';
+const E2E = !!process.env['E2E_ENABLED'];
 
 async function login(page: Page, email: string, password = '12345') {
   await page.goto(`${APP_BASE}/auth/login`);
@@ -43,6 +44,7 @@ async function assertRouteLoads(page: Page, path: string) {
 
 test.describe('QC smoke', () => {
   test('super admin navigation and primary actions', async ({ page }) => {
+    test.skip(!E2E, 'Requires full stack (E2E_ENABLED=true)');
     test.setTimeout(180000);
     await login(page, 'admin@propmgmt.com');
 
@@ -106,6 +108,7 @@ test.describe('QC smoke', () => {
   });
 
   test('owner portal screens load for owner user', async ({ page }) => {
+    test.skip(!E2E, 'Requires full stack (E2E_ENABLED=true)');
     test.setTimeout(90000);
     await login(page, 'owner@propmgmt.com');
 
