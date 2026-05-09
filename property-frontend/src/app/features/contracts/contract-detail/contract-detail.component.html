@@ -198,6 +198,18 @@
           </div>
         </ng-container>
       </div>
+
+      <!-- Owner decision buttons -->
+      <div class="owner-decision-actions" *ngIf="canDecideTermination()">
+        <button mat-flat-button color="primary" (click)="decideTermination('APPROVED')" [disabled]="actionLoading">
+          <mat-icon>check_circle</mat-icon>
+          {{ 'CONTRACTS.TERMINATION_APPROVE' | translate }}
+        </button>
+        <button mat-stroked-button color="warn" (click)="decideTermination('REJECTED')" [disabled]="actionLoading">
+          <mat-icon>cancel</mat-icon>
+          {{ 'CONTRACTS.TERMINATION_REJECT' | translate }}
+        </button>
+      </div>
     </div>
   </div>
 
@@ -374,10 +386,36 @@
           <div class="ic-label">{{ 'CONTRACTS.OWNER_CHANGE_LOG' | translate }}</div>
           <div class="ic-value notes-text owner-change-log">{{ contract.ownerChangeLog }}</div>
         </div>
-        <div class="info-cell full-span" *ngIf="contract.staffChangeLog">
-          <div class="ic-label">{{ 'CONTRACTS.STAFF_ACTIVITY_LOG' | translate }}</div>
-          <div class="ic-value notes-text owner-change-log">{{ contract.staffChangeLog }}</div>
-        </div>
+      </div>
+    </div>
+
+    <!-- Staff activity log table -->
+    <div class="info-section app-card" *ngIf="contract.staffChangeLog">
+      <div class="app-card-header">
+        <span class="app-card-title">
+          <mat-icon class="section-icon">history</mat-icon>
+          {{ 'CONTRACTS.STAFF_ACTIVITY_LOG' | translate }}
+        </span>
+      </div>
+      <div class="app-card-body" style="padding:0">
+        <table class="staff-log-table">
+          <thead>
+            <tr>
+              <th>{{ 'CONTRACTS.LOG_TIME' | translate }}</th>
+              <th>{{ 'CONTRACTS.LOG_ACTOR' | translate }}</th>
+              <th>{{ 'CONTRACTS.LOG_ACTION' | translate }}</th>
+              <th>{{ 'CONTRACTS.LOG_DETAIL' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of parsedStaffLog()">
+              <td class="log-time">{{ row.timestamp }}</td>
+              <td class="log-actor">{{ row.actor }}</td>
+              <td class="log-action"><span class="log-action-chip">{{ row.action }}</span></td>
+              <td class="log-detail">{{ row.detail }}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 

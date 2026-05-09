@@ -156,6 +156,8 @@ export interface CurrentUser {
   initials: string;
   permissions?: PermissionMap;
   clientModules?: ClientModuleMap;
+  /** When true the user must change their temporary password before using the app. */
+  mustChangePassword?: boolean;
 }
 
 export interface LoginRequest {
@@ -189,5 +191,6 @@ export interface LoginResponse {
     contractorCompanyId?: number;
     permissions?: PermissionMap;
     clientModules?: ClientModuleMap;
+    mustChangePassword?: boolean;
   };
 }

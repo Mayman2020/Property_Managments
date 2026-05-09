@@ -27,7 +27,9 @@ import java.util.Set;
 @Service
 @RequiredArgsConstructor
 public class OwnerService {
-    private static final String DEFAULT_SYSTEM_PASSWORD = "1234";
+
+    @org.springframework.beans.factory.annotation.Value("${user.default.password:ChangeMeNow@1234}")
+    private String defaultUserPassword;
 
     private final OwnerRepository ownerRepository;
     private final UserRepository userRepository;
@@ -256,11 +258,12 @@ public class OwnerService {
         return userRepository.save(User.builder()
                 .username(email)
                 .email(email)
-                .password(passwordEncoder.encode(DEFAULT_SYSTEM_PASSWORD))
+                .password(passwordEncoder.encode(defaultUserPassword))
                 .fullName(fullName)
                 .phone(phone)
                 .role(UserRole.OWNER)
                 .active(true)
+                .mustChangePassword(true)
                 .build());
     }
 

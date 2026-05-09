@@ -29,8 +29,10 @@ import java.util.Set;
 @Service
 @RequiredArgsConstructor
 public class EmployeeService {
-    private static final String DEFAULT_EMPLOYEE_PASSWORD = "1234";
-    private static final String DEFAULT_CONTRACTOR_PASSWORD = "123";
+
+    @org.springframework.beans.factory.annotation.Value("${user.default.password:ChangeMeNow@1234}")
+    private String defaultPassword;
+
     private static final UserRole DEFAULT_EMPLOYEE_ROLE = UserRole.PROCEDURES_CLERK;
 
     private static final Set<UserRole> EMPLOYEE_PORTAL_ROLES = Set.of(
@@ -200,7 +202,7 @@ public class EmployeeService {
         return userRepository.save(User.builder()
                 .username(email)
                 .email(email)
-                .password(passwordEncoder.encode(defaultPasswordFor(role, officerType)))
+                .password(passwordEncoder.encode(defaultPassword))
                 .fullName(fullName)
                 .phone(phone)
                 .role(role)
@@ -209,6 +211,7 @@ public class EmployeeService {
                 .contractorCompanyId(contractorCompanyId)
                 .maintenanceCompanyName(contractorName)
                 .active(true)
+                .mustChangePassword(true)
                 .build());
     }
 
@@ -281,11 +284,6 @@ public class EmployeeService {
         });
     }
 
-    private String defaultPasswordFor(UserRole role, MaintenanceOfficerType type) {
-        boolean contractedMaintenance = role == UserRole.MAINTENANCE_COMPANY
-                || (role == UserRole.MAINTENANCE_OFFICER_COMPANY && type == MaintenanceOfficerType.CONTRACTOR_COMPANY);
-        return contractedMaintenance ? DEFAULT_CONTRACTOR_PASSWORD : DEFAULT_EMPLOYEE_PASSWORD;
-    }
 
     private Employee find(Long id) {
         return repository.findById(id)

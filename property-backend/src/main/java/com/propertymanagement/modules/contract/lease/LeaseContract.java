@@ -181,6 +181,7 @@ public class LeaseContract {
     @Column(name = "free_months")
     private Integer freeMonths = 0;
 
+    @Builder.Default
     @Column(name = "has_free_month", length = 1)
     private Boolean hasFreeMonth = false;
 

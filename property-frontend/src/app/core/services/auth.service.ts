@@ -30,6 +30,7 @@ export class AuthService {
           const userDto = res.data.user;
           if (!userDto) return;
           const extraRoles = Array.isArray(userDto.extraRoles) ? (userDto.extraRoles as UserRole[]) : [];
+          const defaultActiveRole = this.resolveDefaultActiveRole(userDto.role, extraRoles);
           const user: CurrentUser = {
             id: userDto.id,
             username: userDto.username,
@@ -40,7 +41,7 @@ export class AuthService {
             profileImageUrl: userDto.profileImageUrl,
             bio: userDto.bio,
             role: userDto.role,
-            activeRole: userDto.role,
+            activeRole: defaultActiveRole,
             extraRoles,
             propertyId: userDto.propertyId,
             ownerId: userDto.ownerId,
@@ -52,7 +53,8 @@ export class AuthService {
             contractorCompanyId: userDto.contractorCompanyId,
             permissions: userDto.permissions,
             clientModules: userDto.clientModules,
-            initials: this.buildInitials(userDto.fullNameAr || userDto.fullNameEn || userDto.fullName)
+            initials: this.buildInitials(userDto.fullNameAr || userDto.fullNameEn || userDto.fullName),
+            mustChangePassword: userDto.mustChangePassword ?? false
           };
           this.tokenStorage.setUser(user);
         }
@@ -193,6 +195,16 @@ export class AuthService {
     return '/auth/login';
   }
 
+  mustChangePassword(): boolean {
+    return this.getCurrentUser()?.mustChangePassword === true;
+  }
+
+  /** Called after a successful password change to clear the flag and update stored user. */
+  clearMustChangePassword(): void {
+    const user = this.getCurrentUser();
+    if (user) this.tokenStorage.setUser({ ...user, mustChangePassword: false });
+  }
+
   clearExpiredTokens(): void {
     const token = this.tokenStorage.getToken();
     if (token && JwtUtils.isExpired(token)) this.tokenStorage.clearAll();
@@ -202,6 +214,14 @@ export class AuthService {
     const words = (name ?? '').trim().split(/\s+/).filter(Boolean);
     if (!words.length) return 'U';
     return words.slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('');
+  }
+
+  private resolveDefaultActiveRole(primaryRole: UserRole, extraRoles: UserRole[]): UserRole {
+    const assigned = new Set<UserRole>([primaryRole, ...(extraRoles ?? [])]);
+    if (assigned.has('GENERAL_MANAGER')) {
+      return 'GENERAL_MANAGER';
+    }
+    return primaryRole;
   }
 
   private hasPermission(moduleKey: string, action: keyof NonNullable<PermissionMap[string]>): boolean {

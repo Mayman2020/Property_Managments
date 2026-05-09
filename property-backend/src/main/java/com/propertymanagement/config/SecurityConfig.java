@@ -1,6 +1,7 @@
 package com.propertymanagement.config;
 
 import com.propertymanagement.shared.security.JwtAuthFilter;
+import com.propertymanagement.shared.security.MustChangePasswordFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,6 +26,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
+    private final MustChangePasswordFilter mustChangePasswordFilter;
     private final CorsConfigurationSource corsConfigurationSource;
 
     @Bean
@@ -43,6 +45,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(mustChangePasswordFilter, JwtAuthFilter.class)
                 .build();
     }
 

@@ -420,6 +420,76 @@ export class ContractDetailComponent implements OnInit {
     }).afterClosed();
   }
 
+  canDecideTermination(): boolean {
+    if (!this.isTerminationPending()) return false;
+    return this.auth.isOwner() || this.auth.isSuperAdmin() || this.auth.isGeneralManager();
+  }
+
+  decideTermination(decision: 'APPROVED' | 'REJECTED'): void {
+    const isAr = this.i18n.currentLang === 'ar';
+    const title = decision === 'APPROVED'
+      ? (isAr ? 'تأكيد الموافقة على الإنهاء' : 'Confirm Termination Approval')
+      : (isAr ? 'تأكيد رفض الإنهاء' : 'Confirm Termination Rejection');
+    const message = decision === 'APPROVED'
+      ? (isAr ? 'هل أنت متأكد من الموافقة على إنهاء العقد؟ ستصبح الوحدة شاغرة.' : 'Are you sure you want to approve the termination? The unit will become vacant.')
+      : (isAr ? 'هل أنت متأكد من رفض طلب الإنهاء؟ سيظل العقد نشطاً.' : 'Are you sure you want to reject the termination request? The contract will remain active.');
+    this.openActionConfirm(title, message).subscribe((ok) => {
+      if (!ok) return;
+      this.actionLoading = true;
+      this.ownerPortal.decideTermination(this.contractId, { decision }).subscribe({
+        next: () => {
+          this.actionLoading = false;
+          const msg = decision === 'APPROVED'
+            ? (isAr ? 'تمت الموافقة على الإنهاء. الوحدة أصبحت شاغرة.' : 'Termination approved. Unit is now vacant.')
+            : (isAr ? 'تم رفض طلب الإنهاء.' : 'Termination request rejected.');
+          this.snack.success(msg);
+          this.loadAll();
+        },
+        error: (e: { error?: { message?: string } }) => {
+          this.actionLoading = false;
+          this.snack.error(e?.error?.message || this.i18n.instant('COMMON.ERROR'));
+        }
+      });
+    });
+  }
+
+  parsedStaffLog(): { timestamp: string; actor: string; action: string; detail: string }[] {
+    const raw = this.contract?.staffChangeLog;
+    if (!raw) return [];
+    return raw.split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0)
+      .map(line => {
+        const parts = line.split(' | ');
+        return {
+          timestamp: parts[0] ?? '',
+          actor: parts[1] ?? '',
+          action: this.translateAction(parts[2] ?? ''),
+          detail: parts[3] ?? ''
+        };
+      })
+      .reverse();
+  }
+
+  private translateAction(action: string): string {
+    const isAr = this.i18n.currentLang === 'ar';
+    if (!isAr) return action;
+    const map: Record<string, string> = {
+      ACTIVATED: 'تفعيل العقد',
+      DRAFT_UPDATED: 'تعديل المسودة',
+      CANCELLED: 'إلغاء العقد',
+      TERMINATION_REQUESTED: 'طلب إنهاء العقد',
+      TERMINATION_APPROVED: 'موافقة على الإنهاء',
+      TERMINATION_REJECTED: 'رفض طلب الإنهاء',
+      TERMINATION_REQUEST_CANCELLED: 'سحب طلب الإنهاء',
+      RENEWAL_REQUESTED: 'طلب تجديد العقد',
+      RENEWAL_APPROVED: 'موافقة على التجديد',
+      RENEWAL_REJECTED: 'رفض طلب التجديد',
+      RENEWAL_REQUEST_CANCELLED: 'سحب طلب التجديد',
+    };
+    return map[action] ?? action;
+  }
+
   getStatusClass(status: string): string {
     const map: Record<string, string> = {
       ACTIVE: 'chip-success', DRAFT: 'chip-default', EXPIRED: 'chip-danger',

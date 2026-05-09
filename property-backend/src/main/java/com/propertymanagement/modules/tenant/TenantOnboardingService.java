@@ -27,8 +27,6 @@ public class TenantOnboardingService {
     private final TenantService tenantService;
     private final LeaseContractService leaseContractService;
 
-    /** Default initial password for tenant logins when the admin does not provide one. */
-    private static final String DEFAULT_TENANT_PASSWORD = "12345";
 
     /**
      * Creates TENANT user (with stub tenant row), fills tenant details, creates DRAFT lease contract,
@@ -42,12 +40,12 @@ public class TenantOnboardingService {
         UserRequest userRequest = new UserRequest();
         userRequest.setEmail(email);
         userRequest.setUsername(email);
-        // Stay aligned with UserService.create() and TenantService.ensureTenantPortalUser():
-        // default to "12345" when no password is supplied so admins get a predictable initial login.
-        String pwd = (req.getPassword() != null && !req.getPassword().isBlank())
-                ? req.getPassword()
-                : DEFAULT_TENANT_PASSWORD;
-        userRequest.setPassword(pwd);
+        // Only set an explicit password when the admin supplies one.
+        // Leaving it blank lets UserService.create() apply the configured default and
+        // automatically set mustChangePassword = true so the tenant is forced to change it.
+        if (req.getPassword() != null && !req.getPassword().isBlank()) {
+            userRequest.setPassword(req.getPassword());
+        }
         userRequest.setFullName(firstNonBlank(req.getFullNameAr(), req.getFullNameEn()));
         userRequest.setPhone(req.getPhone().trim());
         userRequest.setProfileImageUrl(trimToNull(req.getProfileImageUrl()));

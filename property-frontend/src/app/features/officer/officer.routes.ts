@@ -36,6 +36,12 @@ export const OFFICER_ROUTES: Routes = [
       {
         canActivate: [permissionGuard],
         data: { permission: 'my_requests', permissionAction: 'view' },
+        path: 'company-queue',
+        loadComponent: () => import('./company-queue/company-queue.component').then((m) => m.CompanyQueueComponent)
+      },
+      {
+        canActivate: [permissionGuard],
+        data: { permission: 'my_requests', permissionAction: 'view' },
         path: 'invoices',
         loadComponent: () => import('./invoice-portal/invoice-portal.component').then((m) => m.InvoicePortalComponent)
       },

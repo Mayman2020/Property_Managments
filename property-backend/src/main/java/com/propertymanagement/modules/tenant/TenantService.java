@@ -44,7 +44,8 @@ import java.util.Set;
 @Service
 @RequiredArgsConstructor
 public class TenantService {
-    private static final String DEFAULT_TENANT_PASSWORD = "12345";
+    @org.springframework.beans.factory.annotation.Value("${tenant.portal.default-password:ChangeMeNow@1234}")
+    private String defaultTenantPassword;
 
     private final TenantRepository tenantRepository;
     private final UnitRepository unitRepository;
@@ -461,11 +462,12 @@ public class TenantService {
         return userRepository.save(User.builder()
                 .username(email)
                 .email(email)
-                .password(passwordEncoder.encode(DEFAULT_TENANT_PASSWORD))
+                .password(passwordEncoder.encode(defaultTenantPassword))
                 .fullName(fullName)
                 .phone(phone)
                 .role(UserRole.TENANT)
                 .active(true)
+                .mustChangePassword(true)
                 .build());
     }
 

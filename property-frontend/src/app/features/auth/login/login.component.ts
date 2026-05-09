@@ -13,7 +13,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { SnackService } from '../../../core/services/snack.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
-import { switchMap } from 'rxjs';
+import { of, switchMap } from 'rxjs';
 
 @Component({
   selector: 'app-login',
@@ -59,11 +59,18 @@ export class LoginComponent {
     this.error = '';
 
     this.auth.login(this.form.value).pipe(
-      switchMap(() => this.permissions.loadMine())
+      switchMap(() => {
+        if (this.auth.mustChangePassword()) return of(null);
+        return this.permissions.loadMine();
+      })
     ).subscribe({
       next: () => {
         this.loading = false;
-        void this.router.navigateByUrl(this.auth.getDashboardRoute());
+        if (this.auth.mustChangePassword()) {
+          void this.router.navigateByUrl('/change-password');
+        } else {
+          void this.router.navigateByUrl(this.auth.getDashboardRoute());
+        }
       },
       error: (err: any) => {
         this.loading = false;

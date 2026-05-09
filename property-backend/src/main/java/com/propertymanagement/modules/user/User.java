@@ -76,6 +76,11 @@ public class User implements UserDetails {
     @Column(name = "is_active")
     private boolean active = true;
 
+    /** When true the user must change their temporary password before accessing the system. */
+    @Builder.Default
+    @Column(name = "must_change_password")
+    private boolean mustChangePassword = true;
+
     @Column(name = "last_login")
     private LocalDateTime lastLogin;
 

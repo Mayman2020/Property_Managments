@@ -270,6 +270,16 @@ public class LeaseContractService {
                 && contract.getStatus() != ContractStatus.PENDING_OWNER_APPROVAL) {
             throw AppException.badRequest("Only DRAFT or owner-pending contracts can be activated");
         }
+        // Prevent duplicate active contracts: reject if the unit already has a live lease
+        if (contract.getUnitId() != null) {
+            long activeLiveContracts = contractRepository.countByUnitIdAndStatusIn(
+                    contract.getUnitId(), UNIT_LIVE_LEASE_STATUSES);
+            if (activeLiveContracts > 0) {
+                throw AppException.conflict(
+                        "Unit already has an active contract. Terminate or expire the existing contract first.",
+                        "UNIT_ALREADY_OCCUPIED");
+            }
+        }
         User acting = userRepository.findById(approvedByUserId).orElse(null);
         if (acting != null && acting.getRole() == UserRole.OWNER) {
             ownerPropertyAccessService.assertOwnerCanAccessProperty(contract.getPropertyId());

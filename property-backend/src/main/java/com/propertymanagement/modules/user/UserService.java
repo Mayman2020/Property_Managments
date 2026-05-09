@@ -58,9 +58,9 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class UserService {
-    private static final String DEFAULT_EMPLOYEE_PASSWORD = "1234";
-    private static final String DEFAULT_TENANT_PASSWORD = "12345";
-    private static final String DEFAULT_CONTRACTOR_PASSWORD = "123";
+
+    @org.springframework.beans.factory.annotation.Value("${user.default.password:ChangeMeNow@1234}")
+    private String defaultUserPassword;
 
     private final UserRepository userRepository;
     private final ContractorCompanyRepository contractorCompanyRepository;
@@ -122,8 +122,8 @@ public class UserService {
             throw AppException.conflict("Email already in use: " + request.getEmail(), "EMAIL_ALREADY_USED");
         }
         validateMaintenanceOfficerDetails(request);
-        String rawPassword = (request.getPassword() != null && !request.getPassword().isBlank())
-                ? request.getPassword() : defaultPasswordFor(request);
+        boolean usingDefaultPassword = request.getPassword() == null || request.getPassword().isBlank();
+        String rawPassword = usingDefaultPassword ? defaultPasswordFor(request) : request.getPassword();
         User user = User.builder()
                 .username(request.getEmail())
                 .email(request.getEmail())
@@ -138,6 +138,7 @@ public class UserService {
                 .maintenanceCompanyName(request.getMaintenanceCompanyName())
                 .contractorCompanyId(request.getContractorCompanyId())
                 .active(true)
+                .mustChangePassword(usingDefaultPassword)
                 .build();
         syncContractorDisplayName(user);
         normalizeRoleSpecificFields(user);
@@ -461,6 +462,7 @@ public class UserService {
             throw AppException.badRequest("New password must be different from current password");
         }
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        user.setMustChangePassword(false);
         userRepository.save(user);
     }
 
@@ -859,17 +861,7 @@ public class UserService {
     }
 
     private String defaultPasswordFor(UserRequest request) {
-        if (request == null || request.getRole() == null) {
-            return DEFAULT_EMPLOYEE_PASSWORD;
-        }
-        if (request.getRole() == UserRole.TENANT) {
-            return DEFAULT_TENANT_PASSWORD;
-        }
-        boolean contractor =
-                request.getRole() == UserRole.MAINTENANCE_COMPANY
-                || (UserRole.isMaintenanceOfficer(request.getRole())
-                        && request.getMaintenanceOfficerType() == MaintenanceOfficerType.CONTRACTOR_COMPANY);
-        return contractor ? DEFAULT_CONTRACTOR_PASSWORD : DEFAULT_EMPLOYEE_PASSWORD;
+        return defaultUserPassword;
     }
 
     private User requireCallerUser() {

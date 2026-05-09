@@ -1,0 +1,72 @@
+<div class="app-page company-queue-page">
+  <app-page-header
+    [title]="'COMPANY_QUEUE.TITLE' | translate"
+    [subtitle]="'COMPANY_QUEUE.SUBTITLE' | translate"
+    [breadcrumbs]="[{ label: ('NAV.COMPANY_QUEUE' | translate) }]">
+    <button mat-stroked-button type="button" (click)="load()" [disabled]="loading">
+      <span class="material-icons">refresh</span>
+      {{ 'COMMON.REFRESH' | translate }}
+    </button>
+  </app-page-header>
+
+  <div class="loading-center" *ngIf="loading">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <app-empty-state
+    *ngIf="!loading && !error && requests.length === 0"
+    icon="inbox"
+    [title]="'COMPANY_QUEUE.EMPTY_TITLE' | translate"
+    [message]="'COMPANY_QUEUE.EMPTY_SUBTITLE' | translate">
+  </app-empty-state>
+
+  <div class="app-card error-card" *ngIf="!loading && error">
+    <span class="material-icons error-icon">error_outline</span>
+    <p>{{ 'COMMON.ERROR' | translate }}</p>
+    <button mat-stroked-button (click)="load()">{{ 'COMMON.REFRESH' | translate }}</button>
+  </div>
+
+  <div class="queue-list" *ngIf="!loading && !error && requests.length > 0">
+    <article class="app-card queue-card" *ngFor="let req of requests">
+      <div class="queue-card-header">
+        <span class="req-number">{{ req.requestNumber }}</span>
+        <span class="priority-badge" [class]="priorityClass(req)">
+          {{ ('PRIORITY.' + req.priority) | translate }}
+        </span>
+      </div>
+
+      <h4 class="req-title">{{ req.title }}</h4>
+
+      <div class="req-meta">
+        <span class="meta-item">
+          <span class="material-icons">apartment</span>
+          {{ req.propertyName || '—' }}
+        </span>
+        <span class="meta-item">
+          <span class="material-icons">meeting_room</span>
+          {{ req.unitNumber || '—' }}
+        </span>
+        <span class="meta-item" *ngIf="req.tenantName">
+          <span class="material-icons">person</span>
+          {{ req.tenantName }}
+        </span>
+      </div>
+
+      <div class="queue-card-actions">
+        <button
+          mat-flat-button
+          color="primary"
+          (click)="claim(req)"
+          [disabled]="claimingId != null">
+          <mat-spinner diameter="16" *ngIf="claimingId === req.id"></mat-spinner>
+          <span class="material-icons" *ngIf="claimingId !== req.id">assignment_ind</span>
+          {{ 'COMPANY_QUEUE.CLAIM' | translate }}
+        </button>
+        <button mat-stroked-button [routerLink]="['/officer/requests', req.id]">
+          <span class="material-icons">visibility</span>
+          {{ 'COMMON.VIEW' | translate }}
+        </button>
+      </div>
+    </article>
+  </div>
+</div>

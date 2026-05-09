@@ -84,6 +84,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     { icon: 'public', labelKey: 'NAV.LOOKUPS', route: '/admin/lookups', roles: ['SUPER_ADMIN'], permissionKey: 'lookups', sectionKey: 'NAV_SECTION.YOU' },
     { icon: 'calendar_month', labelKey: 'NAV.SCHEDULE', route: '/officer/schedule', roles: ['MAINTENANCE_OFFICER_INTERNAL', 'MAINTENANCE_OFFICER_COMPANY', 'MAINTENANCE_COMPANY'], permissionKey: 'schedule', sectionKey: 'NAV_SECTION.OPERATIONS' },
     { icon: 'assignment', labelKey: 'NAV.MY_REQUESTS', route: '/officer/requests', roles: ['MAINTENANCE_OFFICER_INTERNAL', 'MAINTENANCE_OFFICER_COMPANY', 'MAINTENANCE_COMPANY'], permissionKey: 'my_requests', sectionKey: 'NAV_SECTION.OPERATIONS' },
+    { icon: 'inbox', labelKey: 'NAV.COMPANY_QUEUE', route: '/officer/company-queue', roles: ['MAINTENANCE_OFFICER_COMPANY', 'MAINTENANCE_COMPANY'], permissionKey: 'my_requests', sectionKey: 'NAV_SECTION.OPERATIONS', bypassPermission: true, officerType: 'CONTRACTOR_COMPANY' },
     { icon: 'person', labelKey: 'NAV.PROFILE', route: '/officer/profile', roles: ['MAINTENANCE_OFFICER_INTERNAL', 'MAINTENANCE_OFFICER_COMPANY', 'MAINTENANCE_COMPANY'], permissionKey: 'profile', sectionKey: 'NAV_SECTION.YOU' },
     { icon: 'home', labelKey: 'NAV.MY_UNIT', route: '/tenant/my-unit', roles: ['TENANT'], permissionKey: 'my_unit', sectionKey: 'NAV_SECTION.OVERVIEW' },
     { icon: 'library_books', labelKey: 'NAV.MY_CONTRACTS', route: '/tenant/my-contracts', roles: ['TENANT'], permissionKey: 'my_unit', sectionKey: 'NAV_SECTION.OVERVIEW', bypassPermission: true },

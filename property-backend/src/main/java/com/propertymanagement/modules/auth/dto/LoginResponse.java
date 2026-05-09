@@ -43,5 +43,7 @@ public class LoginResponse {
         private List<String> leaseContractFiles;
         private Map<String, Map<String, Boolean>> permissions;
         private Map<String, Boolean> clientModules;
+        /** True when the user must change their temporary password before using the system. */
+        private boolean mustChangePassword;
     }
 }

@@ -19,6 +19,7 @@ import { ContractService } from '../../../core/services/contract.service';
 import { ContractRenewalContext, LeaseContract } from '../../../core/models/contract.model';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { TenantService } from '../../../core/services/tenant.service';
 
 @Component({
   selector: 'app-contract-renewal-form',
@@ -39,6 +40,7 @@ export class ContractRenewalFormComponent implements OnInit {
   errorMsg = '';
   contractId!: number;
   ctx: ContractRenewalContext | null = null;
+  tenantDisplayName = '';
   form!: FormGroup;
   rentIncreasePercent = 0;
 
@@ -47,6 +49,7 @@ export class ContractRenewalFormComponent implements OnInit {
     private router: Router,
     private fb: FormBuilder,
     private contractSvc: ContractService,
+    private tenantSvc: TenantService,
     private location: Location,
     private dialog: MatDialog,
     readonly i18n: I18nService
@@ -73,6 +76,7 @@ export class ContractRenewalFormComponent implements OnInit {
         this.form.patchValue({
           newMonthlyRent: this.contract.monthlyRent
         });
+        this.loadTenantDisplayName(this.contract.tenantId, this.contract.tenantName);
       }
       this.loading = false;
     });
@@ -130,6 +134,21 @@ export class ContractRenewalFormComponent implements OnInit {
 
   cancel(): void {
     this.router.navigate(['/admin/contracts', this.contractId]);
+  }
+
+  private loadTenantDisplayName(tenantId?: number | null, fallbackName?: string | null): void {
+    const fallback = (fallbackName ?? '').trim();
+    this.tenantDisplayName = fallback;
+    if (!tenantId) return;
+    this.tenantSvc.getById(tenantId).pipe(catchError(() => of(null))).subscribe((res) => {
+      const tenant = res?.data;
+      const ar = tenant?.fullNameAr?.trim();
+      const en = tenant?.fullNameEn?.trim();
+      const full = tenant?.fullName?.trim();
+      this.tenantDisplayName = this.i18n.currentLang === 'ar'
+        ? (ar || full || en || fallback || '-')
+        : (en || full || ar || fallback || '-');
+    });
   }
 
   unitTypeLabel(code?: string | null): string {

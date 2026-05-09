@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { MainLayoutComponent } from '../../layout/main-layout/main-layout.component';
-import { adminGuard, permissionGuard, superAdminGuard, contractsGuard, moduleGuard, ownerGuard } from '../../core/guards/auth.guard';
+import { adminGuard, permissionGuard, superAdminGuard, contractsGuard, moduleGuard, ownerGuard, roleGuard } from '../../core/guards/auth.guard';
 
 export const ADMIN_ROUTES: Routes = [
   {
@@ -140,6 +140,7 @@ export const ADMIN_ROUTES: Routes = [
       },
       {
         path: 'hr',
+        canActivate: [moduleGuard],
         data: { module: 'hr' },
         children: [
           {
@@ -278,7 +279,7 @@ export const ADMIN_ROUTES: Routes = [
       // Owner Approval Portal
       {
         path: 'owner-portal/contract-approvals',
-        canActivate: [moduleGuard, ownerGuard],
+        canActivate: [moduleGuard, roleGuard(['OWNER', 'SUPER_ADMIN', 'GENERAL_MANAGER'])],
         data: { module: 'owner_portal' },
         loadComponent: () => import('../owner/contract-approvals/contract-approvals.component').then((m) => m.ContractApprovalsComponent)
       },

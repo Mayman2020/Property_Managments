@@ -103,6 +103,10 @@ public class InventoryService {
         InventoryItem item = findActive(id);
         BigDecimal qty = request.getQuantity();
 
+        if (qty == null || qty.compareTo(BigDecimal.ZERO) <= 0) {
+            throw AppException.badRequest("Quantity must be greater than zero");
+        }
+
         if ("OUT".equalsIgnoreCase(request.getType())) {
             if (item.getQuantity().compareTo(qty) < 0) {
                 throw AppException.badRequest("Insufficient stock. Available: " + item.getQuantity());

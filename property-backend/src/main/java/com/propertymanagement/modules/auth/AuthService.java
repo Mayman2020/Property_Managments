@@ -56,7 +56,7 @@ public class AuthService {
         String rawEmail = request.getEmail().trim();
         User resolved = userRepository.findByEmail(rawEmail)
                 .or(() -> userRepository.findByEmailIgnoreCase(rawEmail))
-                .orElseThrow(() -> AppException.badRequest(appMessages.get("auth.error.unknown_email")));
+                .orElseThrow(() -> AppException.badRequest(appMessages.get("auth.error.invalid_password")));
         if (!resolved.isActive()) {
             throw AppException.badRequest(appMessages.get("auth.error.account_inactive"));
         }
@@ -96,7 +96,8 @@ public class AuthService {
         Map<String, Object> claims = Map.of(
                 "role", user.getRole().name(),
                 "userId", user.getId(),
-                "propertyId", user.getPropertyId() != null ? user.getPropertyId() : ""
+                "propertyId", user.getPropertyId() != null ? user.getPropertyId() : "",
+                "mustChangePassword", user.isMustChangePassword()
         );
         String accessToken = jwtUtil.generateToken(user.getEmail(), claims);
         String refreshToken = jwtUtil.generateRefreshToken(user.getEmail());
@@ -140,6 +141,7 @@ public class AuthService {
                 .leaseContractFiles(null)
                 .permissions(RolePermissionService.mergePermissionMaps(permMaps))
                 .clientModules(resolveClientModules(user))
+                .mustChangePassword(user.isMustChangePassword())
                 .build();
         userDto = portalProfileBridge.mergeRoleRecordIntoLoginUser(userDto, user);
         userDto.setFullName(LocalizedNameResolver.resolve(

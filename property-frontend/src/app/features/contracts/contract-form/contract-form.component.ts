@@ -402,7 +402,12 @@ export class ContractFormComponent implements OnInit {
   }
 
   tenantLabel(tenant: Tenant): string {
-    return tenant.fullName + (tenant.phone ? ` (${tenant.phone})` : '');
+    const ar = tenant.fullNameAr?.trim();
+    const en = tenant.fullNameEn?.trim();
+    const fallback = tenant.fullName?.trim();
+    return this.i18n.currentLang === 'ar'
+      ? (ar || fallback || en || '-')
+      : (en || fallback || ar || '-');
   }
 
   submit(): void {

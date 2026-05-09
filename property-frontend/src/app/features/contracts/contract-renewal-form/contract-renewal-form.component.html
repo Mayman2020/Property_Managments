@@ -6,7 +6,7 @@
   <ng-container *ngIf="!loading && ctx">
     <app-page-header
       [title]="'CONTRACT.RENEWAL.DIALOG.TITLE' | translate"
-      [subtitle]="(contract?.contractNumber ?? '') + ' — ' + (contract?.tenantName ?? '')"
+      [subtitle]="(contract?.contractNumber ?? '') + ' — ' + (tenantDisplayName || contract?.tenantName || '')"
       [showBack]="true"
       (backClick)="goBack()">
     </app-page-header>
@@ -49,7 +49,7 @@
     <div class="action-bar app-card">
       <div class="ab-meta">
         <span class="ab-meta-item"><mat-icon>apartment</mat-icon>{{ contract?.propertyName }} · {{ contract?.unitNumber }}</span>
-        <span class="ab-meta-item"><mat-icon>person</mat-icon>{{ contract?.tenantName }}</span>
+        <span class="ab-meta-item"><mat-icon>person</mat-icon>{{ tenantDisplayName || contract?.tenantName }}</span>
         <span class="ab-meta-item"><mat-icon>info</mat-icon>{{ 'CONTRACT.RENEWAL.DIALOG.HINT' | translate }}</span>
       </div>
     </div>

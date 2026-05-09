@@ -7,7 +7,9 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
-import { TenantPortalService } from '../../../core/services/tenant-portal.service';import { AuthService } from '../../../core/services/auth.service';import { I18nService } from '../../../core/i18n/i18n.service';
+import { TenantPortalService } from '../../../core/services/tenant-portal.service';
+import { AuthService } from '../../../core/services/auth.service';
+import { I18nService } from '../../../core/i18n/i18n.service';
 import { LeaseContract } from '../../../core/models/contract.model';
 
 @Component({

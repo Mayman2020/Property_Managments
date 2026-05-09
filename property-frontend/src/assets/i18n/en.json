@@ -54,7 +54,15 @@
     "RENEWAL_REQUESTS": "Renewal Requests",
     "CONTRACT_APPROVALS": "Contract Approvals",
     "MAINTENANCE_INVOICES": "Maintenance Invoices",
-    "MY_INVOICES": "My Invoices"
+    "MY_INVOICES": "My Invoices",
+    "COMPANY_QUEUE": "Company Queue"
+  },
+  "COMPANY_QUEUE": {
+    "TITLE": "Company Queue",
+    "SUBTITLE": "Pending requests assigned to your company — claim one to take ownership",
+    "EMPTY_TITLE": "No pending requests",
+    "EMPTY_SUBTITLE": "All company requests have been claimed or there are no new requests",
+    "CLAIM": "Claim"
   },
   "AUTH": {
     "LOGIN": "Sign In",
@@ -64,6 +72,22 @@
     "ENTER": "Login",
     "LOGIN_FAILED": "Login failed. Please check your credentials.",
     "INVALID_CREDENTIALS": "Email or password is incorrect. Please try again."
+  },
+  "CHANGE_PW": {
+    "HERO_EYEBROW": "Security",
+    "HERO_TITLE": "Protect Your Account",
+    "HERO_SUBTITLE": "Set a strong password to secure your system access",
+    "TITLE": "Change Your Password",
+    "SUBTITLE": "Your account has a temporary password. Please set a new one to continue",
+    "CURRENT_PW": "Current (Temporary) Password",
+    "NEW_PW": "New Password",
+    "CONFIRM_PW": "Confirm New Password",
+    "SUBMIT": "Set New Password",
+    "REQUIRED": "This field is required",
+    "MIN_LENGTH": "Password must be at least 6 characters",
+    "MISMATCH": "Passwords do not match",
+    "SUCCESS": "Password changed successfully. Welcome!",
+    "ERROR": "Failed to change password. Please try again."
   },
   "TOPBAR": {
     "TOGGLE_MENU": "Toggle menu",
@@ -1245,7 +1269,13 @@
     "REJECT_DRAFT": "Reject draft",
     "CONFIRM_REJECT": "Confirm rejection",
     "DRAFT_CANCELLED_SUCCESS": "Contract cancelled; unit released if no other lease",
-    "STAFF_ACTIVITY_LOG": "Staff activity",
+    "STAFF_ACTIVITY_LOG": "Staff Activity Log",
+    "LOG_TIME": "Time",
+    "LOG_ACTOR": "By",
+    "LOG_ACTION": "Action",
+    "LOG_DETAIL": "Details",
+    "TERMINATION_APPROVE": "Approve Termination",
+    "TERMINATION_REJECT": "Reject Termination",
     "VIEW_DETAILS": "View Details",
     "CLICK_TO_VIEW": "Click to view",
     "RENEW": "Renew",

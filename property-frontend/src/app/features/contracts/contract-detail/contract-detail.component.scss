@@ -477,3 +477,69 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ── Staff activity log table ─────────────────────────────────── */
+.staff-log-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+
+  th {
+    background: var(--navy-900, #0f1f3d);
+    color: #f4e7c4;
+    padding: 10px 14px;
+    font-weight: 600;
+    text-align: right;
+    white-space: nowrap;
+    font-size: 12px;
+    letter-spacing: 0.3px;
+  }
+
+  tr:nth-child(even) td { background: #f8fafc; }
+  tr:hover td { background: #f0f4ff; }
+
+  td {
+    padding: 9px 14px;
+    border-bottom: 1px solid #e8edf2;
+    vertical-align: middle;
+    color: #334155;
+  }
+
+  .log-time {
+    font-family: monospace;
+    font-size: 12px;
+    color: #64748b;
+    white-space: nowrap;
+  }
+
+  .log-actor {
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .log-action-chip {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    background: #e0e9ff;
+    color: var(--navy-800, #1a3356);
+  }
+
+  .log-detail {
+    color: #64748b;
+    font-size: 12px;
+    max-width: 260px;
+    word-break: break-word;
+  }
+}
+
+/* ── Owner decision buttons ───────────────────────────────────── */
+.owner-decision-actions {
+  display: flex;
+  gap: 12px;
+  padding: 16px 20px;
+  border-top: 1px solid #e8edf2;
+  justify-content: flex-end;
+}

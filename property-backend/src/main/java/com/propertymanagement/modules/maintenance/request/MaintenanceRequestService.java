@@ -1,5 +1,7 @@
 package com.propertymanagement.modules.maintenance.request;
 
+import com.propertymanagement.modules.inventory.InventoryService;
+import com.propertymanagement.modules.inventory.dto.StockTransactionRequest;
 import com.propertymanagement.modules.maintenance.assignment.MaintenanceProvider;
 import com.propertymanagement.modules.maintenance.assignment.MaintenanceProviderRepository;
 import com.propertymanagement.modules.maintenance.assignment.PropertyMaintenanceAssignmentRepository;
@@ -63,6 +65,7 @@ public class MaintenanceRequestService {
     private final MaintenanceProviderRepository providerRepository;
     private final PropertyOwnerPortalRecipientService propertyOwnerPortalRecipientService;
     private final OwnerPropertyAccessService ownerPropertyAccessService;
+    private final InventoryService inventoryService;
 
     public Page<MaintenanceRequestResponse> getAll(Pageable pageable) {
         Set<Long> ownerScope = ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner();
@@ -427,6 +430,13 @@ public class MaintenanceRequestService {
                         .notes(itemDto.getNotes())
                         .build();
                 visitReportItemRepository.save(item);
+
+                StockTransactionRequest stock = new StockTransactionRequest();
+                stock.setType("OUT");
+                stock.setQuantity(itemDto.getQuantityUsed());
+                stock.setNotes("Maintenance request: " + request.getRequestNumber());
+                stock.setRequestId(id);
+                inventoryService.adjustStock(itemDto.getItemId(), stock);
             }
         }
 
