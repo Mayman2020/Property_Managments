@@ -122,9 +122,26 @@ The backend POST endpoint exists (`/contracts/complaints`).
 
 ---
 
+## Near-Term Operational Gaps (Prioritized for Phase 3)
+
+These are confirmed backend-ready, documented in `business-gap-review-final.md`:
+
+| # | Gap | Effort | Sprint |
+|---|-----|--------|--------|
+| A | Vendor Management screen | Small | Sprint 1 |
+| B | Property Attachments tab | Small-Medium | Sprint 1 |
+| C | Inventory Stock History per item | Small | Sprint 1 |
+| D | Payment Proof Review (accountant portal) | Small-Medium | Sprint 1 |
+| E | Floor Management (property detail) | Medium | Sprint 2 |
+| F | Maintenance Contracts management | Medium | Sprint 2 |
+| G | Maintenance Provider Assignments | Medium | Sprint 2 |
+| H | Expiring Contracts dedicated list | Small | Sprint 2 |
+
+---
+
 ## Implemented During This Audit (Resolved)
 
-The following gaps were identified and **fixed** during the audit phase:
+The following gaps were identified and **fixed** during the audit and business-review phases:
 
 | Gap | Fix Applied |
 |-----|-------------|
@@ -132,3 +149,6 @@ The following gaps were identified and **fixed** during the audit phase:
 | Owners route missing permission guard | Added `canActivate: [permissionGuard]` in `admin.routes.ts` |
 | `FinanceService` Hibernate 6 null-param bug (dashboard, P&L, cashflow) | Dynamic SQL builder applied |
 | `HrWorkspaceComponent` unconditional leave-balances API call | Guard added for null `filterPropertyId` |
+| HR Attendance screen missing (route + section + nav item) | Added to hr-workspace + admin.routes.ts + sidebar |
+| Tenant Complaint submission form missing | New `submit-complaint.component.ts` + route + nav item |
+| Overdue Payments screen missing | New `overdue-payments.component.ts` + route + nav item |

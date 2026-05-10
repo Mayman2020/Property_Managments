@@ -55,7 +55,10 @@
     "CONTRACT_APPROVALS": "موافقات العقود",
     "MAINTENANCE_INVOICES": "فواتير الصيانة",
     "MY_INVOICES": "فواتيري",
-    "COMPANY_QUEUE": "طابور الشركة"
+    "COMPANY_QUEUE": "طابور الشركة",
+    "OVERDUE_PAYMENTS": "الإيجارات المتأخرة",
+    "SUBMIT_COMPLAINT": "تقديم شكوى",
+    "ATTENDANCE": "الحضور"
   },
   "COMPANY_QUEUE": {
     "TITLE": "طابور الشركة",
@@ -63,6 +66,39 @@
     "EMPTY_TITLE": "لا توجد طلبات معلقة",
     "EMPTY_SUBTITLE": "تمت المطالبة بجميع طلبات الشركة أو لا توجد طلبات جديدة",
     "CLAIM": "استلام"
+  },
+  "COMPLAINT": {
+    "SUBMIT_TITLE": "تقديم شكوى",
+    "SUBMIT_SUBTITLE": "اشرح مشكلتك وسيتواصل معك فريقنا للمتابعة",
+    "SUBJECT_LABEL": "الموضوع",
+    "SUBJECT_PLACEHOLDER": "ملخص مختصر للشكوى",
+    "CATEGORY_LABEL": "التصنيف",
+    "DESCRIPTION_LABEL": "التفاصيل",
+    "DESCRIPTION_PLACEHOLDER": "أضف أكبر قدر من التفاصيل حتى نتمكن من حل مشكلتك بسرعة",
+    "SUBMIT_BTN": "إرسال الشكوى",
+    "SUBMITTED_SUCCESS": "تم تقديم شكواك بنجاح، سنتواصل معك قريباً.",
+    "CAT_MAINTENANCE": "الصيانة",
+    "CAT_NOISE": "الضوضاء",
+    "CAT_CLEANLINESS": "النظافة",
+    "CAT_BILLING": "الفواتير / المدفوعات",
+    "CAT_MANAGEMENT": "الإدارة",
+    "CAT_OTHER": "أخرى"
+  },
+  "OVERDUE": {
+    "TITLE": "الإيجارات المتأخرة",
+    "SUBTITLE": "مدفوعات الإيجار التي تجاوزت تاريخ الاستحقاق ولم يتم سدادها",
+    "ITEMS_LABEL": "بند متأخر",
+    "CONTRACT_COL": "العقد",
+    "TENANT_COL": "المستأجر",
+    "UNIT_COL": "الوحدة",
+    "DUE_DATE_COL": "تاريخ الاستحقاق",
+    "AMOUNT_COL": "المبلغ",
+    "DAYS_LATE_COL": "أيام التأخر",
+    "STATUS_COL": "الحالة",
+    "STATUS_OVERDUE": "متأخر",
+    "DAYS": "أيام",
+    "EMPTY_TITLE": "لا توجد إيجارات متأخرة",
+    "EMPTY_MSG": "جميع مدفوعات الإيجار محدّثة."
   },
   "AUTH": {
     "LOGIN": "تسجيل الدخول",
@@ -1724,6 +1760,10 @@
     "PAYROLL_DETAIL_TITLE": "تفاصيل الرواتب",
     "LEAVES_TITLE": "طلبات الإجازة",
     "ATTENDANCE_TITLE": "الحضور",
+    "ATTENDANCE_DATE_COL": "التاريخ",
+    "CHECK_IN_COL": "وقت الحضور",
+    "CHECK_OUT_COL": "وقت الانصراف",
+    "LATE_MINUTES_COL": "دقائق التأخير",
     "SUBTITLE": "إدارة سجلات الموظفين والرواتب والخصومات من مساحة عمل واحدة.",
     "ADD_EMPLOYEE": "إضافة موظف",
     "ADD_EMPLOYEE_HINT": "إنشاء سجل موظف جديد وربطه بالعقار.",

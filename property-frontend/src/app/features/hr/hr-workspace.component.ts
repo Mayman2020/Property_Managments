@@ -15,6 +15,7 @@ import { TablePagerComponent } from '../../shared/components/table-pager/table-p
 import { ExportColumn, TableExportToolbarComponent } from '../../shared/components/table-export-toolbar/table-export-toolbar.component';
 import {
   EmployeeItem,
+  AttendanceItem,
   HrService,
   LeaveBalanceItem,
   LeaveRequestItem,
@@ -267,6 +268,40 @@ import { EmployeeDialogComponent } from './employee-dialog.component';
         </div>
       </div>
 
+      <div class="app-card" *ngIf="section === 'attendance'">
+        <div class="app-table-wrap" *ngIf="attendanceItems.length; else emptyTpl">
+          <table class="app-data-table">
+            <thead>
+              <tr>
+                <th>{{ 'HR.EMPLOYEE_COL' | translate }}</th>
+                <th>{{ 'HR.ATTENDANCE_DATE_COL' | translate }}</th>
+                <th>{{ 'HR.CHECK_IN_COL' | translate }}</th>
+                <th>{{ 'HR.CHECK_OUT_COL' | translate }}</th>
+                <th>{{ 'HR.LATE_MINUTES_COL' | translate }}</th>
+                <th>{{ 'HR.STATUS_COL' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of pagedAttendance">
+                <td>{{ item.employeeName || '-' }}</td>
+                <td>{{ item.attendanceDate | date:'dd/MM/yyyy' }}</td>
+                <td>{{ item.checkIn || '-' }}</td>
+                <td>{{ item.checkOut || '-' }}</td>
+                <td>{{ item.lateMinutes ?? 0 }}</td>
+                <td><span class="status-badge" [attr.data-status]="item.status || 'PRESENT'">{{ item.status || 'PRESENT' }}</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <app-table-pager
+          *ngIf="attendanceItems.length > attendancePageSize"
+          [length]="attendanceItems.length"
+          [pageSize]="attendancePageSize"
+          [pageIndex]="attendancePageIndex"
+          (pageIndexChange)="attendancePageIndex = $event">
+        </app-table-pager>
+      </div>
+
       <ng-template #emptyTpl>
         <div class="app-empty-state">
           <span class="material-icons empty-icon">badge</span>
@@ -338,6 +373,9 @@ export class HrWorkspaceComponent implements OnInit {
   leaveBalanceByEmployeeId = new Map<number, LeaveBalanceItem>();
   payrollRuns: PayrollRunItem[] = [];
   payrollDetail: PayrollRunDetail | null = null;
+  attendanceItems: AttendanceItem[] = [];
+  readonly attendancePageSize = 20;
+  attendancePageIndex = 0;
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -448,6 +486,21 @@ export class HrWorkspaceComponent implements OnInit {
         error: () => { this.leaveRequests = []; }
       });
     }
+    if (this.section === 'attendance') {
+      this.loadAttendance();
+    }
+  }
+
+  get pagedAttendance(): AttendanceItem[] {
+    const start = this.attendancePageIndex * this.attendancePageSize;
+    return this.attendanceItems.slice(start, start + this.attendancePageSize);
+  }
+
+  private loadAttendance(): void {
+    this.service.getAttendance({ page: 0, size: 200 }).subscribe({
+      next: (res) => { this.attendanceItems = res.data?.content ?? []; },
+      error: () => { this.attendanceItems = []; }
+    });
   }
 
   openAddEmployee(): void {

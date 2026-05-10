@@ -166,6 +166,11 @@ export const ADMIN_ROUTES: Routes = [
             loadComponent: () => import('../hr/hr-workspace.component').then((m) => m.HrWorkspaceComponent)
           },
           {
+            path: 'attendance',
+            data: { section: 'attendance' },
+            loadComponent: () => import('../hr/hr-workspace.component').then((m) => m.HrWorkspaceComponent)
+          },
+          {
             path: 'payroll',
             data: { section: 'payroll-list' },
             loadComponent: () => import('../hr/hr-workspace.component').then((m) => m.HrWorkspaceComponent)
@@ -216,6 +221,10 @@ export const ADMIN_ROUTES: Routes = [
             path: 'reports/owner-statement',
             data: { report: 'owner-statement' },
             loadComponent: () => import('../finance/finance-reports.component').then((m) => m.FinanceReportsComponent)
+          },
+          {
+            path: 'overdue-payments',
+            loadComponent: () => import('../finance/overdue-payments/overdue-payments.component').then((m) => m.OverduePaymentsComponent)
           }
         ]
       },

@@ -41,6 +41,10 @@ export const TENANT_ROUTES: Routes = [
         loadComponent: () => import('./rent-receipts/rent-receipts.component').then((m) => m.RentReceiptsComponent)
       },
       {
+        path: 'complaints',
+        loadComponent: () => import('./submit-complaint/submit-complaint.component').then((m) => m.SubmitComplaintComponent)
+      },
+      {
         path: 'notifications',
         loadComponent: () => import('../notifications/notifications-page.component').then((m) => m.NotificationsPageComponent)
       },

@@ -55,7 +55,10 @@
     "CONTRACT_APPROVALS": "Contract Approvals",
     "MAINTENANCE_INVOICES": "Maintenance Invoices",
     "MY_INVOICES": "My Invoices",
-    "COMPANY_QUEUE": "Company Queue"
+    "COMPANY_QUEUE": "Company Queue",
+    "OVERDUE_PAYMENTS": "Overdue Payments",
+    "SUBMIT_COMPLAINT": "Submit Complaint",
+    "ATTENDANCE": "Attendance"
   },
   "COMPANY_QUEUE": {
     "TITLE": "Company Queue",
@@ -63,6 +66,39 @@
     "EMPTY_TITLE": "No pending requests",
     "EMPTY_SUBTITLE": "All company requests have been claimed or there are no new requests",
     "CLAIM": "Claim"
+  },
+  "COMPLAINT": {
+    "SUBMIT_TITLE": "Submit a Complaint",
+    "SUBMIT_SUBTITLE": "Describe your concern and our team will follow up",
+    "SUBJECT_LABEL": "Subject",
+    "SUBJECT_PLACEHOLDER": "Brief summary of your complaint",
+    "CATEGORY_LABEL": "Category",
+    "DESCRIPTION_LABEL": "Description",
+    "DESCRIPTION_PLACEHOLDER": "Provide as much detail as possible so we can resolve your issue quickly",
+    "SUBMIT_BTN": "Submit Complaint",
+    "SUBMITTED_SUCCESS": "Your complaint has been submitted. We will follow up soon.",
+    "CAT_MAINTENANCE": "Maintenance",
+    "CAT_NOISE": "Noise",
+    "CAT_CLEANLINESS": "Cleanliness",
+    "CAT_BILLING": "Billing / Payments",
+    "CAT_MANAGEMENT": "Management",
+    "CAT_OTHER": "Other"
+  },
+  "OVERDUE": {
+    "TITLE": "Overdue Payments",
+    "SUBTITLE": "Rent payments that have passed their due date and remain unpaid",
+    "ITEMS_LABEL": "overdue items",
+    "CONTRACT_COL": "Contract",
+    "TENANT_COL": "Tenant",
+    "UNIT_COL": "Unit",
+    "DUE_DATE_COL": "Due Date",
+    "AMOUNT_COL": "Amount",
+    "DAYS_LATE_COL": "Days Late",
+    "STATUS_COL": "Status",
+    "STATUS_OVERDUE": "Overdue",
+    "DAYS": "days",
+    "EMPTY_TITLE": "No Overdue Payments",
+    "EMPTY_MSG": "All rent payments are up to date."
   },
   "AUTH": {
     "LOGIN": "Sign In",
@@ -1731,6 +1767,10 @@
     "PAYROLL_DETAIL_TITLE": "Payroll Detail",
     "LEAVES_TITLE": "Leave Requests",
     "ATTENDANCE_TITLE": "Attendance",
+    "ATTENDANCE_DATE_COL": "Date",
+    "CHECK_IN_COL": "Check In",
+    "CHECK_OUT_COL": "Check Out",
+    "LATE_MINUTES_COL": "Late (min)",
     "SUBTITLE": "Manage employee records, payroll, and deductions from one workspace.",
     "ADD_EMPLOYEE": "Add Employee",
     "ADD_EMPLOYEE_HINT": "Create a new employee record and link it to the property.",
