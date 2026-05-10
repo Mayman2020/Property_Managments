@@ -622,10 +622,11 @@ export class HrWorkspaceComponent implements OnInit {
   }
 
   private loadLeaveBalances(): void {
-    const params: Record<string, string | number> = {};
-    if (this.filterPropertyId) {
-      params['propertyId'] = this.filterPropertyId;
+    if (!this.filterPropertyId) {
+      this.leaveBalanceByEmployeeId.clear();
+      return;
     }
+    const params: Record<string, string | number> = { propertyId: this.filterPropertyId };
     this.service.getLeaveBalances(params).subscribe({
       next: (res) => {
         this.leaveBalanceByEmployeeId.clear();

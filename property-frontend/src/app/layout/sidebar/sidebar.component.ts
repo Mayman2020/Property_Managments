@@ -88,6 +88,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     { icon: 'person', labelKey: 'NAV.PROFILE', route: '/officer/profile', roles: ['MAINTENANCE_OFFICER_INTERNAL', 'MAINTENANCE_OFFICER_COMPANY', 'MAINTENANCE_COMPANY'], permissionKey: 'profile', sectionKey: 'NAV_SECTION.YOU' },
     { icon: 'home', labelKey: 'NAV.MY_UNIT', route: '/tenant/my-unit', roles: ['TENANT'], permissionKey: 'my_unit', sectionKey: 'NAV_SECTION.OVERVIEW' },
     { icon: 'library_books', labelKey: 'NAV.MY_CONTRACTS', route: '/tenant/my-contracts', roles: ['TENANT'], permissionKey: 'my_unit', sectionKey: 'NAV_SECTION.OVERVIEW', bypassPermission: true },
+    { icon: 'receipt_long', labelKey: 'NAV.RENT_RECEIPTS', route: '/tenant/rent-receipts', roles: ['TENANT'], permissionKey: 'my_unit', sectionKey: 'NAV_SECTION.OVERVIEW', bypassPermission: true },
     { icon: 'autorenew', labelKey: 'NAV.CONTRACT_REQUEST', route: '/tenant/contract-request', roles: ['TENANT'], permissionKey: 'my_unit', sectionKey: 'NAV_SECTION.OVERVIEW', bypassPermission: true },
     { icon: 'history', labelKey: 'NAV.MAINTENANCE_REQUESTS', route: '/tenant/requests', roles: ['TENANT'], permissionKey: 'my_requests', sectionKey: 'NAV_SECTION.OVERVIEW' },
     { icon: 'notifications', labelKey: 'NAV.NOTIFICATIONS', route: '/tenant/notifications', roles: ['TENANT'], permissionKey: 'notifications', sectionKey: 'NAV_SECTION.YOU', bypassPermission: true },

@@ -54,7 +54,7 @@ test.describe('Maintenance & Inventory', () => {
   test('API: maintenance requests list returns data', async ({ request }) => {
     test.skip(!E2E, 'Requires running backend (E2E_ENABLED=true)');
     const token = await apiLogin(request);
-    const res = await request.get(`${API}/maintenance-requests?page=0&size=10`, {
+    const res = await request.get(`${API}/maintenance/requests?page=0&size=10`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     expect(res.ok(), await res.text()).toBeTruthy();
@@ -66,7 +66,7 @@ test.describe('Maintenance & Inventory', () => {
   test('API: inventory items list returns data', async ({ request }) => {
     test.skip(!E2E, 'Requires running backend (E2E_ENABLED=true)');
     const token = await apiLogin(request);
-    const res = await request.get(`${API}/inventory/items?page=0&size=10`, {
+    const res = await request.get(`${API}/inventory?page=0&size=10`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     expect(res.ok(), await res.text()).toBeTruthy();
@@ -79,7 +79,7 @@ test.describe('Maintenance & Inventory', () => {
     const token = await apiLogin(request);
     const headers = { Authorization: `Bearer ${token}` };
 
-    const itemsRes = await request.get(`${API}/inventory/items?page=0&size=1`, { headers });
+    const itemsRes = await request.get(`${API}/inventory?page=0&size=1`, { headers });
     if (!itemsRes.ok()) return;
     const items = (await itemsRes.json()).data?.content ?? [];
     if (items.length === 0) {
@@ -88,7 +88,7 @@ test.describe('Maintenance & Inventory', () => {
     }
     const itemId = items[0].id;
 
-    const adjustRes = await request.post(`${API}/inventory/items/${itemId}/transactions`, {
+    const adjustRes = await request.post(`${API}/inventory/${itemId}/stock`, {
       headers,
       data: { type: 'IN', quantity: 0, notes: 'E2E zero-qty test' }
     });
@@ -102,7 +102,7 @@ test.describe('Maintenance & Inventory', () => {
     const token = await apiLogin(request);
     const headers = { Authorization: `Bearer ${token}` };
 
-    const itemsRes = await request.get(`${API}/inventory/items?page=0&size=1`, { headers });
+    const itemsRes = await request.get(`${API}/inventory?page=0&size=1`, { headers });
     if (!itemsRes.ok()) return;
     const items = (await itemsRes.json()).data?.content ?? [];
     if (items.length === 0) {
@@ -111,7 +111,7 @@ test.describe('Maintenance & Inventory', () => {
     }
     const itemId = items[0].id;
 
-    const adjustRes = await request.post(`${API}/inventory/items/${itemId}/transactions`, {
+    const adjustRes = await request.post(`${API}/inventory/${itemId}/stock`, {
       headers,
       data: { type: 'IN', quantity: -5, notes: 'E2E negative-qty test' }
     });
@@ -121,7 +121,7 @@ test.describe('Maintenance & Inventory', () => {
   test('API: tenant can submit maintenance request', async ({ request }) => {
     test.skip(!E2E, 'Requires running backend with tenant seed data (E2E_ENABLED=true)');
     const token = await apiLogin(request, TENANT.email);
-    const res = await request.post(`${API}/maintenance-requests`, {
+    const res = await request.post(`${API}/maintenance/requests`, {
       headers: { Authorization: `Bearer ${token}` },
       data: {
         title: 'E2E Test Request',
@@ -137,7 +137,7 @@ test.describe('Maintenance & Inventory', () => {
       // cleanup — cancel the request
       const reqId = json.data.id;
       const token2 = await apiLogin(request);
-      await request.post(`${API}/maintenance-requests/${reqId}/cancel`, {
+      await request.post(`${API}/maintenance/requests/${reqId}/cancel`, {
         headers: { Authorization: `Bearer ${token2}` }
       });
     } else {
@@ -152,7 +152,7 @@ test.describe('Maintenance & Inventory', () => {
     const headers = { Authorization: `Bearer ${token}` };
 
     // Find a request in ASSIGNED or IN_PROGRESS status
-    const reqRes = await request.get(`${API}/maintenance-requests?status=ASSIGNED&page=0&size=1`, { headers });
+    const reqRes = await request.get(`${API}/maintenance/requests?status=ASSIGNED&page=0&size=1`, { headers });
     if (!reqRes.ok()) return;
     const reqs = (await reqRes.json()).data?.content ?? [];
     if (reqs.length === 0) {
@@ -161,7 +161,7 @@ test.describe('Maintenance & Inventory', () => {
     }
 
     const reqId = reqs[0].id;
-    const itemsRes = await request.get(`${API}/inventory/items?page=0&size=1`, { headers });
+    const itemsRes = await request.get(`${API}/inventory?page=0&size=1`, { headers });
     if (!itemsRes.ok()) return;
     const items = (await itemsRes.json()).data?.content ?? [];
     if (items.length === 0) {
@@ -172,7 +172,7 @@ test.describe('Maintenance & Inventory', () => {
     const stockBefore = item.currentStock ?? item.quantityInStock ?? 0;
 
     // Submit visit report consuming 1 unit
-    const reportRes = await request.post(`${API}/maintenance-requests/${reqId}/visit-report`, {
+    const reportRes = await request.post(`${API}/maintenance/requests/${reqId}/visit-report`, {
       headers,
       data: {
         notes: 'E2E visit report',
@@ -182,17 +182,18 @@ test.describe('Maintenance & Inventory', () => {
     if (!reportRes.ok()) return; // skip if state transition not allowed
 
     // Verify stock decreased
-    const itemAfterRes = await request.get(`${API}/inventory/items/${item.id}`, { headers });
+    const itemAfterRes = await request.get(`${API}/inventory/${item.id}`, { headers });
     expect(itemAfterRes.ok()).toBeTruthy();
     const itemAfter = (await itemAfterRes.json()).data;
     const stockAfter = itemAfter?.currentStock ?? itemAfter?.quantityInStock ?? 0;
     expect(stockAfter).toBeLessThan(stockBefore);
   });
 
-  test('API: company queue returns unassigned requests', async ({ request }) => {
-    test.skip(!E2E, 'Requires running backend (E2E_ENABLED=true)');
-    const token = await apiLogin(request);
-    const res = await request.get(`${API}/maintenance-requests/company-queue?page=0&size=10`, {
+  test('API: company queue returns unassigned requests (officer access)', async ({ request }) => {
+    test.skip(!E2E, 'Requires running backend with officer seed (E2E_ENABLED=true)');
+    // endpoint restricted to MAINTENANCE_OFFICER roles — use officer account not admin
+    const token = await apiLogin(request, OFFICER.email);
+    const res = await request.get(`${API}/maintenance/requests/company-queue?page=0&size=10`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     expect(res.ok(), await res.text()).toBeTruthy();

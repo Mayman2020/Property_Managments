@@ -67,5 +67,6 @@ server:
 logging:
   level:
     com.propertymanagement: INFO
-    org.springframework.security: INFO
+    org.springframework.security: WARN
     org.flywaydb: INFO
+    org.hibernate.SQL: WARN

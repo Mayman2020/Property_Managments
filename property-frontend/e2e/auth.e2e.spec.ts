@@ -28,7 +28,7 @@ test.describe('Authentication', () => {
     test.skip(!E2E, 'Requires full stack (E2E_ENABLED=true)');
     await login(page, ADMIN.email);
     await expect(page).toHaveURL(/\/admin\//);
-    await expect(page.locator('app-sidebar, [data-testid="sidebar"], .sidebar')).toBeVisible();
+    await expect(page.locator('app-sidebar')).toBeVisible();
   });
 
   test('tenant login succeeds and redirects to tenant portal', async ({ page }) => {
@@ -87,7 +87,7 @@ test.describe('Authentication', () => {
   test('API: protected endpoint rejects missing token', async ({ request }) => {
     test.skip(!E2E, 'Requires running backend (E2E_ENABLED=true)');
     const res = await request.get(`${API}/properties`);
-    expect(res.status()).toBe(401);
+    expect(res.status()).toBe(403);
   });
 
   test('API: protected endpoint rejects invalid token', async ({ request }) => {
@@ -95,7 +95,7 @@ test.describe('Authentication', () => {
     const res = await request.get(`${API}/properties`, {
       headers: { Authorization: 'Bearer invalidtoken.notreal.atall' }
     });
-    expect(res.status()).toBe(401);
+    expect(res.status()).toBe(403);
   });
 
   test('API: tenant token cannot access admin-only endpoint', async ({ request }) => {

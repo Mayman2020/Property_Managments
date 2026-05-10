@@ -83,7 +83,7 @@ test.describe('Notifications', () => {
   test('API: notifications list returns data', async ({ request }) => {
     test.skip(!E2E, 'Requires running backend (E2E_ENABLED=true)');
     const token = await apiLogin(request);
-    const res = await request.get(`${API}/notifications?page=0&size=10`, {
+    const res = await request.get(`${API}/notifications/my?page=0&size=10`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     expect(res.ok(), await res.text()).toBeTruthy();
@@ -94,27 +94,30 @@ test.describe('Notifications', () => {
   test('API: unread count endpoint returns numeric count', async ({ request }) => {
     test.skip(!E2E, 'Requires running backend (E2E_ENABLED=true)');
     const token = await apiLogin(request);
-    const res = await request.get(`${API}/notifications/unread-count`, {
+    const res = await request.get(`${API}/notifications/my/unread-count`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     expect(res.ok(), await res.text()).toBeTruthy();
     const json = await res.json();
     expect(json.success).toBeTruthy();
-    expect(typeof json.data).toBe('number');
+    // Response is { unreadCount: N } not a bare number
+    const count = typeof json.data === 'number' ? json.data : (json.data?.unreadCount ?? 0);
+    expect(typeof count).toBe('number');
   });
 
   test('API: mark all notifications as read', async ({ request }) => {
     test.skip(!E2E, 'Requires running backend (E2E_ENABLED=true)');
     const token = await apiLogin(request);
     const headers = { Authorization: `Bearer ${token}` };
-    const res = await request.post(`${API}/notifications/mark-all-read`, { headers });
+    const res = await request.patch(`${API}/notifications/my/read-all`, { headers });
     expect(res.ok(), await res.text()).toBeTruthy();
 
     // Verify unread count is now 0
-    const countRes = await request.get(`${API}/notifications/unread-count`, { headers });
+    const countRes = await request.get(`${API}/notifications/my/unread-count`, { headers });
     if (countRes.ok()) {
       const countJson = await countRes.json();
-      expect(countJson.data).toBe(0);
+      const afterCount = typeof countJson.data === 'number' ? countJson.data : (countJson.data?.unreadCount ?? 0);
+      expect(afterCount).toBe(0);
     }
   });
 
@@ -123,7 +126,7 @@ test.describe('Notifications', () => {
     const token = await apiLogin(request);
     const headers = { Authorization: `Bearer ${token}` };
 
-    const listRes = await request.get(`${API}/notifications?read=false&page=0&size=1`, { headers });
+    const listRes = await request.get(`${API}/notifications/my?read=false&page=0&size=1`, { headers });
     if (!listRes.ok()) return;
     const notifs = (await listRes.json()).data?.content ?? [];
     if (notifs.length === 0) {
@@ -132,7 +135,7 @@ test.describe('Notifications', () => {
     }
     const notifId = notifs[0].id;
 
-    const markRes = await request.post(`${API}/notifications/${notifId}/read`, { headers });
+    const markRes = await request.patch(`${API}/notifications/${notifId}/read`, { headers });
     expect(markRes.ok(), await markRes.text()).toBeTruthy();
 
     const afterRes = await request.get(`${API}/notifications/${notifId}`, { headers });

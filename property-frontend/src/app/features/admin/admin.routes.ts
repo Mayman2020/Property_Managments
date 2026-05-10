@@ -117,6 +117,8 @@ export const ADMIN_ROUTES: Routes = [
         loadComponent: () => import('../contractors/contractor-companies.component').then((m) => m.ContractorCompaniesComponent)
       },
       {
+        canActivate: [permissionGuard],
+        data: { permission: 'properties', permissionAction: 'view' },
         path: 'owners',
         loadComponent: () => import('../owners/owners-management.component').then((m) => m.OwnersManagementComponent)
       },

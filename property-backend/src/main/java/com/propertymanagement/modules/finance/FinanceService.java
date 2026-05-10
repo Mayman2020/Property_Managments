@@ -79,6 +79,17 @@ public class FinanceService {
                     """)
                     .setParameter("propertyIds", ownerScope)
                     .getSingleResult();
+        } else if (propertyId != null) {
+            row = (Object[]) entityManager.createNativeQuery("""
+                    SELECT COALESCE(SUM(this_month_collected), 0),
+                           COALESCE(SUM(this_month_expenses), 0),
+                           COALESCE(SUM(this_month_collected - this_month_expenses), 0),
+                           COALESCE(SUM(overdue_amount), 0)
+                    FROM dashboard_financial
+                    WHERE property_id = :propertyId
+                    """)
+                    .setParameter("propertyId", propertyId)
+                    .getSingleResult();
         } else {
             row = (Object[]) entityManager.createNativeQuery("""
                     SELECT COALESCE(SUM(this_month_collected), 0),
@@ -86,9 +97,7 @@ public class FinanceService {
                            COALESCE(SUM(this_month_collected - this_month_expenses), 0),
                            COALESCE(SUM(overdue_amount), 0)
                     FROM dashboard_financial
-                    WHERE (:propertyId IS NULL OR property_id = :propertyId)
                     """)
-                    .setParameter("propertyId", propertyId)
                     .getSingleResult();
         }
 
@@ -219,35 +228,34 @@ public class FinanceService {
             if (ownerScope.isEmpty()) {
                 return List.of();
             }
-            rows = entityManager.createNativeQuery("""
-                    SELECT property_name, year, month, COALESCE(rent_revenue, 0) + COALESCE(other_revenue, 0) AS total_revenue,
-                           COALESCE(total_expenses, 0) AS total_expenses,
-                           (COALESCE(rent_revenue, 0) + COALESCE(other_revenue, 0) - COALESCE(total_expenses, 0)) AS net_income
-                    FROM property_pnl
-                    WHERE property_id IN (:propertyIds)
-                      AND (:yearFrom IS NULL OR year >= :yearFrom)
-                      AND (:yearTo IS NULL OR year <= :yearTo)
-                    ORDER BY year DESC, month DESC, property_name ASC
-                    """)
-                    .setParameter("propertyIds", ownerScope)
-                    .setParameter("yearFrom", yearFrom)
-                    .setParameter("yearTo", yearTo)
-                    .getResultList();
+            StringBuilder ownerSql = new StringBuilder(
+                    "SELECT property_name, year, month, COALESCE(rent_revenue, 0) + COALESCE(other_revenue, 0) AS total_revenue," +
+                    " COALESCE(total_expenses, 0) AS total_expenses," +
+                    " (COALESCE(rent_revenue, 0) + COALESCE(other_revenue, 0) - COALESCE(total_expenses, 0)) AS net_income" +
+                    " FROM property_pnl WHERE property_id IN (:propertyIds)");
+            if (yearFrom != null) ownerSql.append(" AND year >= :yearFrom");
+            if (yearTo != null) ownerSql.append(" AND year <= :yearTo");
+            ownerSql.append(" ORDER BY year DESC, month DESC, property_name ASC");
+            var ownerQ = entityManager.createNativeQuery(ownerSql.toString())
+                    .setParameter("propertyIds", ownerScope);
+            if (yearFrom != null) ownerQ.setParameter("yearFrom", yearFrom);
+            if (yearTo != null) ownerQ.setParameter("yearTo", yearTo);
+            rows = ownerQ.getResultList();
         } else {
-            rows = entityManager.createNativeQuery("""
-                    SELECT property_name, year, month, COALESCE(rent_revenue, 0) + COALESCE(other_revenue, 0) AS total_revenue,
-                           COALESCE(total_expenses, 0) AS total_expenses,
-                           (COALESCE(rent_revenue, 0) + COALESCE(other_revenue, 0) - COALESCE(total_expenses, 0)) AS net_income
-                    FROM property_pnl
-                    WHERE (:propertyId IS NULL OR property_id = :propertyId)
-                      AND (:yearFrom IS NULL OR year >= :yearFrom)
-                      AND (:yearTo IS NULL OR year <= :yearTo)
-                    ORDER BY year DESC, month DESC, property_name ASC
-                    """)
-                    .setParameter("propertyId", propertyId)
-                    .setParameter("yearFrom", yearFrom)
-                    .setParameter("yearTo", yearTo)
-                    .getResultList();
+            StringBuilder sql = new StringBuilder(
+                    "SELECT property_name, year, month, COALESCE(rent_revenue, 0) + COALESCE(other_revenue, 0) AS total_revenue," +
+                    " COALESCE(total_expenses, 0) AS total_expenses," +
+                    " (COALESCE(rent_revenue, 0) + COALESCE(other_revenue, 0) - COALESCE(total_expenses, 0)) AS net_income" +
+                    " FROM property_pnl WHERE 1=1");
+            if (propertyId != null) sql.append(" AND property_id = :propertyId");
+            if (yearFrom != null) sql.append(" AND year >= :yearFrom");
+            if (yearTo != null) sql.append(" AND year <= :yearTo");
+            sql.append(" ORDER BY year DESC, month DESC, property_name ASC");
+            var q = entityManager.createNativeQuery(sql.toString());
+            if (propertyId != null) q.setParameter("propertyId", propertyId);
+            if (yearFrom != null) q.setParameter("yearFrom", yearFrom);
+            if (yearTo != null) q.setParameter("yearTo", yearTo);
+            rows = q.getResultList();
         }
         List<FinancialReportRowResponse> result = new ArrayList<>();
         for (Object[] row : rows) {
@@ -306,37 +314,25 @@ public class FinanceService {
                     .setParameter("propertyIds", ownerScope)
                     .getResultList();
         } else {
-            rows = entityManager.createNativeQuery("""
-                    SELECT year_part, month_part, SUM(cash_in) AS cash_in, SUM(cash_out) AS cash_out
-                    FROM (
-                        SELECT EXTRACT(YEAR FROM rp.payment_date) AS year_part,
-                               EXTRACT(MONTH FROM rp.payment_date) AS month_part,
-                               rp.amount_paid AS cash_in,
-                               0 AS cash_out
-                        FROM rent_payments rp
-                        LEFT JOIN lease_contracts lc ON lc.id = rp.contract_id
-                        WHERE (:propertyId IS NULL OR lc.property_id = :propertyId)
-                        UNION ALL
-                        SELECT EXTRACT(YEAR FROM r.revenue_date),
-                               EXTRACT(MONTH FROM r.revenue_date),
-                               r.amount,
-                               0
-                        FROM other_revenues r
-                        WHERE (:propertyId IS NULL OR r.property_id = :propertyId)
-                        UNION ALL
-                        SELECT EXTRACT(YEAR FROM e.expense_date),
-                               EXTRACT(MONTH FROM e.expense_date),
-                               0,
-                               e.amount
-                        FROM expenses e
-                        WHERE e.status = 'PAID'
-                          AND (:propertyId IS NULL OR e.property_id = :propertyId)
-                    ) flow
-                    GROUP BY year_part, month_part
-                    ORDER BY year_part DESC, month_part DESC
-                    """)
-                    .setParameter("propertyId", propertyId)
-                    .getResultList();
+            String propFilter = propertyId != null ? " AND lc.property_id = :propertyId" : "";
+            String propFilterR = propertyId != null ? " AND r.property_id = :propertyId" : "";
+            String propFilterE = propertyId != null ? " AND e.property_id = :propertyId" : "";
+            String cfSql =
+                    "SELECT year_part, month_part, SUM(cash_in) AS cash_in, SUM(cash_out) AS cash_out FROM (" +
+                    " SELECT EXTRACT(YEAR FROM rp.payment_date) AS year_part," +
+                    "        EXTRACT(MONTH FROM rp.payment_date) AS month_part," +
+                    "        rp.amount_paid AS cash_in, 0 AS cash_out" +
+                    " FROM rent_payments rp LEFT JOIN lease_contracts lc ON lc.id = rp.contract_id WHERE 1=1" + propFilter +
+                    " UNION ALL" +
+                    " SELECT EXTRACT(YEAR FROM r.revenue_date), EXTRACT(MONTH FROM r.revenue_date), r.amount, 0" +
+                    " FROM other_revenues r WHERE 1=1" + propFilterR +
+                    " UNION ALL" +
+                    " SELECT EXTRACT(YEAR FROM e.expense_date), EXTRACT(MONTH FROM e.expense_date), 0, e.amount" +
+                    " FROM expenses e WHERE e.status = 'PAID'" + propFilterE +
+                    ") flow GROUP BY year_part, month_part ORDER BY year_part DESC, month_part DESC";
+            var cfQ = entityManager.createNativeQuery(cfSql);
+            if (propertyId != null) cfQ.setParameter("propertyId", propertyId);
+            rows = cfQ.getResultList();
         }
         List<FinancialReportRowResponse> result = new ArrayList<>();
         for (Object[] row : rows) {
