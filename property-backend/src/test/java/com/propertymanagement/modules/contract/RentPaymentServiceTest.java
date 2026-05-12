@@ -1,18 +1,30 @@
 package com.propertymanagement.modules.contract;
 
 import com.propertymanagement.codegen.CodeGenerationService;
-import com.propertymanagement.modules.contract.lease.LeaseContract;
-import com.propertymanagement.modules.contract.lease.LeaseContractRepository;
-import com.propertymanagement.modules.contract.payment.*;
+import com.propertymanagement.modules.contract.lease.entity.LeaseContract;
+import com.propertymanagement.modules.contract.lease.repository.LeaseContractRepository;
+import com.propertymanagement.modules.contract.payment.entity.PaymentScheduleStatus;
+import com.propertymanagement.modules.contract.payment.entity.RentPayment;
+import com.propertymanagement.modules.contract.payment.entity.RentPaymentSchedule;
+import com.propertymanagement.modules.contract.payment.repository.RentPaymentRepository;
+import com.propertymanagement.modules.contract.payment.repository.RentPaymentScheduleRepository;
+import com.propertymanagement.modules.contract.payment.service.RentPaymentService;
 import com.propertymanagement.modules.contract.payment.dto.AccountantMarkPaidRequest;
 import com.propertymanagement.modules.contract.payment.dto.ReviewPaymentProofRequest;
 import com.propertymanagement.modules.contract.payment.dto.UploadPaymentProofRequest;
-import com.propertymanagement.modules.notification.NotificationService;
-import com.propertymanagement.modules.tenant.Tenant;
-import com.propertymanagement.modules.tenant.TenantRepository;
-import com.propertymanagement.modules.user.User;
-import com.propertymanagement.modules.user.UserRepository;
-import com.propertymanagement.modules.user.UserRole;
+import com.propertymanagement.modules.notification.service.NotificationService;
+import com.propertymanagement.modules.finance.revenue.entity.OtherRevenue;
+import com.propertymanagement.modules.finance.revenue.repository.OtherRevenueWriterRepository;
+import com.propertymanagement.modules.property.entity.Property;
+import com.propertymanagement.modules.property.repository.PropertyRepository;
+import com.propertymanagement.modules.property.service.PropertyOwnerPortalRecipientService;
+import com.propertymanagement.modules.tenant.entity.Tenant;
+import com.propertymanagement.modules.tenant.repository.TenantRepository;
+import com.propertymanagement.modules.unit.entity.Unit;
+import com.propertymanagement.modules.unit.repository.UnitRepository;
+import com.propertymanagement.modules.user.entity.User;
+import com.propertymanagement.modules.user.repository.UserRepository;
+import com.propertymanagement.modules.user.entity.UserRole;
 import com.propertymanagement.shared.exception.AppException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,8 +53,12 @@ class RentPaymentServiceTest {
     @Mock LeaseContractRepository contractRepository;
     @Mock TenantRepository tenantRepository;
     @Mock UserRepository userRepository;
+    @Mock UnitRepository unitRepository;
+    @Mock PropertyRepository propertyRepository;
+    @Mock OtherRevenueWriterRepository revenueWriterRepository;
     @Mock CodeGenerationService codeGenerationService;
     @Mock NotificationService notificationService;
+    @Mock PropertyOwnerPortalRecipientService propertyOwnerPortalRecipientService;
 
     @InjectMocks RentPaymentService service;
 
@@ -65,6 +81,12 @@ class RentPaymentServiceTest {
                 .amount(BigDecimal.valueOf(1000))
                 .status(PaymentScheduleStatus.PENDING)
                 .build();
+
+        lenient().when(revenueWriterRepository.existsByDescriptionContaining(anyString())).thenReturn(false);
+        lenient().when(revenueWriterRepository.countByRevenueNumberStartingWith(anyString())).thenReturn(0L);
+        lenient().when(revenueWriterRepository.save(any(OtherRevenue.class))).thenAnswer(inv -> inv.getArgument(0));
+        lenient().when(unitRepository.findById(anyLong())).thenReturn(Optional.of(Unit.builder().id(7L).unitNumber("UNIT-001").build()));
+        lenient().when(propertyRepository.findById(anyLong())).thenReturn(Optional.of(Property.builder().id(5L).propertyName("Property 1").build()));
     }
 
     // ── UPLOAD PROOF ─────────────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { DatePipe, DecimalPipe, NgClass, NgFor, NgIf } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -10,20 +10,21 @@ import { TranslateModule } from '@ngx-translate/core';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { ContractService } from '../../../core/services/contract.service';
 import { OwnerPortalService } from '../../../core/services/owner-portal.service';
+import { MaintenanceContractResponse, MaintenanceContractService } from '../../../core/services/maintenance-contract.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { SnackService } from '../../../core/services/snack.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { LeaseContract } from '../../../core/models/contract.model';
-import { OwnerDraftRejectDialogComponent } from '../owner-draft-reject-dialog.component';
-import { OwnerDraftAmendDialogComponent } from '../owner-draft-amend-dialog.component';
+import { OwnerDraftRejectDialogComponent } from '../owner-draft-reject-dialog/owner-draft-reject-dialog.component';
+import { OwnerDraftAmendDialogComponent } from '../owner-draft-amend-dialog/owner-draft-amend-dialog.component';
 import {
   OwnerTerminationDecisionDialogComponent,
   OwnerTerminationDecisionDialogResult
-} from '../owner-termination-decision-dialog.component';
+} from '../owner-termination-decision-dialog/owner-termination-decision-dialog.component';
 import {
   OwnerRenewalDecisionDialogComponent,
   OwnerRenewalDecisionDialogResult
-} from '../owner-renewal-decision-dialog.component';
+} from '../owner-renewal-decision-dialog/owner-renewal-decision-dialog.component';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
@@ -41,9 +42,15 @@ export class ContractApprovalsComponent implements OnInit {
   contracts: LeaseContract[] = [];
   pendingTerminations: LeaseContract[] = [];
   pendingRenewals: LeaseContract[] = [];
+  maintenanceDrafts: MaintenanceContractResponse[] = [];
+  maintenancePendingTerminations: MaintenanceContractResponse[] = [];
+  maintenancePendingRenewals: MaintenanceContractResponse[] = [];
   loading = true;
   loadingTerminations = true;
   loadingRenewals = true;
+  loadingMaintenanceDrafts = true;
+  loadingMaintenanceTerminations = true;
+  loadingMaintenanceRenewals = true;
   activating: Record<number, boolean> = {};
   busyReject: Record<number, boolean> = {};
   busyAmend: Record<number, boolean> = {};
@@ -54,6 +61,7 @@ export class ContractApprovalsComponent implements OnInit {
   constructor(
     private readonly contractSvc: ContractService,
     private readonly ownerPortal: OwnerPortalService,
+    private readonly maintenanceContractSvc: MaintenanceContractService,
     private readonly auth: AuthService,
     private readonly dialog: MatDialog,
     private readonly snack: SnackService,
@@ -66,6 +74,9 @@ export class ContractApprovalsComponent implements OnInit {
     this.load();
     this.loadPendingTerminations();
     this.loadPendingRenewals();
+    this.loadMaintenanceDrafts();
+    this.loadMaintenancePendingTerminations();
+    this.loadMaintenancePendingRenewals();
   }
 
   load(): void {
@@ -110,6 +121,53 @@ export class ContractApprovalsComponent implements OnInit {
         this.loadingRenewals = false;
       },
       error: () => { this.loadingRenewals = false; }
+    });
+  }
+
+  loadMaintenanceDrafts(): void {
+    this.loadingMaintenanceDrafts = true;
+    const req = this.isOwner
+      ? this.maintenanceContractSvc.getOwnerDrafts()
+      : this.maintenanceContractSvc.listAll();
+    req.subscribe({
+      next: (res) => {
+        const rows = res.data ?? [];
+        this.maintenanceDrafts = (Array.isArray(rows) ? rows : []).filter((c) => c.status === 'DRAFT');
+        this.loadingMaintenanceDrafts = false;
+      },
+      error: () => { this.loadingMaintenanceDrafts = false; }
+    });
+  }
+
+  loadMaintenancePendingTerminations(): void {
+    this.loadingMaintenanceTerminations = true;
+    const req = this.isOwner
+      ? this.maintenanceContractSvc.getOwnerPendingTerminations()
+      : this.maintenanceContractSvc.listAll();
+    req.subscribe({
+      next: (res) => {
+        const rows = res.data ?? [];
+        this.maintenancePendingTerminations = (Array.isArray(rows) ? rows : [])
+          .filter((c) => c.status === 'PENDING_TERMINATION_APPROVAL');
+        this.loadingMaintenanceTerminations = false;
+      },
+      error: () => { this.loadingMaintenanceTerminations = false; }
+    });
+  }
+
+  loadMaintenancePendingRenewals(): void {
+    this.loadingMaintenanceRenewals = true;
+    const req = this.isOwner
+      ? this.maintenanceContractSvc.getOwnerPendingRenewals()
+      : this.maintenanceContractSvc.listAll();
+    req.subscribe({
+      next: (res) => {
+        const rows = res.data ?? [];
+        this.maintenancePendingRenewals = (Array.isArray(rows) ? rows : [])
+          .filter((c) => c.status === 'PENDING_RENEWAL_APPROVAL');
+        this.loadingMaintenanceRenewals = false;
+      },
+      error: () => { this.loadingMaintenanceRenewals = false; }
     });
   }
 
@@ -272,6 +330,110 @@ export class ContractApprovalsComponent implements OnInit {
             this.snack.error(msg || this.i18n.instant('COMMON.ERROR'));
           }
         });
+      });
+    });
+  }
+
+  activateMaintenance(c: MaintenanceContractResponse): void {
+    this.openActionConfirm(
+      this.i18n.instant('OWNER_PORTAL.MAINTENANCE_APPROVE_CONFIRM_TITLE'),
+      this.i18n.instant('OWNER_PORTAL.MAINTENANCE_APPROVE_CONFIRM_MESSAGE')
+    ).subscribe((ok) => {
+      if (!ok) return;
+      this.activating[c.contractId] = true;
+      this.maintenanceContractSvc.decideDraft(c.contractId, 'APPROVED').subscribe({
+        next: () => {
+          this.activating[c.contractId] = false;
+          this.snack.success(this.i18n.instant('CONTRACTS.ACTIVATED_SUCCESS'));
+          this.loadMaintenanceDrafts();
+        },
+        error: (e: unknown) => {
+          this.activating[c.contractId] = false;
+          const msg = (e as { error?: { message?: string } })?.error?.message;
+          this.snack.error(msg || this.i18n.instant('COMMON.ERROR'));
+        }
+      });
+    });
+  }
+
+  rejectMaintenance(c: MaintenanceContractResponse): void {
+    this.dialog.open(OwnerDraftRejectDialogComponent, {
+      width: '440px',
+      data: { contractId: c.contractId, contractNumber: c.contractNumber }
+    }).afterClosed().subscribe((reason: string | null | undefined) => {
+      if (!reason) return;
+      this.busyReject[c.contractId] = true;
+      this.maintenanceContractSvc.decideDraft(c.contractId, 'REJECTED', reason).subscribe({
+        next: () => {
+          this.busyReject[c.contractId] = false;
+          this.snack.success(this.i18n.instant('OWNER_PORTAL.REJECT_OK'));
+          this.loadMaintenanceDrafts();
+        },
+        error: (e: unknown) => {
+          this.busyReject[c.contractId] = false;
+          const msg = (e as { error?: { message?: string } })?.error?.message;
+          this.snack.error(msg || this.i18n.instant('COMMON.ERROR'));
+        }
+      });
+    });
+  }
+
+  openMaintenanceTerminationDecision(c: MaintenanceContractResponse, decision: 'APPROVED' | 'REJECTED'): void {
+    this.dialog.open(OwnerTerminationDecisionDialogComponent, {
+      width: '480px',
+      maxWidth: '95vw',
+      panelClass: 'app-dialog-panel',
+      disableClose: true,
+      data: {
+        contractId: c.contractId,
+        contractNumber: c.contractNumber,
+        decision,
+        terminationDate: c.terminationProposedDate,
+        terminationReason: c.terminationRequestNotes
+      }
+    }).afterClosed().subscribe((result: OwnerTerminationDecisionDialogResult | null | undefined) => {
+      if (!result) return;
+      this.busyTerminationDecision[c.contractId] = true;
+      this.maintenanceContractSvc.decideTermination(c.contractId, result.decision, result.notes).subscribe({
+        next: () => {
+          this.busyTerminationDecision[c.contractId] = false;
+          this.snack.success(this.i18n.instant(result.decision === 'APPROVED'
+            ? 'OWNER_PORTAL.TERMINATION_APPROVE_OK'
+            : 'OWNER_PORTAL.TERMINATION_REJECT_OK'));
+          this.loadMaintenancePendingTerminations();
+        },
+        error: (e: unknown) => {
+          this.busyTerminationDecision[c.contractId] = false;
+          const msg = (e as { error?: { message?: string } })?.error?.message;
+          this.snack.error(msg || this.i18n.instant('COMMON.ERROR'));
+        }
+      });
+    });
+  }
+
+  openMaintenanceRenewalDecision(c: MaintenanceContractResponse, decision: 'APPROVED' | 'REJECTED'): void {
+    this.dialog.open(OwnerRenewalDecisionDialogComponent, {
+      width: '480px',
+      maxWidth: '95vw',
+      panelClass: 'app-dialog-panel',
+      disableClose: true,
+      data: { contractId: c.contractId, contractNumber: c.contractNumber, decision }
+    }).afterClosed().subscribe((result: OwnerRenewalDecisionDialogResult | null | undefined) => {
+      if (!result) return;
+      this.busyRenewalDecision[c.contractId] = true;
+      this.maintenanceContractSvc.decideRenewal(c.contractId, result.decision, result.notes).subscribe({
+        next: () => {
+          this.busyRenewalDecision[c.contractId] = false;
+          this.snack.success(this.i18n.instant(result.decision === 'APPROVED'
+            ? 'OWNER_PORTAL.RENEWALS.APPROVE_OK'
+            : 'OWNER_PORTAL.RENEWALS.REJECT_OK'));
+          this.loadMaintenancePendingRenewals();
+        },
+        error: (e: unknown) => {
+          this.busyRenewalDecision[c.contractId] = false;
+          const msg = (e as { error?: { message?: string } })?.error?.message;
+          this.snack.error(msg || this.i18n.instant('COMMON.ERROR'));
+        }
       });
     });
   }

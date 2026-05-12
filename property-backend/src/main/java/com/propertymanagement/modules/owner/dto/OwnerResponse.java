@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import com.propertymanagement.modules.user.entity.User;
 
 @Data
 @Builder

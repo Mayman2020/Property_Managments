@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { CurrencyPipe, DatePipe, NgFor, NgIf } from '@angular/common';
+import { CurrencyPipe, DatePipe, DecimalPipe, NgFor, NgIf } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -16,7 +16,7 @@ import { I18nService } from '../../../core/i18n/i18n.service';
   selector: 'app-overdue-payments',
   standalone: true,
   imports: [
-    NgIf, NgFor, DatePipe, CurrencyPipe, RouterLink,
+    NgIf, NgFor, DatePipe, CurrencyPipe, DecimalPipe, RouterLink,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule,
     TranslateModule, PageHeaderComponent, EmptyStateComponent, TablePagerComponent
   ],

@@ -1,6 +1,6 @@
 package com.propertymanagement.modules.maintenance.request.dto;
 
-import com.propertymanagement.modules.maintenance.request.RequestPriority;
+import com.propertymanagement.modules.maintenance.request.entity.RequestPriority;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;

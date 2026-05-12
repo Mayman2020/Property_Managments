@@ -1,7 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { forkJoin } from 'rxjs';
 import { NgFor, NgIf, DatePipe, Location } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -17,14 +17,17 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
 import { FilterBarComponent, FilterSpec } from '../../../shared/components/filter-bar/filter-bar.component';
+import { SearchDropdownComponent, SearchDropdownItem } from '../../../shared/components/search-dropdown/search-dropdown.component';
 import { MaintenanceService, MaintenanceRequest } from '../../../core/services/maintenance.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { PropertyService, Property } from '../../../core/services/property.service';
-import { RequestTimelineDialogComponent } from '../request-timeline-dialog.component';
+import { RequestTimelineDialogComponent } from '../request-timeline-dialog/request-timeline-dialog.component';
+import { TenantPortalService } from '../../../core/services/tenant-portal.service';
+import { LeaseContract } from '../../../core/models/contract.model';
 
-import { MaintenanceRequestDialogComponent } from '../maintenance-request-dialog.component';
+import { MaintenanceRequestDialogComponent } from '../maintenance-request-dialog/maintenance-request-dialog.component';
 
 export type RequestListContext = 'admin' | 'tenant' | 'officer';
 
@@ -36,7 +39,7 @@ const ACTIVE_STATUSES = new Set(['PENDING', 'ASSIGNED', 'SCHEDULED', 'IN_PROGRES
   imports: [
     NgFor, NgIf, DatePipe, FormsModule, RouterLink, TranslateModule,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule, MatTabsModule,
-    PageHeaderComponent, EmptyStateComponent, TablePagerComponent, FilterBarComponent
+    PageHeaderComponent, EmptyStateComponent, TablePagerComponent, FilterBarComponent, SearchDropdownComponent
   ],
   templateUrl: './request-list.component.html',
   styleUrl: './request-list.component.scss'
@@ -57,6 +60,9 @@ export class RequestListComponent implements OnInit {
   tenantPreviousPageIndex = 0;
   properties: Property[] = [];
   pageFilters: FilterSpec[] = [];
+  tenantContracts: LeaseContract[] = [];
+  selectedTenantPropertyId: number | null = null;
+  selectedTenantUnitId: number | null = null;
 
   readonly statuses: { value: string; labelKey: string }[] = [
     { value: '', labelKey: 'REQUEST_LIST.ALL_STATUS' },
@@ -84,7 +90,9 @@ export class RequestListComponent implements OnInit {
     private readonly route: ActivatedRoute,
     readonly auth: AuthService,
     private readonly propertySvc: PropertyService,
+    private readonly portalSvc: TenantPortalService,
     private readonly location: Location,
+    private readonly router: Router,
     private readonly dialog: MatDialog,
     private readonly permissions: PermissionService
   ) {}
@@ -139,6 +147,10 @@ export class RequestListComponent implements OnInit {
     return this.pageSlice(this.filterBySearch(this.previousRequests), this.tenantPreviousPageIndex);
   }
 
+  get pagedTenantRequests(): MaintenanceRequest[] {
+    return this.pageSlice(this.filteredRequests, this.tenantCurrentPageIndex);
+  }
+
   load(): void {
     this.loading = true;
     this.missingTenantLink = false;
@@ -153,9 +165,20 @@ export class RequestListComponent implements OnInit {
         this.loading = false;
         return;
       }
-      this.maintSvc.getByTenant(tenantId, params).subscribe({
-        next: (res) => {
-          this.requests = this.sortRequests(res.data?.content ?? []);
+      forkJoin({
+        requests: this.maintSvc.getByTenant(tenantId, params),
+        contracts: this.portalSvc.getMyContracts()
+      }).subscribe({
+        next: ({ requests, contracts }) => {
+          this.requests = this.sortRequests(requests.data?.content ?? []);
+          this.tenantContracts = contracts.data ?? [];
+          const queryPropertyId = Number(this.route.snapshot.queryParamMap.get('propertyId'));
+          const queryUnitId = Number(this.route.snapshot.queryParamMap.get('unitId'));
+          this.selectedTenantPropertyId = queryPropertyId || null;
+          this.selectedTenantUnitId = queryUnitId || null;
+          if (this.selectedTenantUnitId && !this.tenantUnitRows.some((c) => c.unitId === this.selectedTenantUnitId)) {
+            this.selectedTenantUnitId = null;
+          }
           this.totalElements = this.filteredRequests.length;
           this.resetPagerIndexes();
           this.loading = false;
@@ -309,6 +332,10 @@ export class RequestListComponent implements OnInit {
     return this.i18n.instant(`PRIORITY.${priority}`);
   }
 
+  contractStatusLabel(status: string): string {
+    return this.i18n.instant(`CONTRACTS.STATUS_${status}`);
+  }
+
   detailLink(id: number): string[] {
     switch (this.listContext) {
       case 'tenant':
@@ -325,6 +352,17 @@ export class RequestListComponent implements OnInit {
   }
 
   openNewRequest(): void {
+    if (this.listContext === 'tenant') {
+      const contract = this.selectedTenantContract;
+      void this.router.navigate(['/tenant/new-request'], {
+        queryParams: {
+          unitId: this.selectedTenantUnitId ?? undefined,
+          propertyId: contract?.propertyId ?? undefined
+        }
+      });
+      return;
+    }
+
     const dialogRef = this.dialog.open(MaintenanceRequestDialogComponent, {
       width: '720px',
       maxWidth: '95vw',
@@ -352,6 +390,109 @@ export class RequestListComponent implements OnInit {
     return this.applyClientFilters(this.requests);
   }
 
+  get tenantUnitRows(): LeaseContract[] {
+    const seen = new Map<number, LeaseContract>();
+    for (const contract of this.selectableTenantContracts) {
+      if (this.selectedTenantPropertyId && contract.propertyId !== this.selectedTenantPropertyId) continue;
+      if (contract.unitId && !seen.has(contract.unitId)) {
+        seen.set(contract.unitId, contract);
+      }
+    }
+    return Array.from(seen.values());
+  }
+
+  get tenantUnitDropdownItems(): SearchDropdownItem[] {
+    return this.tenantUnitRows.map((contract) => ({
+      label: `${contract.unitNumber || '-'} - ${contract.propertyName || '-'}`,
+      subLabel: contract.contractNumber,
+      badge: this.contractStatusLabel(contract.status),
+      badgeClass: 'st-' + contract.status,
+      data: contract
+    }));
+  }
+
+  get selectedTenantUnitLabel(): string {
+    const c = this.selectedTenantContract;
+    if (!c) return this.i18n.currentLang === 'ar' ? 'اختر وحدة...' : 'Choose a unit...';
+    return `${c.unitNumber || '-'} - ${c.propertyName || '-'}`;
+  }
+
+  get tenantPropertyRows(): LeaseContract[] {
+    const seen = new Map<number, LeaseContract>();
+    for (const contract of this.selectableTenantContracts) {
+      if (contract.propertyId && !seen.has(contract.propertyId)) {
+        seen.set(contract.propertyId, contract);
+      }
+    }
+    return Array.from(seen.values());
+  }
+
+  get selectedTenantContract(): LeaseContract | null {
+    if (!this.selectedTenantUnitId) return null;
+    return this.tenantUnitRows.find((c) => c.unitId === this.selectedTenantUnitId) ?? null;
+  }
+
+  get selectableTenantContracts(): LeaseContract[] {
+    return this.tenantContracts.filter((contract) => contract.status === 'ACTIVE');
+  }
+
+  selectTenantProperty(propertyId: number | null): void {
+    this.selectedTenantPropertyId = propertyId;
+    if (this.selectedTenantUnitId && !this.tenantUnitRows.some((c) => c.unitId === this.selectedTenantUnitId)) {
+      this.selectedTenantUnitId = null;
+    }
+    this.applyFilter();
+  }
+
+  selectTenantUnit(unitId: number | null): void {
+    this.selectedTenantUnitId = unitId;
+    this.searchTerm = '';
+    this.filterStatus = '';
+    this.filterPriority = '';
+    this.applyFilter();
+  }
+
+  onTenantUnitDropdownSelect(contract: LeaseContract | null): void {
+    if (!contract?.unitId) return;
+    this.selectTenantUnit(contract.unitId);
+  }
+
+  propertyRequestsCount(propertyId: number): number {
+    return this.requests.filter((req) => req.propertyId === propertyId).length;
+  }
+
+  tenantUnitScopeRequestsCount(): number {
+    return this.requests.filter((req) => {
+      if (this.selectedTenantPropertyId && req.propertyId !== this.selectedTenantPropertyId) return false;
+      return true;
+    }).length;
+  }
+
+  unitRequestsCount(unitId: number): number {
+    return this.requests.filter((req) => req.unitId === unitId).length;
+  }
+
+  tenantStatusCount(status: string): number {
+    return this.requests.filter((req) => {
+      if (!this.selectedTenantUnitId || req.unitId !== this.selectedTenantUnitId) return false;
+      return status ? req.status === status : true;
+    }).length;
+  }
+
+  statusFilterIcon(status: string): string {
+    const icons: Record<string, string> = {
+      PENDING: 'hourglass_empty',
+      ASSIGNED: 'assignment_ind',
+      SCHEDULED: 'event',
+      IN_PROGRESS: 'construction',
+      NEEDS_REVISIT: 'replay',
+      COMPLETED: 'task_alt',
+      CANCELLED: 'cancel',
+      TENANT_ABSENT: 'person_off'
+    };
+    return status ? icons[status] ?? 'info' : 'apps';
+  }
+
   filterBySearch(list: MaintenanceRequest[]): MaintenanceRequest[] {
     const q = this.searchTerm.trim().toLowerCase();
     if (!q) return list;
@@ -373,6 +514,8 @@ export class RequestListComponent implements OnInit {
       if (this.filterStatus && req.status !== this.filterStatus) return false;
       if (this.filterPriority && req.priority !== this.filterPriority) return false;
       if (this.filterPropertyId && req.propertyId !== this.filterPropertyId) return false;
+      if (this.listContext === 'tenant' && this.selectedTenantPropertyId && req.propertyId !== this.selectedTenantPropertyId) return false;
+      if (this.listContext === 'tenant' && this.selectedTenantUnitId && req.unitId !== this.selectedTenantUnitId) return false;
       return true;
     });
   }

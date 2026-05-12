@@ -1,6 +1,6 @@
 package com.propertymanagement.modules.property.dto;
 
-import com.propertymanagement.modules.property.PropertyType;
+import com.propertymanagement.modules.property.entity.PropertyType;
 import lombok.Builder;
 import lombok.Data;
 

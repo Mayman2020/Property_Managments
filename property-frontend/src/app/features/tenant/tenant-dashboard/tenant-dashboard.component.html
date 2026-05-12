@@ -13,115 +13,98 @@
       [subtitle]="'TENANT_DASHBOARD.SUBTITLE' | translate">
     </app-page-header>
 
-    <!-- Unit Filter (if multiple units) -->
-    <div class="unit-filter app-card" *ngIf="uniqueUnits.length > 1">
-      <label>{{ 'TENANT_DASHBOARD.SELECT_UNIT' | translate }}</label>
-      <div class="unit-buttons">
-        <button
-          *ngFor="let unit of uniqueUnits"
-          class="unit-btn"
-          [class.active]="selectedUnitId === unit.unitId || (selectedUnitId === null && activeContract?.unitId === unit.unitId)"
-          (click)="onUnitChange(unit.unitId)">
-          {{ unit.unitNumber }} - {{ unit.propertyName }}
-        </button>
+    <section class="app-card unit-selector-card" *ngIf="uniqueUnits.length > 0">
+      <div class="section-card-header">
+        <div>
+          <div class="section-mini-label">{{ i18n.currentLang === 'ar' ? 'الوحدات' : 'Units' }}</div>
+          <h3>{{ 'TENANT_DASHBOARD.SELECT_UNIT' | translate }}</h3>
+        </div>
       </div>
+      <div class="unit-picker-wrap">
+        <app-search-dropdown
+          [items]="unitDropdownItems"
+          [placeholder]="activeUnitLabel"
+          (selectionChange)="onUnitDropdownSelect($event)">
+        </app-search-dropdown>
+      </div>
+    </section>
+
+    <div class="no-selection app-card" *ngIf="!selectedUnitId">
+      <span class="material-icons">touch_app</span>
+      <p>{{ i18n.currentLang === 'ar' ? 'اختر وحدة من القائمة لعرض التفاصيل وطلبات الصيانة.' : 'Select a unit from the list to view details and maintenance requests.' }}</p>
     </div>
 
-    <div class="tenant-grid">
-      <section class="app-card unit-hero">
-        <div class="unit-visual">
-          <div class="unit-overlay"></div>
-          <div class="unit-copy">
-            <div class="eyebrow">{{ 'NAV.MY_UNIT' | translate }}</div>
+    <section class="app-card unit-overview-card" *ngIf="selectedUnitId">
+      <div class="unit-overview-head">
+        <div class="unit-identity">
+          <span class="material-icons">apartment</span>
+          <div>
+            <div class="section-mini-label">{{ 'NAV.MY_UNIT' | translate }}</div>
             <h2>{{ activeContract?.propertyName || ('TENANT_DASHBOARD.NO_CONTRACT_PROPERTY' | translate) }}</h2>
             <p>{{ 'REQUEST_LIST.UNIT' | translate }} {{ activeContract?.unitNumber || ('TENANT_DASHBOARD.NO_UNIT' | translate) }}</p>
           </div>
         </div>
-        <div class="unit-stats">
-          <div class="mini-stat">
-            <span class="mini-label">{{ 'TENANT_DASHBOARD.CONTRACT_STATUS' | translate }}</span>
-            <strong>{{ contractStatusLabel }}</strong>
-          </div>
-          <div class="mini-stat">
-            <span class="mini-label">{{ 'TENANT_DASHBOARD.NEXT_RENT_DUE' | translate }}</span>
-            <strong *ngIf="nextDuePayment">{{ nextDuePayment.dueDate | date:'dd/MM/yyyy' }}</strong>
-            <strong *ngIf="!nextDuePayment">{{ 'TENANT_DASHBOARD.NO_NEXT_DUE' | translate }}</strong>
-          </div>
-          <div class="mini-stat">
-            <span class="mini-label">{{ 'TENANT_DASHBOARD.UNITS' | translate }}</span>
-            <strong>{{ unitsCount }}</strong>
-          </div>
-        </div>
-      </section>
-
-      <section class="app-card active-request">
-        <div class="app-card-header">
-          <span class="app-card-title">{{ 'TENANT_DASHBOARD.MAINTENANCE_OVERVIEW' | translate }}</span>
-        </div>
-        <div class="app-card-body">
-          <p>{{ 'TENANT_DASHBOARD.MAINTENANCE_OVERVIEW_MESSAGE' | translate }}</p>
-          <div class="request-summary">
-            <div class="summary-item">
-              <span>{{ 'TENANT_DASHBOARD.CURRENT_REQUESTS' | translate }}</span>
-              <strong>{{ currentRequests.length }}</strong>
-            </div>
-            <div class="summary-item">
-              <span>{{ 'TENANT_DASHBOARD.PREVIOUS_REQUESTS' | translate }}</span>
-              <strong>{{ previousRequests.length }}</strong>
-            </div>
-          </div>
-          <button mat-flat-button color="primary" routerLink="/tenant/new-request">
-            <span class="material-icons">add</span>
-            {{ 'TENANT_DASHBOARD.CREATE_REQUEST' | translate }}
-          </button>
-        </div>
-      </section>
-    </div>
-
-    <div class="app-card history-card">
-      <div class="app-card-header">
-        <span class="app-card-title">{{ 'TENANT_DASHBOARD.MAINTENANCE_REQUESTS' | translate }}</span>
       </div>
 
-      <div class="app-table-wrap" *ngIf="requests.length > 0; else emptyHistory">
-        <table class="app-data-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>{{ 'REQUEST_LIST.REQUEST_TITLE' | translate }}</th>
-              <th>{{ 'REQUEST_LIST.OFFICER' | translate }}</th>
-              <th>{{ 'MAINTENANCE.STATUS' | translate }}</th>
-              <th>{{ 'REQUEST_LIST.CREATED_AT' | translate }}</th>
-              <th>{{ 'REQUEST_LIST.ACTIONS' | translate }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let req of requests">
-              <td><span class="mono-cell">{{ req.requestNumber }}</span></td>
-              <td>{{ req.title }}</td>
-              <td>{{ req.assignedOfficerName || '—' }}</td>
-              <td><span class="status-badge" [attr.data-status]="req.status">{{ statusLabel(req.status) }}</span></td>
-              <td>{{ req.createdAt | date:'dd/MM/yyyy' }}</td>
-              <td>
-                <div class="table-actions">
-                  <a class="app-icon-btn" [routerLink]="['/tenant/requests', req.id]" [matTooltip]="'ACTIONS.VIEW' | translate">
-                    <span class="material-icons">visibility</span>
-                  </a>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="unit-summary-grid">
+        <div class="unit-summary-item">
+          <span>{{ 'TENANT_DASHBOARD.CONTRACT_STATUS' | translate }}</span>
+          <strong>{{ contractStatusLabel }}</strong>
+        </div>
+        <div class="unit-summary-item">
+          <span>{{ 'TENANT_DASHBOARD.NEXT_RENT_DUE' | translate }}</span>
+          <strong *ngIf="nextDuePayment">{{ nextDuePayment.dueDate | date:'dd/MM/yyyy' }}</strong>
+          <strong *ngIf="!nextDuePayment">{{ 'TENANT_DASHBOARD.NO_NEXT_DUE' | translate }}</strong>
+        </div>
+        <div class="unit-summary-item">
+          <span>{{ 'TENANT_DASHBOARD.CURRENT_REQUESTS' | translate }}</span>
+          <strong>{{ currentRequests.length }}</strong>
+        </div>
+        <div class="unit-summary-item">
+          <span>{{ 'TENANT_DASHBOARD.PREVIOUS_REQUESTS' | translate }}</span>
+          <strong>{{ previousRequests.length }}</strong>
+        </div>
+        <div class="unit-summary-item">
+          <span>{{ i18n.currentLang === 'ar' ? 'آخر طلب صيانة' : 'Latest maintenance request' }}</span>
+          <strong *ngIf="latestMaintenanceRequest">{{ statusLabel(latestMaintenanceRequest.status) }}</strong>
+          <strong *ngIf="!latestMaintenanceRequest">{{ i18n.currentLang === 'ar' ? 'لا يوجد' : 'None' }}</strong>
+        </div>
+        <div class="unit-summary-item">
+          <span>{{ i18n.currentLang === 'ar' ? 'آخر موعد صيانة' : 'Latest maintenance visit' }}</span>
+          <strong *ngIf="latestMaintenanceVisit">{{ latestMaintenanceVisit.scheduledDate | date:'dd/MM/yyyy' }}</strong>
+          <strong *ngIf="!latestMaintenanceVisit">{{ i18n.currentLang === 'ar' ? 'غير محدد' : 'Not scheduled' }}</strong>
+        </div>
+        <div class="unit-summary-item">
+          <span>{{ i18n.currentLang === 'ar' ? 'موعد تجديد العقد' : 'Contract renewal date' }}</span>
+          <strong *ngIf="activeContract?.endDate">{{ activeContract?.endDate | date:'dd/MM/yyyy' }}</strong>
+          <strong *ngIf="!activeContract?.endDate">{{ '-' }}</strong>
+        </div>
+        <div class="unit-summary-item">
+          <span>{{ i18n.currentLang === 'ar' ? 'آخر دفعة إيجار مقبولة' : 'Latest accepted rent payment' }}</span>
+          <strong *ngIf="latestAcceptedRentPayment">{{ latestAcceptedRentPayment.amount }} {{ activeContract?.currency || '' }}</strong>
+          <strong *ngIf="!latestAcceptedRentPayment">{{ i18n.currentLang === 'ar' ? 'لا يوجد' : 'None' }}</strong>
+        </div>
+        <div class="unit-summary-item">
+          <span>{{ i18n.currentLang === 'ar' ? 'تاريخ دفع آخر دفعة مقبولة' : 'Latest accepted payment date' }}</span>
+          <strong *ngIf="latestAcceptedRentPaymentDate">{{ latestAcceptedRentPaymentDate | date:'dd/MM/yyyy' }}</strong>
+          <strong *ngIf="!latestAcceptedRentPaymentDate">{{ '-' }}</strong>
+        </div>
+        <div class="unit-summary-item">
+          <span>{{ i18n.currentLang === 'ar' ? 'مقبولة بواسطة' : 'Accepted by' }}</span>
+          <strong class="summary-text">{{ latestAcceptedRentReviewer }}</strong>
+        </div>
+        <div class="unit-summary-item">
+          <span>{{ i18n.currentLang === 'ar' ? 'تاريخ قبول آخر دفعة' : 'Latest payment accepted at' }}</span>
+          <strong *ngIf="latestAcceptedRentReviewedAt">{{ latestAcceptedRentReviewedAt | date:'dd/MM/yyyy' }}</strong>
+          <strong *ngIf="!latestAcceptedRentReviewedAt">{{ '-' }}</strong>
+        </div>
+        <div class="unit-summary-item">
+          <span>{{ i18n.currentLang === 'ar' ? 'آخر شكوى للوحدة' : 'Latest unit complaint' }}</span>
+          <strong class="summary-text" *ngIf="latestUnitComplaint">{{ latestUnitComplaint.title }}</strong>
+          <strong *ngIf="!latestUnitComplaint">{{ i18n.currentLang === 'ar' ? 'لا يوجد' : 'None' }}</strong>
+        </div>
       </div>
-
-      <ng-template #emptyHistory>
-        <app-empty-state
-          icon="build_circle"
-          [title]="'TENANT_DASHBOARD.EMPTY_TITLE' | translate"
-          [message]="'TENANT_DASHBOARD.EMPTY_MESSAGE' | translate">
-        </app-empty-state>
-      </ng-template>
-    </div>
+    </section>
   </ng-container>
 </div>
 

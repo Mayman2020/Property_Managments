@@ -8,4 +8,6 @@ public class FloorRequest {
     @NotNull
     private Integer floorNumber;
     private String floorLabel;
+    private String floorLabelAr;
+    private String floorLabelEn;
 }

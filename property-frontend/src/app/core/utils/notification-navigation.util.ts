@@ -13,6 +13,8 @@ function num(v: unknown): number | undefined {
 
 function idsFromPayload(n: AppNotification): {
   contractId?: number;
+  maintenanceContractId?: number;
+  scheduleId?: number;
   unitId?: number;
   tenantId?: number;
   propertyId?: number;
@@ -22,6 +24,8 @@ function idsFromPayload(n: AppNotification): {
   const propertyFromRow = n.propertyId != null && n.propertyId > 0 ? n.propertyId : undefined;
   return {
     contractId: num(p['contractId'] ?? vars['contractId']),
+    maintenanceContractId: num(p['maintenanceContractId'] ?? vars['maintenanceContractId']),
+    scheduleId: num(p['scheduleId'] ?? vars['scheduleId']),
     unitId: num(p['unitId'] ?? vars['unitId']),
     tenantId: num(p['tenantId'] ?? vars['tenantId']),
     propertyId: num(p['propertyId'] ?? vars['propertyId']) ?? propertyFromRow,
@@ -49,11 +53,12 @@ export function resolveNotificationTargetUrl(n: AppNotification, auth: AuthServi
     return `/admin/maintenance/${reqId}`;
   }
 
-  const { contractId, propertyId } = idsFromPayload(n);
+  const { contractId, scheduleId, propertyId } = idsFromPayload(n);
 
   if (contractId != null) {
+    const scheduleQuery = scheduleId != null ? `?tab=schedule&scheduleId=${scheduleId}` : '';
     if (role === 'TENANT') {
-      return `/tenant/contracts/${contractId}`;
+      return `/tenant/contracts/${contractId}${scheduleQuery}`;
     }
     if (
       role === 'SUPER_ADMIN' ||
@@ -63,7 +68,7 @@ export function resolveNotificationTargetUrl(n: AppNotification, auth: AuthServi
       role === 'PROCEDURES_CLERK' ||
       role === 'PROPERTY_GUARD'
     ) {
-      return `/admin/contracts/${contractId}`;
+      return `/admin/contracts/${contractId}${scheduleQuery}`;
     }
     return null;
   }
@@ -88,13 +93,35 @@ export function resolveNotificationTargetUrl(n: AppNotification, auth: AuthServi
   if (
     (n.type === 'CONTRACT_AWAITING_OWNER_REVIEW'
       || n.type === 'CONTRACT_TERMINATION_REQUESTED'
-      || n.type === 'CONTRACT_RENEWAL_REQUESTED') &&
+      || n.type === 'CONTRACT_RENEWAL_REQUESTED'
+      || n.type === 'MAINTENANCE_CONTRACT_AWAITING_OWNER_REVIEW'
+      || n.type === 'MAINTENANCE_CONTRACT_TERMINATION_REQUESTED'
+      || n.type === 'MAINTENANCE_CONTRACT_RENEWAL_REQUESTED') &&
     (role === 'OWNER' ||
       role === 'SUPER_ADMIN' ||
       role === 'GENERAL_MANAGER' ||
       role === 'ACCOUNTANT')
   ) {
     return '/admin/owner-portal/contract-approvals';
+  }
+
+  const maintenanceContractFollowUpTypes = [
+    'MAINTENANCE_CONTRACT_APPROVED',
+    'MAINTENANCE_CONTRACT_REJECTED',
+    'MAINTENANCE_CONTRACT_TERMINATION_APPROVED',
+    'MAINTENANCE_CONTRACT_TERMINATION_REJECTED',
+    'MAINTENANCE_CONTRACT_RENEWAL_APPROVED',
+    'MAINTENANCE_CONTRACT_RENEWAL_REJECTED'
+  ];
+  if (
+    maintenanceContractFollowUpTypes.includes(n.type) &&
+    (role === 'SUPER_ADMIN' ||
+      role === 'GENERAL_MANAGER' ||
+      role === 'ACCOUNTANT' ||
+      role === 'OWNER' ||
+      role === 'PROCEDURES_CLERK')
+  ) {
+    return '/admin/contracts/list?type=MAINTENANCE';
   }
 
   if (n.type === 'UNIT_ADDED_TO_OWNER_PROPERTY') {

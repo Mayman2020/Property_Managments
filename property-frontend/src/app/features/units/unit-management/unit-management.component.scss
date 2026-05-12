@@ -1,0 +1,87 @@
+.units-page { display: grid; gap: 24px; }
+
+.status-toggle-btn {
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.15s, transform 0.15s;
+  &:hover { opacity: 0.82; transform: scale(1.04); }
+}
+.loading-wrap { display: flex; justify-content: center; padding: 60px 0; }
+
+.search-bar-shell { display: flex; align-items: center; gap: 8px; padding: 16px; background: var(--surface); border-bottom: 1px solid var(--line); flex-wrap: nowrap; }
+.search-input-box { flex: 0 1 260px; min-width: 180px; display: flex; align-items: center; gap: 6px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 0 10px; height: 40px; transition: all 0.2s; }
+.search-input-box:focus-within { border-color: var(--navy-400); background: var(--surface); }
+.search-input-box mat-icon { color: var(--text-muted); font-size: 16px; width: 16px; height: 16px; }
+.search-input-box input { border: none; background: transparent; color: var(--text-main); width: 100%; outline: none; font-size: 0.82rem; }
+
+.units-page app-filter-bar { flex: 1 1 auto; min-width: 0; }
+::ng-deep .units-page app-filter-bar .estate-filter-bar { flex-wrap: nowrap !important; align-items: center !important; gap: 8px !important; padding: 0 !important; width: 100%; }
+::ng-deep .units-page app-filter-bar .filter-field { flex: 0 1 auto; width: 140px; min-width: 0; margin-bottom: 0; }
+::ng-deep .units-page app-filter-bar .filter-field--filterUnitNumber { width: 160px; }
+::ng-deep .units-page app-filter-bar .filter-field--selectedPropertyId { width: 250px; }
+::ng-deep .units-page app-filter-bar .filter-field--filterFloor { width: 110px; }
+::ng-deep .units-page app-filter-bar .filter-field--filterUnitType { width: 145px; }
+::ng-deep .units-page app-filter-bar .filter-field--filterStatus { width: 165px; }
+::ng-deep .units-page app-filter-bar .filter-field .mat-mdc-form-field-wrapper { padding-bottom: 0; }
+::ng-deep .units-page app-filter-bar .filter-field .mat-mdc-text-field-wrapper { height: 40px !important; background: var(--surface-2) !important; border-radius: 6px; }
+::ng-deep .units-page app-filter-bar .filter-field .mat-mdc-form-field-flex { height: 40px !important; align-items: center !important; }
+::ng-deep .units-page app-filter-bar .filter-field .mat-mdc-form-field-infix { display: flex; align-items: center; min-height: 40px !important; padding: 10px 0 6px !important; font-size: 0.82rem; }
+::ng-deep .units-page app-filter-bar .filter-field .mat-mdc-form-field-subscript-wrapper { display: none; }
+::ng-deep .units-page app-filter-bar .filter-field .mat-mdc-floating-label { font-size: 0.72rem; }
+::ng-deep .units-page app-filter-bar .filter-field input { font-size: 0.82rem; line-height: 20px; }
+::ng-deep .units-page app-filter-bar .filter-field .mat-mdc-select-trigger { height: 22px; display: flex; align-items: center; }
+::ng-deep .units-page app-filter-bar .filter-field .mat-mdc-select-value { font-size: 0.82rem; line-height: 20px; }
+
+.property-filter { width: 150px; min-width: 130px; }
+::ng-deep .property-filter .mat-mdc-form-field-wrapper { padding-bottom: 0; }
+::ng-deep .property-filter .mat-mdc-text-field-wrapper { background: var(--surface-2) !important; border-radius: 6px; }
+::ng-deep .property-filter .mat-mdc-form-field-subscript-wrapper { display: none; }
+::ng-deep .property-filter .mat-mdc-floating-label { top: 16px; font-size: 0.65rem; }
+
+.type-filter, .status-filter { width: 130px; min-width: 120px; }
+::ng-deep .type-filter .mat-mdc-form-field-wrapper, ::ng-deep .status-filter .mat-mdc-form-field-wrapper { padding-bottom: 0; }
+::ng-deep .type-filter .mat-mdc-text-field-wrapper, ::ng-deep .status-filter .mat-mdc-text-field-wrapper { background: var(--surface-2) !important; border-radius: 6px; }
+::ng-deep .type-filter .mat-mdc-form-field-subscript-wrapper, ::ng-deep .status-filter .mat-mdc-form-field-subscript-wrapper { display: none; }
+
+.clear-filters-btn { color: var(--text-muted); transition: color 0.2s; width: 40px; height: 40px; flex: 0 0 40px; }
+.clear-filters-btn:hover { color: var(--bad); }
+
+::ng-deep .export-toolbar { padding: 0 !important; }
+::ng-deep .export-toolbar button { height: 40px; font-size: 0.82rem; }
+
+.unit-code-cell { display: flex; align-items: center; gap: 8px; color: var(--navy-700); font-weight: 700; }
+.unit-icon { font-size: 20px; width: 20px; height: 20px; color: var(--navy-300); }
+
+.property-cell { display: flex; align-items: center; gap: 8px; color: var(--text-main); font-size: 0.9rem; }
+.property-cell mat-icon { font-size: 18px; width: 18px; height: 18px; color: var(--text-muted); }
+
+.floor-badge, .type-badge { display: inline-block; padding: 4px 10px; border-radius: 6px; background: var(--surface-2); border: 1px solid var(--line); color: var(--text-main); font-size: 0.82rem; font-weight: 600; }
+.area-text { font-family: var(--font-mono); color: var(--text-muted); font-size: 0.85rem; }
+
+.actions-col { width: 150px; min-width: 150px; text-align: center; }
+.center-col { text-align: center; }
+
+.unit-status-cell { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+
+.contract-meta-badges { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
+
+.cmb {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 0.72rem; font-weight: 600; padding: 2px 6px; border-radius: 6px;
+  white-space: nowrap;
+  mat-icon { font-size: 12px; width: 12px; height: 12px; }
+}
+.cmb-tenant { background: var(--surface-2); color: var(--text-muted); border: 1px solid var(--line); }
+.cmb-discount { background: #fef3c7; color: #92400e; }
+.cmb-free { background: #d1fae5; color: #065f46; }
+
+.app-icon-btn.navy { color: var(--navy-600); }
+.app-icon-btn.navy:hover { background: var(--navy-50); color: var(--navy-800); }
+
+@media (max-width: 768px) {
+  .search-bar-shell { flex-direction: column; align-items: stretch; }
+  .units-page app-filter-bar { width: 100%; }
+  ::ng-deep .units-page app-filter-bar .estate-filter-bar { flex-wrap: wrap !important; }
+  ::ng-deep .units-page app-filter-bar .filter-field { width: 100%; flex: 1 1 100%; }
+}

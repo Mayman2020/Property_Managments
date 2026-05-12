@@ -61,6 +61,34 @@ export interface RatingDashboardItem {
   tenantName?: string;
 }
 
+export interface ComplaintRatingsSummary {
+  averageRating: number;
+  totalRatings: number;
+  veryDissatisfied: number;
+  dissatisfied: number;
+  satisfied: number;
+  verySatisfied: number;
+}
+
+export interface ComplaintRatingDashboardItem {
+  id: number;
+  complaintId: number;
+  rating: 'VERY_SATISFIED' | 'SATISFIED' | 'DISSATISFIED' | 'VERY_DISSATISFIED' | string;
+  raterRole?: string;
+  ratedAt: string;
+  complaintTitle?: string;
+  complaintType?: string;
+  status?: string;
+  priority?: string;
+  propertyId?: number;
+  propertyName?: string;
+  propertyNameAr?: string;
+  propertyNameEn?: string;
+  unitId?: number;
+  unitNumber?: string;
+  tenantName?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class DashboardService {
   constructor(private readonly api: ApiService) {}
@@ -92,5 +120,13 @@ export class DashboardService {
 
   getRatingsDetails(): Observable<ApiResponse<RatingDashboardItem[]>> {
     return this.api.get(AppConstants.API.DASHBOARD_RATINGS_DETAILS);
+  }
+
+  getComplaintRatingsSummary(): Observable<ApiResponse<ComplaintRatingsSummary>> {
+    return this.api.get(AppConstants.API.DASHBOARD_COMPLAINT_RATINGS_SUMMARY);
+  }
+
+  getComplaintRatingsDetails(): Observable<ApiResponse<ComplaintRatingDashboardItem[]>> {
+    return this.api.get(AppConstants.API.DASHBOARD_COMPLAINT_RATINGS_DETAILS);
   }
 }

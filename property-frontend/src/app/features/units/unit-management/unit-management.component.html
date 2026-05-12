@@ -1,0 +1,144 @@
+<div class="app-page units-page">
+  <app-page-header
+    [eyebrow]="'NAV_SECTION.DIRECTORY' | translate"
+    [title]="'NAV.UNITS' | translate"
+    [subtitle]="'UNITS.SUBTITLE' | translate"
+    [breadcrumbs]="[{label:('NAV.DASHBOARD' | translate), route:'/admin/dashboard'}, {label:('NAV.UNITS' | translate)}]"
+    [showBack]="true"
+    (backClick)="goBack()">
+    <button mat-flat-button type="button" (click)="openAddDialog()" *ngIf="canCreateUnit()">
+      <mat-icon>add</mat-icon>
+      {{ 'UNITS.ADD_UNIT' | translate }}
+    </button>
+  </app-page-header>
+
+  <div class="loading-wrap" *ngIf="loading">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <!-- Empty state: no data and no active search/filter -->
+  <app-empty-state
+    *ngIf="!loading && filteredUnits.length === 0 && !searchTerm && !hasFiltersBar()"
+    icon="door_front"
+    [title]="'UNITS.EMPTY_TITLE' | translate"
+    [message]="'UNITS.EMPTY_MESSAGE' | translate">
+  </app-empty-state>
+
+  <!-- Table: show when data exists OR search/filter is active -->
+  <section class="app-card" *ngIf="!loading && (filteredUnits.length > 0 || searchTerm || hasFiltersBar())">
+    <div class="search-bar-shell">
+      <div class="search-input-box">
+        <mat-icon>search</mat-icon>
+        <input [value]="searchTerm" (input)="onSearch($any($event.target).value)" [placeholder]="'ACTIONS.SEARCH' | translate">
+      </div>
+
+      <app-filter-bar
+        [filters]="unitFilters"
+        [filterValues]="filterValues"
+        (filtersChange)="onFilterBarChange($event)"> </app-filter-bar>
+      <button mat-icon-button class="clear-filters-btn" (click)="clearFiltersFromBar()" *ngIf="hasFiltersBar()" [matTooltip]="'ACTIONS.CLEAR_FILTERS' | translate">
+        <mat-icon>filter_alt_off</mat-icon>
+      </button>
+
+      <app-table-export-toolbar
+        permissionKey="units"
+        [title]="'NAV.UNITS' | translate"
+        fileName="units"
+        [columns]="exportColumns"
+        [rows]="filteredUnits">
+      </app-table-export-toolbar>
+    </div>
+
+    <div class="app-table-wrap">
+      <table class="app-data-table source-table">
+        <thead>
+          <tr>
+            <th>{{ 'UNITS.UNIT_NUMBER' | translate }}</th>
+            <th>{{ 'REQUEST_FORM.PROPERTY' | translate }}</th>
+            <th class="center-col">{{ 'UNITS.FLOOR' | translate }}</th>
+            <th class="center-col">{{ 'UNITS.UNIT_TYPE' | translate }}</th>
+            <th class="center-col">{{ 'UNITS.AREA' | translate }}</th>
+            <th class="center-col">{{ 'MAINTENANCE.STATUS' | translate }}</th>
+            <th class="center-col">{{ 'COMMON.ACTIVE' | translate }}</th>
+            <th class="actions-col"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let unit of pagedUnits">
+            <td>
+              <div class="unit-code-cell">
+                <mat-icon class="unit-icon">door_front</mat-icon>
+                <span class="unit-number">{{ unit.unitNumber }}</span>
+              </div>
+            </td>
+            <td>
+              <div class="property-cell">
+                <mat-icon>apartment</mat-icon>
+                <span>{{ propertyName(unit) }}</span>
+              </div>
+            </td>
+            <td class="center-col"><span class="floor-badge">{{ displayFloor(unit) }}</span></td>
+            <td class="center-col"><span class="type-badge">{{ unitTypeLabel(unit.unitType) }}</span></td>
+            <td class="center-col"><span class="area-text">{{ unit.areaSqm ? unit.areaSqm + ' m²' : '-' }}</span></td>
+            <td class="center-col">
+              <div class="unit-status-cell">
+                <span class="status-chip" [ngClass]="unitStatusChipClass(unit)">
+                  {{ unitStatusLabelKey(unit) | translate }}
+                </span>
+                <ng-container *ngIf="(unit.rented || unit.reserved) && contractByUnitId[unit.id] as c">
+                  <div class="contract-meta-badges">
+                    <span class="cmb cmb-tenant" *ngIf="tenantName(unit) !== '—'">
+                      <mat-icon>person</mat-icon>{{ tenantName(unit) }}
+                    </span>
+                    <span class="cmb cmb-discount" *ngIf="c.rentDiscountReason">
+                      <mat-icon>local_offer</mat-icon>{{ discountLabel(c.rentDiscountReason) }}
+                    </span>
+                    <span class="cmb cmb-free" *ngIf="c.hasFreeMonth">
+                      <mat-icon>card_giftcard</mat-icon>{{ 'CONTRACTS.FREE_MONTH_LABEL' | translate }}
+                    </span>
+                  </div>
+                </ng-container>
+              </div>
+            </td>
+            <td class="center-col">
+              <button *ngIf="canEditUnit()" type="button" class="status-badge status-toggle-btn"
+                [attr.data-status]="unit.active ? 'ACTIVE' : 'INACTIVE'"
+                (click)="toggleUnitActive(unit); $event.stopPropagation()"
+                [matTooltip]="(unit.active ? 'PROPERTY_LIST.DEACTIVATE_HINT' : 'PROPERTY_LIST.ACTIVATE_HINT') | translate">
+                {{ (unit.active ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') | translate }}
+              </button>
+              <span *ngIf="!canEditUnit()" class="status-badge" [attr.data-status]="unit.active ? 'ACTIVE' : 'INACTIVE'">
+                {{ (unit.active ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') | translate }}
+              </span>
+            </td>
+            <td class="actions-col">
+              <div class="table-actions">
+                <button class="app-icon-btn accent" type="button" (click)="openViewDialog(unit)" [matTooltip]="'ACTIONS.VIEW' | translate">
+                  <mat-icon>visibility</mat-icon>
+                </button>
+                <button *ngIf="canEditUnit()" class="app-icon-btn info" type="button" (click)="openEditDialog(unit)" [matTooltip]="'ACTIONS.EDIT' | translate">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button class="app-icon-btn navy" type="button" *ngIf="(unit.rented || unit.reserved) && contractByUnitId[unit.id]"
+                        (click)="viewContract(unit)" [matTooltip]="'CONTRACTS.VIEW_DETAILS' | translate">
+                  <mat-icon>description</mat-icon>
+                </button>
+                <button *ngIf="canEditUnit() && !unit.rented && !unit.reserved" class="app-icon-btn success" type="button"
+                        (click)="openAssignTenant(unit)" [matTooltip]="'TENANTS.ASSIGN_UNIT' | translate">
+                  <mat-icon>person_add</mat-icon>
+                </button>
+                <button *ngIf="canDeleteUnit()" class="app-icon-btn danger" type="button" (click)="deleteUnit(unit)" [disabled]="unit.rented || unit.reserved" [matTooltip]="(unit.rented || unit.reserved ? 'UNITS.DELETE_RENTED_HINT' : 'ACTIONS.DELETE') | translate">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="pagedUnits.length === 0">
+            <td colspan="8" class="empty-row">{{ 'COMMON.NO_DATA' | translate }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <app-table-pager [length]="filteredUnits.length" [pageSize]="pageSize" [pageIndex]="pageIndex" (pageIndexChange)="pageIndex = $event"></app-table-pager>
+  </section>
+</div>

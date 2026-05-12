@@ -10,4 +10,6 @@ public class FloorResponse {
     private Long propertyId;
     private Integer floorNumber;
     private String floorLabel;
+    private String floorLabelAr;
+    private String floorLabelEn;
 }

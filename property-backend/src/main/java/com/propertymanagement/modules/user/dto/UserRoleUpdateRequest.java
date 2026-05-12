@@ -1,6 +1,6 @@
 package com.propertymanagement.modules.user.dto;
 
-import com.propertymanagement.modules.user.UserRole;
+import com.propertymanagement.modules.user.entity.UserRole;
 import lombok.Data;
 
 import java.util.List;

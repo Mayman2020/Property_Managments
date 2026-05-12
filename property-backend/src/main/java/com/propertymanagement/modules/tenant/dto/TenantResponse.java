@@ -6,6 +6,7 @@ import lombok.Data;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import com.propertymanagement.modules.user.entity.User;
 
 @Data
 @Builder

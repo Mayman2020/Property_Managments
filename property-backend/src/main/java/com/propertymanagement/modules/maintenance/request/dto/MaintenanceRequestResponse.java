@@ -1,7 +1,7 @@
 package com.propertymanagement.modules.maintenance.request.dto;
 
-import com.propertymanagement.modules.maintenance.request.RequestPriority;
-import com.propertymanagement.modules.maintenance.request.RequestStatus;
+import com.propertymanagement.modules.maintenance.request.entity.RequestPriority;
+import com.propertymanagement.modules.maintenance.request.entity.RequestStatus;
 import lombok.Builder;
 import lombok.Data;
 

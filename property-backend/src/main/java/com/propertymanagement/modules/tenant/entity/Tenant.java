@@ -1,0 +1,101 @@
+package com.propertymanagement.modules.tenant.entity;
+
+import com.propertymanagement.shared.persistence.StringListJsonConverter;
+import jakarta.persistence.*;
+import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+@Entity
+@Table(name = "tenants")
+@EntityListeners(AuditingEntityListener.class)
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+public class Tenant {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "user_id")
+    private Long userId;
+
+    @Column(name = "unit_id")
+    private Long unitId;
+
+    @Column(name = "property_id")
+    private Long propertyId;
+
+    @Column(name = "full_name", nullable = false, length = 300)
+    private String fullName;
+
+    @Column(name = "full_name_ar", nullable = false, length = 150)
+    private String fullNameAr;
+
+    @Column(name = "full_name_en", nullable = false, length = 150)
+    private String fullNameEn;
+
+    @Column(name = "national_id", length = 30)
+    private String nationalId;
+
+    @Column(nullable = false, length = 20)
+    private String phone;
+
+    @Column(unique = true, length = 100)
+    private String email;
+
+    @Column(name = "lease_start")
+    private LocalDate leaseStart;
+
+    @Column(name = "lease_end")
+    private LocalDate leaseEnd;
+
+    @Builder.Default
+    @Column(name = "is_active")
+    private boolean active = true;
+
+    @Column(name = "profile_image", length = 500)
+    private String profileImage;
+
+    @Column(name = "civil_id_image_url", length = 500)
+    private String civilIdImageUrl;
+
+    @Builder.Default
+    @Convert(converter = StringListJsonConverter.class)
+    @Column(name = "lease_contract_files", columnDefinition = "TEXT")
+    private List<String> leaseContractFiles = new ArrayList<>();
+
+    @Column(columnDefinition = "TEXT")
+    private String notes;
+
+    @CreatedBy
+    @Column(name = "created_by", updatable = false)
+    private Long createdBy;
+
+    @CreatedDate
+    @Column(name = "created_on", updatable = false)
+    private LocalDateTime createdOn;
+
+    @LastModifiedBy
+    @Column(name = "modified_by")
+    private Long modifiedBy;
+
+    @LastModifiedDate
+    @Column(name = "modified_on")
+    private LocalDateTime modifiedOn;
+
+    @CreatedDate
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @LastModifiedDate
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+}

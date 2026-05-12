@@ -1,4 +1,4 @@
-import { Routes } from '@angular/router';
+﻿import { Routes } from '@angular/router';
 import { MainLayoutComponent } from '../../layout/main-layout/main-layout.component';
 import { officerGuard, permissionGuard } from '../../core/guards/auth.guard';
 
@@ -49,7 +49,7 @@ export const OFFICER_ROUTES: Routes = [
         canActivate: [permissionGuard],
         data: { permission: 'profile', permissionAction: 'view' },
         path: 'profile',
-        loadComponent: () => import('../profile/profile.component').then((m) => m.ProfileComponent)
+        loadComponent: () => import('../profile/profile/profile.component').then((m) => m.ProfileComponent)
       }
     ]
   }

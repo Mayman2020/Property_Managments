@@ -34,8 +34,8 @@
     "MY_UNIT": "وحدتي",
     "NEW_REQUEST": "طلب جديد",
     "PROFILE": "الملف الشخصي",
-    "RATINGS": "تقييمات الزيارات",
-    "CONTRACTOR_COMPANIES": "شركات المقاولين",
+    "RATINGS": "التقييمات",
+    "CONTRACTOR_COMPANIES": "شركات الصيانة",
     "OWNERS": "الملاك",
     "LOOKUPS": "الجداول المرجعية",
     "PERMISSIONS": "الصلاحيات",
@@ -82,7 +82,35 @@
     "CAT_CLEANLINESS": "النظافة",
     "CAT_BILLING": "الفواتير / المدفوعات",
     "CAT_MANAGEMENT": "الإدارة",
-    "CAT_OTHER": "أخرى"
+    "CAT_OTHER": "أخرى",
+    "PAGE_TITLE": "شكاويّ",
+    "PAGE_SUBTITLE": "الشكاوي الحالية والسابقة لوحدتك",
+    "NEW_COMPLAINT": "شكوى جديدة",
+    "TAB_ACTIVE": "شكاوي نشطة",
+    "TAB_HISTORY": "شكاوي سابقة",
+    "EMPTY_ACTIVE": "لا توجد شكاوي نشطة حالياً",
+    "EMPTY_HISTORY": "لا توجد شكاوي سابقة",
+    "COL_DATE": "التاريخ",
+    "COL_TITLE": "الموضوع",
+    "COL_TYPE": "النوع",
+    "COL_STATUS": "الحالة",
+    "COL_RATING": "التقييم",
+    "REPLIES_LABEL": "الردود",
+    "NO_REPLIES": "لا توجد ردود حتى الآن",
+    "CLOSE_COMPLAINT": "إغلاق الشكوى",
+    "RATE_COMPLAINT": "تقييم حل الشكوى",
+    "RATE_NOW": "قيّم الآن",
+    "RATING_PROMPT": "كيف تقيّم حل هذه الشكوى؟",
+    "SUBMIT_RATING": "إرسال التقييم",
+    "RATING_SUBMITTED": "شكراً! تم إرسال تقييمك بنجاح.",
+    "ATTACHMENTS_LABEL": "المرفقات",
+    "ADD_ATTACHMENT": "إضافة ملف",
+    "ATTACHMENT": "مرفق",
+    "UNIT_LABEL": "الوحدة",
+    "SELECT_UNIT": "اختر الوحدة...",
+    "HAS_MAINTENANCE": "تم إنشاء طلب صيانة",
+    "MAINTENANCE_LINKED": "طلب صيانة مرتبط",
+    "CREATE_MAINTENANCE": "إنشاء طلب صيانة من الشكوى"
   },
   "OVERDUE": {
     "TITLE": "الإيجارات المتأخرة",
@@ -189,7 +217,8 @@
     "DETAILS": "التفاصيل",
     "CLOSE": "إغلاق",
     "CLEAR_FILTERS": "مسح الفلاتر",
-    "DOWNLOAD": "تنزيل"
+    "DOWNLOAD": "تنزيل",
+    "SKIP": "تخطي"
   },
   "COMMON": {
     "LOADING": "جاري التحميل...",
@@ -319,7 +348,7 @@
     "NO_TENANT_LINK": "حساب المستخدم الخاص بك غير مرتبط بسجل مستأجر. اطلب من المسؤول ربط حسابك بالإيجار لتتمكن من رؤية طلباتك."
   },
   "RATINGS_DASHBOARD": {
-    "TITLE": "نظرة عامة على تقييمات الزيارات",
+    "TITLE": "نظرة عامة على التقييمات",
     "SUBTITLE": "متوسط النتيجة وتوزيع التقييمات عبر الزيارات",
     "OUT_OF_FIVE": "من 4",
     "VISITS_RATED": "زيارات مُقيّمة",
@@ -335,10 +364,10 @@
     "FOR_UNIT": "الوحدة"
   },
   "CONTRACTORS": {
-    "TITLE": "شركات المقاولين",
-    "SUBTITLE": "تسجيل شركات المقاولين للصيانة للرجوع إليها عند إنشاء حسابات مسؤولين خارجيين",
+    "TITLE": "شركات الصيانة",
+    "SUBTITLE": "تسجيل شركات الصيانة المتعاقدة مع العقارات وإدارة عقودها",
     "ADD": "إضافة شركة",
-    "NEW": "شركة مقاولين جديدة",
+    "NEW": "شركة صيانة جديدة",
     "EDIT": "تعديل الشركة",
     "VIEW_DETAILS": "تفاصيل الشركة",
     "NAME": "اسم الشركة",
@@ -347,13 +376,23 @@
     "PHONE": "الهاتف",
     "EMAIL": "البريد الإلكتروني",
     "NOTES": "ملاحظات",
-    "EMPTY_TITLE": "لا توجد شركات مقاولين",
+    "EMPTY_TITLE": "لا توجد شركات صيانة",
     "EMPTY_MSG": "أضف شركات الصيانة التي تعمل معها ليبقى الاسم متسقاً في النظام.",
     "CONTRACT_START": "بداية العقد",
     "CONTRACT_END": "نهاية العقد",
     "CONTRACT_ATTACHMENTS": "مرفقات العقد",
     "CONTRACT_REQUIRED": "مدة العقد ومرفق واحد على الأقل مطلوبان",
-    "ADD_HINT": "أدخل تفاصيل المقاول وتواريخ العقد والمرفقات المطلوبة."
+    "ADD_HINT": "أدخل بيانات شركة الصيانة والعقار المرتبط وقيمة العقد والمرفقات المطلوبة.",
+    "SELECT_PROPERTY": "اختر العقار (اختياري)",
+    "CONTRACT_VALUE": "قيمة العقد السنوية",
+    "PROPERTY_LINK_SECTION": "ربط بعقار",
+    "PROPERTY_LINK_HINT": "سيُنشئ عقد صيانة مسودة بانتظار موافقة المالك",
+    "CONTRACT_STATUS": "حالة العقد",
+    "STATUS_PENDING_OWNER_APPROVAL": "بانتظار موافقة المالك",
+    "STATUS_COMPANY_READY": "الشركة جاهزة",
+    "ASSIGN_PROPERTY": "تعاقد مع عقار",
+    "DIALOG_HINT": "أدخل بيانات شركة الصيانة والعقد والمرفقات المطلوبة.",
+    "NONE": "بدون ربط"
   },
   "REQUEST_FORM": {
     "TITLE": "طلب صيانة جديد",
@@ -563,9 +602,9 @@
     "NO_OWNERS": "لم يتم تحديد مالك",
     "OWNER_PHONE": "الهاتف",
     "MAINTENANCE_ROUTING": "توجيه الصيانة",
-    "MAINTENANCE_ROUTING_HINT": "اختر إما مسؤول صيانة داخلي أو شركة مقاولين (وليس كلاهما). ثم تُوجّه الطلبات لذلك المسؤول أو طابور الشركة حتى يتم تعيين فني.",
+    "MAINTENANCE_ROUTING_HINT": "اختر إما مسؤول صيانة داخلي أو شركة صيانة (وليس كلاهما). ثم تُوجّه الطلبات لذلك المسؤول أو طابور الشركة حتى يتم تعيين فني.",
     "INTERNAL_MAINTENANCE_OFFICER": "مسؤول صيانة داخلي",
-    "CONTRACTOR_COMPANY": "شركة مقاولين",
+    "CONTRACTOR_COMPANY": "شركة صيانة",
     "NO_INTERNAL_OFFICER": "لا يوجد",
     "NO_CONTRACTOR": "لا يوجد",
     "SUBTITLE": "أدخل التفاصيل أدناه لتسجيل عقار في النظام",
@@ -592,9 +631,9 @@
     "MAP_SHORT_URL_NOT_SUPPORTED": "الروابط المختصرة (maps.app.goo.gl) لا يمكن تضمينها. الصق الرابط الكامل من شريط عنوان المتصفح، أو استخدم مشاركة ← تضمين خريطة في Google Maps.",
     "SELECT_OWNER": "اختر المالك...",
     "MAINTENANCE_PROVIDER_USER": "موظف صيانة",
-    "MAINTENANCE_PROVIDER_COMPANY": "شركة مقاولات",
+    "MAINTENANCE_PROVIDER_COMPANY": "شركة صيانة",
     "SEARCH_OFFICER": "ابحث عن موظف صيانة...",
-    "SEARCH_COMPANY": "ابحث عن شركة مقاولات...",
+    "SEARCH_COMPANY": "ابحث عن شركة صيانة...",
     "PROVIDER_NAME": "الاسم",
     "PROVIDER_TYPE_LABEL": "النوع",
     "NO_MAINTENANCE_PROVIDERS": "لا يوجد توجيه صيانة محدد.",
@@ -691,7 +730,7 @@
     "OFFICER_TYPE_REQUIRED": "نوع المسؤول مطلوب",
     "COMPANY_NAME": "اسم الشركة",
     "COMPANY_REQUIRED": "الشركة مطلوبة",
-    "CONTRACTOR_COMPANY": "شركة المقاولين",
+    "CONTRACTOR_COMPANY": "شركة الصيانة",
     "SELECT_CONTRACTOR": "اختر الشركة",
     "PASSWORD_HINT": "اتركه فارغاً للحفاظ على كلمة المرور الحالية",
     "DEFAULT_PASSWORD_HINT": "كلمة المرور الافتراضية: 12345 (يمكن تغييرها لاحقاً)",
@@ -760,8 +799,8 @@
         "DESC": "بياناتLookup الدول والمدن."
       },
       "contractors": {
-        "TITLE": "المقاولون",
-        "DESC": "شركات المقاولين ومقدمي الصيانة الخارجيين."
+        "TITLE": "شركات الصيانة",
+        "DESC": "شركات الصيانة المتعاقدة مع العقارات."
       },
       "ratings": {
         "TITLE": "التقييمات",
@@ -910,7 +949,7 @@
     "CONTRACT_EXPIRED_BODY": "انتهت مدة العقد {{contractNumber}} (المستأجر {{tenantName}} — الوحدة {{unitNumber}} — {{propertyName}}) وتم تحويل حالته إلى منتهي.",
     "CONTRACT_TERMINATION_REQUESTED": "طلب إلغاء عقد بانتظار موافقتك",
     "CONTRACT_TERMINATION_REQUESTED_TITLE": "طلب إلغاء عقد — بانتظار موافقتك",
-    "CONTRACT_TERMINATION_REQUESTED_BODY": "العقد {{contractNumber}} (المستأجر {{tenantName}}، الوحدة {{unitNumber}} — {{propertyName}}). تاريخ الإلغاء المقترح: {{terminationDate}}. السبب: {{terminationReason}}. يرجى مراجعة الطلب والموافقة أو الرفض من بوابة المالك.",
+    "CONTRACT_TERMINATION_REQUESTED_BODY": "العقد {{contractNumber}} (المستأجر {{tenantName}}، الوحدة {{unitNumber}} — {{propertyName}}). تاريخ الإلغاء المقترح: {{terminationDate}}. السبب: {{terminationReason}}. يرجى مراجعة الطلب والموافقة أو الرفض من بوابة الموافقات.",
     "TENANT_CONTRACT_TERMINATION_REQUESTED": "تم تقديم طلب إلغاء العقد",
     "TENANT_CONTRACT_TERMINATION_REQUESTED_TITLE": "تم تقديم طلب إلغاء العقد",
     "TENANT_CONTRACT_TERMINATION_REQUESTED_BODY": "العقد {{contractNumber}} (الوحدة {{unitNumber}} — {{propertyName}}). تقدم المحاسب بطلب إلغاء/تسليم بتاريخ {{terminationDate}}. يبقى العقد ساريًا حتى يوافق مالك العقار على الطلب.",
@@ -939,9 +978,53 @@
     "CONTRACT_AWAITING_OWNER_REVIEW_TITLE": "مسودة عقد بانتظار مراجعة المالك",
     "CONTRACT_AWAITING_OWNER_REVIEW_BODY": "العقد {{contractNumber}} للمستأجر {{tenantName}} (الوحدة {{unitNumber}} — {{propertyName}}) بانتظار مراجعتك.",
     "TYPES": {
+      "MAINTENANCE_PROVIDER_ASSIGNED": {
+        "TITLE": "تم تعيين مزود صيانة",
+        "BODY": "تم تعيين {{providerName}} على العقار رقم {{propertyId}}."
+      },
+      "MAINTENANCE_PROVIDER_UNASSIGNED": {
+        "TITLE": "تم إنهاء تعيين مزود الصيانة",
+        "BODY": "تم إنهاء تعيين {{providerName}} على العقار رقم {{propertyId}}."
+      },
+      "MAINTENANCE_CONTRACT_AWAITING_OWNER_REVIEW": {
+        "TITLE": "عقد صيانة بانتظار الموافقة",
+        "BODY": "عقد الصيانة {{contractNumber}} الخاص بـ {{companyName}} في {{propertyName}} بانتظار موافقة المالك."
+      },
+      "MAINTENANCE_CONTRACT_APPROVED": {
+        "TITLE": "تمت الموافقة على عقد الصيانة",
+        "BODY": "تمت الموافقة على عقد الصيانة {{contractNumber}} الخاص بـ {{companyName}} في {{propertyName}}."
+      },
+      "MAINTENANCE_CONTRACT_REJECTED": {
+        "TITLE": "تم رفض عقد الصيانة",
+        "BODY": "تم رفض أو إلغاء عقد الصيانة {{contractNumber}} الخاص بـ {{companyName}} في {{propertyName}}."
+      },
+      "MAINTENANCE_CONTRACT_TERMINATION_REQUESTED": {
+        "TITLE": "طلب إنهاء عقد صيانة",
+        "BODY": "طلب إنهاء عقد الصيانة {{contractNumber}} في {{propertyName}} بانتظار موافقة المالك."
+      },
+      "MAINTENANCE_CONTRACT_TERMINATION_APPROVED": {
+        "TITLE": "تمت الموافقة على إنهاء عقد الصيانة",
+        "BODY": "تمت الموافقة على إنهاء عقد الصيانة {{contractNumber}} في {{propertyName}}."
+      },
+      "MAINTENANCE_CONTRACT_TERMINATION_REJECTED": {
+        "TITLE": "تم رفض إنهاء عقد الصيانة",
+        "BODY": "تم رفض طلب إنهاء عقد الصيانة {{contractNumber}} في {{propertyName}}."
+      },
+      "MAINTENANCE_CONTRACT_RENEWAL_REQUESTED": {
+        "TITLE": "طلب تجديد عقد صيانة",
+        "BODY": "طلب تجديد عقد الصيانة {{contractNumber}} في {{propertyName}} بانتظار موافقة المالك."
+      },
+      "MAINTENANCE_CONTRACT_RENEWAL_APPROVED": {
+        "TITLE": "تمت الموافقة على تجديد عقد الصيانة",
+        "BODY": "تمت الموافقة على تجديد عقد الصيانة {{contractNumber}} في {{propertyName}}."
+      },
+      "MAINTENANCE_CONTRACT_RENEWAL_REJECTED": {
+        "TITLE": "تم رفض تجديد عقد الصيانة",
+        "BODY": "تم رفض طلب تجديد عقد الصيانة {{contractNumber}} في {{propertyName}}."
+      },
       "CONTRACT_RENEWAL_REQUESTED": {
         "TITLE": "طلب تجديد بانتظار موافقتك",
-        "BODY": "العقد {{contractNumber}} (المستأجر {{tenantName}}، الوحدة {{unitNumber}} — {{propertyName}}) عليه طلب تجديد. الفترة المقترحة: {{proposedStartDate}} إلى {{proposedEndDate}}، والإيجار المقترح: {{proposedRentAmount}}. الملاحظة: {{requestNote}}."
+        "BODY": "العقد {{contractNumber}} (المستأجر {{tenantName}}، الوحدة {{unitNumber}} — {{propertyName}}) عليه طلب تجديد بانتظار موافقة المالك/الإدارة. الفترة المقترحة: {{proposedStartDate}} إلى {{proposedEndDate}}، والإيجار المقترح: {{proposedRentAmount}}. الملاحظة: {{requestNote}}."
       },
       "TENANT_CONTRACT_RENEWAL_REQUESTED": {
         "TITLE": "تم إرسال طلب التجديد",
@@ -968,11 +1051,14 @@
     "GENERAL_MESSAGE": "لديك إشعار جديد.",
     "PAYMENT_PROOF_SUBMITTED_TITLE": "تم إرسال إثبات دفع",
     "PAYMENT_PROOF_SUBMITTED_BODY": "أرسل المستأجر إثبات دفع للعقد {{contractNumber}}، استحقاق {{dueDate}}، مبلغ {{amount}}. يرجى المراجعة.",
-    "PAYMENT_CONFIRMED_TITLE": "?? ????? ?????",
-    "PAYMENT_CONFIRMED_BODY": "?? ????? ????? ????? {{contractNumber}}? ??????? {{dueDate}}? ???? {{amount}}.",
-    "PAYMENT_CONFIRMED_ADMIN_BODY": "?? ????? ???? ????? {{contractNumber}}? ??????? {{dueDate}}? ???? {{amount}}. ?? ????? ????????? ???????.",
-    "PAYMENT_REJECTED_TITLE": "?? ??? ????? ?????",
-    "PAYMENT_REJECTED_BODY": "?? ??? ????? ????? ????? {{contractNumber}}? ??????? {{dueDate}}. ?????: {{reason}}. ????? ??? ????? ???? ?? ???? ?????."
+    "PAYMENT_CONFIRMED_TITLE": "تم تأكيد الدفع",
+    "PAYMENT_CONFIRMED_BODY": "تم تأكيد دفعة الإيجار للعقد {{contractNumber}}، استحقاق {{dueDate}}، مبلغ {{amount}}. موعد الإيجار القادم: {{nextDueDate}}.",
+    "PAYMENT_CONFIRMED_ADMIN_BODY": "تم تأكيد دفعة الإيجار للعقد {{contractNumber}}، استحقاق {{dueDate}}، مبلغ {{amount}}. تم تحديث الإيرادات المالية.",
+    "PAYMENT_CONFIRMED_OWNER_BODY": "تم تأكيد دفع الإيجار للعقد {{contractNumber}}، استحقاق {{dueDate}}، مبلغ {{amount}}. موعد الإيجار القادم: {{nextDueDate}}.",
+    "RENT_DUE_TITLE": "الإيجار مستحق قريبًا",
+    "RENT_DUE_BODY": "الإيجار للعقد {{contractNumber}} مستحق في {{dueDate}} بمبلغ {{amount}}. يرجى تجهيز الدفع.",
+    "PAYMENT_REJECTED_TITLE": "تم رفض إثبات الدفع",
+    "PAYMENT_REJECTED_BODY": "تم رفض إثبات الدفع للعقد {{contractNumber}}، استحقاق {{dueDate}}. السبب: {{reason}}. يمكنك رفع إثبات جديد من جدول الدفعات."
   },
   "CONTRACT": {
     "STATUS": {
@@ -1205,12 +1291,21 @@
     "DASHBOARD_TITLE": "لوحة العقود",
     "DASHBOARD_SUBTITLE": "نظرة عامة على العقود وجداول الإيجار والشكاوى",
     "ACTIVE_CONTRACTS": "العقود النشطة",
+    "ACTIVE_RENTAL_CONTRACTS": "العقود الإيجارية النشطة",
+    "CANCELLED_RENTAL_CONTRACTS": "العقود الإيجارية الملغية",
+    "RENTAL_EXPIRING_30_DAYS": "إيجارات شارفت على الانتهاء",
+    "ACTIVE_MAINTENANCE_CONTRACTS": "عقود الصيانة النشطة",
+    "CANCELLED_MAINTENANCE_CONTRACTS": "عقود الصيانة الملغية",
+    "MAINTENANCE_EXPIRING_30_DAYS": "صيانة شارفت على الانتهاء",
     "DRAFT_CONTRACTS": "عقود مسودة",
     "DRAFT_CONTRACTS_HINT": "تُنشأ عند إضافة مستأجر أو يدوياً؛ فعّل العقد من قائمة العقود ليُحسب ضمن النشطة.",
+    "MAINTENANCE_PENDING_APPROVAL": "عقود الصيانة بانتظار الموافقة",
+    "MAINTENANCE_PENDING_APPROVAL_HINT": "مسودات الصيانة وطلبات الإنهاء/التجديد بانتظار قرار المالك. اضغط للذهاب إلى شاشة الموافقات.",
     "EXPIRING_30_DAYS": "تنتهي خلال 30 يوماً",
     "OVERDUE_PAYMENTS": "المدفوعات المتأخرة",
     "OPEN_COMPLAINTS": "الشكاوى المفتوحة",
     "NEW_CONTRACT": "عقد جديد",
+    "NEW_MAINTENANCE_CONTRACT": "تعاقد صيانة جديد",
     "VIEW_ALL": "عرض الكل",
     "EXPIRING_SOON": "عقود على وشك الانتهاء",
     "DAYS_LEFT": "يوم متبقي",
@@ -1605,7 +1700,13 @@
     "STAFF_UPLOAD_TENANT_ID": "معرّف المستأجر",
     "STAFF_UPLOAD_CONTRACT_ID": "معرّف العقد (اختياري)",
     "STAFF_UPLOAD_SUBMIT": "رفع",
-    "STAFF_UPLOAD_OK": "تم حفظ الإيصال للمستأجر"
+    "STAFF_UPLOAD_OK": "تم حفظ الإيصال للمستأجر",
+    "TABLE_CONTRACT": "العقد",
+    "TABLE_TENANT": "المستأجر",
+    "TABLE_DUE_DATE": "تاريخ الاستحقاق",
+    "TABLE_AMOUNT": "المبلغ",
+    "TABLE_STATUS": "الحالة",
+    "TABLE_SUBMITTED": "تم الإرسال"
   },
   "INVOICE_PORTAL": {
     "TITLE": "بوابة الفواتير",
@@ -1673,6 +1774,8 @@
     "AMEND_OK": "تم تحديث المسودة",
     "PENDING_DRAFTS_HEADING": "العقود المسودة بانتظار الموافقة",
     "PENDING_TERMINATIONS_HEADING": "طلبات إلغاء العقود بانتظار الموافقة",
+    "MAINTENANCE_APPROVE_CONFIRM_TITLE": "تأكيد قبول عقد الصيانة",
+    "MAINTENANCE_APPROVE_CONFIRM_MESSAGE": "هل أنت متأكد من قبول عقد الصيانة وتفعيله؟",
     "TERMINATION_DECISION_APPROVE_TITLE": "الموافقة على طلب إلغاء العقد",
     "TERMINATION_DECISION_REJECT_TITLE": "رفض طلب إلغاء العقد",
     "TERMINATION_DECISION_NOTES": "ملاحظات للمحاسب والمستأجر (اختيارية للموافقة، إلزامية للرفض)",
@@ -1860,7 +1963,7 @@
     "ASSIGN_BTN": "تعيين مزود صيانة",
     "PROVIDER_TYPE": "نوع المزود",
     "PROVIDER_USER": "موظف داخلي",
-    "PROVIDER_COMPANY": "شركة مقاولين",
+    "PROVIDER_COMPANY": "شركة صيانة",
     "SELECT_OFFICER": "اختر مسؤول الصيانة",
     "SELECT_COMPANY": "اختر الشركة",
     "START_DATE": "تاريخ البداية",
@@ -1904,7 +2007,9 @@
     "STATUS_ISSUED": "صادرة",
     "STATUS_PAID": "مدفوعة",
     "STATUS_OVERDUE": "متأخرة",
-    "STATUS_CANCELLED": "ملغاة"
+    "STATUS_CANCELLED": "ملغاة",
+    "STATUS_ENDED": "منتهي",
+    "STATUS_RENEWED": "مُجدّد"
   },
   "OWNERS": {
     "TITLE": "الملاك",

@@ -1,0 +1,400 @@
+<div class="app-page complaints-page">
+
+  <app-page-header
+    [eyebrow]="i18n.currentLang === 'ar' ? 'نظرة عامة' : 'Overview'"
+    [title]="'COMPLAINT.PAGE_TITLE' | translate"
+    [subtitle]="'COMPLAINT.PAGE_SUBTITLE' | translate"
+    [showBack]="true"
+    (backClick)="goBack()"
+    [breadcrumbs]="[
+      { label: ('NAV.MY_UNIT' | translate), route: '/tenant/my-unit' },
+      { label: ('NAV.COMPLAINTS' | translate) }
+    ]">
+    <button mat-flat-button (click)="openNew()">
+      <mat-icon>add</mat-icon>
+      {{ 'COMPLAINT.NEW_COMPLAINT' | translate }}
+    </button>
+  </app-page-header>
+
+  <!-- Loading -->
+  <div class="loading-center" *ngIf="loading">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <!-- Tabs -->
+  <div class="app-card tabs-card" *ngIf="!loading">
+    <mat-tab-group animationDuration="200ms">
+
+      <!-- ── Active ── -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon class="tab-icon">pending_actions</mat-icon>
+          {{ 'COMPLAINT.TAB_ACTIVE' | translate }}
+          <span class="tab-badge" *ngIf="activeComplaints.length">{{ activeComplaints.length }}</span>
+        </ng-template>
+
+        <div class="tab-content">
+          <div class="empty-tab" *ngIf="activeComplaints.length === 0">
+            <span class="material-icons empty-icon">sentiment_satisfied_alt</span>
+            <p>{{ 'COMPLAINT.EMPTY_ACTIVE' | translate }}</p>
+          </div>
+
+          <div class="app-table-wrap" *ngIf="activeComplaints.length > 0">
+            <table class="app-data-table source-table">
+              <thead>
+                <tr>
+                  <th>{{ 'COMPLAINT.COL_DATE' | translate }}</th>
+                  <th>{{ 'COMPLAINT.COL_TITLE' | translate }}</th>
+                  <th>{{ 'COMPLAINT.COL_TYPE' | translate }}</th>
+                  <th>{{ 'COMPLAINT.COL_STATUS' | translate }}</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let c of activeComplaints" (click)="openDetail(c)" class="clickable-row">
+                  <td class="date-cell">{{ c.createdAt | date:'dd/MM/yyyy' }}</td>
+                  <td class="title-cell">
+                    <span class="req-title">{{ c.title }}</span>
+                    <span class="maintenance-badge" *ngIf="c.maintenanceRequestId">
+                      <mat-icon class="badge-icon">build</mat-icon>
+                      {{ 'COMPLAINT.HAS_MAINTENANCE' | translate }}
+                    </span>
+                  </td>
+                  <td><span class="type-chip">{{ typeLabel(c.complaintType) }}</span></td>
+                  <td>
+                    <span class="status-badge" [attr.data-status]="c.status">{{ statusLabel(c.status) }}</span>
+                  </td>
+                  <td>
+                    <span class="material-icons table-arrow">
+                      {{ i18n.currentLang === 'ar' ? 'arrow_back' : 'arrow_forward' }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- ── History ── -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon class="tab-icon">history</mat-icon>
+          {{ 'COMPLAINT.TAB_HISTORY' | translate }}
+        </ng-template>
+
+        <div class="tab-content">
+          <div class="empty-tab" *ngIf="previousComplaints.length === 0">
+            <span class="material-icons empty-icon">folder_open</span>
+            <p>{{ 'COMPLAINT.EMPTY_HISTORY' | translate }}</p>
+          </div>
+
+          <div class="app-table-wrap" *ngIf="previousComplaints.length > 0">
+            <table class="app-data-table source-table">
+              <thead>
+                <tr>
+                  <th>{{ 'COMPLAINT.COL_DATE' | translate }}</th>
+                  <th>{{ 'COMPLAINT.COL_TITLE' | translate }}</th>
+                  <th>{{ 'COMPLAINT.COL_TYPE' | translate }}</th>
+                  <th>{{ 'COMPLAINT.COL_STATUS' | translate }}</th>
+                  <th>{{ 'COMPLAINT.COL_RATING' | translate }}</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let c of previousComplaints" (click)="openDetail(c)" class="clickable-row">
+                  <td class="date-cell">{{ c.createdAt | date:'dd/MM/yyyy' }}</td>
+                  <td class="title-cell">
+                    <span class="req-title">{{ c.title }}</span>
+                    <span class="date-sub" *ngIf="c.resolvedAt">
+                      {{ i18n.currentLang === 'ar' ? 'أُغلق' : 'Closed' }}: {{ c.resolvedAt | date:'dd/MM/yyyy' }}
+                    </span>
+                  </td>
+                  <td><span class="type-chip">{{ typeLabel(c.complaintType) }}</span></td>
+                  <td>
+                    <span class="status-badge" [attr.data-status]="c.status">{{ statusLabel(c.status) }}</span>
+                  </td>
+                  <td>
+                    <span class="rating-cell" *ngIf="c.rating">
+                      {{ ratingEmoji(c.rating?.rating) }} {{ ratingLabel(c.rating?.rating) }}
+                    </span>
+                    <button mat-stroked-button class="rate-btn" *ngIf="canRate(c)"
+                      (click)="openRating(c); $event.stopPropagation()">
+                      {{ 'COMPLAINT.RATE_NOW' | translate }}
+                    </button>
+                  </td>
+                  <td>
+                    <span class="material-icons table-arrow">
+                      {{ i18n.currentLang === 'ar' ? 'arrow_back' : 'arrow_forward' }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </mat-tab>
+
+    </mat-tab-group>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!--  DETAIL PANEL OVERLAY                                     -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="panel-backdrop" [class.open]="selected || detailLoading" (click)="closePanel()"></div>
+<aside class="detail-panel" [class.open]="selected || detailLoading">
+
+  <div class="loading-center panel-loading" *ngIf="detailLoading">
+    <mat-spinner diameter="36"></mat-spinner>
+  </div>
+
+  <ng-container *ngIf="selected && !detailLoading">
+    <div class="panel-header">
+      <div class="panel-title-group">
+        <span class="status-badge" [attr.data-status]="selected.status">{{ statusLabel(selected.status) }}</span>
+        <h3 class="panel-title">{{ selected.title }}</h3>
+        <div class="panel-meta">
+          <span class="type-chip">{{ typeLabel(selected.complaintType) }}</span>
+          <span class="meta-date">{{ selected.createdAt | date:'dd/MM/yyyy' }}</span>
+        </div>
+      </div>
+      <button class="panel-close-btn" mat-icon-button (click)="closePanel()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="panel-body">
+
+      <!-- Maintenance request linked badge -->
+      <div class="panel-section maintenance-link-banner" *ngIf="selected.maintenanceRequestId">
+        <span class="material-icons maintenance-link-icon">build</span>
+        <span>{{ 'COMPLAINT.MAINTENANCE_LINKED' | translate }}</span>
+        <span class="maintenance-req-id">#{{ selected.maintenanceRequestId }}</span>
+      </div>
+
+      <!-- Description -->
+      <div class="panel-section">
+        <div class="section-mini-label">{{ 'COMPLAINT.DESCRIPTION_LABEL' | translate }}</div>
+        <p class="complaint-desc">{{ selected.description }}</p>
+      </div>
+
+      <!-- Attachments -->
+      <div class="panel-section" *ngIf="selected.attachments?.length">
+        <div class="section-mini-label">{{ 'COMPLAINT.ATTACHMENTS_LABEL' | translate }}</div>
+        <div class="attachment-grid">
+          <a *ngFor="let a of selected.attachments"
+             [href]="a.fileUrl" target="_blank"
+             class="attachment-item"
+             [title]="a.fileName || a.fileUrl">
+            <span class="material-icons attach-icon">{{ a.fileType === 'IMAGE' ? 'image' : 'description' }}</span>
+            <span class="attach-name">{{ a.fileName || ('COMPLAINT.ATTACHMENT' | translate) }}</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Rating (if exists) -->
+      <div class="panel-section rating-banner" *ngIf="selected.rating">
+        <div class="section-mini-label">{{ 'COMPLAINT.COL_RATING' | translate }}</div>
+        <div class="rating-display">
+          <span class="rating-emoji">{{ ratingEmoji(selected.rating?.rating) }}</span>
+          <span class="rating-label">{{ ratingLabel(selected.rating?.rating) }}</span>
+        </div>
+      </div>
+
+      <!-- Replies thread -->
+      <div class="panel-section" *ngIf="selected.replies?.length">
+        <div class="section-mini-label">{{ 'COMPLAINT.REPLIES_LABEL' | translate }}</div>
+        <div class="reply-thread">
+          <div class="reply-item" *ngFor="let r of selected.replies">
+            <div class="reply-avatar">
+              {{ r.senderRole === 'OWNER' ? '👤' : '🛡️' }}
+            </div>
+            <div class="reply-content">
+              <div class="reply-sender">
+                {{ r.senderName }}
+                <span class="reply-role-chip">{{ r.senderRole }}</span>
+              </div>
+              <div class="reply-message">{{ r.message }}</div>
+              <div class="reply-date">{{ r.createdAt | date:'dd/MM/yyyy HH:mm' }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="no-replies" *ngIf="!selected.replies?.length">
+        <span class="material-icons">chat_bubble_outline</span>
+        <span>{{ 'COMPLAINT.NO_REPLIES' | translate }}</span>
+      </div>
+    </div>
+
+    <!-- Panel actions -->
+    <div class="panel-footer">
+      <button mat-stroked-button class="close-complaint-btn"
+        *ngIf="canClose(selected)" [disabled]="closing"
+        (click)="closeComplaint()">
+        <mat-spinner diameter="16" *ngIf="closing"></mat-spinner>
+        <mat-icon *ngIf="!closing">check_circle_outline</mat-icon>
+        {{ 'COMPLAINT.CLOSE_COMPLAINT' | translate }}
+      </button>
+
+      <button mat-flat-button class="rate-btn-primary"
+        *ngIf="canRate(selected)" (click)="openRating(selected)">
+        <mat-icon>star</mat-icon>
+        {{ 'COMPLAINT.RATE_COMPLAINT' | translate }}
+      </button>
+    </div>
+  </ng-container>
+</aside>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!--  NEW COMPLAINT DIALOG                                     -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="modal-backdrop" [class.open]="showNewDialog" (click)="showNewDialog = false"></div>
+<div class="modal-box" [class.open]="showNewDialog">
+  <div class="modal-header">
+    <span class="material-icons modal-icon">report_problem</span>
+    <h3>{{ 'COMPLAINT.SUBMIT_TITLE' | translate }}</h3>
+    <button mat-icon-button class="modal-close" (click)="showNewDialog = false">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <form #newForm="ngForm" (ngSubmit)="submitNew(newForm)" novalidate class="modal-form">
+
+    <!-- Unit selector -->
+    <div class="form-row" *ngIf="!unitsLoading && activeUnits.length > 1">
+      <label class="field-shell">
+        <span>{{ 'COMPLAINT.UNIT_LABEL' | translate }}</span>
+        <select class="form-select" name="unitSelect"
+          (change)="onUnitSelect($event)">
+          <option value="">{{ 'COMPLAINT.SELECT_UNIT' | translate }}</option>
+          <option *ngFor="let u of activeUnits" [value]="u.unitId">{{ unitLabel(u) }}</option>
+        </select>
+      </label>
+    </div>
+
+    <!-- Single unit display (read-only) -->
+    <div class="unit-badge" *ngIf="!unitsLoading && activeUnits.length === 1 && selectedUnit">
+      <span class="material-icons unit-badge-icon">apartment</span>
+      <span>{{ unitLabel(selectedUnit) }}</span>
+    </div>
+
+    <div class="form-row">
+      <label class="field-shell">
+        <span>{{ 'COMPLAINT.SUBJECT_LABEL' | translate }} <b class="req-star">*</b></span>
+        <input class="form-input" name="subject" [(ngModel)]="newModel.subject"
+          required maxlength="200" [placeholder]="'COMPLAINT.SUBJECT_PLACEHOLDER' | translate">
+        <div class="field-error" *ngIf="newForm.submitted && newForm.controls['subject']?.invalid">
+          {{ 'COMMON.REQUIRED' | translate }}
+        </div>
+      </label>
+    </div>
+
+    <div class="form-row">
+      <label class="field-shell">
+        <span>{{ 'COMPLAINT.CATEGORY_LABEL' | translate }}</span>
+        <select class="form-select" name="category" [(ngModel)]="newModel.category">
+          <option value="">-</option>
+          <option value="MAINTENANCE">{{ 'COMPLAINT.CAT_MAINTENANCE' | translate }}</option>
+          <option value="NOISE">{{ 'COMPLAINT.CAT_NOISE' | translate }}</option>
+          <option value="CLEANLINESS">{{ 'COMPLAINT.CAT_CLEANLINESS' | translate }}</option>
+          <option value="BILLING">{{ 'COMPLAINT.CAT_BILLING' | translate }}</option>
+          <option value="MANAGEMENT">{{ 'COMPLAINT.CAT_MANAGEMENT' | translate }}</option>
+          <option value="OTHER">{{ 'COMPLAINT.CAT_OTHER' | translate }}</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="form-row">
+      <label class="field-shell">
+        <span>{{ 'COMPLAINT.DESCRIPTION_LABEL' | translate }} <b class="req-star">*</b></span>
+        <textarea class="form-textarea" name="description" [(ngModel)]="newModel.description"
+          required minlength="10" maxlength="2000" rows="5"
+          [placeholder]="'COMPLAINT.DESCRIPTION_PLACEHOLDER' | translate"></textarea>
+        <div class="field-error" *ngIf="newForm.submitted && newForm.controls['description']?.invalid">
+          {{ 'COMMON.REQUIRED' | translate }}
+        </div>
+      </label>
+    </div>
+
+    <!-- File attachments -->
+    <div class="form-row">
+      <div class="field-shell">
+        <span>{{ 'COMPLAINT.ATTACHMENTS_LABEL' | translate }}</span>
+        <div class="upload-zone">
+          <label class="upload-btn" [class.disabled]="newAttachments.length >= MAX_FILES || uploadingFiles">
+            <mat-icon>attach_file</mat-icon>
+            <span *ngIf="!uploadingFiles">{{ 'COMPLAINT.ADD_ATTACHMENT' | translate }}</span>
+            <mat-spinner *ngIf="uploadingFiles" diameter="16"></mat-spinner>
+            <input type="file" multiple accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+              (change)="onFilePick($event)"
+              [disabled]="newAttachments.length >= MAX_FILES || uploadingFiles"
+              style="display:none">
+          </label>
+          <span class="upload-hint">{{ newAttachments.length }}/{{ MAX_FILES }}</span>
+        </div>
+
+        <div class="attachments-list" *ngIf="newAttachments.length">
+          <div class="attach-chip" *ngFor="let a of newAttachments; let i = index">
+            <span class="material-icons attach-chip-icon">{{ fileIcon(a) }}</span>
+            <span class="attach-chip-name">{{ a.fileName || 'file' }}</span>
+            <button type="button" class="attach-remove" (click)="removeAttachment(i)">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button mat-stroked-button type="button" (click)="showNewDialog = false" [disabled]="submitting">
+        {{ 'ACTIONS.CANCEL' | translate }}
+      </button>
+      <button mat-flat-button type="submit" [disabled]="submitting || uploadingFiles">
+        <mat-spinner *ngIf="submitting" diameter="16"></mat-spinner>
+        <mat-icon *ngIf="!submitting">send</mat-icon>
+        {{ 'COMPLAINT.SUBMIT_BTN' | translate }}
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!--  RATING DIALOG                                            -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="modal-backdrop" [class.open]="showRatingDialog" (click)="skipRating()"></div>
+<div class="modal-box rating-modal" [class.open]="showRatingDialog">
+  <div class="modal-header">
+    <span class="material-icons modal-icon">star</span>
+    <h3>{{ 'COMPLAINT.RATE_COMPLAINT' | translate }}</h3>
+    <button mat-icon-button class="modal-close" (click)="skipRating()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <p class="rating-prompt">{{ 'COMPLAINT.RATING_PROMPT' | translate }}</p>
+
+  <div class="rating-options">
+    <button
+      *ngFor="let r of RATINGS"
+      class="rating-option"
+      [class.selected]="selectedRating === r.value"
+      (click)="selectedRating = r.value"
+      type="button">
+      <span class="rating-emoji-big">{{ r.emoji }}</span>
+      <span class="rating-opt-label">{{ i18n.currentLang === 'ar' ? r.labelAr : r.labelEn }}</span>
+    </button>
+  </div>
+
+  <div class="modal-actions">
+    <button mat-stroked-button type="button" (click)="skipRating()">
+      {{ 'ACTIONS.SKIP' | translate }}
+    </button>
+    <button mat-flat-button [disabled]="!selectedRating || ratingSending" (click)="submitRating()">
+      <mat-spinner *ngIf="ratingSending" diameter="16"></mat-spinner>
+      <mat-icon *ngIf="!ratingSending">send</mat-icon>
+      {{ 'COMPLAINT.SUBMIT_RATING' | translate }}
+    </button>
+  </div>
+</div>

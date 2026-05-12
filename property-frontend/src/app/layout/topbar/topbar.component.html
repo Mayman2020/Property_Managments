@@ -1,4 +1,4 @@
-<header class="topbar">
+﻿<header class="topbar">
   <div class="topbar-start">
     <button class="tb-action-btn topbar-toggle" (click)="sidebarToggle.emit()" [matTooltip]="'TOPBAR.TOGGLE_MENU' | translate">
       <span class="material-icons">{{ sidebarCollapsed ? 'menu_open' : 'menu' }}</span>
@@ -71,14 +71,21 @@
     <button class="tb-user-btn" [matMenuTriggerFor]="userMenu">
       <div class="tb-avatar" *ngIf="!currentUser?.profileImageUrl">{{ currentUser?.initials || 'U' }}</div>
       <img class="tb-avatar tb-avatar-img" *ngIf="currentUser?.profileImageUrl" [src]="currentUser?.profileImageUrl" [attr.alt]="'PROFILE.AVATAR_ALT' | translate">
-      <span class="tb-user-name" *ngIf="roleKey">{{ roleKey | translate }}</span>
-      <span class="tb-user-name" *ngIf="!roleKey">{{ currentUserDisplayName || '—' }}</span>
+      <span class="tb-user-copy">
+        <span class="tb-user-name">{{ currentUserDisplayName || '-' }}</span>
+        <span class="tb-user-role" *ngIf="roleKey">{{ roleKey | translate }}</span>
+      </span>
     </button>
 
-    <mat-menu #userMenu="matMenu">
+    <mat-menu #userMenu="matMenu" class="tb-user-menu">
       <div class="user-menu-header">
-        <strong>{{ currentUserDisplayName }}</strong>
-        <span style="font-size: 0.75rem; color: var(--text-muted)">{{ currentUser?.email }}</span>
+        <div class="user-menu-avatar" *ngIf="!currentUser?.profileImageUrl">{{ currentUser?.initials || 'U' }}</div>
+        <img class="user-menu-avatar user-menu-avatar-img" *ngIf="currentUser?.profileImageUrl" [src]="currentUser?.profileImageUrl" [attr.alt]="'PROFILE.AVATAR_ALT' | translate">
+        <div class="user-menu-copy">
+          <strong>{{ currentUserDisplayName || '-' }}</strong>
+          <span class="user-menu-role" *ngIf="roleKey">{{ roleKey | translate }}</span>
+          <span class="user-menu-email">{{ currentUser?.email }}</span>
+        </div>
       </div>
       <mat-divider></mat-divider>
       <button mat-menu-item [routerLink]="profileRoute()">

@@ -1,11 +1,16 @@
 package com.propertymanagement.modules.inventory;
 
-import com.propertymanagement.modules.inventory.dto.InventoryItemRequest;
-import com.propertymanagement.modules.inventory.dto.InventoryItemResponse;
-import com.propertymanagement.modules.inventory.dto.StockTransactionRequest;
-import com.propertymanagement.modules.owner.OwnerPropertyAccessService;
-import com.propertymanagement.modules.user.User;
-import com.propertymanagement.modules.user.UserRole;
+import com.propertymanagement.modules.inventory.entity.InventoryItemEntity;
+import com.propertymanagement.modules.inventory.entity.InventoryTransactionEntity;
+import com.propertymanagement.modules.inventory.dto.InventoryItemRequestDTO;
+import com.propertymanagement.modules.inventory.dto.InventoryItemResponseDTO;
+import com.propertymanagement.modules.inventory.dto.StockTransactionRequestDTO;
+import com.propertymanagement.modules.inventory.repository.InventoryRepository;
+import com.propertymanagement.modules.inventory.repository.InventoryTransactionRepository;
+import com.propertymanagement.modules.inventory.service.InventoryService;
+import com.propertymanagement.modules.owner.service.OwnerPropertyAccessService;
+import com.propertymanagement.modules.user.entity.User;
+import com.propertymanagement.modules.user.entity.UserRole;
 import com.propertymanagement.shared.exception.AppException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,14 +50,14 @@ class InventoryServiceTest {
 
     @Test
     void create_savesItemWithDefaults() {
-        InventoryItem saved = buildItem(1L, BigDecimal.valueOf(10), BigDecimal.valueOf(2));
+        InventoryItemEntity saved = buildItem(1L, BigDecimal.valueOf(10), BigDecimal.valueOf(2));
         when(inventoryRepository.save(any())).thenReturn(saved);
 
-        InventoryItemRequest req = buildItemRequest("Paint", 10L);
-        InventoryItemResponse result = service.create(req);
+        InventoryItemRequestDTO req = buildItemRequest("Paint", 10L);
+        InventoryItemResponseDTO result = service.create(req);
 
         assertThat(result.getId()).isEqualTo(1L);
-        verify(inventoryRepository).save(any(InventoryItem.class));
+        verify(inventoryRepository).save(any(InventoryItemEntity.class));
     }
 
     @Test
@@ -69,10 +74,10 @@ class InventoryServiceTest {
 
     @Test
     void adjustStock_throwsBadRequest_whenQuantityIsZero() {
-        InventoryItem item = buildItem(1L, BigDecimal.valueOf(10), BigDecimal.valueOf(2));
+        InventoryItemEntity item = buildItem(1L, BigDecimal.valueOf(10), BigDecimal.valueOf(2));
         when(inventoryRepository.findById(1L)).thenReturn(Optional.of(item));
 
-        StockTransactionRequest req = new StockTransactionRequest();
+        StockTransactionRequestDTO req = new StockTransactionRequestDTO();
         req.setType("IN");
         req.setQuantity(BigDecimal.ZERO);
 
@@ -83,10 +88,10 @@ class InventoryServiceTest {
 
     @Test
     void adjustStock_throwsBadRequest_whenQuantityIsNegative() {
-        InventoryItem item = buildItem(1L, BigDecimal.valueOf(10), BigDecimal.valueOf(2));
+        InventoryItemEntity item = buildItem(1L, BigDecimal.valueOf(10), BigDecimal.valueOf(2));
         when(inventoryRepository.findById(1L)).thenReturn(Optional.of(item));
 
-        StockTransactionRequest req = new StockTransactionRequest();
+        StockTransactionRequestDTO req = new StockTransactionRequestDTO();
         req.setType("OUT");
         req.setQuantity(BigDecimal.valueOf(-5));
 
@@ -99,16 +104,16 @@ class InventoryServiceTest {
 
     @Test
     void adjustStock_in_increasesQuantity() {
-        InventoryItem item = buildItem(1L, BigDecimal.valueOf(10), BigDecimal.valueOf(2));
+        InventoryItemEntity item = buildItem(1L, BigDecimal.valueOf(10), BigDecimal.valueOf(2));
         when(inventoryRepository.findById(1L)).thenReturn(Optional.of(item));
         when(inventoryRepository.save(any())).thenReturn(item);
-        when(transactionRepository.save(any())).thenReturn(mock(InventoryTransaction.class));
+        when(transactionRepository.save(any())).thenReturn(mock(InventoryTransactionEntity.class));
 
-        StockTransactionRequest req = new StockTransactionRequest();
+        StockTransactionRequestDTO req = new StockTransactionRequestDTO();
         req.setType("IN");
         req.setQuantity(BigDecimal.valueOf(5));
 
-        InventoryItemResponse result = service.adjustStock(1L, req);
+        InventoryItemResponseDTO result = service.adjustStock(1L, req);
 
         verify(inventoryRepository).save(argThat(i -> i.getQuantity().compareTo(BigDecimal.valueOf(15)) == 0));
     }
@@ -117,12 +122,12 @@ class InventoryServiceTest {
 
     @Test
     void adjustStock_out_decreasesQuantity() {
-        InventoryItem item = buildItem(1L, BigDecimal.valueOf(10), BigDecimal.valueOf(2));
+        InventoryItemEntity item = buildItem(1L, BigDecimal.valueOf(10), BigDecimal.valueOf(2));
         when(inventoryRepository.findById(1L)).thenReturn(Optional.of(item));
         when(inventoryRepository.save(any())).thenReturn(item);
-        when(transactionRepository.save(any())).thenReturn(mock(InventoryTransaction.class));
+        when(transactionRepository.save(any())).thenReturn(mock(InventoryTransactionEntity.class));
 
-        StockTransactionRequest req = new StockTransactionRequest();
+        StockTransactionRequestDTO req = new StockTransactionRequestDTO();
         req.setType("OUT");
         req.setQuantity(BigDecimal.valueOf(3));
 
@@ -133,10 +138,10 @@ class InventoryServiceTest {
 
     @Test
     void adjustStock_out_throwsBadRequest_whenInsufficientStock() {
-        InventoryItem item = buildItem(1L, BigDecimal.valueOf(2), BigDecimal.valueOf(1));
+        InventoryItemEntity item = buildItem(1L, BigDecimal.valueOf(2), BigDecimal.valueOf(1));
         when(inventoryRepository.findById(1L)).thenReturn(Optional.of(item));
 
-        StockTransactionRequest req = new StockTransactionRequest();
+        StockTransactionRequestDTO req = new StockTransactionRequestDTO();
         req.setType("OUT");
         req.setQuantity(BigDecimal.valueOf(5)); // More than available
 
@@ -147,10 +152,10 @@ class InventoryServiceTest {
 
     @Test
     void adjustStock_out_throwsBadRequest_whenExactlyZeroStock() {
-        InventoryItem item = buildItem(1L, BigDecimal.ZERO, BigDecimal.valueOf(1));
+        InventoryItemEntity item = buildItem(1L, BigDecimal.ZERO, BigDecimal.valueOf(1));
         when(inventoryRepository.findById(1L)).thenReturn(Optional.of(item));
 
-        StockTransactionRequest req = new StockTransactionRequest();
+        StockTransactionRequestDTO req = new StockTransactionRequestDTO();
         req.setType("OUT");
         req.setQuantity(BigDecimal.valueOf(1));
 
@@ -161,12 +166,12 @@ class InventoryServiceTest {
 
     @Test
     void adjustStock_createsTransactionRecord() {
-        InventoryItem item = buildItem(1L, BigDecimal.valueOf(10), BigDecimal.valueOf(2));
+        InventoryItemEntity item = buildItem(1L, BigDecimal.valueOf(10), BigDecimal.valueOf(2));
         when(inventoryRepository.findById(1L)).thenReturn(Optional.of(item));
         when(inventoryRepository.save(any())).thenReturn(item);
-        when(transactionRepository.save(any())).thenReturn(mock(InventoryTransaction.class));
+        when(transactionRepository.save(any())).thenReturn(mock(InventoryTransactionEntity.class));
 
-        StockTransactionRequest req = new StockTransactionRequest();
+        StockTransactionRequestDTO req = new StockTransactionRequestDTO();
         req.setType("IN");
         req.setQuantity(BigDecimal.valueOf(3));
         req.setNotes("restocking");
@@ -183,11 +188,11 @@ class InventoryServiceTest {
 
     @Test
     void getLowStock_returnsItemsBelowMinQuantity() {
-        InventoryItem lowItem = buildItem(1L, BigDecimal.valueOf(1), BigDecimal.valueOf(5));
+        InventoryItemEntity lowItem = buildItem(1L, BigDecimal.valueOf(1), BigDecimal.valueOf(5));
         when(ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner()).thenReturn(null);
         when(inventoryRepository.findLowStock()).thenReturn(List.of(lowItem));
 
-        List<InventoryItemResponse> result = service.getLowStock();
+        List<InventoryItemResponseDTO> result = service.getLowStock();
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).isLowStock()).isTrue();
@@ -198,7 +203,7 @@ class InventoryServiceTest {
         when(ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner())
                 .thenReturn(java.util.Collections.emptySet());
 
-        List<InventoryItemResponse> result = service.getLowStock();
+        List<InventoryItemResponseDTO> result = service.getLowStock();
 
         assertThat(result).isEmpty();
         verifyNoInteractions(inventoryRepository);
@@ -208,7 +213,7 @@ class InventoryServiceTest {
 
     @Test
     void delete_softDeletesItem() {
-        InventoryItem item = buildItem(1L, BigDecimal.valueOf(5), BigDecimal.valueOf(2));
+        InventoryItemEntity item = buildItem(1L, BigDecimal.valueOf(5), BigDecimal.valueOf(2));
         when(inventoryRepository.findById(1L)).thenReturn(Optional.of(item));
         when(inventoryRepository.save(any())).thenReturn(item);
 
@@ -227,8 +232,8 @@ class InventoryServiceTest {
 
     // ── HELPERS ──────────────────────────────────────────────────────────
 
-    private InventoryItem buildItem(Long id, BigDecimal quantity, BigDecimal minQty) {
-        return InventoryItem.builder()
+    private InventoryItemEntity buildItem(Long id, BigDecimal quantity, BigDecimal minQty) {
+        return InventoryItemEntity.builder()
                 .id(id)
                 .propertyId(10L)
                 .itemCode("ITEM-" + id)
@@ -241,8 +246,8 @@ class InventoryServiceTest {
                 .build();
     }
 
-    private InventoryItemRequest buildItemRequest(String name, Long propertyId) {
-        InventoryItemRequest req = new InventoryItemRequest();
+    private InventoryItemRequestDTO buildItemRequest(String name, Long propertyId) {
+        InventoryItemRequestDTO req = new InventoryItemRequestDTO();
         req.setPropertyId(propertyId);
         req.setItemCode("CODE-001");
         req.setItemNameAr("صنف");

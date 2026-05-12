@@ -1,7 +1,7 @@
 package com.propertymanagement.modules.hr.employee.dto;
 
-import com.propertymanagement.modules.user.UserRole;
-import com.propertymanagement.modules.user.MaintenanceOfficerType;
+import com.propertymanagement.modules.user.entity.UserRole;
+import com.propertymanagement.modules.user.entity.MaintenanceOfficerType;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -10,6 +10,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import com.propertymanagement.modules.hr.employee.entity.Employee;
 
 @Getter
 @Setter

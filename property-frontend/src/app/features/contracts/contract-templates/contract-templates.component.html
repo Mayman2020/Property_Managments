@@ -24,11 +24,19 @@
     <form [formGroup]="form" class="template-form">
       <div class="two-col">
         <mat-form-field appearance="outline">
-          <mat-label>{{ 'CONTRACTS.TEMPLATE_NAME' | translate }}</mat-label>
-          <input matInput formControlName="templateName" required>
+          <mat-label>{{ 'LOOKUPS.NAME_AR' | translate }}</mat-label>
+          <input matInput formControlName="templateNameAr" required>
           <mat-error>{{ 'COMMON.REQUIRED' | translate }}</mat-error>
         </mat-form-field>
 
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'LOOKUPS.NAME_EN' | translate }}</mat-label>
+          <input matInput formControlName="templateNameEn" required>
+          <mat-error>{{ 'COMMON.REQUIRED' | translate }}</mat-error>
+        </mat-form-field>
+      </div>
+
+      <div class="two-col">
         <mat-form-field appearance="outline">
           <mat-label>{{ 'CONTRACTS.TEMPLATE_TYPE' | translate }}</mat-label>
           <mat-select formControlName="templateType">
@@ -75,6 +83,8 @@
         <thead>
           <tr>
             <th>{{ 'CONTRACTS.TEMPLATE_NAME' | translate }}</th>
+            <th>{{ 'LOOKUPS.NAME_AR' | translate }}</th>
+            <th>{{ 'LOOKUPS.NAME_EN' | translate }}</th>
             <th>{{ 'CONTRACTS.TEMPLATE_TYPE' | translate }}</th>
             <th>{{ 'CONTRACTS.ACTIVE' | translate }}</th>
             <th></th>
@@ -82,7 +92,9 @@
         </thead>
         <tbody>
           <tr *ngFor="let t of pagedTemplates">
-            <td class="name-col">{{ t.templateName }}</td>
+            <td class="name-col">{{ templateDisplayName(t) }}</td>
+            <td>{{ t.templateNameAr || t.templateName }}</td>
+            <td>{{ t.templateNameEn || t.templateName }}</td>
             <td>
               <span class="type-chip">{{ 'CONTRACTS.TMPL_TYPE_' + t.templateType | translate }}</span>
             </td>
@@ -101,7 +113,7 @@
             </td>
           </tr>
           <tr *ngIf="templates.length === 0">
-            <td colspan="4" class="empty-row">{{ 'COMMON.NO_DATA' | translate }}</td>
+            <td colspan="6" class="empty-row">{{ 'COMMON.NO_DATA' | translate }}</td>
           </tr>
         </tbody>
       </table>

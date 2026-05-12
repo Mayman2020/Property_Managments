@@ -39,10 +39,12 @@ export class ComplaintsListComponent implements OnInit {
   loading = true;
   complaints: TenantComplaint[] = [];
   totalElements = 0;
+  creatingRequestId: number | null = null;
   pageSize = 10;
   pageIndex = 0;
   filterStatus = '';
   filterPropertyId: number | null = null;
+  searchTerm = '';
 
   properties: Property[] = [];
   loadingProperties = false;
@@ -140,6 +142,19 @@ export class ComplaintsListComponent implements OnInit {
     this.load();
   }
 
+  onSearch(value: string): void {
+    this.searchTerm = value;
+  }
+
+  get filteredComplaints(): TenantComplaint[] {
+    const q = this.searchTerm.trim().toLowerCase();
+    if (!q) return this.complaints;
+    return this.complaints.filter(c =>
+      [c.title, c.tenantName, c.propertyName, c.complaintType, c.status, c.priority]
+        .join(' ').toLowerCase().includes(q)
+    );
+  }
+
   hasFiltersBar(): boolean {
     return !!(this.filterPropertyId || this.filterStatus);
   }
@@ -158,6 +173,18 @@ export class ComplaintsListComponent implements OnInit {
 
   resolve(id: number): void {
     this.complaintSvc.resolve(id).subscribe(() => this.load());
+  }
+
+  createMaintenanceRequest(complaint: TenantComplaint): void {
+    if (this.creatingRequestId) return;
+    this.creatingRequestId = complaint.id;
+    this.complaintSvc.createMaintenanceRequest(complaint.id).subscribe({
+      next: () => {
+        this.creatingRequestId = null;
+        this.load();
+      },
+      error: () => { this.creatingRequestId = null; },
+    });
   }
 
   goToPage(pageIndex: number): void {

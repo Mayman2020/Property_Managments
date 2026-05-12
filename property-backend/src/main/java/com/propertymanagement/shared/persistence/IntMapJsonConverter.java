@@ -8,6 +8,7 @@ import jakarta.persistence.Converter;
 
 import java.util.HashMap;
 import java.util.Map;
+import com.propertymanagement.modules.property.entity.Floor;
 
 @Converter
 public class IntMapJsonConverter implements AttributeConverter<Map<Integer, Integer>, String> {

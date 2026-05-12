@@ -4,6 +4,9 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import com.propertymanagement.modules.owner.entity.Owner;
+import com.propertymanagement.modules.property.entity.Property;
+import com.propertymanagement.modules.unit.entity.Unit;
 
 @Data
 public class OwnerAmendDraftRequest {

@@ -1,223 +1,278 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { DatePipe, DecimalPipe, NgClass, NgFor, NgIf } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
-import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
-import { firstValueFrom } from 'rxjs';
+import { Subscription } from 'rxjs';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
-import { UploadZoneComponent, UploadedFile } from '../../../shared/components/upload-zone/upload-zone.component';
-import { TenantPortalService, RentReceipt } from '../../../core/services/tenant-portal.service';
-import { ApiService } from '../../../core/services/api.service';
-import { LookupCacheService } from '../../../core/services/lookup-cache.service';
-import { LookupItem } from '../../../core/services/lookup.service';
+import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
+import { SearchDropdownComponent, SearchDropdownItem } from '../../../shared/components/search-dropdown/search-dropdown.component';
+import { TenantPortalService } from '../../../core/services/tenant-portal.service';
 import { SnackService } from '../../../core/services/snack.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
-import { Subscription } from 'rxjs';
+import { LeaseContract, RentPaymentSchedule } from '../../../core/models/contract.model';
+import { PaymentProofDialogComponent } from '../payment-proof-dialog/payment-proof-dialog.component';
 
 @Component({
   selector: 'app-rent-receipts',
   standalone: true,
   imports: [
-    NgFor, NgIf, NgClass, DatePipe, DecimalPipe, ReactiveFormsModule, RouterLink,
-    TranslateModule, MatButtonModule, MatFormFieldModule, MatInputModule,
-    MatSelectModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule,
-    PageHeaderComponent, UploadZoneComponent
+    NgFor, NgIf, NgClass, DatePipe, DecimalPipe, RouterLink,
+    TranslateModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule,
+    MatTooltipModule, MatDialogModule, PageHeaderComponent, TablePagerComponent,
+    SearchDropdownComponent
   ],
   templateUrl: './rent-receipts.component.html',
   styleUrl: './rent-receipts.component.scss'
 })
 export class RentReceiptsComponent implements OnInit, OnDestroy {
-  receipts: RentReceipt[] = [];
-  /** When set via ?contractId=, list only receipts linked to that contract. */
-  filterContractId: number | null = null;
-  private qpSub?: Subscription;
+  contracts: LeaseContract[] = [];
+  selectedContractId: number | null = null;
+  selectedUnitFilterId: number | null = null;
+  schedule: RentPaymentSchedule[] = [];
+  totalSchedule = 0;
+  pageIndex = 0;
+  readonly pageSize = 5;
   loading = true;
-  submitting = false;
-  showForm = false;
+  loadingSchedule = false;
+  submittingScheduleId: number | null = null;
+  contractSearchTerm = '';
 
-  form: FormGroup;
-  uploadedFile: UploadedFile | null = null;
-  uploadedUrl: string | null = null;
-
-  monthOptions: LookupItem[] = [];
-  yearOptions: LookupItem[] = [];
-  readonly currentYear = new Date().getFullYear();
+  private qpSub?: Subscription;
 
   constructor(
-    private readonly fb: FormBuilder,
     private readonly portalSvc: TenantPortalService,
-    private readonly apiSvc: ApiService,
-    private readonly lookupCache: LookupCacheService,
     private readonly snack: SnackService,
     private readonly route: ActivatedRoute,
+    private readonly dialog: MatDialog,
     readonly i18n: I18nService
-  ) {
-    this.form = this.fb.group({
-      periodMonth: [String(new Date().getMonth() + 1), Validators.required],
-      periodYear: [String(this.currentYear), Validators.required],
-      amount: [null],
-      notes: ['']
-    });
-  }
+  ) {}
 
   ngOnInit(): void {
     this.qpSub = this.route.queryParamMap.subscribe((pm) => {
       const raw = pm.get('contractId');
-      if (raw == null || raw === '') {
-        this.filterContractId = null;
-        return;
-      }
-      const n = Number(raw);
-      this.filterContractId = Number.isFinite(n) ? n : null;
+      const n = raw != null && raw !== '' ? Number(raw) : null;
+      this.selectedContractId = n != null && Number.isFinite(n) ? n : this.selectedContractId;
     });
-    this.loadPeriodLookups();
-    this.loadReceipts();
+    this.loadContracts();
   }
 
   ngOnDestroy(): void {
     this.qpSub?.unsubscribe();
   }
 
-  get filteredReceipts(): RentReceipt[] {
-    if (this.filterContractId == null) {
-      return this.receipts;
-    }
-    return this.receipts.filter((r) => r.contractId === this.filterContractId);
-  }
-
-  loadReceipts(): void {
+  loadContracts(): void {
     this.loading = true;
-    this.portalSvc.getMyReceipts().subscribe({
-      next: res => { this.receipts = res.data ?? []; this.loading = false; },
-      error: () => { this.loading = false; }
-    });
-  }
-
-  private loadPeriodLookups(): void {
-    this.lookupCache.preload('MONTH', 'YEAR').subscribe({
-      next: () => {
-        const monthItems = this.lookupCache.items('MONTH');
-        const yearItems = this.lookupCache.items('YEAR');
-        this.monthOptions = monthItems.length ? monthItems : this.fallbackMonthOptions();
-        this.yearOptions = yearItems.length ? yearItems : this.fallbackYearOptions();
+    this.portalSvc.getMyContracts().subscribe({
+      next: (res) => {
+        this.contracts = res.data ?? [];
+        const selectedExists = this.selectableContracts.some((c) => c.id === this.selectedContractId);
+        if (this.selectedContractId != null && !selectedExists) {
+          this.selectedContractId = null;
+        }
+        this.loading = false;
+        this.loadSchedule();
       },
       error: () => {
-        this.monthOptions = this.fallbackMonthOptions();
-        this.yearOptions = this.fallbackYearOptions();
+        this.loading = false;
+        this.snack.error(this.i18n.instant('COMMON.ERROR'));
       }
     });
   }
 
-  private fallbackMonthOptions(): LookupItem[] {
-    const namesAr = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-    const namesEn = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-    return namesEn.map((nameEn, index) => ({
-      id: index + 1,
-      type: 'MONTH',
-      code: String(index + 1),
-      nameAr: namesAr[index],
-      nameEn,
-      sortOrder: index,
-      active: true,
-      locked: false
+  loadSchedule(): void {
+    if (!this.selectedContractId) {
+      this.schedule = [];
+      this.totalSchedule = 0;
+      return;
+    }
+    this.loadingSchedule = true;
+    this.portalSvc.getTenantContractSchedule(this.selectedContractId, { page: this.pageIndex, size: this.pageSize }).subscribe({
+      next: (res) => {
+        const page = res.data;
+        this.schedule = page?.content ?? [];
+        this.totalSchedule = page?.totalElements ?? 0;
+        this.loadingSchedule = false;
+      },
+      error: () => {
+        this.loadingSchedule = false;
+        this.snack.error(this.i18n.instant('COMMON.ERROR'));
+      }
+    });
+  }
+
+  selectContract(contract: LeaseContract): void {
+    if (this.selectedContractId === contract.id) return;
+    this.selectedContractId = contract.id;
+    this.pageIndex = 0;
+    this.loadSchedule();
+  }
+
+  selectUnitFilter(unitId: number | null): void {
+    this.selectedUnitFilterId = unitId;
+    const candidates = this.filteredContracts;
+    if (unitId && !candidates.some((c) => c.id === this.selectedContractId)) {
+      this.selectedContractId = candidates[0]?.id ?? null;
+      this.pageIndex = 0;
+      this.loadSchedule();
+    }
+  }
+
+  onPageChange(index: number): void {
+    this.pageIndex = index;
+    this.loadSchedule();
+  }
+
+  get selectedContract(): LeaseContract | null {
+    return this.selectableContracts.find((c) => c.id === this.selectedContractId) ?? null;
+  }
+
+  get selectableContracts(): LeaseContract[] {
+    return this.contracts.filter((c) => c.status === 'ACTIVE');
+  }
+
+  get unitOptions(): Array<{ unitId: number; unitNumber: string; propertyName: string }> {
+    const seen = new Map<number, { unitId: number; unitNumber: string; propertyName: string }>();
+    for (const contract of this.selectableContracts) {
+      if (contract.unitId && !seen.has(contract.unitId)) {
+        seen.set(contract.unitId, {
+          unitId: contract.unitId,
+          unitNumber: contract.unitNumber || '',
+          propertyName: contract.propertyName || ''
+        });
+      }
+    }
+    return Array.from(seen.values());
+  }
+
+  get filteredContracts(): LeaseContract[] {
+    const q = this.contractSearchTerm.trim().toLowerCase();
+    return this.selectableContracts.filter((contract) => {
+      if (this.selectedUnitFilterId && contract.unitId !== this.selectedUnitFilterId) return false;
+      if (!q) return true;
+      return [
+        contract.contractNumber,
+        contract.propertyName,
+        contract.unitNumber,
+        contract.status
+      ].join(' ').toLowerCase().includes(q);
+    });
+  }
+
+  onContractSearch(value: string): void {
+    this.contractSearchTerm = value;
+  }
+
+  get contractDropdownItems(): SearchDropdownItem[] {
+    return this.selectableContracts.map(c => ({
+      label: c.contractNumber,
+      subLabel: [c.propertyName, c.unitNumber ? (this.i18n.currentLang === 'ar' ? 'وحدة ' : 'Unit ') + c.unitNumber : null]
+        .filter(Boolean).join(' · '),
+      badge: this.statusLabel(c.status),
+      badgeClass: 'st-' + c.status,
+      data: c
     }));
   }
 
-  private fallbackYearOptions(): LookupItem[] {
-    return Array.from({ length: 5 }, (_, i) => {
-      const year = this.currentYear - i;
-      return {
-        id: year,
-        type: 'YEAR',
-        code: String(year),
-        nameAr: String(year),
-        nameEn: String(year),
-        sortOrder: i,
-        active: true,
-        locked: false
-      };
+  onContractDropdownSelect(contract: LeaseContract | null): void {
+    if (contract) {
+      this.selectContract(contract);
+    } else {
+      this.selectedContractId = null;
+      this.selectedUnitFilterId = null;
+      this.schedule = [];
+      this.totalSchedule = 0;
+    }
+  }
+
+  get nextDue(): RentPaymentSchedule | null {
+    return [...this.schedule]
+      .filter((row) => row.status !== 'PAID' && row.status !== 'WAIVED')
+      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())[0] ?? null;
+  }
+
+  statusLabel(status: string): string {
+    return this.i18n.instant(`CONTRACTS.STATUS_${status}`);
+  }
+
+  scheduleStatusLabel(status: string): string {
+    return this.i18n.instant(`CONTRACTS.SCHED_${status}`);
+  }
+
+  canUploadProof(row: RentPaymentSchedule): boolean {
+    return row.status === 'PENDING' || row.status === 'OVERDUE' || row.status === 'PAYMENT_REJECTED';
+  }
+
+  isPaidLike(row: RentPaymentSchedule): boolean {
+    return row.status === 'PAID' || row.status === 'PARTIAL';
+  }
+
+  openProofDialog(row: RentPaymentSchedule): void {
+    if (!this.selectedContractId || !this.canUploadProof(row)) return;
+    this.dialog.open(PaymentProofDialogComponent, {
+      width: '680px',
+      maxWidth: '95vw',
+      maxHeight: '92vh',
+      panelClass: 'app-dialog-panel',
+      disableClose: true,
+      data: { row }
+    }).afterClosed().subscribe((payload) => {
+      if (!payload || !this.selectedContractId) return;
+      this.submitProof(row, payload);
     });
   }
 
-  onFilesChange(files: UploadedFile[]): void {
-    this.uploadedFile = files[0] ?? null;
-    this.uploadedUrl = null;
-  }
-
-  async submit(): Promise<void> {
-    if (this.form.invalid || this.submitting) {
-      this.form.markAllAsTouched();
-      return;
-    }
-    if (!this.uploadedFile) {
-      this.snack.error(this.i18n.instant('TENANT_PORTAL.RECEIPT_FILE_REQUIRED'));
-      return;
-    }
-
-    this.submitting = true;
-
-    try {
-      if (!this.uploadedUrl) {
-        const uploadRes = await firstValueFrom(this.apiSvc.uploadFile(this.uploadedFile.file));
-        this.uploadedUrl = uploadRes?.url;
+  private submitProof(row: RentPaymentSchedule, payload: unknown): void {
+    if (!this.selectedContractId) return;
+    this.submittingScheduleId = row.id;
+    this.portalSvc.uploadPaymentProof(this.selectedContractId, row.id, payload as any).subscribe({
+      next: () => {
+        this.snack.success(this.i18n.instant('TENANT_PORTAL.PAYMENT_PROOF_SUBMITTED'));
+        this.submittingScheduleId = null;
+        this.loadSchedule();
+      },
+      error: (e) => {
+        this.submittingScheduleId = null;
+        this.snack.error(e?.error?.message || this.i18n.instant('COMMON.ERROR'));
       }
-
-      const { periodMonth, periodYear, amount, notes } = this.form.value;
-      const monthNumber = Number(periodMonth);
-      const yearNumber = Number(periodYear);
-      await firstValueFrom(this.portalSvc.uploadReceipt({ periodMonth: monthNumber, periodYear: yearNumber, amount: amount || undefined, fileUrl: this.uploadedUrl!, notes: notes || undefined }));
-
-      this.snack.success(this.i18n.instant('TENANT_PORTAL.RECEIPT_UPLOADED'));
-      this.showForm = false;
-      this.uploadedFile = null;
-      this.uploadedUrl = null;
-      this.form.reset({ periodMonth: String(new Date().getMonth() + 1), periodYear: String(this.currentYear), amount: null, notes: '' });
-      this.loadReceipts();
-    } catch (err: any) {
-      this.snack.error(err?.message || this.i18n.instant('COMMON.ERROR'));
-    } finally {
-      this.submitting = false;
-    }
+    });
   }
 
-  monthLabel(value: number | string): string {
-    const code = String(value);
-    const label = this.lookupCache.label('MONTH', code);
-    if (label && label !== code) {
-      return label;
-    }
-
-    const names: Record<string, string[]> = {
-      ar: ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'],
-      en: ['January','February','March','April','May','June','July','August','September','October','November','December']
+  getStatusClass(status: string): string {
+    const map: Record<string, string> = {
+      ACTIVE: 'chip-success',
+      DRAFT: 'chip-default',
+      EXPIRED: 'chip-danger',
+      TERMINATED: 'chip-danger',
+      RENEWED: 'chip-info',
+      SUSPENDED: 'chip-warn',
+      CANCELLED: 'chip-danger',
+      PENDING_OWNER_APPROVAL: 'chip-warn',
+      PENDING_TERMINATION_APPROVAL: 'chip-warn',
+      PENDING_RENEWAL_APPROVAL: 'chip-warn',
+      PENDING: 'chip-default',
+      PENDING_CONFIRMATION: 'chip-info',
+      PAYMENT_REJECTED: 'chip-danger',
+      PAID: 'chip-success',
+      OVERDUE: 'chip-danger',
+      PARTIAL: 'chip-warn',
+      WAIVED: 'chip-info'
     };
-    const lang = this.i18n.currentLang === 'ar' ? 'ar' : 'en';
-    const index = Number(code) - 1;
-    return names[lang][index] ?? code;
+    return map[status] ?? 'chip-default';
   }
 
-  yearLabel(value: number | string): string {
-    const code = String(value);
-    const label = this.lookupCache.label('YEAR', code);
-    return label || code;
-  }
-
-  statusClass(s: string): string {
-    return s === 'APPROVED' ? 'COMPLETED' : s === 'REJECTED' ? 'CANCELLED' : 'PENDING';
-  }
-
-  receiptSourceLabel(r: RentReceipt): string {
-    if (r.uploadSource === 'STAFF') {
-      return this.i18n.instant('TENANT_PORTAL.RECEIPT_SOURCE_STAFF');
-    }
-    return this.i18n.instant('TENANT_PORTAL.RECEIPT_SOURCE_TENANT');
+  rowClass(row: RentPaymentSchedule): string {
+    if (row.status === 'PAID') return 'st-paid';
+    if (row.status === 'PARTIAL') return 'st-partial';
+    if (row.status === 'PENDING_CONFIRMATION') return 'st-confirming';
+    if (row.status === 'PAYMENT_REJECTED') return 'st-rejected';
+    if (row.status === 'OVERDUE') return 'st-overdue';
+    if (row.status === 'WAIVED') return 'st-waived';
+    return 'st-pending';
   }
 }

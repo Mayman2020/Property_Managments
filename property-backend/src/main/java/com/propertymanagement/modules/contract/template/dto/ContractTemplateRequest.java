@@ -7,9 +7,14 @@ import lombok.Data;
 @Data
 public class ContractTemplateRequest {
 
-    @NotBlank
     @Size(max = 200)
     private String templateName;
+
+    @Size(max = 200)
+    private String templateNameAr;
+
+    @Size(max = 200)
+    private String templateNameEn;
 
     private String templateType;
 

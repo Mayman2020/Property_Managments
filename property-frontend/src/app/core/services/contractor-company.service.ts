@@ -15,6 +15,9 @@ export interface ContractorCompany {
   email?: string;
   notes?: string;
   active: boolean;
+  latestMaintenanceContractStatus?: string;
+  latestMaintenanceContractOwnerApprovalStatus?: string;
+  latestMaintenanceContractNumber?: string;
   contractStart?: string;
   contractEnd?: string;
   attachmentFiles?: string[];

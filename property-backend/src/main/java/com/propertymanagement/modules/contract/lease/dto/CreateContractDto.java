@@ -1,12 +1,13 @@
 package com.propertymanagement.modules.contract.lease.dto;
 
-import com.propertymanagement.modules.contract.lease.PaymentFrequency;
+import com.propertymanagement.modules.contract.lease.entity.PaymentFrequency;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import com.propertymanagement.modules.hr.employee.entity.Employee;
 
 @Data
 public class CreateContractDto {

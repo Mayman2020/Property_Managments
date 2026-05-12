@@ -1,0 +1,192 @@
+<div class="app-page ratings-page">
+  <app-page-header
+    [title]="'RATINGS_DASHBOARD.TITLE' | translate"
+    [subtitle]="'RATINGS_DASHBOARD.SUBTITLE' | translate"
+    [breadcrumbs]="[
+      { label: ('NAV.DASHBOARD' | translate), route: '/admin/dashboard' },
+      { label: ('NAV.RATINGS' | translate) }
+    ]">
+  </app-page-header>
+
+  <div class="loading-center" *ngIf="loading">
+    <mat-spinner diameter="48"></mat-spinner>
+  </div>
+
+  <ng-container *ngIf="!loading">
+    <section class="kpi-grid">
+      <article class="kpi-card active-contracts">
+        <div class="kpi-icon-wrap"><mat-icon>star</mat-icon></div>
+        <div class="kpi-body">
+          <div class="kpi-value">{{ averageRating | number:'1.1-2' }}</div>
+          <div class="kpi-label">{{ 'RATING.AVERAGE' | translate }}</div>
+        </div>
+      </article>
+
+      <article class="kpi-card draft-contracts">
+        <div class="kpi-icon-wrap"><mat-icon>reviews</mat-icon></div>
+        <div class="kpi-body">
+          <div class="kpi-value">{{ totalRatings }}</div>
+          <div class="kpi-label">{{ tabTitle() }}</div>
+        </div>
+      </article>
+
+      <article class="kpi-card expiring-soon">
+        <div class="kpi-icon-wrap"><mat-icon>sentiment_satisfied</mat-icon></div>
+        <div class="kpi-body">
+          <div class="kpi-value">{{ satisfactionRate }}%</div>
+          <div class="kpi-label">{{ 'RATINGS_DASHBOARD.SATISFACTION_LABEL' | translate }}</div>
+        </div>
+      </article>
+
+      <article class="kpi-card overdue-payments">
+        <div class="kpi-icon-wrap"><mat-icon>priority_high</mat-icon></div>
+        <div class="kpi-body">
+          <div class="kpi-value">{{ lowRatingsCount }}</div>
+          <div class="kpi-label">{{ 'RATINGS_DASHBOARD.LOW_RATINGS_LABEL' | translate }}</div>
+        </div>
+      </article>
+    </section>
+
+    <section class="app-card ratings-table-card">
+      <div class="estate-table-toolbar ratings-toolbar">
+        <div class="ratings-toolbar-main">
+          <div class="ratings-source-switch">
+            <button type="button" [class.active]="activeTab === 'visits'" (click)="setTab('visits')">
+              <mat-icon>engineering</mat-icon>
+              {{ i18n.currentLang === 'ar' ? 'الزيارات' : 'Visits' }}
+            </button>
+            <button type="button" [class.active]="activeTab === 'complaints'" (click)="setTab('complaints')">
+              <mat-icon>forum</mat-icon>
+              {{ i18n.currentLang === 'ar' ? 'الشكاوى' : 'Complaints' }}
+            </button>
+          </div>
+
+          <div class="estate-search-inline ratings-search">
+            <span class="material-icons">search</span>
+            <input [value]="searchTerm" (input)="searchTerm = $any($event.target).value; applyFilters()" [placeholder]="'ACTIONS.SEARCH' | translate">
+          </div>
+
+          <button mat-icon-button class="clear-filters-btn" type="button" (click)="resetFilters()" [matTooltip]="'ACTIONS.CLEAR_FILTERS' | translate">
+            <mat-icon>filter_alt_off</mat-icon>
+          </button>
+        </div>
+
+        <div class="ratings-filter-grid">
+          <mat-form-field appearance="outline" floatLabel="always" class="rating-filter-field">
+            <mat-label>{{ 'REQUEST_FORM.PROPERTY' | translate }}</mat-label>
+            <mat-select [(value)]="selectedPropertyId" (selectionChange)="onPropertyChange($event.value)">
+              <mat-option [value]="null">{{ 'ACTIONS.VIEW_ALL' | translate }}</mat-option>
+              <mat-option *ngFor="let p of propertyOptions" [value]="p.id">{{ p.name }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" floatLabel="always" class="rating-filter-field">
+            <mat-label>{{ 'REQUEST_FORM.UNIT' | translate }}</mat-label>
+            <mat-select [(value)]="selectedUnitId" (selectionChange)="applyFilters()" [disabled]="!selectedPropertyId || loadingUnits">
+              <mat-option [value]="null">
+                <ng-container *ngIf="!selectedPropertyId">{{ 'REQUEST_FORM.SELECT_PROPERTY_FIRST' | translate }}</ng-container>
+                <ng-container *ngIf="selectedPropertyId && loadingUnits">{{ 'REQUEST_FORM.LOADING_UNITS' | translate }}</ng-container>
+                <ng-container *ngIf="selectedPropertyId && !loadingUnits">{{ 'ACTIONS.VIEW_ALL' | translate }}</ng-container>
+              </mat-option>
+              <mat-option *ngFor="let u of unitOptions" [value]="u.id">{{ u.name }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" floatLabel="always" class="rating-filter-field rating-filter-date">
+            <mat-label>{{ 'RATINGS_DASHBOARD.DATE_FROM' | translate }}</mat-label>
+            <input matInput [matDatepicker]="fromPicker" [value]="dateFrom" (dateChange)="dateFrom = $event.value; applyFilters()">
+            <mat-datepicker-toggle matIconSuffix [for]="fromPicker"></mat-datepicker-toggle>
+            <mat-datepicker #fromPicker></mat-datepicker>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" floatLabel="always" class="rating-filter-field rating-filter-date">
+            <mat-label>{{ 'RATINGS_DASHBOARD.DATE_TO' | translate }}</mat-label>
+            <input matInput [matDatepicker]="toPicker" [value]="dateTo" (dateChange)="dateTo = $event.value; applyFilters()">
+            <mat-datepicker-toggle matIconSuffix [for]="toPicker"></mat-datepicker-toggle>
+            <mat-datepicker #toPicker></mat-datepicker>
+          </mat-form-field>
+        </div>
+
+        <div class="contracts-filter-tray">
+          <div class="estate-filter-row">
+            <button type="button" class="estate-filter-btn fs-all" [class.active]="selectedStars === null" (click)="selectedStars = null; applyFilters()">
+              {{ 'COMMON.ALL' | translate }}
+            </button>
+            <button
+              type="button"
+              class="estate-filter-btn"
+              *ngFor="let star of stars"
+              [class.active]="selectedStars === star"
+              [class.fs-active]="star === 4"
+              [class.fs-renewed]="star === 3"
+              [class.fs-terminated]="star === 2"
+              [class.fs-expired]="star === 1"
+              (click)="selectedStars = star; applyFilters()">
+              {{ star }} / 4
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="ratings-content-grid" *ngIf="totalRatings > 0">
+        <aside class="distribution-panel">
+          <div class="section-title">{{ 'RATING.DISTRIBUTION' | translate }}</div>
+          <div class="bar-row" *ngFor="let star of stars">
+            <div class="bar-label">
+              <span class="material-icons tiny-star">star</span>
+              <span>{{ star }}</span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill" [style.width.%]="barWidth(star)"></div>
+            </div>
+            <div class="bar-count">{{ starCount(star) }}</div>
+          </div>
+        </aside>
+
+        <div class="app-table-wrap">
+          <table class="app-data-table ratings-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>{{ 'REQUEST_LIST.REQUEST_TITLE' | translate }}</th>
+                <th>{{ 'REQUEST_LIST.PROPERTY_UNIT' | translate }}</th>
+                <th>{{ 'REQUEST_LIST.TENANT' | translate }}</th>
+                <th>{{ 'RATING.STARS' | translate }}</th>
+                <th>{{ 'REQUEST_LIST.CREATED_AT' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of recentRatings; trackBy: trackByRatingId">
+                <td><span class="mono-cell">{{ item.number || item.sourceId }}</span></td>
+                <td class="title-cell">
+                  <strong>{{ item.title || '-' }}</strong>
+                  <span *ngIf="item.type">{{ item.type }}</span>
+                  <span *ngIf="item.comment">{{ item.comment }}</span>
+                </td>
+                <td>
+                  <div class="property-info">{{ item.propertyName || '-' }}</div>
+                  <div class="unit-info">{{ 'REQUEST_LIST.UNIT' | translate }} {{ item.unitNumber || '-' }}</div>
+                </td>
+                <td>{{ item.tenantName || '-' }}</td>
+                <td>
+                  <span class="rating-chip" [ngClass]="'rating-' + item.rating">
+                    <mat-icon>star</mat-icon>
+                    {{ ratingLabel(item) }}
+                  </span>
+                </td>
+                <td>{{ item.createdAt | date:'dd/MM/yyyy' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <app-empty-state
+        *ngIf="totalRatings === 0"
+        icon="star_border"
+        [title]="'RATINGS_DASHBOARD.NO_RATINGS_TITLE' | translate"
+        [message]="'RATINGS_DASHBOARD.NO_RATINGS_MSG' | translate">
+      </app-empty-state>
+    </section>
+  </ng-container>
+</div>

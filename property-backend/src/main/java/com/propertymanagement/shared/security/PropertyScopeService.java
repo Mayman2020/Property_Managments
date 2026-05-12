@@ -1,10 +1,10 @@
 package com.propertymanagement.shared.security;
 
-import com.propertymanagement.modules.owner.OwnerRepository;
-import com.propertymanagement.modules.property.PropertyRepository;
-import com.propertymanagement.modules.user.User;
-import com.propertymanagement.modules.user.UserPropertyAccessRepository;
-import com.propertymanagement.modules.user.UserRole;
+import com.propertymanagement.modules.owner.repository.OwnerRepository;
+import com.propertymanagement.modules.property.repository.PropertyRepository;
+import com.propertymanagement.modules.user.entity.User;
+import com.propertymanagement.modules.user.repository.UserPropertyAccessRepository;
+import com.propertymanagement.modules.user.entity.UserRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,6 +18,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import com.propertymanagement.modules.property.entity.Property;
 
 @Service
 @RequiredArgsConstructor

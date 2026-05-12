@@ -1066,6 +1066,13 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
     });
   }
 
+  openMaintenanceContractDialog(): void {
+    if (!this.propertyId) return;
+    void this.router.navigate(['/admin/contracts/list'], {
+      queryParams: { propertyId: this.propertyId, type: 'MAINTENANCE', openDialog: '1' }
+    });
+  }
+
   private loadOwners(): void {
     this.ownersLoading = true;
     this.ownerSvc.getAll(0, 200).subscribe({

@@ -1,0 +1,117 @@
+package com.propertymanagement.modules.property.service;
+
+import com.propertymanagement.modules.property.dto.FloorRequest;
+import com.propertymanagement.modules.property.dto.FloorResponse;
+import com.propertymanagement.shared.exception.AppException;
+import com.propertymanagement.shared.i18n.AppMessages;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
+import com.propertymanagement.modules.property.entity.Floor;
+import com.propertymanagement.modules.property.repository.FloorRepository;
+import com.propertymanagement.modules.property.repository.PropertyRepository;
+import com.propertymanagement.modules.property.entity.Property;
+
+@Service
+@RequiredArgsConstructor
+public class FloorService {
+
+    private final FloorRepository floorRepository;
+    private final PropertyRepository propertyRepository;
+    private final AppMessages appMessages;
+
+    @Transactional
+    public List<FloorResponse> getByProperty(Long propertyId) {
+        List<Floor> floors = floorRepository.findByPropertyIdOrderByFloorNumberAsc(propertyId);
+        if (floors.isEmpty()) {
+            floors = provisionFloors(propertyId);
+        }
+        return floors.stream().map(this::toResponse).collect(Collectors.toList());
+    }
+
+    private List<Floor> provisionFloors(Long propertyId) {
+        return propertyRepository.findById(propertyId).map(property -> {
+            int total = property.getTotalFloors() != null ? property.getTotalFloors() : 0;
+            List<Floor> created = new java.util.ArrayList<>();
+            for (int n = 1; n <= total; n++) {
+                if (!floorRepository.existsByPropertyIdAndFloorNumber(propertyId, n)) {
+                    String labelAr = appMessages.get(AppMessages.LOCALE_AR, "floor.numbered", n);
+                    String labelEn = appMessages.get(AppMessages.LOCALE_EN, "floor.numbered", n);
+                    created.add(floorRepository.save(Floor.builder()
+                            .propertyId(propertyId)
+                            .floorNumber(n)
+                            .floorLabel(composite(labelAr, labelEn))
+                            .floorLabelAr(labelAr)
+                            .floorLabelEn(labelEn)
+                            .build()));
+                }
+            }
+            return created;
+        }).orElse(java.util.List.of());
+    }
+
+    @Transactional
+    public FloorResponse create(Long propertyId, FloorRequest request) {
+        if (floorRepository.existsByPropertyIdAndFloorNumber(propertyId, request.getFloorNumber())) {
+            throw AppException.conflict("Floor number already exists: " + request.getFloorNumber());
+        }
+        Floor floor = Floor.builder()
+                .propertyId(propertyId)
+                .floorNumber(request.getFloorNumber())
+                .floorLabelAr(firstNonBlank(request.getFloorLabelAr(), request.getFloorLabel()))
+                .floorLabelEn(firstNonBlank(request.getFloorLabelEn(), request.getFloorLabel()))
+                .build();
+        floor.setFloorLabel(composite(floor.getFloorLabelAr(), floor.getFloorLabelEn()));
+        return toResponse(floorRepository.save(floor));
+    }
+
+    @Transactional
+    public FloorResponse update(Long id, FloorRequest request) {
+        Floor floor = floorRepository.findById(id)
+                .orElseThrow(() -> AppException.notFound("Floor not found: " + id));
+        floor.setFloorLabelAr(firstNonBlank(request.getFloorLabelAr(), request.getFloorLabel()));
+        floor.setFloorLabelEn(firstNonBlank(request.getFloorLabelEn(), request.getFloorLabel()));
+        floor.setFloorLabel(composite(floor.getFloorLabelAr(), floor.getFloorLabelEn()));
+        return toResponse(floorRepository.save(floor));
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        Floor floor = floorRepository.findById(id)
+                .orElseThrow(() -> AppException.notFound("Floor not found: " + id));
+        floorRepository.delete(floor);
+    }
+
+    private FloorResponse toResponse(Floor f) {
+        return FloorResponse.builder()
+                .id(f.getId())
+                .propertyId(f.getPropertyId())
+                .floorNumber(f.getFloorNumber())
+                .floorLabel(f.getFloorLabel())
+                .floorLabelAr(f.getFloorLabelAr())
+                .floorLabelEn(f.getFloorLabelEn())
+                .build();
+    }
+
+    private String firstNonBlank(String preferred, String fallback) {
+        String p = trimToNull(preferred);
+        return p != null ? p : trimToNull(fallback);
+    }
+
+    private String composite(String labelAr, String labelEn) {
+        String ar = trimToNull(labelAr);
+        String en = trimToNull(labelEn);
+        if (ar == null) return en;
+        if (en == null || ar.equals(en)) return ar;
+        return ar + " / " + en;
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) return null;
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+}

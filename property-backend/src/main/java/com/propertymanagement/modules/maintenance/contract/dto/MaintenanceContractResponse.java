@@ -20,5 +20,15 @@ public record MaintenanceContractResponse(
         String status,
         String notes,
         LocalDateTime createdAt,
-        int invoiceCount
+        int invoiceCount,
+        Long previousContractId,
+        String ownerApprovalStatus,
+        String ownerApprovalNotes,
+        LocalDate terminationProposedDate,
+        String terminationRequestNotes,
+        LocalDate renewalProposedStartDate,
+        LocalDate renewalProposedEndDate,
+        BigDecimal renewalProposedValue,
+        String renewalRequestedNote,
+        String renewalDecisionStatus
 ) {}

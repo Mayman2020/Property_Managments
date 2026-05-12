@@ -397,8 +397,8 @@
           {{ 'CONTRACTS.STAFF_ACTIVITY_LOG' | translate }}
         </span>
       </div>
-      <div class="app-card-body" style="padding:0">
-        <table class="staff-log-table">
+      <div class="app-table-wrap staff-log-wrap">
+        <table class="app-data-table staff-log-table">
           <thead>
             <tr>
               <th>{{ 'CONTRACTS.LOG_TIME' | translate }}</th>
@@ -409,10 +409,27 @@
           </thead>
           <tbody>
             <tr *ngFor="let row of parsedStaffLog()">
-              <td class="log-time">{{ row.timestamp }}</td>
-              <td class="log-actor">{{ row.actor }}</td>
-              <td class="log-action"><span class="log-action-chip">{{ row.action }}</span></td>
-              <td class="log-detail">{{ row.detail }}</td>
+              <td>
+                <span class="log-time">{{ row.timestamp || '-' }}</span>
+              </td>
+              <td>
+                <div class="staff-log-actor">
+                  <span class="staff-log-avatar material-icons">person</span>
+                  <div>
+                    <strong>{{ row.actor || '-' }}</strong>
+                    <span>{{ i18n.currentLang === 'ar' ? 'منفذ الإجراء' : 'Action owner' }}</span>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <span class="status-badge log-action-chip" data-status="INFO">{{ row.action || '-' }}</span>
+              </td>
+              <td>
+                <span class="log-detail">{{ row.detail || '-' }}</span>
+              </td>
+            </tr>
+            <tr *ngIf="parsedStaffLog().length === 0">
+              <td colspan="4" class="empty-row">{{ 'COMMON.NO_DATA' | translate }}</td>
             </tr>
           </tbody>
         </table>
@@ -438,6 +455,7 @@
         <table class="app-data-table schedule-table">
           <thead>
             <tr>
+              <th class="center-col">#</th>
               <th>{{ 'CONTRACTS.DUE_DATE' | translate }}</th>
               <th>{{ 'CONTRACTS.PERIOD' | translate }}</th>
               <th>{{ 'CONTRACTS.AMOUNT' | translate }}</th>
@@ -445,13 +463,17 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let s of schedulePageSlice">
+            <tr
+              *ngFor="let s of schedulePageSlice; let i = index"
+              [class.schedule-row-highlight]="isHighlightedSchedule(s)"
+              [class.schedule-row-paid]="s.status === 'PAID'">
+              <td class="center-col"><span class="row-index">{{ schedulePageIndex * schedulePageSize + i + 1 }}</span></td>
               <td><strong>{{ s.dueDate | date:'dd/MM/yyyy' }}</strong></td>
               <td class="text-muted">{{ s.periodFrom | date:'dd/MM/yyyy' }} — {{ s.periodTo | date:'dd/MM/yyyy' }}</td>
               <td><span class="amount-cell">{{ s.amount | number }} <span class="currency-tag">{{ contract.currency }}</span></span></td>
               <td class="flag-cell">
                 <div class="flag-row">
-                  <span class="flag-visual" [class.flag-visual--on]="isPaidLike(s)" [class.flag-visual--waived]="s.status === 'WAIVED'">
+                  <span class="flag-visual" *ngIf="!hasProof(s)" [class.flag-visual--on]="isPaidLike(s)" [class.flag-visual--waived]="s.status === 'WAIVED'">
                     <mat-icon>{{ s.status === 'WAIVED' ? 'block' : 'flag' }}</mat-icon>
                   </span>
                   <button type="button" mat-stroked-button class="flag-action-btn"
@@ -461,6 +483,38 @@
                     {{ 'CONTRACTS.MARK_PAID_WITH_RECEIPT' | translate }}
                   </button>
                   <span class="waived-label" *ngIf="s.status === 'WAIVED'">{{ 'CONTRACTS.SCHED_WAIVED' | translate }}</span>
+                  <span class="pending-proof-label" *ngIf="s.status === 'PENDING_CONFIRMATION'">
+                    <mat-icon>priority_high</mat-icon>
+                    {{ i18n.currentLang === 'ar' ? 'بانتظار مراجعة إثبات الدفع' : 'Payment proof pending review' }}
+                  </span>
+                </div>
+                <div class="proof-review-box" *ngIf="hasProof(s)">
+                  <div class="proof-actions-row">
+                    <span class="flag-visual" [class.flag-visual--on]="isPaidLike(s)" [class.flag-visual--waived]="s.status === 'WAIVED'">
+                      <mat-icon>{{ s.status === 'WAIVED' ? 'block' : 'flag' }}</mat-icon>
+                    </span>
+                    <button type="button" mat-stroked-button (click)="openProofDetails(s)">
+                      <mat-icon>info</mat-icon>
+                      {{ i18n.currentLang === 'ar' ? 'تفاصيل' : 'Details' }}
+                    </button>
+                    <button type="button" mat-stroked-button *ngFor="let url of proofUrls(s); let i = index" (click)="viewProof(url)">
+                      <mat-icon>visibility</mat-icon>
+                      {{ i18n.currentLang === 'ar' ? 'عرض المرفق' : 'View attachment' }} {{ proofUrls(s).length > 1 ? i + 1 : '' }}
+                    </button>
+                    <a mat-stroked-button *ngFor="let url of proofUrls(s); let i = index" [href]="url" download>
+                      <mat-icon>download</mat-icon>
+                      {{ i18n.currentLang === 'ar' ? 'تحميل' : 'Download' }} {{ proofUrls(s).length > 1 ? i + 1 : '' }}
+                    </a>
+                    <button type="button" mat-flat-button color="primary" *ngIf="canReviewProof(s)" (click)="reviewProof(s, 'APPROVED')">
+                      <mat-icon>check_circle</mat-icon>
+                      {{ i18n.currentLang === 'ar' ? 'موافقة' : 'Approve' }}
+                    </button>
+                    <button type="button" mat-stroked-button color="warn" *ngIf="canReviewProof(s)" (click)="reviewProof(s, 'REJECTED')">
+                      <mat-icon>cancel</mat-icon>
+                      {{ i18n.currentLang === 'ar' ? 'رفض' : 'Reject' }}
+                    </button>
+                  </div>
+                  <p class="sm-notes rejected-note" *ngIf="s.status === 'PAYMENT_REJECTED' && s.rejectionReason">{{ s.rejectionReason }}</p>
                 </div>
                 <div class="settlement-meta" *ngIf="isPaidLike(s) && (s.receiptUrl || s.settlementPaymentDate || s.recordedByName || s.settlementNotes)">
                   <div class="sm-line" *ngIf="s.settlementPaymentDate">
@@ -482,12 +536,47 @@
           </tbody>
         </table>
       </div>
-      <app-table-pager
+      <div class="srs-pager-shell" *ngIf="schedule.length > schedulePageSize">
+        <div class="srs-pager__info">
+          {{ 'PROPERTY_LIST.PAGE_RANGE' | translate:{ start: schedulePageStart, end: schedulePageEnd, total: schedule.length } }}
+        </div>
+
+        <div class="srs-pager__controls">
+          <button type="button" class="srs-pager__nav" (click)="previousSchedulePage()" [disabled]="schedulePageIndex === 0">
+            <span class="material-icons">chevron_left</span>
+          </button>
+
+          <ng-container *ngFor="let item of schedulePageItems()">
+            <span *ngIf="item === 'ellipsis'" class="srs-pager__gap">...</span>
+            <button
+              *ngIf="item !== 'ellipsis'"
+              type="button"
+              class="srs-pager__page"
+              [class.srs-pager__page--active]="item === schedulePageIndex + 1"
+              (click)="goToSchedulePage(item)">
+              {{ item }}
+            </button>
+          </ng-container>
+
+          <button type="button" class="srs-pager__nav" (click)="nextSchedulePage()" [disabled]="schedulePageIndex + 1 >= scheduleTotalPages">
+            <span class="material-icons">chevron_right</span>
+          </button>
+        </div>
+
+        <div class="srs-pager__size">
+          <span class="srs-pager__size-label">{{ 'PROPERTY_LIST.RESULTS' | translate }}: {{ schedule.length }}</span>
+        </div>
+      </div>
+
+      <mat-paginator
+        class="property-paginator"
         [length]="schedule.length"
-        [pageSize]="schedulePageSize"
         [pageIndex]="schedulePageIndex"
-        (pageIndexChange)="onSchedulePageChange($event)">
-      </app-table-pager>
+        [pageSize]="schedulePageSize"
+        [pageSizeOptions]="[schedulePageSize]"
+        [hidePageSize]="true"
+        (page)="onScheduleMatPage($event)">
+      </mat-paginator>
     </div>
     <ng-template #emptySchedule>
       <div class="empty-state app-card">

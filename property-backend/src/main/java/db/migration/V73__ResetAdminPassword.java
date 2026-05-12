@@ -5,6 +5,7 @@ import org.flywaydb.core.api.migration.Context;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.sql.PreparedStatement;
+import com.propertymanagement.modules.user.entity.User;
 
 /**
  * Resets ALL user passwords to "Admin@1234" using BCryptPasswordEncoder at migration time,

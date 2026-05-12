@@ -1,6 +1,7 @@
 package com.propertymanagement.modules.maintenance.assignment.dto;
 
 import java.time.LocalDate;
+import com.propertymanagement.modules.user.entity.User;
 
 public record AssignMaintenanceRequest(
         String providerType,          // USER | COMPANY

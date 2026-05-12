@@ -1,6 +1,6 @@
 package com.propertymanagement.shared.security;
 
-import com.propertymanagement.modules.user.User;
+import com.propertymanagement.modules.user.entity.User;
 import org.springframework.data.domain.AuditorAware;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;

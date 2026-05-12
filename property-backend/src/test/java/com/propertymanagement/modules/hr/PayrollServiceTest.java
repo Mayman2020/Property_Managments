@@ -1,17 +1,25 @@
 package com.propertymanagement.modules.hr;
 
-import com.propertymanagement.modules.finance.expense.ExpenseCategoryLookupRepository;
-import com.propertymanagement.modules.finance.expense.ExpenseWriterRepository;
-import com.propertymanagement.modules.hr.employee.Employee;
-import com.propertymanagement.modules.hr.employee.EmployeeRepository;
-import com.propertymanagement.modules.hr.payroll.*;
+import com.propertymanagement.modules.finance.expense.repository.ExpenseCategoryLookupRepository;
+import com.propertymanagement.modules.finance.expense.repository.ExpenseWriterRepository;
+import com.propertymanagement.modules.hr.employee.entity.Employee;
+import com.propertymanagement.modules.hr.employee.repository.EmployeeRepository;
+import com.propertymanagement.modules.hr.payroll.entity.EmployeeBonus;
+import com.propertymanagement.modules.hr.payroll.entity.PayrollRun;
+import com.propertymanagement.modules.hr.payroll.entity.Payslip;
+import com.propertymanagement.modules.hr.payroll.entity.SalaryAdvance;
+import com.propertymanagement.modules.hr.payroll.repository.EmployeeBonusRepository;
+import com.propertymanagement.modules.hr.payroll.repository.PayrollRepository;
+import com.propertymanagement.modules.hr.payroll.repository.PayslipRepository;
+import com.propertymanagement.modules.hr.payroll.repository.SalaryAdvanceRepository;
+import com.propertymanagement.modules.hr.payroll.service.PayrollService;
 import com.propertymanagement.modules.hr.payroll.dto.GeneratePayrollRequest;
-import com.propertymanagement.modules.notification.NotificationService;
-import com.propertymanagement.modules.owner.OwnerPropertyAccessService;
-import com.propertymanagement.modules.property.PropertyOwnerPortalRecipientService;
-import com.propertymanagement.modules.user.User;
-import com.propertymanagement.modules.user.UserRepository;
-import com.propertymanagement.modules.user.UserRole;
+import com.propertymanagement.modules.notification.service.NotificationService;
+import com.propertymanagement.modules.owner.service.OwnerPropertyAccessService;
+import com.propertymanagement.modules.property.service.PropertyOwnerPortalRecipientService;
+import com.propertymanagement.modules.user.entity.User;
+import com.propertymanagement.modules.user.repository.UserRepository;
+import com.propertymanagement.modules.user.entity.UserRole;
 import com.propertymanagement.shared.exception.AppException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -116,8 +124,8 @@ class PayrollServiceTest {
                 .thenReturn(List.of());
         when(payslipRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(payslipRepository.findByPayrollRunIdOrderByIdAsc(anyLong())).thenReturn(List.of());
-        com.propertymanagement.modules.finance.expense.ExpenseCategory cat =
-                new com.propertymanagement.modules.finance.expense.ExpenseCategory();
+        com.propertymanagement.modules.finance.expense.entity.ExpenseCategory cat =
+                new com.propertymanagement.modules.finance.expense.entity.ExpenseCategory();
         cat.setId(7L);
         cat.setCategoryCode("PAY-SALARY");
         when(expenseCategoryLookupRepository.findByCategoryCode("PAY-SALARY")).thenReturn(Optional.of(cat));

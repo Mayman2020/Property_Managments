@@ -1,11 +1,15 @@
 package com.propertymanagement.modules.contract;
 
-import com.propertymanagement.modules.contract.lease.*;
+import com.propertymanagement.modules.contract.lease.entity.ContractStatus;
+import com.propertymanagement.modules.contract.lease.entity.LeaseContract;
+import com.propertymanagement.modules.contract.lease.repository.LeaseContractRepository;
+import com.propertymanagement.modules.contract.lease.service.LeaseContractService;
+import com.propertymanagement.modules.contract.lease.service.OwnerApprovalService;
 import com.propertymanagement.modules.contract.lease.dto.ContractResponse;
 import com.propertymanagement.modules.contract.lease.dto.OwnerApprovalDto;
 import com.propertymanagement.modules.contract.lease.dto.OwnerTerminationDecisionDto;
-import com.propertymanagement.modules.tenant.TenantPortalWelcomeService;
-import com.propertymanagement.modules.owner.OwnerPropertyAccessService;
+import com.propertymanagement.modules.tenant.service.TenantPortalWelcomeService;
+import com.propertymanagement.modules.owner.service.OwnerPropertyAccessService;
 import com.propertymanagement.shared.exception.AppException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

@@ -1,11 +1,12 @@
 package com.propertymanagement.modules.unit.dto;
 
-import com.propertymanagement.modules.unit.UnitType;
+import com.propertymanagement.modules.unit.entity.UnitType;
 import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import com.propertymanagement.modules.property.entity.Floor;
 
 @Data
 @Builder

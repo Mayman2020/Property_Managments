@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { NgFor, NgIf, NgClass, DatePipe } from '@angular/common';
+import { NgFor, NgIf, NgClass, DatePipe, DecimalPipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -15,19 +15,21 @@ import { firstValueFrom } from 'rxjs';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { UploadZoneComponent, UploadedFile } from '../../../shared/components/upload-zone/upload-zone.component';
+import { SearchDropdownComponent, SearchDropdownItem } from '../../../shared/components/search-dropdown/search-dropdown.component';
 import { TenantPortalService, ContractActionRequest } from '../../../core/services/tenant-portal.service';
 import { ApiService } from '../../../core/services/api.service';
 import { SnackService } from '../../../core/services/snack.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
+import { LeaseContract } from '../../../core/models/contract.model';
 
 @Component({
   selector: 'app-contract-request',
   standalone: true,
   imports: [
-    NgFor, NgIf, NgClass, DatePipe, ReactiveFormsModule, RouterLink,
+    NgFor, NgIf, NgClass, DatePipe, DecimalPipe, ReactiveFormsModule, RouterLink,
     TranslateModule, MatButtonModule, MatFormFieldModule, MatInputModule,
     MatSelectModule, MatDatepickerModule, MatIconModule, MatProgressSpinnerModule, MatTabsModule,
-    PageHeaderComponent, UploadZoneComponent
+    PageHeaderComponent, UploadZoneComponent, SearchDropdownComponent
   ],
   templateUrl: './contract-request.component.html',
   styleUrl: './contract-request.component.scss'
@@ -35,8 +37,15 @@ import { I18nService } from '../../../core/i18n/i18n.service';
 export class ContractRequestComponent implements OnInit {
   activeTab: 'RENEWAL' | 'TERMINATION' = 'RENEWAL';
   submitting = false;
+  loadingContracts = true;
   loadingHistory = true;
   history: ContractActionRequest[] = [];
+  contracts: LeaseContract[] = [];
+  selectedContractId: number | null = null;
+  selectedUnitFilterId: number | null = null;
+  contractSearchTerm = '';
+  chooserOpen = false;
+  requestDetailsOpen = false;
 
   renewalForm: FormGroup;
   terminationForm: FormGroup;
@@ -75,7 +84,25 @@ export class ContractRequestComponent implements OnInit {
     const action = this.route.snapshot.queryParamMap.get('action');
     if (action === 'TERMINATION') this.activeTab = 'TERMINATION';
 
+    this.loadContracts();
     this.loadHistory();
+  }
+
+  loadContracts(): void {
+    this.loadingContracts = true;
+    this.portalSvc.getMyContracts().subscribe({
+      next: (res) => {
+        this.contracts = res.data ?? [];
+        const queryContractId = Number(this.route.snapshot.queryParamMap.get('contractId'));
+        const preferred = Number.isFinite(queryContractId)
+          ? this.selectableContracts.find((c) => c.id === queryContractId) ?? null
+          : null;
+        this.selectedContractId = preferred?.id ?? null;
+        this.selectedUnitFilterId = null;
+        this.loadingContracts = false;
+      },
+      error: () => { this.loadingContracts = false; }
+    });
   }
 
   loadHistory(): void {
@@ -93,7 +120,7 @@ export class ContractRequestComponent implements OnInit {
 
   async submit(): Promise<void> {
     const form = this.activeTab === 'RENEWAL' ? this.renewalForm : this.terminationForm;
-    if (form.invalid || this.submitting) {
+    if (form.invalid || this.submitting || !this.selectedContractId) {
       form.markAllAsTouched();
       return;
     }
@@ -105,13 +132,9 @@ export class ContractRequestComponent implements OnInit {
         this.attachmentUrl = res?.url ?? null;
       }
 
-      const contractRes = await firstValueFrom(this.portalSvc.getMyContract());
-      const contractId = contractRes.data?.id;
-      if (!contractId) throw new Error('No active contract');
-
       const { requestedDate, notes, reason } = form.value;
       await firstValueFrom(this.portalSvc.createContractRequest({
-        contractId,
+        contractId: this.selectedContractId,
         actionType: this.activeTab,
         requestedDate: requestedDate ? this.toYmd(requestedDate) : undefined,
         reason: reason || undefined,
@@ -123,7 +146,9 @@ export class ContractRequestComponent implements OnInit {
       form.reset();
       this.attachmentFile = null;
       this.attachmentUrl = null;
+      this.requestDetailsOpen = false;
       this.loadHistory();
+      this.loadContracts();
     } catch (err: any) {
       this.snack.error(err?.message || this.i18n.instant('COMMON.ERROR'));
     } finally {
@@ -138,6 +163,121 @@ export class ContractRequestComponent implements OnInit {
 
   statusClass(s: string): string {
     return s === 'APPROVED' ? 'COMPLETED' : s === 'REJECTED' ? 'CANCELLED' : s === 'CANCELLED' ? 'CANCELLED' : 'PENDING';
+  }
+
+  get selectedContract(): LeaseContract | null {
+    return this.selectableContracts.find((c) => c.id === this.selectedContractId) ?? null;
+  }
+
+  get selectableContracts(): LeaseContract[] {
+    return this.contracts.filter((c) => c.status === 'ACTIVE');
+  }
+
+  get unitOptions(): Array<{ unitId: number; unitNumber: string; propertyName: string }> {
+    const seen = new Map<number, { unitId: number; unitNumber: string; propertyName: string }>();
+    for (const contract of this.selectableContracts) {
+      if (contract.unitId && !seen.has(contract.unitId)) {
+        seen.set(contract.unitId, {
+          unitId: contract.unitId,
+          unitNumber: contract.unitNumber || '',
+          propertyName: contract.propertyName || ''
+        });
+      }
+    }
+    return Array.from(seen.values());
+  }
+
+  get filteredContracts(): LeaseContract[] {
+    const q = this.contractSearchTerm.trim().toLowerCase();
+    return this.selectableContracts.filter((contract) => {
+      if (this.selectedUnitFilterId && contract.unitId !== this.selectedUnitFilterId) return false;
+      if (!q) return true;
+      return [
+        contract.contractNumber,
+        contract.propertyName,
+        contract.unitNumber,
+        contract.status
+      ].join(' ').toLowerCase().includes(q);
+    });
+  }
+
+  get contractDropdownItems(): SearchDropdownItem[] {
+    return this.selectableContracts.map(c => ({
+      label: c.contractNumber,
+      subLabel: [c.propertyName, c.unitNumber ? (this.i18n.currentLang === 'ar' ? 'وحدة ' : 'Unit ') + c.unitNumber : null]
+        .filter(Boolean).join(' · '),
+      badge: this.contractStatusLabel(c.status),
+      badgeClass: 'st-' + c.status,
+      data: c
+    }));
+  }
+
+  onContractDropdownSelect(contract: LeaseContract | null): void {
+    if (contract) {
+      this.selectedContractId = contract.id;
+    } else {
+      this.selectedContractId = null;
+      this.selectedUnitFilterId = null;
+    }
+  }
+
+  get filteredHistory(): ContractActionRequest[] {
+    if (this.selectedContractId) {
+      return this.history.filter((request) => request.contractId === this.selectedContractId);
+    }
+    if (!this.selectedUnitFilterId) return this.history;
+    const contractIds = new Set(this.filteredContracts.map((contract) => contract.id));
+    return this.history.filter((request) => contractIds.has(request.contractId));
+  }
+
+  selectContract(contract: LeaseContract): void {
+    this.selectedContractId = contract.id;
+  }
+
+  selectUnitFilter(unitId: number | null): void {
+    this.selectedUnitFilterId = unitId;
+    const candidates = this.filteredContracts;
+    if (unitId && !candidates.some((contract) => contract.id === this.selectedContractId)) {
+      this.selectedContractId = candidates[0]?.id ?? null;
+    }
+  }
+
+  onContractSearch(value: string): void {
+    this.contractSearchTerm = value;
+  }
+
+  openChooser(contract?: LeaseContract): void {
+    if (contract) this.selectContract(contract);
+    this.chooserOpen = true;
+  }
+
+  chooseAction(action: 'RENEWAL' | 'TERMINATION'): void {
+    this.activeTab = action;
+    this.chooserOpen = false;
+    this.requestDetailsOpen = true;
+    this.attachmentFile = null;
+    this.attachmentUrl = null;
+    this.renewalForm.reset();
+    this.terminationForm.reset();
+  }
+
+  closeRequestDetails(): void {
+    if (this.submitting) return;
+    this.requestDetailsOpen = false;
+    this.attachmentFile = null;
+    this.attachmentUrl = null;
+  }
+
+  requestProgressLabel(req: ContractActionRequest): string {
+    const ar = this.i18n.currentLang === 'ar';
+    if (req.status === 'APPROVED') return ar ? 'وافق المالك وتم تنفيذ الطلب' : 'Owner approved and the request was applied';
+    if (req.status === 'REJECTED') return ar ? 'رفض المالك الطلب' : 'Owner rejected the request';
+    if (req.status === 'CANCELLED') return ar ? 'تم إلغاء الطلب' : 'Request cancelled';
+    return ar ? 'بانتظار موافقة المالك' : 'Waiting for owner approval';
+  }
+
+  contractStatusLabel(status: string): string {
+    return this.i18n.instant(`CONTRACTS.STATUS_${status}`);
   }
 
   private toYmd(value: Date | string): string {

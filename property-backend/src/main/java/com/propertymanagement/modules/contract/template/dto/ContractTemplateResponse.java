@@ -9,6 +9,8 @@ import java.time.LocalDateTime;
 public class ContractTemplateResponse {
     private Long id;
     private String templateName;
+    private String templateNameAr;
+    private String templateNameEn;
     private String templateType;
     private String content;
     private String variables;

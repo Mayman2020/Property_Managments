@@ -1,7 +1,7 @@
 ﻿import { Component, OnDestroy, OnInit } from '@angular/core';
 import { AbstractControl, FormBuilder, FormGroup, ValidationErrors, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Location, NgFor, NgIf } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
@@ -49,6 +49,7 @@ export class RequestFormComponent implements OnInit, OnDestroy {
   units: Unit[] = [];
   selectedCategoryIds = new Set<number>();
   tenantContract: LeaseContract | null = null;
+  tenantContracts: LeaseContract[] = [];
 
   private readonly destroy$ = new Subject<void>();
 
@@ -68,6 +69,7 @@ export class RequestFormComponent implements OnInit, OnDestroy {
     private readonly snack: SnackService,
     readonly i18n: I18nService,
     private readonly router: Router,
+    private readonly route: ActivatedRoute,
     readonly permissions: PermissionService,
     readonly auth: AuthService,
     private readonly location: Location
@@ -186,14 +188,18 @@ export class RequestFormComponent implements OnInit, OnDestroy {
     forkJoin({
       categoriesRes: this.maintSvc.getCategories(),
       propertiesRes: this.propertySvc.getAll(0, 200),
-      contractRes: this.auth.isTenant() ? this.portalSvc.getMyContract() : of({ data: null })
+      contractsRes: this.auth.isTenant() ? this.portalSvc.getMyContracts() : of({ data: [] as LeaseContract[] })
     }).subscribe({
-      next: ({ categoriesRes, propertiesRes, contractRes }) => {
+      next: ({ categoriesRes, propertiesRes, contractsRes }) => {
         this.categories = categoriesRes.data ?? [];
         this.properties = propertiesRes.data?.content ?? [];
-        this.tenantContract = contractRes.data ?? null;
+        this.tenantContracts = contractsRes.data ?? [];
 
-        const preferredPropertyId = this.tenantContract?.propertyId ?? this.auth.getCurrentUser()?.propertyId;
+        const queryPropertyId = Number(this.route.snapshot.queryParamMap.get('propertyId')) || null;
+        const queryUnitId = Number(this.route.snapshot.queryParamMap.get('unitId')) || null;
+        this.tenantContract = this.pickTenantContract(queryPropertyId, queryUnitId);
+
+        const preferredPropertyId = queryPropertyId ?? this.tenantContract?.propertyId ?? this.auth.getCurrentUser()?.propertyId;
         if (preferredPropertyId && this.properties.some((p) => p.id === preferredPropertyId)) {
           this.form.patchValue({ propertyId: preferredPropertyId });
         }
@@ -212,8 +218,10 @@ export class RequestFormComponent implements OnInit, OnDestroy {
     this.unitSvc.getByProperty(propertyId, 0, 500).subscribe({
       next: (res) => {
         this.units = (res.data?.content ?? []).filter((u) => u.active);
-        if (this.tenantContract?.unitId && this.units.some((u) => u.id === this.tenantContract?.unitId)) {
-          this.form.patchValue({ unitId: this.tenantContract.unitId });
+        const queryUnitId = Number(this.route.snapshot.queryParamMap.get('unitId')) || null;
+        const preferredUnitId = queryUnitId ?? this.tenantContract?.unitId ?? null;
+        if (preferredUnitId && this.units.some((u) => u.id === preferredUnitId)) {
+          this.form.patchValue({ unitId: preferredUnitId });
         }
         this.loadingUnits = false;
       },
@@ -223,5 +231,14 @@ export class RequestFormComponent implements OnInit, OnDestroy {
         this.snack.error(this.i18n.instant('REQUEST_FORM.LOAD_UNITS_ERROR'));
       }
     });
+  }
+
+  private pickTenantContract(propertyId: number | null, unitId: number | null): LeaseContract | null {
+    if (!this.tenantContracts.length) return null;
+    return this.tenantContracts.find((c) => unitId != null && c.unitId === unitId)
+      ?? this.tenantContracts.find((c) => propertyId != null && c.propertyId === propertyId && c.status === 'ACTIVE')
+      ?? this.tenantContracts.find((c) => c.status === 'ACTIVE')
+      ?? this.tenantContracts[0]
+      ?? null;
   }
 }

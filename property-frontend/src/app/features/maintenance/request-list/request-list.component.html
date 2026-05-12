@@ -28,10 +28,6 @@
         { label: ('NAV.MY_UNIT' | translate), route: '/tenant/dashboard' },
         { label: ('NAV.MY_REQUESTS' | translate) }
       ]">
-      <button mat-flat-button (click)="openNewRequest()">
-        <mat-icon>add</mat-icon>
-        {{ 'NAV.NEW_REQUEST' | translate }}
-      </button>
     </app-page-header>
   </ng-container>
 
@@ -56,61 +52,89 @@
   </div>
 
   <ng-container *ngIf="listContext === 'tenant' && !loading && !missingTenantLink">
-    <section class="tenant-active-card app-card" *ngIf="activeTenantRequest as active">
-      <div class="tenant-active-meta">
-        <span class="status-badge" [attr.data-status]="active.status">{{ statusLabel(active.status) }}</span>
-        <span class="priority-badge" [class]="active.priority">{{ priorityLabel(active.priority) }}</span>
-        <span class="req-number">{{ active.requestNumber }}</span>
+    <section class="app-card tenant-units-card" *ngIf="tenantUnitRows.length > 0">
+      <div class="section-card-header">
+        <div>
+          <div class="section-mini-label">{{ i18n.currentLang === 'ar' ? 'الوحدات' : 'Units' }}</div>
+          <h3>{{ i18n.currentLang === 'ar' ? 'اختر الوحدة' : 'Choose a unit' }}</h3>
+        </div>
       </div>
-      <div class="tenant-active-title">{{ active.title }}</div>
-      <div class="tenant-active-copy">
-        {{ active.propertyName || '-' }} · {{ 'REQUEST_LIST.UNIT' | translate }} {{ active.unitNumber || '-' }}
+
+      <div class="tenant-unit-picker-wrap">
+        <app-search-dropdown
+          [items]="tenantUnitDropdownItems"
+          [placeholder]="selectedTenantUnitLabel"
+          (selectionChange)="onTenantUnitDropdownSelect($event)">
+        </app-search-dropdown>
       </div>
-      <div class="tenant-active-footer">
-        <div class="tenant-active-visit">
-          <div class="section-mini-label">{{ i18n.currentLang === 'ar' ? 'الزيارة القادمة' : 'Next visit' }}</div>
-          <div class="section-mini-value">
-            <ng-container *ngIf="active.scheduledDate; else noVisit">
-              {{ active.scheduledDate | date:'dd/MM/yyyy' }}<ng-container *ngIf="active.scheduledTimeFrom"> · {{ active.scheduledTimeFrom }}</ng-container>
-            </ng-container>
-            <ng-template #noVisit>{{ i18n.currentLang === 'ar' ? 'سيتم التحديد قريبًا' : 'To be scheduled' }}</ng-template>
+    </section>
+
+    <div class="no-selection app-card" *ngIf="!selectedTenantUnitId">
+      <span class="material-icons">touch_app</span>
+      <p>{{ i18n.currentLang === 'ar' ? 'اختر وحدة من القائمة لعرض طلبات الصيانة.' : 'Select a unit from the list to view maintenance requests.' }}</p>
+    </div>
+
+    <section class="app-card tenant-maintenance-card" *ngIf="selectedTenantUnitId">
+      <div class="maintenance-head">
+        <div>
+          <span class="section-mini-label">{{ i18n.currentLang === 'ar' ? 'الصيانة' : 'Maintenance' }}</span>
+          <h2>{{ 'TENANT_DASHBOARD.MAINTENANCE_REQUESTS' | translate }}</h2>
+        </div>
+        <div class="maintenance-head-actions">
+          <span class="requests-total">{{ filteredRequests.length }} / {{ tenantStatusCount('') }}</span>
+          <button mat-flat-button color="primary" type="button" (click)="openNewRequest()">
+            <mat-icon>add</mat-icon>
+            {{ 'NAV.NEW_REQUEST' | translate }}
+          </button>
+        </div>
+      </div>
+
+      <div class="tenant-maintenance-toolbar">
+        <label class="estate-search-inline tenant-search">
+          <span class="material-icons">search</span>
+          <input [value]="searchTerm" (input)="onSearch($any($event.target).value)" [placeholder]="'ACTIONS.SEARCH' | translate">
+        </label>
+        <div class="status-filter-inline">
+          <span class="tenant-filter-label">{{ i18n.currentLang === 'ar' ? 'الحالة' : 'Status' }}</span>
+          <div class="tenant-unit-filter status-chips">
+            <button type="button" class="status-icon-filter" [class.active]="filterStatus === ''" (click)="filterStatus = ''; applyFilter()" [matTooltip]="i18n.currentLang === 'ar' ? 'الكل' : 'All'">
+              <span class="material-icons">apps</span>
+              <strong>{{ tenantStatusCount('') }}</strong>
+            </button>
+            <button
+              type="button"
+              class="status-icon-filter"
+              *ngFor="let s of statuses.slice(1)"
+              [class.active]="filterStatus === s.value"
+              [attr.data-status]="s.value"
+              [matTooltip]="i18n.instant(s.labelKey)"
+              (click)="filterStatus = s.value; applyFilter()">
+              <span class="material-icons">{{ statusFilterIcon(s.value) }}</span>
+              <strong>{{ tenantStatusCount(s.value) }}</strong>
+            </button>
           </div>
         </div>
-        <a mat-stroked-button [routerLink]="detailLink(active.id)">
-          {{ 'ACTIONS.VIEW' | translate }}
-        </a>
-      </div>
-    </section>
-
-    <app-empty-state
-      *ngIf="currentRequests.length === 0 && previousRequests.length === 0"
-      icon="build_circle"
-      [title]="'TENANT_DASHBOARD.EMPTY_TITLE' | translate"
-      [message]="'TENANT_DASHBOARD.EMPTY_MESSAGE' | translate">
-    </app-empty-state>
-
-    <section class="app-card table-card" *ngIf="currentRequests.length > 0">
-      <div class="section-card-header">
-        <div>
-          <div class="section-mini-label">{{ i18n.currentLang === 'ar' ? 'الحالي' : 'Current' }}</div>
-          <h3>{{ 'TENANT_DASHBOARD.CURRENT_REQUESTS' | translate }}</h3>
-        </div>
+        <button type="button" class="clear-filter-btn" *ngIf="searchTerm || filterStatus" (click)="searchTerm = ''; filterStatus = ''; applyFilter()">
+          <span class="material-icons">restart_alt</span>
+          {{ i18n.currentLang === 'ar' ? 'إعادة ضبط' : 'Reset' }}
+        </button>
       </div>
 
-      <div class="app-table-wrap">
-        <table class="app-data-table source-table">
+      <div class="app-table-wrap" *ngIf="filteredRequests.length > 0; else tenantEmptyRequests">
+        <table class="app-data-table source-table tenant-data-table">
           <thead>
             <tr>
               <th>#</th>
               <th>{{ 'REQUEST_LIST.REQUEST_TITLE' | translate }}</th>
               <th>{{ 'REQUEST_LIST.OFFICER' | translate }}</th>
               <th>{{ 'MAINTENANCE.STATUS' | translate }}</th>
+              <th>{{ 'MAINTENANCE.PRIORITY' | translate }}</th>
               <th>{{ 'REQUEST_LIST.CREATED_AT' | translate }}</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let req of pagedCurrentRequests">
+            <tr *ngFor="let req of pagedTenantRequests">
               <td><span class="req-number">{{ req.requestNumber }}</span></td>
               <td class="request-cell">
                 <span class="req-title">{{ req.title }}</span>
@@ -118,9 +142,10 @@
               </td>
               <td>{{ req.assignedOfficerName || '—' }}</td>
               <td><span class="status-badge" [attr.data-status]="req.status">{{ statusLabel(req.status) }}</span></td>
+              <td><span class="priority-badge" [class]="req.priority">{{ priorityLabel(req.priority) }}</span></td>
               <td>{{ req.createdAt | date:'dd/MM/yyyy' }}</td>
               <td>
-                <a class="table-arrow" [routerLink]="detailLink(req.id)">
+                <a class="table-arrow" [routerLink]="detailLink(req.id)" [matTooltip]="'ACTIONS.VIEW' | translate">
                   <span class="material-icons">{{ i18n.currentLang === 'ar' ? 'arrow_back' : 'arrow_forward' }}</span>
                 </a>
               </td>
@@ -129,50 +154,21 @@
         </table>
       </div>
 
-      <app-table-pager [length]="filterBySearch(currentRequests).length" [pageSize]="pageSize" [pageIndex]="tenantCurrentPageIndex" (pageIndexChange)="tenantCurrentPageIndex = $event"></app-table-pager>
-    </section>
+      <app-table-pager
+        *ngIf="filteredRequests.length > pageSize"
+        [length]="filteredRequests.length"
+        [pageSize]="pageSize"
+        [pageIndex]="tenantCurrentPageIndex"
+        (pageIndexChange)="tenantCurrentPageIndex = $event">
+      </app-table-pager>
 
-    <section class="app-card table-card" *ngIf="previousRequests.length > 0">
-      <div class="section-card-header">
-        <div>
-          <div class="section-mini-label">{{ i18n.currentLang === 'ar' ? 'السجل' : 'History' }}</div>
-          <h3>{{ 'TENANT_DASHBOARD.PREVIOUS_REQUESTS' | translate }}</h3>
-        </div>
-      </div>
-
-      <div class="app-table-wrap">
-        <table class="app-data-table source-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>{{ 'REQUEST_LIST.REQUEST_TITLE' | translate }}</th>
-              <th>{{ 'REQUEST_LIST.OFFICER' | translate }}</th>
-              <th>{{ 'MAINTENANCE.STATUS' | translate }}</th>
-              <th>{{ 'REQUEST_LIST.CREATED_AT' | translate }}</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let req of pagedPreviousRequests">
-              <td><span class="req-number">{{ req.requestNumber }}</span></td>
-              <td class="request-cell">
-                <span class="req-title">{{ req.title }}</span>
-                <span class="unit-info">{{ req.propertyName || '-' }} · {{ req.unitNumber || '-' }}</span>
-              </td>
-              <td>{{ req.assignedOfficerName || '—' }}</td>
-              <td><span class="status-badge" [attr.data-status]="req.status">{{ statusLabel(req.status) }}</span></td>
-              <td>{{ req.createdAt | date:'dd/MM/yyyy' }}</td>
-              <td>
-                <a class="table-arrow" [routerLink]="detailLink(req.id)">
-                  <span class="material-icons">{{ i18n.currentLang === 'ar' ? 'arrow_back' : 'arrow_forward' }}</span>
-                </a>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <app-table-pager [length]="filterBySearch(previousRequests).length" [pageSize]="pageSize" [pageIndex]="tenantPreviousPageIndex" (pageIndexChange)="tenantPreviousPageIndex = $event"></app-table-pager>
+      <ng-template #tenantEmptyRequests>
+        <app-empty-state
+          icon="build_circle"
+          [title]="'TENANT_DASHBOARD.EMPTY_TITLE' | translate"
+          [message]="'TENANT_DASHBOARD.EMPTY_MESSAGE' | translate">
+        </app-empty-state>
+      </ng-template>
     </section>
   </ng-container>
 

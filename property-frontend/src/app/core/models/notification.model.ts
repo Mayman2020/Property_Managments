@@ -32,11 +32,22 @@ export type NotificationType =
   | 'PAYROLL_GENERATED'
   | 'FINANCE_ALERT'
   | 'MAINTENANCE_UPDATE'
+  | 'MAINTENANCE_PROVIDER_ASSIGNED'
+  | 'MAINTENANCE_PROVIDER_UNASSIGNED'
   | 'OWNER_STATEMENT'
   | 'PROPERTY_LINKED_TO_OWNER'
   | 'UNIT_ADDED_TO_OWNER_PROPERTY'
   | 'TENANT_REGISTERED_ON_OWNER_PROPERTY'
-  | 'GENERAL';
+  | 'GENERAL'
+  | 'MAINTENANCE_CONTRACT_AWAITING_OWNER_REVIEW'
+  | 'MAINTENANCE_CONTRACT_APPROVED'
+  | 'MAINTENANCE_CONTRACT_REJECTED'
+  | 'MAINTENANCE_CONTRACT_TERMINATION_REQUESTED'
+  | 'MAINTENANCE_CONTRACT_TERMINATION_APPROVED'
+  | 'MAINTENANCE_CONTRACT_TERMINATION_REJECTED'
+  | 'MAINTENANCE_CONTRACT_RENEWAL_REQUESTED'
+  | 'MAINTENANCE_CONTRACT_RENEWAL_APPROVED'
+  | 'MAINTENANCE_CONTRACT_RENEWAL_REJECTED';
 
 /**
  * Structured i18n payload sent by the backend so the frontend renders the
@@ -49,9 +60,14 @@ export interface NotificationParams {
   vars?: Record<string, string | number | boolean | null>;
   /** Inbox deep-link hints (persisted beside i18n keys). */
   contractId?: number;
+  maintenanceContractId?: number;
   unitId?: number;
   tenantId?: number;
   propertyId?: number;
+  /** Complaint-originated maintenance request flags. */
+  fromComplaint?: boolean;
+  complaintId?: number;
+  color?: string;
 }
 
 export interface AppNotification {

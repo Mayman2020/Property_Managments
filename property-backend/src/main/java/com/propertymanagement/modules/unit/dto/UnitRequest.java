@@ -1,6 +1,6 @@
 package com.propertymanagement.modules.unit.dto;
 
-import com.propertymanagement.modules.unit.UnitType;
+import com.propertymanagement.modules.unit.entity.UnitType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;

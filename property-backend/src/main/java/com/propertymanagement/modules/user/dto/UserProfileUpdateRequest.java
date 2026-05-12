@@ -5,11 +5,18 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.util.List;
+import com.propertymanagement.modules.hr.employee.entity.Employee;
+import com.propertymanagement.modules.owner.entity.Owner;
+import com.propertymanagement.modules.tenant.entity.Tenant;
 
 @Data
 public class UserProfileUpdateRequest {
     @Size(max = 150)
     private String fullName;
+    @Size(max = 150)
+    private String fullNameAr;
+    @Size(max = 150)
+    private String fullNameEn;
     @Size(max = 20)
     private String phone;
     @Size(max = 600)

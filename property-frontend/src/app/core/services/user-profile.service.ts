@@ -7,6 +7,8 @@ import { EmployeeProfileLink, OwnerProfileLink, TenantProfileLink, User } from '
 
 export interface UserProfileUpdateRequest {
   fullName?: string;
+  fullNameAr?: string;
+  fullNameEn?: string;
   phone?: string;
   profileImageUrl?: string;
   bio?: string;

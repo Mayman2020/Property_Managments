@@ -6,6 +6,8 @@ import org.springframework.stereotype.Service;
 import jakarta.transaction.Transactional;
 
 import java.time.Year;
+import com.propertymanagement.modules.property.entity.Property;
+import com.propertymanagement.modules.unit.entity.Unit;
 
 @Service
 @RequiredArgsConstructor

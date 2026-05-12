@@ -5,6 +5,11 @@ import lombok.Data;
 
 import java.util.List;
 import java.util.Map;
+import com.propertymanagement.modules.hr.employee.entity.Employee;
+import com.propertymanagement.modules.owner.entity.Owner;
+import com.propertymanagement.modules.tenant.entity.Tenant;
+import com.propertymanagement.modules.user.entity.MaintenanceOfficerType;
+import com.propertymanagement.modules.user.entity.User;
 
 @Data
 @Builder

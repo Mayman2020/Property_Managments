@@ -5,6 +5,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import com.propertymanagement.modules.property.entity.Property;
+import com.propertymanagement.modules.user.entity.User;
 
 @Data
 @NoArgsConstructor

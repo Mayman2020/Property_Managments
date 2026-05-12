@@ -1,0 +1,89 @@
+<h2 mat-dialog-title>{{ titleKey | translate }}</h2>
+
+<mat-dialog-content class="dialog-body">
+  <div class="loading-center" *ngIf="loading">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <form [formGroup]="form" class="maintenance-contract-form" *ngIf="!loading">
+    <div class="form-intro">
+      <span class="material-icons">domain</span>
+      <div>
+        <strong>{{ (mode === 'create' ? 'MAINTENANCE.CONTRACT_NEW' : 'MAINTENANCE.CONTRACT_EDIT') | translate }}</strong>
+        <p>{{ i18n.currentLang === 'ar' 
+          ? 'أدخل بيانات العقد مع شركة الصيانة (العقار، الشركة، التواريخ، والقيمة).' 
+          : 'Enter maintenance contract details (property, company, dates, and value).' }}</p>
+      </div>
+    </div>
+
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>{{ 'COMMON.PROPERTY' | translate }}</mat-label>
+      <mat-select formControlName="propertyId">
+        <mat-option>{{ 'COMMON.SELECT' | translate }}</mat-option>
+        <mat-option *ngFor="let prop of properties" [value]="prop.id">
+          {{ propertyLabel(prop) }}
+        </mat-option>
+      </mat-select>
+      <mat-error *ngIf="form.get('propertyId')?.invalid">{{ 'COMMON.REQUIRED' | translate }}</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>{{ 'CONTRACTORS.COMPANY' | translate }}</mat-label>
+      <mat-select formControlName="contractorCompanyId">
+        <mat-option>{{ 'COMMON.SELECT' | translate }}</mat-option>
+        <mat-option *ngFor="let company of contractorCompanies" [value]="company.id">
+          {{ companyLabel(company) }}
+        </mat-option>
+      </mat-select>
+      <mat-error *ngIf="form.get('contractorCompanyId')?.invalid">{{ 'COMMON.REQUIRED' | translate }}</mat-error>
+    </mat-form-field>
+
+    <div class="form-row">
+      <mat-form-field appearance="outline" class="half">
+        <mat-label>{{ 'CONTRACTS.START_DATE' | translate }}</mat-label>
+        <input matInput [matDatepicker]="startPicker" formControlName="startDate">
+        <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+        <mat-datepicker #startPicker></mat-datepicker>
+        <mat-error *ngIf="form.get('startDate')?.invalid">{{ 'COMMON.REQUIRED' | translate }}</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="half">
+        <mat-label>{{ 'CONTRACTS.END_DATE' | translate }}</mat-label>
+        <input matInput [matDatepicker]="endPicker" formControlName="endDate">
+        <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+        <mat-datepicker #endPicker></mat-datepicker>
+        <mat-error *ngIf="form.get('endDate')?.invalid">{{ 'COMMON.REQUIRED' | translate }}</mat-error>
+      </mat-form-field>
+    </div>
+
+    <div class="form-row">
+      <mat-form-field appearance="outline" class="half">
+        <mat-label>{{ 'CONTRACTS.CONTRACT_VALUE' | translate }}</mat-label>
+        <input matInput type="number" formControlName="contractValue" min="0" step="0.01">
+        <mat-error *ngIf="form.get('contractValue')?.invalid">{{ 'COMMON.REQUIRED' | translate }}</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="half">
+        <mat-label>{{ 'LOOKUPS.CURRENCY' | translate }}</mat-label>
+        <mat-select formControlName="currency">
+          <mat-option *ngFor="let currency of currencies" [value]="currency.code">
+            {{ currencyLabel(currency) }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>{{ 'CONTRACTS.NOTES' | translate }}</mat-label>
+      <textarea matInput formControlName="notes" rows="3"></textarea>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()">{{ 'ACTIONS.CANCEL' | translate }}</button>
+  <button mat-flat-button color="primary" (click)="submit()" [disabled]="loading || submitting || (mode === 'view')">
+    <span *ngIf="!submitting">{{ mode === 'create' ? ('ACTIONS.CREATE' | translate) : ('ACTIONS.SAVE' | translate) }}</span>
+    <mat-spinner *ngIf="submitting" diameter="20"></mat-spinner>
+  </button>
+</mat-dialog-actions>

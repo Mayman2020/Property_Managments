@@ -3,6 +3,8 @@ package com.propertymanagement.modules.maintenance.assignment.dto;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import com.propertymanagement.modules.user.entity.User;
+import com.propertymanagement.modules.user.entity.UserRole;
 
 public record MaintenanceAssignmentResponse(
         Long assignmentId,

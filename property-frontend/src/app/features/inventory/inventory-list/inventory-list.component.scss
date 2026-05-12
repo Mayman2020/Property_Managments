@@ -4,32 +4,24 @@
   padding: 48px;
 }
 
-.inventory-search-shell,
 .inventory-table-card {
   animation: fadeUp 280ms ease both;
 }
 
-.inventory-search-shell {
+.inventory-toolbar {
+  margin-bottom: 16px;
+}
+
+.inventory-toolbar-row {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 16px;
-  height: 46px;
-  padding: 0 14px;
-  border: 1px solid var(--card-border);
-  border-radius: 14px;
-  background: var(--surface);
-  box-shadow: var(--shadow-card);
-  color: var(--text-muted);
+  flex-wrap: wrap;
+  width: 100%;
 }
 
-.inventory-search-shell input {
-  flex: 1;
-  border: 0;
-  outline: 0;
-  background: transparent;
-  color: var(--text-main);
-  font: inherit;
+.inventory-toolbar .estate-search-inline {
+  flex: 0 1 300px;
 }
 
 .source-table tbody tr:hover {

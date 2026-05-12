@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Location, NgIf, NgFor, DatePipe, DecimalPipe, NgClass } from '@angular/common';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -10,6 +11,7 @@ import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { TranslateModule } from '@ngx-translate/core';
 import { catchError, forkJoin, of } from 'rxjs';
 import { RecordPaymentFormComponent } from '../record-payment-form/record-payment-form.component';
+import { ReviewDialogComponent, ReviewDialogData } from '../../accountant/review-dialog/review-dialog.component';
 import {
   TerminateContractDialogComponent,
   TerminateContractDialogData
@@ -17,16 +19,16 @@ import {
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { AuditTrailComponent } from '../../../shared/components/audit-trail/audit-trail.component';
-import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
 import { ContractFormComponent } from '../contract-form/contract-form.component';
 import {
   CancelDraftContractDialogComponent,
   CancelDraftContractDialogData
 } from '../cancel-draft-contract-dialog/cancel-draft-contract-dialog.component';
-import { OwnerDraftAmendDialogComponent } from '../../owner/owner-draft-amend-dialog.component';
-import { OwnerDraftRejectDialogComponent } from '../../owner/owner-draft-reject-dialog.component';
+import { OwnerDraftAmendDialogComponent } from '../../owner/owner-draft-amend-dialog/owner-draft-amend-dialog.component';
+import { OwnerDraftRejectDialogComponent } from '../../owner/owner-draft-reject-dialog/owner-draft-reject-dialog.component';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { ContractService } from '../../../core/services/contract.service';
+import { PaymentService } from '../../../core/services/payment.service';
 import { OwnerPortalService } from '../../../core/services/owner-portal.service';
 import { SnackService } from '../../../core/services/snack.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -48,8 +50,8 @@ export type ContractDetailSection = 'info' | 'schedule' | 'complaints';
     NgIf, NgFor, DatePipe, DecimalPipe, NgClass,
     MatCardModule, MatButtonModule, MatIconModule,
     MatProgressSpinnerModule,
-    MatTableModule, MatDialogModule,
-    TranslateModule, PageHeaderComponent, AuditTrailComponent, TablePagerComponent,
+    MatTableModule, MatDialogModule, MatPaginatorModule,
+    TranslateModule, PageHeaderComponent, AuditTrailComponent,
     ContractFormComponent, CancelDraftContractDialogComponent,
     OwnerDraftAmendDialogComponent, OwnerDraftRejectDialogComponent
   ],
@@ -68,13 +70,16 @@ export class ContractDetailComponent implements OnInit {
 
   section: ContractDetailSection = 'info';
 
+  /** Same default page size as {@link PropertyListComponent}. */
   readonly schedulePageSize = 5;
   schedulePageIndex = 0;
+  highlightedScheduleId: number | null = null;
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private contractSvc: ContractService,
+    private paymentSvc: PaymentService,
     private readonly ownerPortal: OwnerPortalService,
     private complaintSvc: ComplaintService,
     private tenantSvc: TenantService,
@@ -89,6 +94,7 @@ export class ContractDetailComponent implements OnInit {
 
   ngOnInit(): void {
     this.contractId = Number(this.route.snapshot.paramMap.get('id'));
+    this.applyScheduleDeepLink();
     this.loadAll();
   }
 
@@ -100,8 +106,10 @@ export class ContractDetailComponent implements OnInit {
       complaints: this.complaintSvc.getAll({ contractId: this.contractId }).pipe(catchError(() => of(null)))
     }).subscribe(({ contract, schedule, complaints }) => {
       this.contract = contract?.data ?? null;
-      this.schedule = schedule?.data?.content ?? schedule?.data ?? [];
+      const schedPayload = schedule?.data;
+      this.schedule = schedPayload?.content ?? schedPayload ?? [];
       this.complaints = complaints?.data?.content ?? complaints?.data ?? [];
+      this.focusHighlightedSchedule();
       this.schedulePageIndex = Math.min(
         this.schedulePageIndex,
         Math.max(Math.ceil(this.schedule.length / this.schedulePageSize) - 1, 0)
@@ -120,12 +128,76 @@ export class ContractDetailComponent implements OnInit {
     return this.schedule.slice(start, start + this.schedulePageSize);
   }
 
-  onSchedulePageChange(index: number): void {
-    this.schedulePageIndex = index;
+  get scheduleTotalPages(): number {
+    return Math.max(1, Math.ceil(this.schedule.length / this.schedulePageSize));
+  }
+
+  get schedulePageStart(): number {
+    if (!this.schedule.length) return 0;
+    return this.schedulePageIndex * this.schedulePageSize + 1;
+  }
+
+  get schedulePageEnd(): number {
+    return Math.min((this.schedulePageIndex + 1) * this.schedulePageSize, this.schedule.length);
+  }
+
+  onScheduleMatPage(event: PageEvent): void {
+    this.schedulePageIndex = event.pageIndex;
+  }
+
+  goToSchedulePage(pageNumber: number): void {
+    const nextPage = pageNumber - 1;
+    if (nextPage < 0 || nextPage >= this.scheduleTotalPages || nextPage === this.schedulePageIndex) return;
+    this.schedulePageIndex = nextPage;
+  }
+
+  previousSchedulePage(): void {
+    this.goToSchedulePage(this.schedulePageIndex + 1);
+  }
+
+  nextSchedulePage(): void {
+    this.goToSchedulePage(this.schedulePageIndex + 2);
+  }
+
+  schedulePageItems(): Array<number | 'ellipsis'> {
+    const total = this.scheduleTotalPages;
+    const current = this.schedulePageIndex + 1;
+
+    if (total <= 7) {
+      return Array.from({ length: total }, (_, index) => index + 1);
+    }
+
+    if (current <= 4) {
+      return [1, 2, 3, 4, 5, 'ellipsis', total];
+    }
+
+    if (current >= total - 3) {
+      return [1, 'ellipsis', total - 4, total - 3, total - 2, total - 1, total];
+    }
+
+    return [1, 'ellipsis', current - 1, current, current + 1, 'ellipsis', total];
   }
 
   setSection(s: ContractDetailSection): void {
     this.section = s;
+  }
+
+  private applyScheduleDeepLink(): void {
+    const tab = this.route.snapshot.queryParamMap.get('tab');
+    const scheduleId = Number(this.route.snapshot.queryParamMap.get('scheduleId'));
+    if (tab === 'schedule') {
+      this.section = 'schedule';
+    }
+    this.highlightedScheduleId = Number.isFinite(scheduleId) && scheduleId > 0 ? scheduleId : null;
+  }
+
+  private focusHighlightedSchedule(): void {
+    if (!this.highlightedScheduleId || !this.schedule.length) return;
+    const idx = this.schedule.findIndex((row) => row.id === this.highlightedScheduleId);
+    if (idx >= 0) {
+      this.section = 'schedule';
+      this.schedulePageIndex = Math.floor(idx / this.schedulePageSize);
+    }
   }
 
   activate(): void {
@@ -503,6 +575,89 @@ export class ContractDetailComponent implements OnInit {
       IN_REVIEW: 'chip-info', CLOSED: 'chip-default'
     };
     return map[status] ?? 'chip-default';
+  }
+
+  isHighlightedSchedule(row: RentPaymentSchedule): boolean {
+    return this.highlightedScheduleId === row.id || row.status === 'PENDING_CONFIRMATION';
+  }
+
+  canReviewProof(row: RentPaymentSchedule): boolean {
+    return row.status === 'PENDING_CONFIRMATION'
+      && (this.auth.isAccountant() || this.auth.isSuperAdmin() || this.auth.isGeneralManager());
+  }
+
+  proofUrls(row: RentPaymentSchedule): string[] {
+    const urls = row.proofUrls?.length ? row.proofUrls : [row.proofUrl || row.receiptUrl || ''];
+    return urls.filter((url): url is string => !!url);
+  }
+
+  hasProof(row: RentPaymentSchedule): boolean {
+    return !!(this.proofUrls(row).length || row.proofPaymentDate || row.proofSubmittedAt || row.proofPaymentMethod || row.proofReferenceNumber);
+  }
+
+  viewProof(url: string): void {
+    window.open(url, '_blank');
+  }
+
+  openProofDetails(row: RentPaymentSchedule): void {
+    const isAr = this.i18n.currentLang === 'ar';
+    const lines = [
+      `${isAr ? 'العقار' : 'Property'}: ${this.contract?.propertyName ?? '-'}`,
+      `${isAr ? 'الوحدة' : 'Unit'}: ${this.contract?.unitNumber ?? '-'}`,
+      `${isAr ? 'تاريخ الدفع' : 'Payment date'}: ${this.formatDisplayDate(row.proofPaymentDate)}`,
+      `${isAr ? 'تاريخ الإرسال' : 'Submitted at'}: ${this.formatDisplayDateTime(row.proofSubmittedAt)}`,
+      `${isAr ? 'تاريخ القبول/المراجعة' : 'Reviewed at'}: ${this.formatDisplayDateTime(row.reviewedAt)}`,
+      `${isAr ? 'نوع التحويل' : 'Transfer type'}: ${row.proofPaymentMethod ?? '-'}`,
+      `${isAr ? 'مرجع التحويل' : 'Transfer reference'}: ${row.proofReferenceNumber ?? '-'}`
+    ];
+    this.dialog.open(ConfirmDialogComponent, {
+      width: '460px',
+      maxWidth: '95vw',
+      panelClass: 'app-dialog-panel',
+      data: {
+        title: isAr ? 'تفاصيل إثبات الدفع' : 'Payment proof details',
+        message: lines.join('\n'),
+        confirmLabel: isAr ? 'إغلاق' : 'Close',
+        alertOnly: true,
+        icon: 'info'
+      } as ConfirmDialogData
+    });
+  }
+
+  reviewProof(row: RentPaymentSchedule, decision: 'APPROVED' | 'REJECTED'): void {
+    if (!this.canReviewProof(row)) return;
+    const data: ReviewDialogData = {
+      title: decision === 'APPROVED'
+        ? (this.i18n.currentLang === 'ar' ? 'تأكيد قبول إثبات الدفع' : 'Approve payment proof')
+        : (this.i18n.currentLang === 'ar' ? 'رفض إثبات الدفع' : 'Reject payment proof'),
+      currentStatus: row.status
+    };
+    const ref = this.dialog.open(ReviewDialogComponent, { width: '420px', data, disableClose: true });
+    ref.afterClosed().subscribe((result: { status: string; notes: string } | undefined) => {
+      if (!result) return;
+      const status = result.status === 'APPROVED' ? 'APPROVED' : 'REJECTED';
+      this.paymentSvc.reviewProof(row.id, status, result.notes).subscribe({
+        next: () => {
+          this.snack.success(this.i18n.instant('COMMON.SAVED'));
+          this.loadAll();
+        },
+        error: (e) => this.snack.error(e?.error?.message || this.i18n.instant('COMMON.ERROR'))
+      });
+    });
+  }
+
+  private formatDisplayDate(value?: string | null): string {
+    if (!value) return '-';
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return value;
+    return d.toLocaleDateString('en-GB');
+  }
+
+  private formatDisplayDateTime(value?: string | null): string {
+    if (!value) return '-';
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return value;
+    return `${d.toLocaleDateString('en-GB')} ${d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })}`;
   }
 
   canOpenMarkPaid(row: RentPaymentSchedule): boolean {

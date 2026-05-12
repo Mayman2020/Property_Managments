@@ -17,6 +17,7 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
 import { ContractService } from '../../../core/services/contract.service';
 import { ContractTemplate, TemplateType } from '../../../core/models/contract.model';
+import { I18nService } from '../../../core/i18n/i18n.service';
 
 @Component({
   selector: 'app-contract-templates',
@@ -47,7 +48,8 @@ export class ContractTemplatesComponent implements OnInit {
 
   constructor(
     private contractSvc: ContractService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private i18n: I18nService
   ) {}
 
   ngOnInit(): void {
@@ -57,7 +59,8 @@ export class ContractTemplatesComponent implements OnInit {
 
   initForm(t?: ContractTemplate): void {
     this.form = this.fb.group({
-      templateName: [t?.templateName ?? '', Validators.required],
+      templateNameAr: [t?.templateNameAr ?? t?.templateName ?? '', Validators.required],
+      templateNameEn: [t?.templateNameEn ?? t?.templateName ?? '', Validators.required],
       templateType: [t?.templateType ?? 'RESIDENTIAL'],
       content: [t?.content ?? '', Validators.required],
       variables: [t?.variables ?? '{}'],
@@ -101,9 +104,18 @@ export class ContractTemplatesComponent implements OnInit {
   submit(): void {
     if (this.form.invalid) return;
     this.saving = true;
+    const value = this.form.value;
+    const templateNameAr = (value.templateNameAr ?? '').trim();
+    const templateNameEn = (value.templateNameEn ?? '').trim();
+    const body: Partial<ContractTemplate> = {
+      ...value,
+      templateNameAr,
+      templateNameEn,
+      templateName: this.i18n.currentLang === 'ar' ? templateNameAr : templateNameEn
+    };
     const obs = this.editingId
-      ? this.contractSvc.updateTemplate(this.editingId, this.form.value)
-      : this.contractSvc.createTemplate(this.form.value);
+      ? this.contractSvc.updateTemplate(this.editingId, body)
+      : this.contractSvc.createTemplate(body);
 
     obs.subscribe({
       next: () => {
@@ -116,5 +128,11 @@ export class ContractTemplatesComponent implements OnInit {
         this.saving = false;
       }
     });
+  }
+
+  templateDisplayName(t: ContractTemplate): string {
+    return this.i18n.currentLang === 'ar'
+      ? (t.templateNameAr || t.templateName || t.templateNameEn || '')
+      : (t.templateNameEn || t.templateName || t.templateNameAr || '');
   }
 }

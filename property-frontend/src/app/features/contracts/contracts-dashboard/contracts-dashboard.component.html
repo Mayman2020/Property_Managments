@@ -7,10 +7,16 @@
       { label: ('NAV.DASHBOARD' | translate), route: '/admin/dashboard' },
       { label: ('NAV.CONTRACTS_DASHBOARD' | translate) }
     ]">
-    <button mat-flat-button class="new-contract-btn" (click)="openContractDialog()">
-      <mat-icon>add</mat-icon>
-      {{ 'CONTRACTS.NEW_CONTRACT' | translate }}
-    </button>
+    <div class="contracts-dashboard-header-actions">
+      <button mat-flat-button class="new-contract-btn" (click)="openContractDialog()">
+        <mat-icon>add</mat-icon>
+        {{ 'CONTRACTS.NEW_CONTRACT' | translate }}
+      </button>
+      <button mat-stroked-button class="new-maintenance-contract-btn" type="button" *ngIf="canCreateMaintenanceContract()" (click)="openMaintenanceContractDialog()">
+        <mat-icon>engineering</mat-icon>
+        {{ 'CONTRACTS.NEW_MAINTENANCE_CONTRACT' | translate }}
+      </button>
+    </div>
   </app-page-header>
 
 <div *ngIf="loading" class="loading-wrap">
@@ -21,15 +27,73 @@
 
   <!-- KPI row -->
   <div class="kpi-grid">
-    <article class="kpi-card active-contracts kpi-clickable"
-      routerLink="/admin/contracts/list" [queryParams]="{status:'ACTIVE'}"
+    <article class="kpi-card active-rental-contracts kpi-clickable"
+      routerLink="/admin/contracts/list" [queryParams]="{type:'LEASE', status:'ACTIVE'}"
       [matTooltip]="'CONTRACTS.CLICK_TO_VIEW' | translate">
       <div class="kpi-icon-wrap">
         <mat-icon>description</mat-icon>
       </div>
       <div class="kpi-body">
-        <div class="kpi-value">{{ stats.activeContracts }}</div>
-        <div class="kpi-label">{{ 'CONTRACTS.ACTIVE_CONTRACTS' | translate }}</div>
+        <div class="kpi-value">{{ stats.activeRentalContracts }}</div>
+        <div class="kpi-label">{{ 'CONTRACTS.ACTIVE_RENTAL_CONTRACTS' | translate }}</div>
+      </div>
+    </article>
+
+    <article class="kpi-card cancelled-rental-contracts kpi-clickable"
+      routerLink="/admin/contracts/list" [queryParams]="{type:'LEASE', status:'CANCELLED'}"
+      [matTooltip]="'CONTRACTS.CLICK_TO_VIEW' | translate">
+      <div class="kpi-icon-wrap">
+        <mat-icon>block</mat-icon>
+      </div>
+      <div class="kpi-body">
+        <div class="kpi-value">{{ stats.cancelledRentalContracts }}</div>
+        <div class="kpi-label">{{ 'CONTRACTS.CANCELLED_RENTAL_CONTRACTS' | translate }}</div>
+      </div>
+    </article>
+
+    <article class="kpi-card rental-expiring-soon kpi-clickable"
+      routerLink="/admin/contracts/list" [queryParams]="{type:'LEASE', status:'ACTIVE'}">
+      <div class="kpi-icon-wrap">
+        <mat-icon>event_upcoming</mat-icon>
+      </div>
+      <div class="kpi-body">
+        <div class="kpi-value">{{ stats.rentalExpiringIn30Days }}</div>
+        <div class="kpi-label">{{ 'CONTRACTS.RENTAL_EXPIRING_30_DAYS' | translate }}</div>
+      </div>
+    </article>
+
+    <article class="kpi-card active-maintenance-contracts kpi-clickable"
+      routerLink="/admin/contracts/list" [queryParams]="{type:'MAINTENANCE', status:'ACTIVE'}"
+      [matTooltip]="'CONTRACTS.CLICK_TO_VIEW' | translate">
+      <div class="kpi-icon-wrap">
+        <mat-icon>engineering</mat-icon>
+      </div>
+      <div class="kpi-body">
+        <div class="kpi-value">{{ stats.activeMaintenanceContracts }}</div>
+        <div class="kpi-label">{{ 'CONTRACTS.ACTIVE_MAINTENANCE_CONTRACTS' | translate }}</div>
+      </div>
+    </article>
+
+    <article class="kpi-card cancelled-maintenance-contracts kpi-clickable"
+      routerLink="/admin/contracts/list" [queryParams]="{type:'MAINTENANCE', status:'CANCELLED'}"
+      [matTooltip]="'CONTRACTS.CLICK_TO_VIEW' | translate">
+      <div class="kpi-icon-wrap">
+        <mat-icon>do_not_disturb_on</mat-icon>
+      </div>
+      <div class="kpi-body">
+        <div class="kpi-value">{{ stats.cancelledMaintenanceContracts }}</div>
+        <div class="kpi-label">{{ 'CONTRACTS.CANCELLED_MAINTENANCE_CONTRACTS' | translate }}</div>
+      </div>
+    </article>
+
+    <article class="kpi-card maintenance-expiring-soon kpi-clickable"
+      routerLink="/admin/contracts/list" [queryParams]="{type:'MAINTENANCE', status:'ACTIVE'}">
+      <div class="kpi-icon-wrap">
+        <mat-icon>pending_actions</mat-icon>
+      </div>
+      <div class="kpi-body">
+        <div class="kpi-value">{{ stats.maintenanceExpiringIn30Days }}</div>
+        <div class="kpi-label">{{ 'CONTRACTS.MAINTENANCE_EXPIRING_30_DAYS' | translate }}</div>
       </div>
     </article>
 
@@ -45,13 +109,15 @@
       </div>
     </article>
 
-    <article class="kpi-card expiring-soon">
+    <article class="kpi-card maintenance-pending kpi-clickable"
+      routerLink="/admin/owner-portal/contract-approvals"
+      [matTooltip]="'CONTRACTS.MAINTENANCE_PENDING_APPROVAL_HINT' | translate">
       <div class="kpi-icon-wrap">
-        <mat-icon>event_upcoming</mat-icon>
+        <mat-icon>engineering</mat-icon>
       </div>
       <div class="kpi-body">
-        <div class="kpi-value">{{ stats.expiringIn30Days }}</div>
-        <div class="kpi-label">{{ 'CONTRACTS.EXPIRING_30_DAYS' | translate }}</div>
+        <div class="kpi-value">{{ stats.maintenancePendingApproval }}</div>
+        <div class="kpi-label">{{ 'CONTRACTS.MAINTENANCE_PENDING_APPROVAL' | translate }}</div>
       </div>
     </article>
 

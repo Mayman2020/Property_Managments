@@ -1,12 +1,13 @@
 package com.propertymanagement.modules.contract.scheduler;
 
-import com.propertymanagement.modules.contract.lease.ContractStatus;
-import com.propertymanagement.modules.contract.lease.LeaseContract;
-import com.propertymanagement.modules.contract.lease.LeaseContractRepository;
-import com.propertymanagement.modules.contract.lease.LeaseContractService;
-import com.propertymanagement.modules.contract.payment.PaymentScheduleStatus;
-import com.propertymanagement.modules.contract.payment.RentPaymentSchedule;
-import com.propertymanagement.modules.contract.payment.RentPaymentScheduleRepository;
+import com.propertymanagement.modules.contract.lease.entity.ContractStatus;
+import com.propertymanagement.modules.contract.lease.entity.LeaseContract;
+import com.propertymanagement.modules.contract.lease.repository.LeaseContractRepository;
+import com.propertymanagement.modules.contract.lease.service.LeaseContractService;
+import com.propertymanagement.modules.contract.payment.entity.PaymentScheduleStatus;
+import com.propertymanagement.modules.contract.payment.entity.RentPaymentSchedule;
+import com.propertymanagement.modules.contract.payment.repository.RentPaymentScheduleRepository;
+import com.propertymanagement.modules.contract.payment.service.RentPaymentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -24,6 +25,7 @@ import java.util.Set;
 public class ContractScheduler {
 
     private final RentPaymentScheduleRepository scheduleRepository;
+    private final RentPaymentService rentPaymentService;
     private final LeaseContractRepository contractRepository;
     private final LeaseContractService leaseContractService;
 
@@ -63,5 +65,15 @@ public class ContractScheduler {
         if (!expired.isEmpty()) {
             log.info("Marked {} contracts as EXPIRED", expired.size());
         }
+    }
+
+    @Scheduled(cron = "0 0 9 * * *")
+    @Transactional
+    public void checkUpcomingRentDueReminders() {
+        log.info("Running upcoming rent due reminder check...");
+        LocalDate reminderDate = LocalDate.now().plusDays(3);
+        List<RentPaymentSchedule> dueSoon = scheduleRepository.findByStatusAndDueDate(PaymentScheduleStatus.PENDING, reminderDate);
+        dueSoon.forEach(rentPaymentService::notifyUpcomingRentDue);
+        log.info("Sent {} rent due reminders for payments due on {}", dueSoon.size(), reminderDate);
     }
 }

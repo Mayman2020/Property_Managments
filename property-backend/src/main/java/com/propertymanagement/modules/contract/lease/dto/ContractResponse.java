@@ -6,6 +6,9 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import com.propertymanagement.modules.contract.lease.entity.PaymentFrequency;
+import com.propertymanagement.modules.owner.entity.Owner;
+import com.propertymanagement.modules.user.entity.User;
 
 @Data @Builder
 public class ContractResponse {
@@ -17,6 +20,7 @@ public class ContractResponse {
     private String unitNumber;
     private Long propertyId;
     private String propertyName;
+    private String propertyCoverImageUrl;
     private Long ownerId;
     private String ownerName;
     private Long templateId;

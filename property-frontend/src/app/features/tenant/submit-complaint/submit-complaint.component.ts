@@ -31,47 +31,61 @@ import { I18nService } from '../../../core/i18n/i18n.service';
         ]">
       </app-page-header>
 
-      <div class="app-card" style="max-width: 680px;">
-        <form #complaintForm="ngForm" (ngSubmit)="submit(complaintForm)" novalidate>
+      <div class="complaint-shell">
+        <form class="complaint-card app-card" #complaintForm="ngForm" (ngSubmit)="submit(complaintForm)" novalidate>
+          <div class="complaint-card-header">
+            <span class="material-icons">report_problem</span>
+            <div>
+              <h3>{{ 'COMPLAINT.SUBMIT_TITLE' | translate }}</h3>
+              <p>{{ 'COMPLAINT.SUBMIT_SUBTITLE' | translate }}</p>
+            </div>
+          </div>
+
           <div class="form-row">
-            <label class="form-label">{{ 'COMPLAINT.SUBJECT_LABEL' | translate }} <span class="required">*</span></label>
-            <input
-              class="form-input"
-              name="subject"
-              [(ngModel)]="model.subject"
-              required
-              maxlength="200"
-              [placeholder]="'COMPLAINT.SUBJECT_PLACEHOLDER' | translate">
+            <label class="field-shell">
+              <span>{{ 'COMPLAINT.SUBJECT_LABEL' | translate }} <b class="required">*</b></span>
+              <input
+                class="form-input"
+                name="subject"
+                [(ngModel)]="model.subject"
+                required
+                maxlength="200"
+                [placeholder]="'COMPLAINT.SUBJECT_PLACEHOLDER' | translate">
+            </label>
             <div class="field-error" *ngIf="complaintForm.submitted && complaintForm.controls['subject']?.invalid">
               {{ 'COMMON.REQUIRED' | translate }}
             </div>
           </div>
 
           <div class="form-row">
-            <label class="form-label">{{ 'COMPLAINT.CATEGORY_LABEL' | translate }}</label>
-            <select class="form-select" name="category" [(ngModel)]="model.category">
-              <option value="">—</option>
-              <option value="MAINTENANCE">{{ 'COMPLAINT.CAT_MAINTENANCE' | translate }}</option>
-              <option value="NOISE">{{ 'COMPLAINT.CAT_NOISE' | translate }}</option>
-              <option value="CLEANLINESS">{{ 'COMPLAINT.CAT_CLEANLINESS' | translate }}</option>
-              <option value="BILLING">{{ 'COMPLAINT.CAT_BILLING' | translate }}</option>
-              <option value="MANAGEMENT">{{ 'COMPLAINT.CAT_MANAGEMENT' | translate }}</option>
-              <option value="OTHER">{{ 'COMPLAINT.CAT_OTHER' | translate }}</option>
-            </select>
+            <label class="field-shell">
+              <span>{{ 'COMPLAINT.CATEGORY_LABEL' | translate }}</span>
+              <select class="form-select" name="category" [(ngModel)]="model.category">
+                <option value="">-</option>
+                <option value="MAINTENANCE">{{ 'COMPLAINT.CAT_MAINTENANCE' | translate }}</option>
+                <option value="NOISE">{{ 'COMPLAINT.CAT_NOISE' | translate }}</option>
+                <option value="CLEANLINESS">{{ 'COMPLAINT.CAT_CLEANLINESS' | translate }}</option>
+                <option value="BILLING">{{ 'COMPLAINT.CAT_BILLING' | translate }}</option>
+                <option value="MANAGEMENT">{{ 'COMPLAINT.CAT_MANAGEMENT' | translate }}</option>
+                <option value="OTHER">{{ 'COMPLAINT.CAT_OTHER' | translate }}</option>
+              </select>
+            </label>
           </div>
 
           <div class="form-row">
-            <label class="form-label">{{ 'COMPLAINT.DESCRIPTION_LABEL' | translate }} <span class="required">*</span></label>
-            <textarea
-              class="form-textarea"
-              name="description"
-              [(ngModel)]="model.description"
-              required
-              minlength="10"
-              maxlength="2000"
-              rows="6"
-              [placeholder]="'COMPLAINT.DESCRIPTION_PLACEHOLDER' | translate">
-            </textarea>
+            <label class="field-shell">
+              <span>{{ 'COMPLAINT.DESCRIPTION_LABEL' | translate }} <b class="required">*</b></span>
+              <textarea
+                class="form-textarea"
+                name="description"
+                [(ngModel)]="model.description"
+                required
+                minlength="10"
+                maxlength="2000"
+                rows="6"
+                [placeholder]="'COMPLAINT.DESCRIPTION_PLACEHOLDER' | translate">
+              </textarea>
+            </label>
             <div class="field-error" *ngIf="complaintForm.submitted && complaintForm.controls['description']?.invalid">
               {{ 'COMMON.REQUIRED' | translate }}
             </div>
@@ -87,7 +101,7 @@ import { I18nService } from '../../../core/i18n/i18n.service';
               {{ 'ACTIONS.CANCEL' | translate }}
             </button>
             <button mat-flat-button type="submit" class="navy-btn" [disabled]="loading || submitted">
-              <mat-spinner *ngIf="loading" diameter="18" style="display:inline-block;vertical-align:middle;margin-inline-end:6px;"></mat-spinner>
+              <mat-spinner *ngIf="loading" diameter="18"></mat-spinner>
               <mat-icon *ngIf="!loading">send</mat-icon>
               {{ 'COMPLAINT.SUBMIT_BTN' | translate }}
             </button>
@@ -97,29 +111,87 @@ import { I18nService } from '../../../core/i18n/i18n.service';
     </div>
   `,
   styles: [`
-    .form-row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; }
-    .form-label { font-size: 0.875rem; font-weight: 500; color: var(--text-secondary, #555); }
+    .complaint-shell { max-width: 880px; }
+    .complaint-card {
+      display: grid;
+      gap: 20px;
+      padding: 24px;
+      animation: fadeUp 320ms ease both;
+    }
+    .complaint-card-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--line-2, #edf0f3);
+    }
+    .complaint-card-header > .material-icons {
+      padding: 10px;
+      border-radius: 10px;
+      background: rgba(200, 154, 61, 0.1);
+      color: var(--accent, #c89a3d);
+      font-size: 28px;
+    }
+    .complaint-card-header h3 {
+      margin: 0 0 4px;
+      color: var(--text-main, #111827);
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+    .complaint-card-header p {
+      margin: 0;
+      color: var(--text-muted, #667085);
+      font-size: 0.84rem;
+    }
+    .form-row { display: grid; gap: 6px; }
+    .field-shell { display: grid; gap: 8px; }
+    .field-shell span {
+      color: var(--text-muted, #667085);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
     .required { color: var(--error, #d32f2f); }
     .form-input, .form-select, .form-textarea {
-      width: 100%; padding: 10px 14px; border: 1px solid var(--line, #ddd);
-      border-radius: 8px; font-size: 0.95rem; background: var(--surface, #fff);
-      color: var(--text-primary, #222); box-sizing: border-box;
-      transition: border-color 0.2s;
+      width: 100%;
+      min-height: 50px;
+      padding: 12px 14px;
+      border: 1px solid var(--line, #ddd);
+      border-radius: 12px;
+      font-size: 0.95rem;
+      background: var(--surface-2, #fff);
+      color: var(--text-primary, #222);
+      box-sizing: border-box;
+      transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
     }
     .form-input:focus, .form-select:focus, .form-textarea:focus {
-      outline: none; border-color: var(--navy-800, #1a2744);
+      outline: none;
+      border-color: var(--amber-500, #c89a3d);
+      box-shadow: 0 0 0 3px rgba(200, 154, 61, 0.12);
+      background: var(--surface, #fff);
     }
-    .form-textarea { resize: vertical; min-height: 120px; }
+    .form-textarea { resize: vertical; min-height: 128px; }
     .field-error { font-size: 0.8rem; color: var(--error, #d32f2f); margin-top: 2px; }
-    .form-actions { display: flex; gap: 12px; justify-content: flex-end; padding-top: 8px; }
+    .form-actions { display: flex; gap: 12px; justify-content: flex-end; padding-top: 4px; }
     .navy-btn { background: var(--navy-800, #1a2744) !important; color: white !important; }
     .navy-btn mat-icon { margin-inline-end: 6px; font-size: 18px; }
+    .navy-btn mat-spinner { display: inline-block; vertical-align: middle; margin-inline-end: 6px; }
     .success-banner {
-      display: flex; align-items: center; gap: 10px;
-      background: #e8f5e9; color: #2e7d32; border-radius: 8px;
-      padding: 12px 16px; margin-bottom: 16px; font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #e8f5e9;
+      color: #2e7d32;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-weight: 500;
     }
     .success-banner mat-icon { color: #2e7d32; }
+    @media (max-width: 640px) {
+      .complaint-card { padding: 18px; }
+      .form-actions { flex-direction: column-reverse; align-items: stretch; }
+    }
   `]
 })
 export class SubmitComplaintComponent {

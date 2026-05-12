@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { NgFor, NgIf, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -21,7 +21,7 @@ import { InventoryService, InventoryItem } from '../../../core/services/inventor
 import { PropertyService, Property } from '../../../core/services/property.service';
 import { SnackService } from '../../../core/services/snack.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
-import { InventoryItemDialogComponent } from '../inventory-item-dialog.component';
+import { InventoryItemDialogComponent } from '../inventory-item-dialog/inventory-item-dialog.component';
 import { PermissionService } from '../../../core/services/permission.service';
 
 @Component({

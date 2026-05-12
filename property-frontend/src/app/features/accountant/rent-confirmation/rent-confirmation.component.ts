@@ -8,6 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
@@ -25,7 +26,7 @@ import { RentPaymentSchedule } from '../../../core/models/contract.model';
     NgFor, NgIf, NgClass, DatePipe, DecimalPipe, ReactiveFormsModule,
     TranslateModule, MatButtonModule, MatFormFieldModule, MatInputModule,
     MatSelectModule, MatIconModule, MatProgressSpinnerModule, MatDialogModule,
-    PageHeaderComponent
+    MatTooltipModule, PageHeaderComponent
   ],
   templateUrl: './rent-confirmation.component.html',
   styleUrl: './rent-confirmation.component.scss'
@@ -54,6 +55,25 @@ export class RentConfirmationComponent implements OnInit {
 
   ngOnInit(): void {
     this.load();
+  }
+
+  get filteredReceipts(): RentPaymentSchedule[] {
+    const { year, month } = this.filterForm.value;
+    return this.receipts.filter((receipt) => {
+      if (year != null) {
+        const dueYear = new Date(receipt.dueDate).getFullYear();
+        if (dueYear !== Number(year)) {
+          return false;
+        }
+      }
+      if (month != null) {
+        const dueMonth = new Date(receipt.dueDate).getMonth() + 1;
+        if (dueMonth !== Number(month)) {
+          return false;
+        }
+      }
+      return true;
+    });
   }
 
   load(): void {

@@ -248,14 +248,16 @@
 
 /* ── Schedule flag column ───────────────────────────────────── */
 .flag-cell {
-  min-width: 200px;
+  min-width: 350px;
 }
 
 .flag-row {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
 }
 
 .flag-visual {
@@ -288,7 +290,9 @@
 .flag-action-btn {
   font-size: 12px;
   min-height: 36px;
-  padding: 0 12px;
+  padding: 0 10px;
+  flex-shrink: 0;
+  white-space: nowrap;
 
   mat-icon {
     font-size: 18px;
@@ -298,6 +302,83 @@
   }
 }
 
+.schedule-row-highlight {
+  background: rgba(220, 38, 38, 0.08) !important;
+  box-shadow: inset 4px 0 0 rgba(220, 38, 38, 0.72);
+}
+
+.schedule-row-paid {
+  background: rgba(16, 185, 129, 0.08) !important;
+  box-shadow: inset 4px 0 0 rgba(5, 150, 105, 0.78);
+}
+
+[dir='rtl'] .schedule-row-highlight {
+  box-shadow: inset -4px 0 0 rgba(220, 38, 38, 0.72);
+}
+
+[dir='rtl'] .schedule-row-paid {
+  box-shadow: inset -4px 0 0 rgba(5, 150, 105, 0.78);
+}
+
+.pending-proof-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(220, 38, 38, 0.1);
+  color: #b91c1c;
+  font-size: 12px;
+  font-weight: 800;
+
+  mat-icon {
+    width: 16px;
+    height: 16px;
+    font-size: 16px;
+  }
+}
+
+.proof-review-box {
+  margin-top: 8px;
+  padding: 12px;
+  border: 1px solid rgba(220, 38, 38, 0.16);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.72);
+  display: grid;
+  gap: 10px;
+  width: 100%;
+}
+
+.proof-actions-row {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.proof-actions-row button,
+.proof-actions-row a {
+  flex: 0 0 auto;
+  min-height: 34px;
+  font-size: 12px;
+  white-space: nowrap;
+
+  mat-icon {
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
+    margin-inline-end: 4px;
+  }
+}
+
+.rejected-note {
+  color: #b91c1c;
+  font-weight: 700;
+}
+
 .waived-label {
   font-size: 12px;
   font-weight: 600;
@@ -305,13 +386,16 @@
 }
 
 .settlement-meta {
-  margin-top: 10px;
-  padding-top: 10px;
+  margin-top: 8px;
+  padding-top: 8px;
   border-top: 1px dashed var(--line);
-  display: grid;
-  gap: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
   font-size: 12px;
   color: var(--ink-700);
+  width: 100%;
 }
 
 .sm-line {
@@ -417,6 +501,37 @@
   margin-inline-start: 3px;
 }
 
+/* ── Table info bar & row helpers ────────────────────────────── */
+.table-info-bar {
+  display: flex;
+  justify-content: center;
+  padding: 10px 16px 0;
+}
+
+.table-info-text {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.center-col {
+  text-align: center;
+  width: 48px;
+}
+
+.row-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: var(--paper-2, #f1f5f9);
+  color: var(--ink-500, #64748b);
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .ref-code {
   font-family: var(--font-mono);
   font-size: 12px;
@@ -479,58 +594,68 @@
 }
 
 /* ── Staff activity log table ─────────────────────────────────── */
+.staff-log-wrap {
+  border-top: 1px solid var(--line);
+}
+
 .staff-log-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-
-  th {
-    background: var(--navy-900, #0f1f3d);
-    color: #f4e7c4;
-    padding: 10px 14px;
-    font-weight: 600;
-    text-align: right;
-    white-space: nowrap;
-    font-size: 12px;
-    letter-spacing: 0.3px;
-  }
-
-  tr:nth-child(even) td { background: #f8fafc; }
-  tr:hover td { background: #f0f4ff; }
-
-  td {
-    padding: 9px 14px;
-    border-bottom: 1px solid #e8edf2;
-    vertical-align: middle;
-    color: #334155;
-  }
-
   .log-time {
-    font-family: monospace;
-    font-size: 12px;
-    color: #64748b;
+    display: inline-flex;
+    direction: ltr;
+    unicode-bidi: plaintext;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--text-muted);
     white-space: nowrap;
   }
 
-  .log-actor {
-    font-weight: 500;
-    white-space: nowrap;
+  .staff-log-actor {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 190px;
+  }
+
+  .staff-log-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: var(--paper-2);
+    color: var(--ink-500);
+    display: grid;
+    place-items: center;
+    flex: 0 0 38px;
+    font-size: 20px;
+  }
+
+  .staff-log-actor div {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+  }
+
+  .staff-log-actor strong {
+    color: var(--text-main);
+    font-size: 0.92rem;
+    line-height: 1.25;
+  }
+
+  .staff-log-actor span:not(.staff-log-avatar) {
+    color: var(--text-muted);
+    font-size: 0.78rem;
   }
 
   .log-action-chip {
-    display: inline-block;
-    padding: 2px 10px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 600;
-    background: #e0e9ff;
-    color: var(--navy-800, #1a3356);
+    white-space: nowrap;
   }
 
   .log-detail {
-    color: #64748b;
-    font-size: 12px;
-    max-width: 260px;
+    display: block;
+    max-width: 360px;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    line-height: 1.7;
     word-break: break-word;
   }
 }

@@ -34,8 +34,8 @@
     "MY_UNIT": "My Unit",
     "NEW_REQUEST": "New Request",
     "PROFILE": "Profile",
-    "RATINGS": "Visit ratings",
-    "CONTRACTOR_COMPANIES": "Contractor companies",
+    "RATINGS": "Ratings",
+    "CONTRACTOR_COMPANIES": "Maintenance companies",
     "OWNERS": "Owners",
     "LOOKUPS": "Lookups",
     "PERMISSIONS": "Permissions",
@@ -82,7 +82,35 @@
     "CAT_CLEANLINESS": "Cleanliness",
     "CAT_BILLING": "Billing / Payments",
     "CAT_MANAGEMENT": "Management",
-    "CAT_OTHER": "Other"
+    "CAT_OTHER": "Other",
+    "PAGE_TITLE": "My Complaints",
+    "PAGE_SUBTITLE": "Current and previous complaints for your unit",
+    "NEW_COMPLAINT": "New Complaint",
+    "TAB_ACTIVE": "Active Complaints",
+    "TAB_HISTORY": "Previous Complaints",
+    "EMPTY_ACTIVE": "No active complaints at the moment",
+    "EMPTY_HISTORY": "No previous complaints",
+    "COL_DATE": "Date",
+    "COL_TITLE": "Subject",
+    "COL_TYPE": "Type",
+    "COL_STATUS": "Status",
+    "COL_RATING": "Rating",
+    "REPLIES_LABEL": "Replies",
+    "NO_REPLIES": "No replies yet",
+    "CLOSE_COMPLAINT": "Close Complaint",
+    "RATE_COMPLAINT": "Rate Resolution",
+    "RATE_NOW": "Rate Now",
+    "RATING_PROMPT": "How would you rate the resolution of this complaint?",
+    "SUBMIT_RATING": "Submit Rating",
+    "RATING_SUBMITTED": "Thank you! Your rating has been submitted.",
+    "ATTACHMENTS_LABEL": "Attachments",
+    "ADD_ATTACHMENT": "Add File",
+    "ATTACHMENT": "Attachment",
+    "UNIT_LABEL": "Unit",
+    "SELECT_UNIT": "Select unit...",
+    "HAS_MAINTENANCE": "Maintenance request created",
+    "MAINTENANCE_LINKED": "Linked maintenance request",
+    "CREATE_MAINTENANCE": "Create maintenance request from complaint"
   },
   "OVERDUE": {
     "TITLE": "Overdue Payments",
@@ -189,7 +217,8 @@
     "DETAILS": "Details",
     "CLOSE": "Close",
     "CLEAR_FILTERS": "Clear filters",
-    "DOWNLOAD": "Download"
+    "DOWNLOAD": "Download",
+    "SKIP": "Skip"
   },
   "COMMON": {
     "LOADING": "Loading...",
@@ -319,7 +348,7 @@
     "NO_TENANT_LINK": "Your user account is not linked to a tenant record. Ask an administrator to link your login to your lease so you can see your requests."
   },
   "RATINGS_DASHBOARD": {
-    "TITLE": "Visit ratings overview",
+    "TITLE": "Ratings overview",
     "SUBTITLE": "Average score and how ratings are distributed across visits",
     "OUT_OF_FIVE": "out of 4",
     "VISITS_RATED": "rated visits",
@@ -335,10 +364,10 @@
     "FOR_UNIT": "Unit"
   },
   "CONTRACTORS": {
-    "TITLE": "Contractor companies",
-    "SUBTITLE": "Register maintenance contractors for reference when creating external officer accounts",
+    "TITLE": "Maintenance companies",
+    "SUBTITLE": "Register maintenance companies contracted with properties and manage their agreements",
     "ADD": "Add company",
-    "NEW": "New contractor company",
+    "NEW": "New maintenance company",
     "EDIT": "Edit company",
     "VIEW_DETAILS": "Company details",
     "NAME": "Company name",
@@ -347,13 +376,23 @@
     "PHONE": "Phone",
     "EMAIL": "Email",
     "NOTES": "Notes",
-    "EMPTY_TITLE": "No contractor companies",
+    "EMPTY_TITLE": "No maintenance companies",
     "EMPTY_MSG": "Add the maintenance firms you work with so names stay consistent in the system.",
     "CONTRACT_START": "Contract start",
     "CONTRACT_END": "Contract end",
     "CONTRACT_ATTACHMENTS": "Contract attachments",
     "CONTRACT_REQUIRED": "Contract period and at least one attachment are required",
-    "ADD_HINT": "Capture contractor details, contract dates, and required attachments."
+    "ADD_HINT": "Enter the maintenance company details, linked property, contract value and required attachments.",
+    "SELECT_PROPERTY": "Select property (optional)",
+    "CONTRACT_VALUE": "Annual contract value",
+    "PROPERTY_LINK_SECTION": "Link to property",
+    "PROPERTY_LINK_HINT": "A draft maintenance contract will be created pending owner approval",
+    "CONTRACT_STATUS": "Contract status",
+    "STATUS_PENDING_OWNER_APPROVAL": "Pending owner approval",
+    "STATUS_COMPANY_READY": "Company ready",
+    "ASSIGN_PROPERTY": "Contract with Property",
+    "DIALOG_HINT": "Enter contractor company data, contract dates, and required attachments.",
+    "NONE": "None"
   },
   "REQUEST_FORM": {
     "TITLE": "New Maintenance Request",
@@ -565,7 +604,7 @@
     "MAINTENANCE_ROUTING": "Maintenance routing",
     "MAINTENANCE_ROUTING_HINT": "Choose either an on-site maintenance officer or a contractor company (not both). Requests then go to that officer or the company queue until a company technician is assigned.",
     "INTERNAL_MAINTENANCE_OFFICER": "Internal maintenance officer",
-    "CONTRACTOR_COMPANY": "Contractor company",
+    "CONTRACTOR_COMPANY": "Maintenance company",
     "NO_INTERNAL_OFFICER": "None",
     "NO_CONTRACTOR": "None",
     "SUBTITLE": "Fill in the details below to register a property in the system",
@@ -592,9 +631,9 @@
     "MAP_SHORT_URL_NOT_SUPPORTED": "Short links (maps.app.goo.gl) cannot be embedded. Please paste the full URL from your browser address bar or use Share → Embed a map in Google Maps.",
     "SELECT_OWNER": "Select Owner...",
     "MAINTENANCE_PROVIDER_USER": "Maintenance Officer",
-    "MAINTENANCE_PROVIDER_COMPANY": "Contractor Company",
+    "MAINTENANCE_PROVIDER_COMPANY": "Maintenance Company",
     "SEARCH_OFFICER": "Search maintenance officer...",
-    "SEARCH_COMPANY": "Search contractor company...",
+    "SEARCH_COMPANY": "Search maintenance company...",
     "PROVIDER_NAME": "Name",
     "PROVIDER_TYPE_LABEL": "Type",
     "NO_MAINTENANCE_PROVIDERS": "No maintenance routing assigned.",
@@ -691,7 +730,7 @@
     "OFFICER_TYPE_REQUIRED": "Officer type is required",
     "COMPANY_NAME": "Company Name",
     "COMPANY_REQUIRED": "Company is required",
-    "CONTRACTOR_COMPANY": "Contractor company",
+    "CONTRACTOR_COMPANY": "Maintenance company",
     "SELECT_CONTRACTOR": "Select company",
     "PASSWORD_HINT": "Leave empty to keep current password",
     "DEFAULT_PASSWORD_HINT": "Default password: 12345 (can be changed later)",
@@ -760,8 +799,8 @@
         "DESC": "Country and city lookup data."
       },
       "contractors": {
-        "TITLE": "Contractors",
-        "DESC": "Contractor companies and external maintenance providers."
+        "TITLE": "Maintenance companies",
+        "DESC": "Maintenance companies contracted with properties."
       },
       "ratings": {
         "TITLE": "Ratings",
@@ -887,8 +926,11 @@
     "PAYMENT_PROOF_SUBMITTED_TITLE": "Payment proof submitted",
     "PAYMENT_PROOF_SUBMITTED_BODY": "Tenant submitted payment proof for lease {{contractNumber}}, due {{dueDate}}, amount {{amount}}. Please review it.",
     "PAYMENT_CONFIRMED_TITLE": "Payment confirmed",
-    "PAYMENT_CONFIRMED_BODY": "Your payment for lease {{contractNumber}}, due {{dueDate}}, amount {{amount}}, was confirmed.",
+    "PAYMENT_CONFIRMED_BODY": "Your payment for lease {{contractNumber}}, due {{dueDate}}, amount {{amount}}, was confirmed. Next rent due: {{nextDueDate}}.",
     "PAYMENT_CONFIRMED_ADMIN_BODY": "Payment was confirmed for lease {{contractNumber}}, due {{dueDate}}, amount {{amount}}. Finance revenue is now updated.",
+    "PAYMENT_CONFIRMED_OWNER_BODY": "Payment for lease {{contractNumber}}, due {{dueDate}}, amount {{amount}} has been confirmed. Next rent due: {{nextDueDate}}.",
+    "RENT_DUE_TITLE": "Rent due soon",
+    "RENT_DUE_BODY": "Your rent for lease {{contractNumber}} is due on {{dueDate}} for amount {{amount}}. Please prepare payment.",
     "PAYMENT_REJECTED_TITLE": "Payment proof rejected",
     "PAYMENT_REJECTED_BODY": "Your payment proof for lease {{contractNumber}}, due {{dueDate}}, was rejected. Reason: {{reason}}. You can upload a new proof from the contract schedule.",
     "CONTRACT_EXPIRING": "Contract expiring",
@@ -917,7 +959,7 @@
     "CONTRACT_EXPIRED_BODY": "Lease {{contractNumber}} (tenant {{tenantName}} — unit {{unitNumber}} — {{propertyName}}) reached its end date and is now expired.",
     "CONTRACT_TERMINATION_REQUESTED": "Termination request awaiting your approval",
     "CONTRACT_TERMINATION_REQUESTED_TITLE": "Termination request — your approval needed",
-    "CONTRACT_TERMINATION_REQUESTED_BODY": "Lease {{contractNumber}} (tenant {{tenantName}}, unit {{unitNumber}} — {{propertyName}}). Proposed termination date: {{terminationDate}}. Reason: {{terminationReason}}. Please review and approve or reject in the owner portal.",
+    "CONTRACT_TERMINATION_REQUESTED_BODY": "Lease {{contractNumber}} (tenant {{tenantName}}, unit {{unitNumber}} — {{propertyName}}). Proposed termination date: {{terminationDate}}. Reason: {{terminationReason}}. Please review and approve or reject from the approvals portal.",
     "TENANT_CONTRACT_TERMINATION_REQUESTED": "Termination request submitted",
     "TENANT_CONTRACT_TERMINATION_REQUESTED_TITLE": "Termination request submitted",
     "TENANT_CONTRACT_TERMINATION_REQUESTED_BODY": "Lease {{contractNumber}} (unit {{unitNumber}} — {{propertyName}}). The accountant submitted a termination/handover request for {{terminationDate}}. The contract remains active until the property owner approves the request.",
@@ -946,9 +988,53 @@
     "CONTRACT_AWAITING_OWNER_REVIEW_TITLE": "Draft lease awaiting owner review",
     "CONTRACT_AWAITING_OWNER_REVIEW_BODY": "Lease {{contractNumber}} for tenant {{tenantName}} (unit {{unitNumber}} — {{propertyName}}) is waiting for your review.",
     "TYPES": {
+      "MAINTENANCE_PROVIDER_ASSIGNED": {
+        "TITLE": "Maintenance provider assigned",
+        "BODY": "{{providerName}} was assigned to property #{{propertyId}}."
+      },
+      "MAINTENANCE_PROVIDER_UNASSIGNED": {
+        "TITLE": "Maintenance provider assignment ended",
+        "BODY": "{{providerName}} assignment for property #{{propertyId}} was ended."
+      },
+      "MAINTENANCE_CONTRACT_AWAITING_OWNER_REVIEW": {
+        "TITLE": "Maintenance contract awaiting approval",
+        "BODY": "Maintenance contract {{contractNumber}} for {{companyName}} at {{propertyName}} is waiting for owner approval."
+      },
+      "MAINTENANCE_CONTRACT_APPROVED": {
+        "TITLE": "Maintenance contract approved",
+        "BODY": "Maintenance contract {{contractNumber}} for {{companyName}} at {{propertyName}} was approved."
+      },
+      "MAINTENANCE_CONTRACT_REJECTED": {
+        "TITLE": "Maintenance contract rejected",
+        "BODY": "Maintenance contract {{contractNumber}} for {{companyName}} at {{propertyName}} was rejected or cancelled."
+      },
+      "MAINTENANCE_CONTRACT_TERMINATION_REQUESTED": {
+        "TITLE": "Maintenance contract termination requested",
+        "BODY": "Termination request for maintenance contract {{contractNumber}} at {{propertyName}} is waiting for owner approval."
+      },
+      "MAINTENANCE_CONTRACT_TERMINATION_APPROVED": {
+        "TITLE": "Maintenance contract termination approved",
+        "BODY": "Termination for maintenance contract {{contractNumber}} at {{propertyName}} was approved."
+      },
+      "MAINTENANCE_CONTRACT_TERMINATION_REJECTED": {
+        "TITLE": "Maintenance contract termination rejected",
+        "BODY": "Termination request for maintenance contract {{contractNumber}} at {{propertyName}} was rejected."
+      },
+      "MAINTENANCE_CONTRACT_RENEWAL_REQUESTED": {
+        "TITLE": "Maintenance contract renewal requested",
+        "BODY": "Renewal request for maintenance contract {{contractNumber}} at {{propertyName}} is waiting for owner approval."
+      },
+      "MAINTENANCE_CONTRACT_RENEWAL_APPROVED": {
+        "TITLE": "Maintenance contract renewal approved",
+        "BODY": "Renewal for maintenance contract {{contractNumber}} at {{propertyName}} was approved."
+      },
+      "MAINTENANCE_CONTRACT_RENEWAL_REJECTED": {
+        "TITLE": "Maintenance contract renewal rejected",
+        "BODY": "Renewal request for maintenance contract {{contractNumber}} at {{propertyName}} was rejected."
+      },
       "CONTRACT_RENEWAL_REQUESTED": {
         "TITLE": "Renewal request awaiting your approval",
-        "BODY": "Lease {{contractNumber}} (tenant {{tenantName}}, unit {{unitNumber}} — {{propertyName}}) has a renewal request. Proposed period: {{proposedStartDate}} to {{proposedEndDate}}, proposed rent: {{proposedRentAmount}}. Note: {{requestNote}}."
+        "BODY": "Lease {{contractNumber}} (tenant {{tenantName}}, unit {{unitNumber}} — {{propertyName}}) has a renewal request awaiting owner/admin approval. Proposed period: {{proposedStartDate}} to {{proposedEndDate}}, proposed rent: {{proposedRentAmount}}. Note: {{requestNote}}."
       },
       "TENANT_CONTRACT_RENEWAL_REQUESTED": {
         "TITLE": "Renewal request submitted",
@@ -1205,12 +1291,21 @@
     "DASHBOARD_TITLE": "Contracts Dashboard",
     "DASHBOARD_SUBTITLE": "Overview of contracts, rent schedules, and complaints",
     "ACTIVE_CONTRACTS": "Active Contracts",
+    "ACTIVE_RENTAL_CONTRACTS": "Active lease contracts",
+    "CANCELLED_RENTAL_CONTRACTS": "Cancelled lease contracts",
+    "RENTAL_EXPIRING_30_DAYS": "Leases nearing expiry",
+    "ACTIVE_MAINTENANCE_CONTRACTS": "Active maintenance contracts",
+    "CANCELLED_MAINTENANCE_CONTRACTS": "Cancelled maintenance contracts",
+    "MAINTENANCE_EXPIRING_30_DAYS": "Maintenance nearing expiry",
     "DRAFT_CONTRACTS": "Draft contracts",
     "DRAFT_CONTRACTS_HINT": "Created from tenant setup or manually; activate from the contract list to count as active.",
+    "MAINTENANCE_PENDING_APPROVAL": "Maintenance contracts awaiting approval",
+    "MAINTENANCE_PENDING_APPROVAL_HINT": "Maintenance drafts plus pending termination/renewal requests waiting for the owner's decision. Click to open the approvals screen.",
     "EXPIRING_30_DAYS": "Expiring in 30 Days",
     "OVERDUE_PAYMENTS": "Overdue Payments",
     "OPEN_COMPLAINTS": "Open Complaints",
     "NEW_CONTRACT": "New Contract",
+    "NEW_MAINTENANCE_CONTRACT": "New maintenance contract",
     "VIEW_ALL": "View All",
     "EXPIRING_SOON": "Contracts Expiring Soon",
     "DAYS_LEFT": "days left",
@@ -1612,7 +1707,13 @@
     "STAFF_UPLOAD_TENANT_ID": "Tenant ID",
     "STAFF_UPLOAD_CONTRACT_ID": "Contract ID (optional)",
     "STAFF_UPLOAD_SUBMIT": "Upload",
-    "STAFF_UPLOAD_OK": "Receipt saved for tenant"
+    "STAFF_UPLOAD_OK": "Receipt saved for tenant",
+    "TABLE_CONTRACT": "Contract",
+    "TABLE_TENANT": "Tenant",
+    "TABLE_DUE_DATE": "Due Date",
+    "TABLE_AMOUNT": "Amount",
+    "TABLE_STATUS": "Status",
+    "TABLE_SUBMITTED": "Submitted"
   },
   "INVOICE_PORTAL": {
     "TITLE": "Invoice Portal",
@@ -1680,6 +1781,8 @@
     "AMEND_OK": "Draft updated",
     "PENDING_DRAFTS_HEADING": "Pending draft contracts",
     "PENDING_TERMINATIONS_HEADING": "Pending termination requests",
+    "MAINTENANCE_APPROVE_CONFIRM_TITLE": "Confirm maintenance contract approval",
+    "MAINTENANCE_APPROVE_CONFIRM_MESSAGE": "Are you sure you want to approve and activate this maintenance contract?",
     "TERMINATION_DECISION_APPROVE_TITLE": "Approve termination request",
     "TERMINATION_DECISION_REJECT_TITLE": "Reject termination request",
     "TERMINATION_DECISION_NOTES": "Notes for accountant and tenant (optional on approve, required on reject)",
@@ -1867,7 +1970,7 @@
     "ASSIGN_BTN": "Assign Maintenance Provider",
     "PROVIDER_TYPE": "Provider Type",
     "PROVIDER_USER": "Internal Officer",
-    "PROVIDER_COMPANY": "Contractor Company",
+    "PROVIDER_COMPANY": "Maintenance Company",
     "SELECT_OFFICER": "Select maintenance officer",
     "SELECT_COMPANY": "Select company",
     "START_DATE": "Start Date",
@@ -1911,7 +2014,9 @@
     "STATUS_ISSUED": "Issued",
     "STATUS_PAID": "Paid",
     "STATUS_OVERDUE": "Overdue",
-    "STATUS_CANCELLED": "Cancelled"
+    "STATUS_CANCELLED": "Cancelled",
+    "STATUS_ENDED": "Ended",
+    "STATUS_RENEWED": "Renewed"
   },
   "OWNERS": {
     "TITLE": "Owners",

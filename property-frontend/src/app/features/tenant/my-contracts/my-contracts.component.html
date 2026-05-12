@@ -8,13 +8,32 @@
     <mat-spinner diameter="48"></mat-spinner>
   </div>
 
-  <div class="empty app-card" *ngIf="!loading && contracts.length === 0">
+  <div class="empty app-card" *ngIf="!loading && selectableContracts.length === 0">
     <mat-icon>folder_off</mat-icon>
     <p>{{ 'TENANT_PORTAL.NO_CONTRACTS_YET' | translate }}</p>
   </div>
 
-  <div class="contracts-stack" *ngIf="!loading && contracts.length">
-    <article class="lease-card app-card" *ngFor="let c of contracts">
+  <ng-container *ngIf="!loading && selectableContracts.length > 0">
+    <!-- Contract selector card -->
+    <section class="app-card picker-card">
+      <div class="section-card-header">
+        <div>
+          <div class="section-mini-label">{{ i18n.currentLang === 'ar' ? 'العقود' : 'Contracts' }}</div>
+          <h3>{{ i18n.currentLang === 'ar' ? 'اختر عقدًا لعرض تفاصيله' : 'Select a contract to view details' }}</h3>
+        </div>
+        <span class="contract-count-badge">{{ selectableContracts.length }}</span>
+      </div>
+      <div class="picker-wrap">
+        <app-search-dropdown
+          [items]="contractDropdownItems"
+          [placeholder]="i18n.currentLang === 'ar' ? 'ابحث عن عقد...' : 'Search contracts...'"
+          (selectionChange)="onContractSelect($event)">
+        </app-search-dropdown>
+      </div>
+    </section>
+
+    <!-- Selected contract detail card -->
+    <article class="lease-card app-card" *ngIf="selectedContract as c">
       <div class="lease-head">
         <div class="lease-title">
           <code class="mono">{{ c.contractNumber }}</code>
@@ -72,5 +91,11 @@
         </a>
       </div>
     </article>
-  </div>
+
+    <!-- Empty state when no contract selected -->
+    <div class="no-selection app-card" *ngIf="!selectedContract">
+      <mat-icon>description</mat-icon>
+      <p>{{ i18n.currentLang === 'ar' ? 'اختر عقدًا من القائمة أعلاه' : 'Select a contract from the list above' }}</p>
+    </div>
+  </ng-container>
 </div>

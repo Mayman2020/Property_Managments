@@ -1,120 +1,167 @@
-<div class="app-page">
+﻿<div class="app-page">
   <app-page-header
     [title]="'TENANT_PORTAL.CONTRACT_REQUEST_TITLE' | translate"
     [subtitle]="'TENANT_PORTAL.CONTRACT_REQUEST_SUB' | translate">
-    <a mat-stroked-button routerLink="/tenant/my-contract">
+    <a mat-stroked-button routerLink="/tenant/my-contracts">
       <span class="material-icons">arrow_back</span>
       {{ 'TENANT_PORTAL.MY_CONTRACT' | translate }}
     </a>
   </app-page-header>
 
-  <!-- Action Type Toggle -->
-  <div class="action-toggle">
-    <button class="toggle-btn" [class.active]="activeTab === 'RENEWAL'" (click)="activeTab = 'RENEWAL'">
-      <span class="material-icons">autorenew</span>
-      {{ 'TENANT_PORTAL.RENEWAL' | translate }}
-    </button>
-    <button class="toggle-btn danger" [class.active]="activeTab === 'TERMINATION'" (click)="activeTab = 'TERMINATION'">
-      <span class="material-icons">cancel</span>
-      {{ 'TENANT_PORTAL.TERMINATION' | translate }}
+  <div class="loading-center" *ngIf="loadingContracts">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <section class="app-card contracts-card" *ngIf="!loadingContracts && selectableContracts.length > 0">
+    <div class="section-card-header">
+      <div>
+        <div class="section-mini-label">{{ i18n.currentLang === 'ar' ? 'العقود' : 'Contracts' }}</div>
+        <h3>{{ i18n.currentLang === 'ar' ? 'اختر العقد المطلوب' : 'Choose a contract' }}</h3>
+      </div>
+    </div>
+    <div class="contract-picker-wrap">
+      <app-search-dropdown
+        [items]="contractDropdownItems"
+        [placeholder]="i18n.currentLang === 'ar' ? 'ابحث عن عقد...' : 'Search contracts...'"
+        (selectionChange)="onContractDropdownSelect($event)">
+      </app-search-dropdown>
+    </div>
+  </section>
+
+  <div class="empty app-card" *ngIf="!loadingContracts && selectableContracts.length === 0">
+    <span class="material-icons">folder_off</span>
+    <p>{{ 'TENANT_PORTAL.NO_CONTRACTS_YET' | translate }}</p>
+  </div>
+
+  <div class="selected-contract app-card" *ngIf="selectedContract as c">
+    <span class="material-icons">description</span>
+    <div>
+      <strong>{{ c.contractNumber }}</strong>
+      <p>{{ c.propertyName || '-' }} - {{ i18n.currentLang === 'ar' ? 'وحدة' : 'Unit' }} {{ c.unitNumber || '-' }}</p>
+    </div>
+    <button mat-flat-button class="navy-btn" type="button" (click)="openChooser()">
+      <span class="material-icons">rule</span>
+      {{ i18n.currentLang === 'ar' ? 'طلب تجديد العقد أو إلغائه' : 'Request renewal or termination' }}
     </button>
   </div>
 
-  <!-- Renewal Form -->
-  <div class="form-card app-card" *ngIf="activeTab === 'RENEWAL'">
-    <div class="form-card-header">
-      <span class="material-icons icon-renewal">autorenew</span>
-      <div>
-        <h3>{{ 'TENANT_PORTAL.REQUEST_RENEWAL' | translate }}</h3>
-        <p>{{ 'TENANT_PORTAL.RENEWAL_DESC' | translate }}</p>
+  <div class="empty app-card" *ngIf="!loadingContracts && selectableContracts.length > 0 && !selectedContractId">
+    <span class="material-icons">touch_app</span>
+    <p>{{ i18n.currentLang === 'ar' ? 'اختر عقدًا من القائمة لبدء طلب التجديد أو الإلغاء.' : 'Select a contract from the list to start a renewal or termination request.' }}</p>
+  </div>
+
+  <div class="request-dialog-backdrop" *ngIf="chooserOpen" (click)="chooserOpen = false">
+    <div class="request-dialog" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <div class="request-dialog-title">
+        <mat-icon class="dialog-title-icon">rule</mat-icon>
+        <span>{{ i18n.currentLang === 'ar' ? 'نوع طلب العقد' : 'Contract request type' }}</span>
+        <button class="dialog-close" type="button" (click)="chooserOpen = false">
+          <span class="material-icons">close</span>
+        </button>
       </div>
-    </div>
-    <form [formGroup]="renewalForm" class="action-form">
-      <mat-form-field appearance="outline">
-        <mat-label>{{ 'TENANT_PORTAL.DESIRED_DATE' | translate }}</mat-label>
-        <input matInput [matDatepicker]="renewalDatePicker" formControlName="requestedDate">
-        <mat-datepicker-toggle matIconSuffix [for]="renewalDatePicker"></mat-datepicker-toggle>
-        <mat-datepicker #renewalDatePicker></mat-datepicker>
-      </mat-form-field>
-      <mat-form-field appearance="outline" class="full">
-        <mat-label>{{ 'COMMON.NOTES' | translate }}</mat-label>
-        <textarea matInput formControlName="notes" rows="3" [placeholder]="'TENANT_PORTAL.RENEWAL_NOTES_HINT' | translate"></textarea>
-      </mat-form-field>
-    </form>
-    <div class="attachment-section">
-      <p class="attachment-label">{{ 'TENANT_PORTAL.ATTACHMENT_OPTIONAL' | translate }}</p>
-      <app-upload-zone [multiple]="false" accept="image/*,application/pdf"
-        [label]="'TENANT_PORTAL.DROP_ATTACHMENT' | translate"
-        (filesChanged)="onAttachmentChange($event)">
-      </app-upload-zone>
-    </div>
-    <div class="form-actions">
-      <button mat-flat-button class="btn-primary" (click)="submit()" [disabled]="submitting">
-        <mat-spinner *ngIf="submitting" diameter="20"></mat-spinner>
-        <span *ngIf="!submitting">{{ 'TENANT_PORTAL.SUBMIT_RENEWAL' | translate }}</span>
-      </button>
+      <div class="request-dialog-content">
+        <div class="dialog-intro">
+          <span class="material-icons">rule</span>
+          <div>
+            <h3>{{ i18n.currentLang === 'ar' ? 'اختر الإجراء المطلوب' : 'Choose the required action' }}</h3>
+            <p>{{ i18n.currentLang === 'ar' ? 'عاوز تقدم طلب تجديد ولا إلغاء للعقد المختار؟' : 'Do you want to request renewal or termination for the selected contract?' }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="dialog-actions">
+        <button mat-stroked-button type="button" class="danger-choice" (click)="chooseAction('TERMINATION')">
+          <span class="material-icons">cancel</span>
+          {{ 'TENANT_PORTAL.TERMINATION' | translate }}
+        </button>
+        <button mat-flat-button type="button" class="navy-btn" (click)="chooseAction('RENEWAL')">
+          <span class="material-icons">autorenew</span>
+          {{ 'TENANT_PORTAL.RENEWAL' | translate }}
+        </button>
+      </div>
     </div>
   </div>
 
-  <!-- Termination Form -->
-  <div class="form-card app-card danger-card" *ngIf="activeTab === 'TERMINATION'">
-    <div class="form-card-header">
-      <span class="material-icons icon-danger">cancel</span>
-      <div>
-        <h3>{{ 'TENANT_PORTAL.REQUEST_TERMINATION' | translate }}</h3>
-        <p>{{ 'TENANT_PORTAL.TERMINATION_DESC' | translate }}</p>
+  <div class="request-dialog-backdrop" *ngIf="requestDetailsOpen" (click)="closeRequestDetails()">
+    <div class="request-dialog request-details-dialog" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <div class="request-dialog-title" [class.danger-title]="activeTab === 'TERMINATION'">
+        <mat-icon class="dialog-title-icon">{{ activeTab === 'RENEWAL' ? 'autorenew' : 'cancel' }}</mat-icon>
+        <span>{{ activeTab === 'RENEWAL' ? ('TENANT_PORTAL.REQUEST_RENEWAL' | translate) : ('TENANT_PORTAL.REQUEST_TERMINATION' | translate) }}</span>
+        <button class="dialog-close" type="button" (click)="closeRequestDetails()">
+          <span class="material-icons">close</span>
+        </button>
       </div>
-    </div>
-    <form [formGroup]="terminationForm" class="action-form">
-      <mat-form-field appearance="outline">
-        <mat-label>{{ 'TENANT_PORTAL.DESIRED_EXIT_DATE' | translate }}</mat-label>
-        <input matInput [matDatepicker]="terminationDatePicker" formControlName="requestedDate">
-        <mat-datepicker-toggle matIconSuffix [for]="terminationDatePicker"></mat-datepicker-toggle>
-        <mat-datepicker #terminationDatePicker></mat-datepicker>
-        <mat-error>{{ 'VALIDATION.REQUIRED' | translate }}</mat-error>
-      </mat-form-field>
-      <mat-form-field appearance="outline">
-        <mat-label>{{ 'TENANT_PORTAL.REASON' | translate }}</mat-label>
-        <mat-select formControlName="reason">
-          <mat-option *ngFor="let r of terminationReasons" [value]="r.value">
-            {{ i18n.currentLang === 'ar' ? r.labelAr : r.labelEn }}
-          </mat-option>
-        </mat-select>
-        <mat-error>{{ 'VALIDATION.REQUIRED' | translate }}</mat-error>
-      </mat-form-field>
-      <mat-form-field appearance="outline" class="full">
-        <mat-label>{{ 'COMMON.NOTES' | translate }}</mat-label>
-        <textarea matInput formControlName="notes" rows="3"></textarea>
-      </mat-form-field>
-    </form>
-    <div class="attachment-section">
-      <p class="attachment-label">{{ 'TENANT_PORTAL.ATTACHMENT_OPTIONAL' | translate }}</p>
-      <app-upload-zone [multiple]="false" accept="image/*,application/pdf"
-        [label]="'TENANT_PORTAL.DROP_ATTACHMENT' | translate"
-        (filesChanged)="onAttachmentChange($event)">
-      </app-upload-zone>
-    </div>
-    <div class="form-actions">
-      <button mat-flat-button class="btn-danger" (click)="submit()" [disabled]="submitting">
-        <mat-spinner *ngIf="submitting" diameter="20"></mat-spinner>
-        <span *ngIf="!submitting">{{ 'TENANT_PORTAL.SUBMIT_TERMINATION' | translate }}</span>
-      </button>
-    </div>
+
+      <div class="request-dialog-content">
+        <form [formGroup]="renewalForm" class="action-form dialog-form" *ngIf="activeTab === 'RENEWAL'">
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'TENANT_PORTAL.DESIRED_DATE' | translate }}</mat-label>
+            <input matInput [matDatepicker]="renewalDatePicker" formControlName="requestedDate">
+            <mat-datepicker-toggle matIconSuffix [for]="renewalDatePicker"></mat-datepicker-toggle>
+            <mat-datepicker #renewalDatePicker></mat-datepicker>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ 'COMMON.NOTES' | translate }}</mat-label>
+            <textarea matInput formControlName="notes" rows="3" [placeholder]="'TENANT_PORTAL.RENEWAL_NOTES_HINT' | translate"></textarea>
+          </mat-form-field>
+        </form>
+
+        <form [formGroup]="terminationForm" class="action-form dialog-form" *ngIf="activeTab === 'TERMINATION'">
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'TENANT_PORTAL.DESIRED_EXIT_DATE' | translate }}</mat-label>
+            <input matInput [matDatepicker]="terminationDatePicker" formControlName="requestedDate">
+            <mat-datepicker-toggle matIconSuffix [for]="terminationDatePicker"></mat-datepicker-toggle>
+            <mat-datepicker #terminationDatePicker></mat-datepicker>
+            <mat-error>{{ i18n.currentLang === 'ar' ? 'هذا الحقل مطلوب' : 'This field is required' }}</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'TENANT_PORTAL.REASON' | translate }}</mat-label>
+            <mat-select formControlName="reason">
+              <mat-option *ngFor="let r of terminationReasons" [value]="r.value">
+                {{ i18n.currentLang === 'ar' ? r.labelAr : r.labelEn }}
+              </mat-option>
+            </mat-select>
+            <mat-error>{{ i18n.currentLang === 'ar' ? 'هذا الحقل مطلوب' : 'This field is required' }}</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ 'COMMON.NOTES' | translate }}</mat-label>
+            <textarea matInput formControlName="notes" rows="3"></textarea>
+          </mat-form-field>
+        </form>
+
+        <div class="attachment-section">
+          <p class="attachment-label">{{ 'TENANT_PORTAL.ATTACHMENT_OPTIONAL' | translate }}</p>
+          <app-upload-zone [multiple]="false" accept="image/*,application/pdf"
+            [label]="'TENANT_PORTAL.DROP_ATTACHMENT' | translate"
+            (filesChanged)="onAttachmentChange($event)">
+          </app-upload-zone>
+        </div>
+      </div>
+
+      <div class="dialog-actions">
+        <button mat-stroked-button type="button" (click)="closeRequestDetails()" [disabled]="submitting">
+          {{ i18n.currentLang === 'ar' ? 'إلغاء' : 'Cancel' }}
+        </button>
+        <button mat-flat-button [class.btn-danger]="activeTab === 'TERMINATION'" [class.navy-btn]="activeTab === 'RENEWAL'" (click)="submit()" [disabled]="submitting">
+          <mat-spinner *ngIf="submitting" diameter="20"></mat-spinner>
+          <span *ngIf="!submitting">{{ activeTab === 'RENEWAL' ? ('TENANT_PORTAL.SUBMIT_RENEWAL' | translate) : ('TENANT_PORTAL.SUBMIT_TERMINATION' | translate) }}</span>
+        </button>
+      </div>
+  </div>
   </div>
 
   <!-- Request History -->
-  <div class="history-section">
+  <div class="history-section" *ngIf="selectedContractId">
     <h3 class="history-title">{{ 'TENANT_PORTAL.REQUEST_HISTORY' | translate }}</h3>
 
     <div class="loading-center" *ngIf="loadingHistory"><mat-spinner diameter="36"></mat-spinner></div>
 
-    <div class="history-empty" *ngIf="!loadingHistory && history.length === 0">
+    <div class="history-empty" *ngIf="!loadingHistory && filteredHistory.length === 0">
       <span class="material-icons">history</span>
       <p>{{ 'TENANT_PORTAL.NO_REQUESTS' | translate }}</p>
     </div>
 
-    <div class="history-list" *ngIf="!loadingHistory && history.length > 0">
-      <div class="history-item app-card" *ngFor="let req of history">
+    <div class="history-list" *ngIf="!loadingHistory && filteredHistory.length > 0">
+      <div class="history-item app-card" *ngFor="let req of filteredHistory">
         <div class="history-item-head">
           <div class="history-type" [class.renewal]="req.actionType === 'RENEWAL'" [class.termination]="req.actionType === 'TERMINATION'">
             <span class="material-icons">{{ req.actionType === 'RENEWAL' ? 'autorenew' : 'cancel' }}</span>
@@ -138,6 +185,10 @@
         <div class="admin-note" *ngIf="req.adminNotes">
           <span class="material-icons">comment</span>
           <span>{{ req.adminNotes }}</span>
+        </div>
+        <div class="admin-note progress-note">
+          <span class="material-icons">task_alt</span>
+          <span>{{ requestProgressLabel(req) }}</span>
         </div>
       </div>
     </div>

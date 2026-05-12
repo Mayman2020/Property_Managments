@@ -10,6 +10,18 @@
   flex-wrap: wrap;
 }
 
+.toolbar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.estate-search-inline {
+  flex: 0 1 300px;
+}
+
 .filter-field {
   width: 210px;
 }

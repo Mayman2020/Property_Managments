@@ -21,6 +21,7 @@ import { UserRole } from '../../core/models/user.model';
 import { PermissionService } from '../../core/services/permission.service';
 import { ScopedPropertyService } from '../../core/services/scoped-property.service';
 import { PropertyService, Property } from '../../core/services/property.service';
+import { resolveNotificationBodyLine, resolveNotificationTitle } from '../../core/utils/notification-display.util';
 
 @Component({
   selector: 'app-topbar',
@@ -207,63 +208,17 @@ export class TopbarComponent implements OnInit, OnDestroy {
     return 'notifications';
   }
 
-  /** Resolved title (i18n keys from backend or stored bilingual title). */
+  /** Resolved title (i18n keys from backend, NOTIFICATIONS.TYPES.<type>, or stored bilingual title). */
   notificationDropdownTitle(notification: AppNotification): string {
-    const fromParams = this.translateFromParams(notification.params?.titleKey, notification.params?.vars);
-    if (fromParams) {
-      return fromParams;
-    }
-    const raw = notification.title ?? '';
-    const single = this.i18n.pickBilingualSegment(raw, 'title');
-    if (raw.includes(' | ')) {
-      return single || this.i18n.instant('NOTIFICATIONS.GENERAL');
-    }
-    const translated = this.i18n.instant(`NOTIFICATIONS.${notification.type}`);
-    if (translated && translated !== `NOTIFICATIONS.${notification.type}`) {
-      return translated;
-    }
-    if (this.i18n.currentLang === 'en') {
-      return single || this.i18n.instant('NOTIFICATIONS.GENERAL');
-    }
-    if (this.hasArabic(single)) {
-      return single;
-    }
-    return single || this.i18n.instant('NOTIFICATIONS.GENERAL');
+    return resolveNotificationTitle(this.i18n, notification);
   }
 
   /** Short secondary line: localized body snippet or generic teaser. */
   notificationDropdownHint(notification: AppNotification): string {
-    const fromBody = this.translateFromParams(notification.params?.bodyKey, notification.params?.vars);
-    if (fromBody) {
-      return this.clampOneLine(fromBody, 120);
-    }
-    const raw = notification.message ?? '';
-    const bodySep = '\n\n—\n\n';
-    const msg = raw.includes(bodySep) ? this.i18n.pickBilingualSegment(raw, 'body') : raw.trim();
-    if (msg) {
-      return this.clampOneLine(msg, 120);
-    }
-    return this.i18n.instant('NOTIFICATIONS.DROPDOWN_TEASER');
-  }
-
-  private clampOneLine(raw: string, max: number): string {
-    const t = raw.replace(/\s+/g, ' ').trim();
-    if (t.length <= max) {
-      return t;
-    }
-    return `${t.slice(0, Math.max(1, max - 1))}…`;
-  }
-
-  private translateFromParams(key: string | undefined, vars: Record<string, unknown> | undefined): string {
-    if (!key) {
-      return '';
-    }
-    const resolved = this.i18n.instant(key, vars as Record<string, string | number> | undefined);
-    return resolved && resolved !== key ? resolved : '';
-  }
-
-  private hasArabic(value: string): boolean {
-    return /[\u0600-\u06FF]/.test(value);
+    return (
+      resolveNotificationBodyLine(this.i18n, notification, 120) ||
+      this.i18n.instant('NOTIFICATIONS.DROPDOWN_TEASER')
+    );
   }
 
   private loadNotifications(): void {

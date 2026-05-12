@@ -25,6 +25,7 @@ export interface LeaseContract {
   unitNumber?: string;
   propertyId: number;
   propertyName?: string;
+  propertyCoverImageUrl?: string;
   ownerId?: number;
   ownerName?: string;
   templateId?: number;
@@ -194,6 +195,7 @@ export interface TenantComplaint {
   assignedTo?: number;
   resolution?: string;
   attachmentUrl?: string;
+  maintenanceRequestId?: number;
   createdAt: string;
   resolvedAt?: string;
 }
@@ -201,6 +203,8 @@ export interface TenantComplaint {
 export interface ContractTemplate {
   id: number;
   templateName: string;
+  templateNameAr?: string;
+  templateNameEn?: string;
   templateType?: TemplateType;
   content: string;
   variables?: string;

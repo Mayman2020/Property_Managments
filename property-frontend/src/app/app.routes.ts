@@ -10,7 +10,7 @@ export const routes: Routes = [
   {
     path: 'change-password',
     loadComponent: () =>
-      import('./features/change-password/change-password.component').then(
+      import('./features/change-password/change-password/change-password.component').then(
         (m) => m.ChangePasswordComponent
       )
   },

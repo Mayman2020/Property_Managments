@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import com.propertymanagement.modules.owner.entity.Owner;
+import com.propertymanagement.modules.user.entity.User;
 
 /** Mirrors editable owner registry fields for profile / user management sync. */
 @Data

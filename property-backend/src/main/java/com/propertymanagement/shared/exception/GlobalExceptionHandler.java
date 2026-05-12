@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 
 import java.util.stream.Collectors;
+import com.propertymanagement.modules.tenant.entity.Tenant;
+import com.propertymanagement.modules.user.entity.User;
 
 @Slf4j
 @RestControllerAdvice

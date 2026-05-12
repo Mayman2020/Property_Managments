@@ -245,6 +245,13 @@
         <p class="no-owners-msg" *ngIf="isViewMode && selectedMaintenanceProviders.length === 0">
           {{ 'PROPERTY_FORM.NO_MAINTENANCE_PROVIDERS' | translate }}
         </p>
+
+        <div class="section-action" *ngIf="propertyId && !isDialogMode">
+          <button mat-flat-button class="navy-btn" type="button" (click)="openMaintenanceContractDialog()">
+            <mat-icon>description</mat-icon>
+            {{ 'MAINTENANCE.CONTRACT_NEW' | translate }}
+          </button>
+        </div>
       </div>
     </section>
 

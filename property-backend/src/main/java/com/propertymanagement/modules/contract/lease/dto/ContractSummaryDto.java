@@ -5,6 +5,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import com.propertymanagement.modules.owner.entity.Owner;
 
 @Data @Builder
 public class ContractSummaryDto {

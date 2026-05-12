@@ -52,6 +52,7 @@ export const AppConstants = {
     UNITS_BY_PROPERTY: (propertyId: number) => `/units/property/${propertyId}`,
     UNIT_BY_ID: (id: number) => `/units/${id}`,
     UNIT_RENTAL_STATUS: (id: number, rented: boolean) => `/units/${id}/rental-status?rented=${rented}`,
+    UNIT_TOGGLE_ACTIVE: (id: number) => `/units/${id}/toggle-active`,
 
     TENANTS: '/tenants',
     TENANT_BY_ID: (id: number) => `/tenants/${id}`,
@@ -129,6 +130,8 @@ export const AppConstants = {
     DASHBOARD_MONTHLY_TREND: '/dashboard/monthly-trend',
     DASHBOARD_RATINGS_SUMMARY: '/dashboard/ratings-summary',
     DASHBOARD_RATINGS_DETAILS: '/dashboard/ratings-details',
+    DASHBOARD_COMPLAINT_RATINGS_SUMMARY: '/dashboard/complaint-ratings-summary',
+    DASHBOARD_COMPLAINT_RATINGS_DETAILS: '/dashboard/complaint-ratings-details',
 
     OWNER_PORTAL_DASHBOARD: '/owner-portal/dashboard',
     OWNER_PORTAL_STATEMENTS: '/owner-portal/statements',
@@ -146,6 +149,14 @@ export const AppConstants = {
       `/owner-portal/contracts/${contractId}/renewal-decision`,
     OWNER_PORTAL_PENDING_APPROVALS: '/owner-portal/pending-approvals',
     OWNER_PORTAL_CONTRACT_DECISION: (contractId: number) => `/owner-portal/contracts/${contractId}/decision`,
+    OWNER_PORTAL_MAINTENANCE_CONTRACT_DRAFTS: '/owner-portal/maintenance-contracts/drafts',
+    OWNER_PORTAL_MAINTENANCE_CONTRACT_PENDING_TERMINATIONS: '/owner-portal/maintenance-contracts/pending-terminations',
+    OWNER_PORTAL_MAINTENANCE_CONTRACT_PENDING_RENEWALS: '/owner-portal/maintenance-contracts/pending-renewals',
+    OWNER_PORTAL_MAINTENANCE_CONTRACT_DECISION: (id: number) => `/owner-portal/maintenance-contracts/${id}/decision`,
+    OWNER_PORTAL_MAINTENANCE_CONTRACT_TERMINATION_DECISION: (id: number) =>
+      `/owner-portal/maintenance-contracts/${id}/termination-decision`,
+    OWNER_PORTAL_MAINTENANCE_CONTRACT_RENEWAL_DECISION: (id: number) =>
+      `/owner-portal/maintenance-contracts/${id}/renewal-decision`,
 
     LOOKUPS_COUNTRIES: '/lookups/countries',
     LOOKUPS_COUNTRIES_OMAN: '/lookups/countries/oman',
@@ -191,8 +202,16 @@ export const AppConstants = {
     CONTRACT_FEES: '/contract-fees',
 
     COMPLAINTS: '/complaints',
+    COMPLAINTS_MY: '/complaints/my',
+    COMPLAINTS_MY_ACTIVE_UNITS: '/complaints/my-active-units',
+    COMPLAINT_BY_ID: (id: number) => `/complaints/${id}`,
     COMPLAINT_ASSIGN: (id: number) => `/complaints/${id}/assign`,
     COMPLAINT_RESOLVE: (id: number) => `/complaints/${id}/resolve`,
+    COMPLAINT_REPLY: (id: number) => `/complaints/${id}/reply`,
+    COMPLAINT_CLOSE: (id: number) => `/complaints/${id}/close`,
+    COMPLAINT_RATING: (id: number) => `/complaints/${id}/rating`,
+    COMPLAINT_MAINTENANCE_REQUEST: (id: number) => `/complaints/${id}/maintenance-request`,
+    COMPLAINT_ATTACHMENTS: (id: number) => `/complaints/${id}/attachments`,
 
     MAINTENANCE_CONTRACTS: '/maintenance-contracts',
     MAINTENANCE_CONTRACT_BY_ID: (id: number) => `/maintenance-contracts/${id}`,
@@ -200,6 +219,10 @@ export const AppConstants = {
     MAINTENANCE_CONTRACTS_BY_COMPANY: (companyId: number) => `/maintenance-companies/${companyId}/contracts`,
     MAINTENANCE_CONTRACT_ACTIVATE: (id: number) => `/maintenance-contracts/${id}/activate`,
     MAINTENANCE_CONTRACT_TERMINATE: (id: number) => `/maintenance-contracts/${id}/terminate`,
+    MAINTENANCE_CONTRACT_CANCEL: (id: number) => `/maintenance-contracts/${id}/cancel`,
+    MAINTENANCE_CONTRACT_CANCEL_TERMINATION_REQUEST: (id: number) => `/maintenance-contracts/${id}/cancel-termination-request`,
+    MAINTENANCE_CONTRACT_REQUEST_RENEWAL: (id: number) => `/maintenance-contracts/${id}/request-renewal`,
+    MAINTENANCE_CONTRACT_CANCEL_RENEWAL_REQUEST: (id: number) => `/maintenance-contracts/${id}/cancel-renewal-request`,
     MAINTENANCE_CONTRACT_GENERATE_MONTHLY_INVOICES: (contractId: number) =>
       `/maintenance-contracts/${contractId}/generate-monthly-invoices`,
     MAINTENANCE_CONTRACT_INVOICES: (contractId: number) => `/maintenance-contracts/${contractId}/invoices`,

@@ -276,11 +276,12 @@
 .tb-user-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   background: transparent;
   border: 1px solid var(--line);
   border-radius: 999px;
-  padding: 4px 12px 4px 4px;
+  min-height: 44px;
+  padding: 4px 14px 4px 5px;
   cursor: pointer;
   transition: background 0.18s, border-color 0.18s;
 }
@@ -291,17 +292,18 @@
 }
 
 .tb-avatar {
-  width: 28px;
-  height: 28px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--amber-600), var(--amber-400));
   color: #1a1408;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.7rem;
+  font-size: 0.78rem;
   font-weight: 700;
   flex-shrink: 0;
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 3px var(--line);
 }
 
 .tb-avatar-img {
@@ -309,21 +311,101 @@
   border: 1px solid var(--line);
 }
 
+.tb-user-copy {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+  text-align: start;
+}
+
 .tb-user-name {
   max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.82rem;
-  font-weight: 600;
+  font-size: 0.84rem;
+  font-weight: 700;
   color: var(--text-main);
+  line-height: 1.15;
+}
+
+.tb-user-role {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.15;
 }
 
 .user-menu-header {
-  padding: 14px 16px 10px;
+  min-width: 260px;
+  padding: 18px 18px 16px;
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  gap: 14px;
+  background:
+    linear-gradient(135deg, rgba(200, 154, 61, 0.08), rgba(17, 39, 64, 0.04)),
+    var(--surface);
+}
+
+.user-menu-avatar {
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, var(--amber-600), var(--amber-400));
+  color: #1a1408;
+  font-size: 1.12rem;
+  font-weight: 800;
+  box-shadow: 0 0 0 3px var(--surface), 0 10px 22px rgba(14, 31, 51, 0.18);
+}
+
+.user-menu-avatar-img {
+  object-fit: cover;
+}
+
+.user-menu-copy {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.user-menu-copy strong {
+  color: var(--text-main);
+  font-size: 1rem;
+  line-height: 1.2;
+  max-width: 170px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-menu-role {
+  width: fit-content;
+  max-width: 170px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--navy-900);
+  color: var(--brass-100);
+  font-size: 0.72rem;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-menu-email {
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  max-width: 170px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 @media (max-width: 900px) {
@@ -333,7 +415,7 @@
 
   .lang-name,
   .topbar-search kbd,
-  .tb-user-name {
+  .tb-user-copy {
     display: none;
   }
 

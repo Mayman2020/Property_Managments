@@ -1,0 +1,476 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------< com.propertymanagement:property-backend >---------------
+[INFO] Building property-backend 1.0.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:3.2.5:run (default-cli) > test-compile @ property-backend >>>
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ property-backend ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 135 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ property-backend ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 385 source files with javac [debug release 17] to target\classes
+[INFO] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/main/java/com/propertymanagement/modules/finance/service/FinanceService.java: D:\Apps Work\My Apps\Property_Managments\property-backend\src\main\java\com\propertymanagement\modules\finance\service\FinanceService.java uses unchecked or unsafe operations.
+[INFO] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/main/java/com/propertymanagement/modules/finance/service/FinanceService.java: Recompile with -Xlint:unchecked for details.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ property-backend ---
+[INFO] Copying 1 resource from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ property-backend ---
+[INFO] Changes detected - recompiling the module! :dependency
+[INFO] Compiling 8 source files with javac [debug release 17] to target\test-classes
+[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR : 
+[INFO] -------------------------------------------------------------
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/inventory/InventoryServiceTest.java:[11,44] package com.propertymanagement.modules.owner does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/inventory/InventoryServiceTest.java:[12,43] package com.propertymanagement.modules.user does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/inventory/InventoryServiceTest.java:[13,43] package com.propertymanagement.modules.user does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/inventory/InventoryServiceTest.java:[37,11] cannot find symbol
+  symbol:   class OwnerPropertyAccessService
+  location: class com.propertymanagement.modules.inventory.InventoryServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/inventory/InventoryServiceTest.java:[41,13] cannot find symbol
+  symbol:   class User
+  location: class com.propertymanagement.modules.inventory.InventoryServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/inventory/InventoryServiceTest.java:[261,37] cannot find symbol
+  symbol:   class User
+  location: class com.propertymanagement.modules.inventory.InventoryServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/contract/OwnerApprovalServiceTest.java:[7,45] cannot find symbol
+  symbol:   class TenantPortalWelcomeService
+  location: package com.propertymanagement.modules.tenant
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/contract/OwnerApprovalServiceTest.java:[8,44] package com.propertymanagement.modules.owner does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/contract/OwnerApprovalServiceTest.java:[28,11] cannot find symbol
+  symbol:   class LeaseContractRepository
+  location: class com.propertymanagement.modules.contract.OwnerApprovalServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/contract/OwnerApprovalServiceTest.java:[29,11] cannot find symbol
+  symbol:   class LeaseContractService
+  location: class com.propertymanagement.modules.contract.OwnerApprovalServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/contract/OwnerApprovalServiceTest.java:[30,11] cannot find symbol
+  symbol:   class TenantPortalWelcomeService
+  location: class com.propertymanagement.modules.contract.OwnerApprovalServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/contract/OwnerApprovalServiceTest.java:[31,11] cannot find symbol
+  symbol:   class OwnerPropertyAccessService
+  location: class com.propertymanagement.modules.contract.OwnerApprovalServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/contract/OwnerApprovalServiceTest.java:[33,18] cannot find symbol
+  symbol:   class OwnerApprovalService
+  location: class com.propertymanagement.modules.contract.OwnerApprovalServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/contract/OwnerApprovalServiceTest.java:[163,13] cannot find symbol
+  symbol:   class LeaseContract
+  location: class com.propertymanagement.modules.contract.OwnerApprovalServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/contract/OwnerApprovalServiceTest.java:[167,50] cannot find symbol
+  symbol:   class ContractStatus
+  location: class com.propertymanagement.modules.contract.OwnerApprovalServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/contract/OwnerApprovalServiceTest.java:[167,13] cannot find symbol
+  symbol:   class LeaseContract
+  location: class com.propertymanagement.modules.contract.OwnerApprovalServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/contract/OwnerApprovalServiceTest.java:[3,1] package com.propertymanagement.modules.contract.lease does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/notification/NotificationServiceTest.java:[8,43] package com.propertymanagement.modules.user does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/notification/NotificationServiceTest.java:[9,43] package com.propertymanagement.modules.user does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/notification/NotificationServiceTest.java:[10,43] package com.propertymanagement.modules.user does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/notification/NotificationServiceTest.java:[37,11] cannot find symbol
+  symbol:   class UserRepository
+  location: class com.propertymanagement.modules.notification.NotificationServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/notification/NotificationServiceTest.java:[41,13] cannot find symbol
+  symbol:   class User
+  location: class com.propertymanagement.modules.notification.NotificationServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/notification/NotificationServiceTest.java:[167,37] cannot find symbol
+  symbol:   class User
+  location: class com.propertymanagement.modules.notification.NotificationServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/tenant/TenantOnboardingIntegrationTest.java:[3,53] cannot find symbol
+  symbol:   class ContractStatus
+  location: package com.propertymanagement.modules.contract.lease
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/tenant/TenantOnboardingIntegrationTest.java:[4,53] cannot find symbol
+  symbol:   class LeaseContractRepository
+  location: package com.propertymanagement.modules.contract.lease
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/tenant/TenantOnboardingIntegrationTest.java:[5,44] package com.propertymanagement.modules.owner does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/tenant/TenantOnboardingIntegrationTest.java:[6,44] package com.propertymanagement.modules.owner does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/tenant/TenantOnboardingIntegrationTest.java:[7,47] package com.propertymanagement.modules.property does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/tenant/TenantOnboardingIntegrationTest.java:[8,47] package com.propertymanagement.modules.property does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/tenant/TenantOnboardingIntegrationTest.java:[9,47] package com.propertymanagement.modules.property does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/tenant/TenantOnboardingIntegrationTest.java:[12,43] package com.propertymanagement.modules.unit does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/tenant/TenantOnboardingIntegrationTest.java:[13,43] package com.propertymanagement.modules.unit does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/tenant/TenantOnboardingIntegrationTest.java:[14,43] package com.propertymanagement.modules.unit does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/tenant/TenantOnboardingIntegrationTest.java:[15,43] package com.propertymanagement.modules.user does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/tenant/TenantOnboardingIntegrationTest.java:[58,13] cannot find symbol
+  symbol:   class TenantOnboardingService
+  location: class com.propertymanagement.modules.tenant.TenantOnboardingIntegrationTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/tenant/TenantOnboardingIntegrationTest.java:[60,13] cannot find symbol
+  symbol:   class OwnerRepository
+  location: class com.propertymanagement.modules.tenant.TenantOnboardingIntegrationTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/tenant/TenantOnboardingIntegrationTest.java:[62,13] cannot find symbol
+  symbol:   class PropertyRepository
+  location: class com.propertymanagement.modules.tenant.TenantOnboardingIntegrationTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/tenant/TenantOnboardingIntegrationTest.java:[64,13] cannot find symbol
+  symbol:   class UnitRepository
+  location: class com.propertymanagement.modules.tenant.TenantOnboardingIntegrationTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/tenant/TenantOnboardingIntegrationTest.java:[66,13] cannot find symbol
+  symbol:   class TenantRepository
+  location: class com.propertymanagement.modules.tenant.TenantOnboardingIntegrationTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/tenant/TenantOnboardingIntegrationTest.java:[68,13] cannot find symbol
+  symbol:   class UserRepository
+  location: class com.propertymanagement.modules.tenant.TenantOnboardingIntegrationTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/tenant/TenantOnboardingIntegrationTest.java:[70,13] cannot find symbol
+  symbol:   class LeaseContractRepository
+  location: class com.propertymanagement.modules.tenant.TenantOnboardingIntegrationTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[3,54] package com.propertymanagement.modules.finance.expense does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[4,54] package com.propertymanagement.modules.finance.expense does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[5,50] package com.propertymanagement.modules.hr.employee does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[6,50] package com.propertymanagement.modules.hr.employee does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[10,44] package com.propertymanagement.modules.owner does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[11,47] package com.propertymanagement.modules.property does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[12,43] package com.propertymanagement.modules.user does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[13,43] package com.propertymanagement.modules.user does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[14,43] package com.propertymanagement.modules.user does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[37,11] cannot find symbol
+  symbol:   class PayrollRepository
+  location: class com.propertymanagement.modules.hr.PayrollServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[38,11] cannot find symbol
+  symbol:   class PayslipRepository
+  location: class com.propertymanagement.modules.hr.PayrollServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[39,11] cannot find symbol
+  symbol:   class EmployeeRepository
+  location: class com.propertymanagement.modules.hr.PayrollServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[40,11] cannot find symbol
+  symbol:   class SalaryAdvanceRepository
+  location: class com.propertymanagement.modules.hr.PayrollServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[41,11] cannot find symbol
+  symbol:   class EmployeeBonusRepository
+  location: class com.propertymanagement.modules.hr.PayrollServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[42,11] cannot find symbol
+  symbol:   class ExpenseWriterRepository
+  location: class com.propertymanagement.modules.hr.PayrollServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[43,11] cannot find symbol
+  symbol:   class ExpenseCategoryLookupRepository
+  location: class com.propertymanagement.modules.hr.PayrollServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[45,11] cannot find symbol
+  symbol:   class UserRepository
+  location: class com.propertymanagement.modules.hr.PayrollServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[46,11] cannot find symbol
+  symbol:   class PropertyOwnerPortalRecipientService
+  location: class com.propertymanagement.modules.hr.PayrollServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[47,11] cannot find symbol
+  symbol:   class OwnerPropertyAccessService
+  location: class com.propertymanagement.modules.hr.PayrollServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[49,18] cannot find symbol
+  symbol:   class PayrollService
+  location: class com.propertymanagement.modules.hr.PayrollServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[51,13] cannot find symbol
+  symbol:   class User
+  location: class com.propertymanagement.modules.hr.PayrollServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[7,1] package com.propertymanagement.modules.hr.payroll does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[4,61] package com.propertymanagement.modules.maintenance.assignment does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[5,61] package com.propertymanagement.modules.maintenance.assignment does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[6,61] package com.propertymanagement.modules.maintenance.assignment does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[7,61] package com.propertymanagement.modules.maintenance.assignment does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[8,59] package com.propertymanagement.modules.maintenance.category does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[16,56] cannot find symbol
+  symbol:   class VisitReport
+  location: package com.propertymanagement.modules.maintenance.visit
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[19,56] cannot find symbol
+  symbol:   class VisitReportItemRepository
+  location: package com.propertymanagement.modules.maintenance.visit
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[20,56] cannot find symbol
+  symbol:   class VisitReportRepository
+  location: package com.propertymanagement.modules.maintenance.visit
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[22,44] package com.propertymanagement.modules.owner does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[23,47] package com.propertymanagement.modules.property does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[24,47] package com.propertymanagement.modules.property does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[25,47] package com.propertymanagement.modules.property does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[26,45] cannot find symbol
+  symbol:   class TenantRepository
+  location: package com.propertymanagement.modules.tenant
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[27,43] package com.propertymanagement.modules.unit does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[28,43] package com.propertymanagement.modules.user does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[29,43] package com.propertymanagement.modules.user does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[30,43] package com.propertymanagement.modules.user does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[31,43] package com.propertymanagement.modules.user does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[53,11] cannot find symbol
+  symbol:   class MaintenanceRequestRepository
+  location: class com.propertymanagement.modules.maintenance.MaintenanceRequestServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[54,11] cannot find symbol
+  symbol:   class VisitReportRepository
+  location: class com.propertymanagement.modules.maintenance.MaintenanceRequestServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[55,11] cannot find symbol
+  symbol:   class VisitReportItemRepository
+  location: class com.propertymanagement.modules.maintenance.MaintenanceRequestServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[57,11] cannot find symbol
+  symbol:   class UserRepository
+  location: class com.propertymanagement.modules.maintenance.MaintenanceRequestServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[58,11] cannot find symbol
+  symbol:   class TenantRepository
+  location: class com.propertymanagement.modules.maintenance.MaintenanceRequestServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[59,11] cannot find symbol
+  symbol:   class PropertyRepository
+  location: class com.propertymanagement.modules.maintenance.MaintenanceRequestServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[60,11] cannot find symbol
+  symbol:   class UnitRepository
+  location: class com.propertymanagement.modules.maintenance.MaintenanceRequestServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[61,11] cannot find symbol
+  symbol:   class MaintenanceCategoryRepository
+  location: class com.propertymanagement.modules.maintenance.MaintenanceRequestServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[62,11] cannot find symbol
+  symbol:   class PropertyMaintenanceAssignmentRepository
+  location: class com.propertymanagement.modules.maintenance.MaintenanceRequestServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[64,11] cannot find symbol
+  symbol:   class MaintenanceProviderRepository
+  location: class com.propertymanagement.modules.maintenance.MaintenanceRequestServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[65,11] cannot find symbol
+  symbol:   class PropertyOwnerPortalRecipientService
+  location: class com.propertymanagement.modules.maintenance.MaintenanceRequestServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[66,11] cannot find symbol
+  symbol:   class OwnerPropertyAccessService
+  location: class com.propertymanagement.modules.maintenance.MaintenanceRequestServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[70,18] cannot find symbol
+  symbol:   class MaintenanceRequestService
+  location: class com.propertymanagement.modules.maintenance.MaintenanceRequestServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[72,13] cannot find symbol
+  symbol:   class User
+  location: class com.propertymanagement.modules.maintenance.MaintenanceRequestServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[73,13] cannot find symbol
+  symbol:   class Property
+  location: class com.propertymanagement.modules.maintenance.MaintenanceRequestServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[307,54] cannot find symbol
+  symbol:   class RequestStatus
+  location: class com.propertymanagement.modules.maintenance.MaintenanceRequestServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[307,13] cannot find symbol
+  symbol:   class MaintenanceRequest
+  location: class com.propertymanagement.modules.maintenance.MaintenanceRequestServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[332,37] cannot find symbol
+  symbol:   class User
+  location: class com.propertymanagement.modules.maintenance.MaintenanceRequestServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[11,1] package com.propertymanagement.modules.maintenance.request does not exist
+[INFO] 100 errors 
+[INFO] -------------------------------------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  17.075 s
+[INFO] Finished at: 2026-05-10T23:22:11+04:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.11.0:testCompile (default-testCompile) on project property-backend: Compilation failure: Compilation failure: 
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/inventory/InventoryServiceTest.java:[11,44] package com.propertymanagement.modules.owner does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/inventory/InventoryServiceTest.java:[12,43] package com.propertymanagement.modules.user does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/inventory/InventoryServiceTest.java:[13,43] package com.propertymanagement.modules.user does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/inventory/InventoryServiceTest.java:[37,11] cannot find symbol
+[ERROR]   symbol:   class OwnerPropertyAccessService
+[ERROR]   location: class com.propertymanagement.modules.inventory.InventoryServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/inventory/InventoryServiceTest.java:[41,13] cannot find symbol
+[ERROR]   symbol:   class User
+[ERROR]   location: class com.propertymanagement.modules.inventory.InventoryServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/inventory/InventoryServiceTest.java:[261,37] cannot find symbol
+[ERROR]   symbol:   class User
+[ERROR]   location: class com.propertymanagement.modules.inventory.InventoryServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/contract/OwnerApprovalServiceTest.java:[7,45] cannot find symbol
+[ERROR]   symbol:   class TenantPortalWelcomeService
+[ERROR]   location: package com.propertymanagement.modules.tenant
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/contract/OwnerApprovalServiceTest.java:[8,44] package com.propertymanagement.modules.owner does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/contract/OwnerApprovalServiceTest.java:[28,11] cannot find symbol
+[ERROR]   symbol:   class LeaseContractRepository
+[ERROR]   location: class com.propertymanagement.modules.contract.OwnerApprovalServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/contract/OwnerApprovalServiceTest.java:[29,11] cannot find symbol
+[ERROR]   symbol:   class LeaseContractService
+[ERROR]   location: class com.propertymanagement.modules.contract.OwnerApprovalServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/contract/OwnerApprovalServiceTest.java:[30,11] cannot find symbol
+[ERROR]   symbol:   class TenantPortalWelcomeService
+[ERROR]   location: class com.propertymanagement.modules.contract.OwnerApprovalServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/contract/OwnerApprovalServiceTest.java:[31,11] cannot find symbol
+[ERROR]   symbol:   class OwnerPropertyAccessService
+[ERROR]   location: class com.propertymanagement.modules.contract.OwnerApprovalServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/contract/OwnerApprovalServiceTest.java:[33,18] cannot find symbol
+[ERROR]   symbol:   class OwnerApprovalService
+[ERROR]   location: class com.propertymanagement.modules.contract.OwnerApprovalServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/contract/OwnerApprovalServiceTest.java:[163,13] cannot find symbol
+[ERROR]   symbol:   class LeaseContract
+[ERROR]   location: class com.propertymanagement.modules.contract.OwnerApprovalServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/contract/OwnerApprovalServiceTest.java:[167,50] cannot find symbol
+[ERROR]   symbol:   class ContractStatus
+[ERROR]   location: class com.propertymanagement.modules.contract.OwnerApprovalServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/contract/OwnerApprovalServiceTest.java:[167,13] cannot find symbol
+[ERROR]   symbol:   class LeaseContract
+[ERROR]   location: class com.propertymanagement.modules.contract.OwnerApprovalServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/contract/OwnerApprovalServiceTest.java:[3,1] package com.propertymanagement.modules.contract.lease does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/notification/NotificationServiceTest.java:[8,43] package com.propertymanagement.modules.user does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/notification/NotificationServiceTest.java:[9,43] package com.propertymanagement.modules.user does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/notification/NotificationServiceTest.java:[10,43] package com.propertymanagement.modules.user does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/notification/NotificationServiceTest.java:[37,11] cannot find symbol
+[ERROR]   symbol:   class UserRepository
+[ERROR]   location: class com.propertymanagement.modules.notification.NotificationServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/notification/NotificationServiceTest.java:[41,13] cannot find symbol
+[ERROR]   symbol:   class User
+[ERROR]   location: class com.propertymanagement.modules.notification.NotificationServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/notification/NotificationServiceTest.java:[167,37] cannot find symbol
+[ERROR]   symbol:   class User
+[ERROR]   location: class com.propertymanagement.modules.notification.NotificationServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/tenant/TenantOnboardingIntegrationTest.java:[3,53] cannot find symbol
+[ERROR]   symbol:   class ContractStatus
+[ERROR]   location: package com.propertymanagement.modules.contract.lease
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/tenant/TenantOnboardingIntegrationTest.java:[4,53] cannot find symbol
+[ERROR]   symbol:   class LeaseContractRepository
+[ERROR]   location: package com.propertymanagement.modules.contract.lease
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/tenant/TenantOnboardingIntegrationTest.java:[5,44] package com.propertymanagement.modules.owner does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/tenant/TenantOnboardingIntegrationTest.java:[6,44] package com.propertymanagement.modules.owner does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/tenant/TenantOnboardingIntegrationTest.java:[7,47] package com.propertymanagement.modules.property does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/tenant/TenantOnboardingIntegrationTest.java:[8,47] package com.propertymanagement.modules.property does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/tenant/TenantOnboardingIntegrationTest.java:[9,47] package com.propertymanagement.modules.property does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/tenant/TenantOnboardingIntegrationTest.java:[12,43] package com.propertymanagement.modules.unit does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/tenant/TenantOnboardingIntegrationTest.java:[13,43] package com.propertymanagement.modules.unit does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/tenant/TenantOnboardingIntegrationTest.java:[14,43] package com.propertymanagement.modules.unit does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/tenant/TenantOnboardingIntegrationTest.java:[15,43] package com.propertymanagement.modules.user does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/tenant/TenantOnboardingIntegrationTest.java:[58,13] cannot find symbol
+[ERROR]   symbol:   class TenantOnboardingService
+[ERROR]   location: class com.propertymanagement.modules.tenant.TenantOnboardingIntegrationTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/tenant/TenantOnboardingIntegrationTest.java:[60,13] cannot find symbol
+[ERROR]   symbol:   class OwnerRepository
+[ERROR]   location: class com.propertymanagement.modules.tenant.TenantOnboardingIntegrationTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/tenant/TenantOnboardingIntegrationTest.java:[62,13] cannot find symbol
+[ERROR]   symbol:   class PropertyRepository
+[ERROR]   location: class com.propertymanagement.modules.tenant.TenantOnboardingIntegrationTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/tenant/TenantOnboardingIntegrationTest.java:[64,13] cannot find symbol
+[ERROR]   symbol:   class UnitRepository
+[ERROR]   location: class com.propertymanagement.modules.tenant.TenantOnboardingIntegrationTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/tenant/TenantOnboardingIntegrationTest.java:[66,13] cannot find symbol
+[ERROR]   symbol:   class TenantRepository
+[ERROR]   location: class com.propertymanagement.modules.tenant.TenantOnboardingIntegrationTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/tenant/TenantOnboardingIntegrationTest.java:[68,13] cannot find symbol
+[ERROR]   symbol:   class UserRepository
+[ERROR]   location: class com.propertymanagement.modules.tenant.TenantOnboardingIntegrationTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/tenant/TenantOnboardingIntegrationTest.java:[70,13] cannot find symbol
+[ERROR]   symbol:   class LeaseContractRepository
+[ERROR]   location: class com.propertymanagement.modules.tenant.TenantOnboardingIntegrationTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[3,54] package com.propertymanagement.modules.finance.expense does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[4,54] package com.propertymanagement.modules.finance.expense does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[5,50] package com.propertymanagement.modules.hr.employee does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[6,50] package com.propertymanagement.modules.hr.employee does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[10,44] package com.propertymanagement.modules.owner does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[11,47] package com.propertymanagement.modules.property does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[12,43] package com.propertymanagement.modules.user does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[13,43] package com.propertymanagement.modules.user does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[14,43] package com.propertymanagement.modules.user does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[37,11] cannot find symbol
+[ERROR]   symbol:   class PayrollRepository
+[ERROR]   location: class com.propertymanagement.modules.hr.PayrollServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[38,11] cannot find symbol
+[ERROR]   symbol:   class PayslipRepository
+[ERROR]   location: class com.propertymanagement.modules.hr.PayrollServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[39,11] cannot find symbol
+[ERROR]   symbol:   class EmployeeRepository
+[ERROR]   location: class com.propertymanagement.modules.hr.PayrollServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[40,11] cannot find symbol
+[ERROR]   symbol:   class SalaryAdvanceRepository
+[ERROR]   location: class com.propertymanagement.modules.hr.PayrollServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[41,11] cannot find symbol
+[ERROR]   symbol:   class EmployeeBonusRepository
+[ERROR]   location: class com.propertymanagement.modules.hr.PayrollServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[42,11] cannot find symbol
+[ERROR]   symbol:   class ExpenseWriterRepository
+[ERROR]   location: class com.propertymanagement.modules.hr.PayrollServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[43,11] cannot find symbol
+[ERROR]   symbol:   class ExpenseCategoryLookupRepository
+[ERROR]   location: class com.propertymanagement.modules.hr.PayrollServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[45,11] cannot find symbol
+[ERROR]   symbol:   class UserRepository
+[ERROR]   location: class com.propertymanagement.modules.hr.PayrollServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[46,11] cannot find symbol
+[ERROR]   symbol:   class PropertyOwnerPortalRecipientService
+[ERROR]   location: class com.propertymanagement.modules.hr.PayrollServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[47,11] cannot find symbol
+[ERROR]   symbol:   class OwnerPropertyAccessService
+[ERROR]   location: class com.propertymanagement.modules.hr.PayrollServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[49,18] cannot find symbol
+[ERROR]   symbol:   class PayrollService
+[ERROR]   location: class com.propertymanagement.modules.hr.PayrollServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[51,13] cannot find symbol
+[ERROR]   symbol:   class User
+[ERROR]   location: class com.propertymanagement.modules.hr.PayrollServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/hr/PayrollServiceTest.java:[7,1] package com.propertymanagement.modules.hr.payroll does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[4,61] package com.propertymanagement.modules.maintenance.assignment does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[5,61] package com.propertymanagement.modules.maintenance.assignment does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[6,61] package com.propertymanagement.modules.maintenance.assignment does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[7,61] package com.propertymanagement.modules.maintenance.assignment does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[8,59] package com.propertymanagement.modules.maintenance.category does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[16,56] cannot find symbol
+[ERROR]   symbol:   class VisitReport
+[ERROR]   location: package com.propertymanagement.modules.maintenance.visit
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[19,56] cannot find symbol
+[ERROR]   symbol:   class VisitReportItemRepository
+[ERROR]   location: package com.propertymanagement.modules.maintenance.visit
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[20,56] cannot find symbol
+[ERROR]   symbol:   class VisitReportRepository
+[ERROR]   location: package com.propertymanagement.modules.maintenance.visit
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[22,44] package com.propertymanagement.modules.owner does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[23,47] package com.propertymanagement.modules.property does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[24,47] package com.propertymanagement.modules.property does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[25,47] package com.propertymanagement.modules.property does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[26,45] cannot find symbol
+[ERROR]   symbol:   class TenantRepository
+[ERROR]   location: package com.propertymanagement.modules.tenant
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[27,43] package com.propertymanagement.modules.unit does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[28,43] package com.propertymanagement.modules.user does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[29,43] package com.propertymanagement.modules.user does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[30,43] package com.propertymanagement.modules.user does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[31,43] package com.propertymanagement.modules.user does not exist
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[53,11] cannot find symbol
+[ERROR]   symbol:   class MaintenanceRequestRepository
+[ERROR]   location: class com.propertymanagement.modules.maintenance.MaintenanceRequestServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[54,11] cannot find symbol
+[ERROR]   symbol:   class VisitReportRepository
+[ERROR]   location: class com.propertymanagement.modules.maintenance.MaintenanceRequestServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[55,11] cannot find symbol
+[ERROR]   symbol:   class VisitReportItemRepository
+[ERROR]   location: class com.propertymanagement.modules.maintenance.MaintenanceRequestServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[57,11] cannot find symbol
+[ERROR]   symbol:   class UserRepository
+[ERROR]   location: class com.propertymanagement.modules.maintenance.MaintenanceRequestServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[58,11] cannot find symbol
+[ERROR]   symbol:   class TenantRepository
+[ERROR]   location: class com.propertymanagement.modules.maintenance.MaintenanceRequestServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[59,11] cannot find symbol
+[ERROR]   symbol:   class PropertyRepository
+[ERROR]   location: class com.propertymanagement.modules.maintenance.MaintenanceRequestServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[60,11] cannot find symbol
+[ERROR]   symbol:   class UnitRepository
+[ERROR]   location: class com.propertymanagement.modules.maintenance.MaintenanceRequestServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[61,11] cannot find symbol
+[ERROR]   symbol:   class MaintenanceCategoryRepository
+[ERROR]   location: class com.propertymanagement.modules.maintenance.MaintenanceRequestServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[62,11] cannot find symbol
+[ERROR]   symbol:   class PropertyMaintenanceAssignmentRepository
+[ERROR]   location: class com.propertymanagement.modules.maintenance.MaintenanceRequestServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[64,11] cannot find symbol
+[ERROR]   symbol:   class MaintenanceProviderRepository
+[ERROR]   location: class com.propertymanagement.modules.maintenance.MaintenanceRequestServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[65,11] cannot find symbol
+[ERROR]   symbol:   class PropertyOwnerPortalRecipientService
+[ERROR]   location: class com.propertymanagement.modules.maintenance.MaintenanceRequestServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[66,11] cannot find symbol
+[ERROR]   symbol:   class OwnerPropertyAccessService
+[ERROR]   location: class com.propertymanagement.modules.maintenance.MaintenanceRequestServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[70,18] cannot find symbol
+[ERROR]   symbol:   class MaintenanceRequestService
+[ERROR]   location: class com.propertymanagement.modules.maintenance.MaintenanceRequestServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[72,13] cannot find symbol
+[ERROR]   symbol:   class User
+[ERROR]   location: class com.propertymanagement.modules.maintenance.MaintenanceRequestServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[73,13] cannot find symbol
+[ERROR]   symbol:   class Property
+[ERROR]   location: class com.propertymanagement.modules.maintenance.MaintenanceRequestServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[307,54] cannot find symbol
+[ERROR]   symbol:   class RequestStatus
+[ERROR]   location: class com.propertymanagement.modules.maintenance.MaintenanceRequestServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[307,13] cannot find symbol
+[ERROR]   symbol:   class MaintenanceRequest
+[ERROR]   location: class com.propertymanagement.modules.maintenance.MaintenanceRequestServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[332,37] cannot find symbol
+[ERROR]   symbol:   class User
+[ERROR]   location: class com.propertymanagement.modules.maintenance.MaintenanceRequestServiceTest
+[ERROR] /D:/Apps Work/My Apps/Property_Managments/property-backend/src/test/java/com/propertymanagement/modules/maintenance/MaintenanceRequestServiceTest.java:[11,1] package com.propertymanagement.modules.maintenance.request does not exist
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

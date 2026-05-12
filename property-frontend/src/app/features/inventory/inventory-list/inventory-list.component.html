@@ -14,13 +14,17 @@
     <mat-spinner diameter="40"></mat-spinner>
   </div>
 
-  <div class="inventory-search-shell" *ngIf="!loading && (items.length > 0 || searchTerm || hasFiltersBar())">
-    <span class="material-icons">search</span>
-    <input [value]="searchTerm" (input)="onSearch($any($event.target).value)" [placeholder]="'ACTIONS.SEARCH' | translate">
-    <app-filter-bar [filters]="pageFilters" [filterValues]="filterValues" (filtersChange)="onFilterBarChange($event)"></app-filter-bar>
-    <button mat-icon-button class="clear-filters-btn" (click)="clearFiltersFromBar()" *ngIf="hasFiltersBar()" [matTooltip]="'ACTIONS.CLEAR_FILTERS' | translate">
-      <mat-icon>filter_alt_off</mat-icon>
-    </button>
+  <div class="estate-table-toolbar inventory-toolbar" *ngIf="!loading && (items.length > 0 || searchTerm || hasFiltersBar())">
+    <div class="inventory-toolbar-row">
+      <div class="estate-search-inline">
+        <span class="material-icons">search</span>
+        <input [value]="searchTerm" (input)="onSearch($any($event.target).value)" [placeholder]="'ACTIONS.SEARCH' | translate">
+      </div>
+      <app-filter-bar [filters]="pageFilters" [filterValues]="filterValues" (filtersChange)="onFilterBarChange($event)"></app-filter-bar>
+      <button mat-icon-button class="clear-filters-btn" (click)="clearFiltersFromBar()" *ngIf="hasFiltersBar()" [matTooltip]="'ACTIONS.CLEAR_FILTERS' | translate">
+        <mat-icon>filter_alt_off</mat-icon>
+      </button>
+    </div>
   </div>
 
   <app-empty-state

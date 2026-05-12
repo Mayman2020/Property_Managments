@@ -14,6 +14,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
+import com.propertymanagement.modules.user.entity.User;
 
 /**
  * Blocks all API calls (except auth and change-password) when the JWT contains

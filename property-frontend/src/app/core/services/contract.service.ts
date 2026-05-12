@@ -69,8 +69,13 @@ export class ContractService {
     return this.api.patch<any>(AppConstants.API.CONTRACT_CANCEL_RENEWAL_REQUEST(id));
   }
 
+  /** Loads schedule rows (server caps page size; request enough for multi-year leases). */
   getPaymentSchedule(contractId: number): Observable<any> {
-    return this.api.get<any>(AppConstants.API.CONTRACT_PAYMENT_SCHEDULE(contractId));
+    return this.api.get<any>(AppConstants.API.CONTRACT_PAYMENT_SCHEDULE(contractId), {
+      page: 0,
+      size: 500,
+      sort: 'dueDate,asc'
+    });
   }
 
   getTemplates(): Observable<any> {

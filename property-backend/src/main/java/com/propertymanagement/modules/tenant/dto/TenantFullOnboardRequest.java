@@ -1,6 +1,6 @@
 package com.propertymanagement.modules.tenant.dto;
 
-import com.propertymanagement.modules.contract.lease.PaymentFrequency;
+import com.propertymanagement.modules.contract.lease.entity.PaymentFrequency;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -10,6 +10,9 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import com.propertymanagement.modules.tenant.entity.Tenant;
+import com.propertymanagement.modules.unit.entity.Unit;
+import com.propertymanagement.modules.user.entity.User;
 
 /**
  * Single payload for admin flow: portal user + tenant profile + draft lease contract + unit rented flag,

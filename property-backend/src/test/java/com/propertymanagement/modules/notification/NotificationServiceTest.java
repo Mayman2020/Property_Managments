@@ -1,9 +1,13 @@
 package com.propertymanagement.modules.notification;
 
-import com.propertymanagement.modules.notification.dto.NotificationResponse;
-import com.propertymanagement.modules.user.User;
-import com.propertymanagement.modules.user.UserRepository;
-import com.propertymanagement.modules.user.UserRole;
+import com.propertymanagement.modules.notification.entity.NotificationEntity;
+import com.propertymanagement.modules.notification.entity.NotificationType;
+import com.propertymanagement.modules.notification.dto.NotificationResponseDTO;
+import com.propertymanagement.modules.notification.repository.NotificationRepository;
+import com.propertymanagement.modules.notification.service.NotificationService;
+import com.propertymanagement.modules.user.entity.User;
+import com.propertymanagement.modules.user.repository.UserRepository;
+import com.propertymanagement.modules.user.entity.UserRole;
 import com.propertymanagement.shared.exception.AppException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,7 +56,7 @@ class NotificationServiceTest {
         service.createForRecipients(recipients, null, null, null,
                 NotificationType.GENERAL, "Title", "Message");
 
-        verify(notificationRepository, times(3)).save(any(Notification.class));
+        verify(notificationRepository, times(3)).save(any(NotificationEntity.class));
     }
 
     @Test
@@ -65,7 +69,7 @@ class NotificationServiceTest {
                 NotificationType.GENERAL, "Title", "Message");
 
         // Should save only 2 (distinct)
-        verify(notificationRepository, times(2)).save(any(Notification.class));
+        verify(notificationRepository, times(2)).save(any(NotificationEntity.class));
     }
 
     @Test
@@ -75,7 +79,7 @@ class NotificationServiceTest {
         service.createForRecipients(List.of(1L), null, null, null,
                 NotificationType.CONTRACT_AWAITING_OWNER_REVIEW, "title", "msg");
 
-        ArgumentCaptor<Notification> captor = ArgumentCaptor.forClass(Notification.class);
+        ArgumentCaptor<NotificationEntity> captor = ArgumentCaptor.forClass(NotificationEntity.class);
         verify(notificationRepository).save(captor.capture());
         assertThat(captor.getValue().getType()).isEqualTo(NotificationType.CONTRACT_AWAITING_OWNER_REVIEW);
     }
@@ -95,10 +99,10 @@ class NotificationServiceTest {
                 vars,
                 null);
 
-        ArgumentCaptor<Notification> captor = ArgumentCaptor.forClass(Notification.class);
+        ArgumentCaptor<NotificationEntity> captor = ArgumentCaptor.forClass(NotificationEntity.class);
         verify(notificationRepository).save(captor.capture());
 
-        Notification saved = captor.getValue();
+        NotificationEntity saved = captor.getValue();
         assertThat(saved.getParams()).isNotNull();
         assertThat(saved.getParams().get("titleKey")).isEqualTo("NOTIFICATIONS.TITLE_KEY");
         assertThat(saved.getParams().get("bodyKey")).isEqualTo("NOTIFICATIONS.BODY_KEY");
@@ -117,7 +121,7 @@ class NotificationServiceTest {
 
     @Test
     void markRead_setsReadAt() {
-        Notification notification = Notification.builder()
+        NotificationEntity notification = NotificationEntity.builder()
                 .id(1L).recipientUserId(10L).type(NotificationType.GENERAL)
                 .title("T").message("M").build();
         when(notificationRepository.findByIdAndRecipientUserId(1L, 10L))

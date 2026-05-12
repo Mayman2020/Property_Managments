@@ -1,4 +1,4 @@
-import { Routes } from '@angular/router';
+﻿import { Routes } from '@angular/router';
 import { MainLayoutComponent } from '../../layout/main-layout/main-layout.component';
 import { permissionGuard, tenantGuard } from '../../core/guards/auth.guard';
 
@@ -42,11 +42,11 @@ export const TENANT_ROUTES: Routes = [
       },
       {
         path: 'complaints',
-        loadComponent: () => import('./submit-complaint/submit-complaint.component').then((m) => m.SubmitComplaintComponent)
+        loadComponent: () => import('./tenant-complaints-page/tenant-complaints-page.component').then((m) => m.TenantComplaintsPageComponent)
       },
       {
         path: 'notifications',
-        loadComponent: () => import('../notifications/notifications-page.component').then((m) => m.NotificationsPageComponent)
+        loadComponent: () => import('../notifications/notifications-page/notifications-page.component').then((m) => m.NotificationsPageComponent)
       },
       {
         path: 'contract-request',
@@ -74,7 +74,7 @@ export const TENANT_ROUTES: Routes = [
         canActivate: [permissionGuard],
         data: { permission: 'profile', permissionAction: 'view' },
         path: 'profile',
-        loadComponent: () => import('../profile/profile.component').then((m) => m.ProfileComponent)
+        loadComponent: () => import('../profile/profile/profile.component').then((m) => m.ProfileComponent)
       }
     ]
   }

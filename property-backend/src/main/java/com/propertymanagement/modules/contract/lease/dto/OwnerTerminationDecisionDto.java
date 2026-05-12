@@ -2,6 +2,8 @@ package com.propertymanagement.modules.contract.lease.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
+import com.propertymanagement.modules.owner.entity.Owner;
+import com.propertymanagement.modules.tenant.entity.Tenant;
 
 /**
  * Owner-portal payload for approving or rejecting a pending termination request.

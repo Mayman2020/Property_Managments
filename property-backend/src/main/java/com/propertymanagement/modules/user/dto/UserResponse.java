@@ -1,13 +1,17 @@
 package com.propertymanagement.modules.user.dto;
 
-import com.propertymanagement.modules.user.UserRole;
-import com.propertymanagement.modules.user.MaintenanceOfficerType;
+import com.propertymanagement.modules.user.entity.UserRole;
+import com.propertymanagement.modules.user.entity.MaintenanceOfficerType;
 import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import com.propertymanagement.modules.hr.employee.entity.Employee;
+import com.propertymanagement.modules.owner.entity.Owner;
+import com.propertymanagement.modules.tenant.entity.Tenant;
+import com.propertymanagement.modules.user.entity.User;
 
 @Data
 @Builder(toBuilder = true)

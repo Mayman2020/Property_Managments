@@ -1,4 +1,4 @@
-import { Routes } from '@angular/router';
+﻿import { Routes } from '@angular/router';
 import { MainLayoutComponent } from '../../layout/main-layout/main-layout.component';
 import { adminGuard, permissionGuard, superAdminGuard, contractsGuard, moduleGuard, ownerGuard, roleGuard } from '../../core/guards/auth.guard';
 
@@ -11,13 +11,13 @@ export const ADMIN_ROUTES: Routes = [
       { path: '', redirectTo: 'home', pathMatch: 'full' },
       {
         path: 'home',
-        loadComponent: () => import('../home-portal/home-portal.component').then((m) => m.HomePortalComponent)
+        loadComponent: () => import('../home-portal/home-portal/home-portal.component').then((m) => m.HomePortalComponent)
       },
       {
         canActivate: [permissionGuard],
         data: { permission: 'dashboard', permissionAction: 'view' },
         path: 'dashboard',
-        loadComponent: () => import('../dashboard/dashboard.component').then((m) => m.DashboardComponent)
+        loadComponent: () => import('../dashboard/dashboard/dashboard.component').then((m) => m.DashboardComponent)
       },
       {
         canActivate: [permissionGuard],
@@ -30,13 +30,13 @@ export const ADMIN_ROUTES: Routes = [
         canActivate: [permissionGuard],
         data: { permission: 'units', permissionAction: 'view' },
         path: 'units',
-        loadComponent: () => import('../units/unit-management.component').then((m) => m.UnitManagementComponent)
+        loadComponent: () => import('../units/unit-management/unit-management.component').then((m) => m.UnitManagementComponent)
       },
       {
         canActivate: [permissionGuard],
         data: { permission: 'tenants', permissionAction: 'view' },
         path: 'tenants',
-        loadComponent: () => import('../tenants/tenant-management.component').then((m) => m.TenantManagementComponent)
+        loadComponent: () => import('../tenants/tenant-list/tenant-management.component').then((m) => m.TenantManagementComponent)
       },
       {
         canActivate: [permissionGuard],
@@ -66,79 +66,79 @@ export const ADMIN_ROUTES: Routes = [
         canActivate: [permissionGuard],
         data: { permission: 'reports', permissionAction: 'view' },
         path: 'reports',
-        loadComponent: () => import('../reports/reports-dashboard.component').then((m) => m.ReportsDashboardComponent)
+        loadComponent: () => import('../reports/reports-dashboard/reports-dashboard.component').then((m) => m.ReportsDashboardComponent)
       },
       {
         canActivate: [permissionGuard],
         data: { permission: 'users', permissionAction: 'view' },
         path: 'users',
-        loadComponent: () => import('../users/user-management.component').then((m) => m.UserManagementComponent)
+        loadComponent: () => import('../users/user-management/user-management.component').then((m) => m.UserManagementComponent)
       },
       {
         canActivate: [superAdminGuard, permissionGuard],
         data: { permission: 'users', permissionAction: 'edit' },
         path: 'user-access',
-        loadComponent: () => import('../users/user-access-management.component').then((m) => m.UserAccessManagementComponent)
+        loadComponent: () => import('../users/user-access-management/user-access-management.component').then((m) => m.UserAccessManagementComponent)
       },
       {
         canActivate: [superAdminGuard, permissionGuard],
         data: { permission: 'permissions', permissionAction: 'view' },
         path: 'screens',
-        loadComponent: () => import('../permissions/screen-management.component').then((m) => m.ScreenManagementComponent)
+        loadComponent: () => import('../permissions/screen-management/screen-management.component').then((m) => m.ScreenManagementComponent)
       },
       {
         canActivate: [superAdminGuard, permissionGuard],
         data: { permission: 'permissions', permissionAction: 'view' },
         path: 'permissions',
-        loadComponent: () => import('../permissions/permission-management.component').then((m) => m.PermissionManagementComponent)
+        loadComponent: () => import('../permissions/permission-management/permission-management.component').then((m) => m.PermissionManagementComponent)
       },
       {
         canActivate: [moduleGuard],
         data: { module: 'permissions' },
         path: 'module-settings',
-        loadComponent: () => import('../permissions/module-management.component').then((m) => m.ModuleManagementComponent)
+        loadComponent: () => import('../permissions/module-management/module-management.component').then((m) => m.ModuleManagementComponent)
       },
       {
         canActivate: [permissionGuard],
         data: { permission: 'lookups', permissionAction: 'view' },
         path: 'lookups',
-        loadComponent: () => import('../lookups/lookup-management.component').then((m) => m.LookupManagementComponent)
+        loadComponent: () => import('../lookups/lookup-management/lookup-management.component').then((m) => m.LookupManagementComponent)
       },
       {
         canActivate: [permissionGuard],
         data: { permission: 'ratings', permissionAction: 'view' },
         path: 'ratings',
-        loadComponent: () => import('../ratings/ratings-dashboard.component').then((m) => m.RatingsDashboardComponent)
+        loadComponent: () => import('../ratings/ratings-dashboard/ratings-dashboard.component').then((m) => m.RatingsDashboardComponent)
       },
       {
         canActivate: [permissionGuard],
         data: { permission: 'contractors', permissionAction: 'view' },
         path: 'contractors',
-        loadComponent: () => import('../contractors/contractor-companies.component').then((m) => m.ContractorCompaniesComponent)
+        loadComponent: () => import('../contractors/contractor-list/contractor-companies.component').then((m) => m.ContractorCompaniesComponent)
       },
       {
         canActivate: [permissionGuard],
         data: { permission: 'properties', permissionAction: 'view' },
         path: 'owners',
-        loadComponent: () => import('../owners/owners-management.component').then((m) => m.OwnersManagementComponent)
+        loadComponent: () => import('../owners/owner-list/owners-management.component').then((m) => m.OwnersManagementComponent)
       },
       {
         canActivate: [permissionGuard],
         data: { permission: 'profile', permissionAction: 'view' },
         path: 'profile',
-        loadComponent: () => import('../profile/profile.component').then((m) => m.ProfileComponent)
+        loadComponent: () => import('../profile/profile/profile.component').then((m) => m.ProfileComponent)
       },
       {
         canActivate: [moduleGuard],
         data: { module: 'notifications' },
         path: 'notifications',
-        loadComponent: () => import('../notifications/notifications-page.component').then((m) => m.NotificationsPageComponent)
+        loadComponent: () => import('../notifications/notifications-page/notifications-page.component').then((m) => m.NotificationsPageComponent)
       },
       {
         canActivate: [moduleGuard],
         data: { module: 'audit' },
         path: 'audit-log',
-        loadComponent: () => import('../audit/audit-log.component').then((m) => m.AuditLogComponent)
+        loadComponent: () => import('../audit/audit-log/audit-log.component').then((m) => m.AuditLogComponent)
       },
       {
         path: 'hr',
@@ -148,7 +148,7 @@ export const ADMIN_ROUTES: Routes = [
           {
             path: 'employees',
             data: { section: 'employees-list' },
-            loadComponent: () => import('../hr/hr-workspace.component').then((m) => m.HrWorkspaceComponent)
+            loadComponent: () => import('../hr/hr-workspace/hr-workspace.component').then((m) => m.HrWorkspaceComponent)
           },
           {
             path: 'employees/new',
@@ -158,27 +158,27 @@ export const ADMIN_ROUTES: Routes = [
           {
             path: 'employees/:id',
             data: { section: 'employee-detail' },
-            loadComponent: () => import('../hr/hr-workspace.component').then((m) => m.HrWorkspaceComponent)
+            loadComponent: () => import('../hr/hr-workspace/hr-workspace.component').then((m) => m.HrWorkspaceComponent)
           },
           {
             path: 'leaves',
             data: { section: 'leaves' },
-            loadComponent: () => import('../hr/hr-workspace.component').then((m) => m.HrWorkspaceComponent)
+            loadComponent: () => import('../hr/hr-workspace/hr-workspace.component').then((m) => m.HrWorkspaceComponent)
           },
           {
             path: 'attendance',
-            data: { section: 'attendance' },
-            loadComponent: () => import('../hr/hr-workspace.component').then((m) => m.HrWorkspaceComponent)
+            redirectTo: 'employees',
+            pathMatch: 'full'
           },
           {
             path: 'payroll',
             data: { section: 'payroll-list' },
-            loadComponent: () => import('../hr/hr-workspace.component').then((m) => m.HrWorkspaceComponent)
+            loadComponent: () => import('../hr/hr-workspace/hr-workspace.component').then((m) => m.HrWorkspaceComponent)
           },
           {
             path: 'payroll/:id',
             data: { section: 'payroll-detail' },
-            loadComponent: () => import('../hr/hr-workspace.component').then((m) => m.HrWorkspaceComponent)
+            loadComponent: () => import('../hr/hr-workspace/hr-workspace.component').then((m) => m.HrWorkspaceComponent)
           },
         ]
       },
@@ -190,37 +190,37 @@ export const ADMIN_ROUTES: Routes = [
           {
             path: 'dashboard',
             data: { section: 'dashboard' },
-            loadComponent: () => import('../finance/finance-workspace.component').then((m) => m.FinanceWorkspaceComponent)
+            loadComponent: () => import('../finance/finance-workspace/finance-workspace.component').then((m) => m.FinanceWorkspaceComponent)
           },
           {
             path: 'expenses',
             data: { section: 'expenses' },
-            loadComponent: () => import('../finance/finance-workspace.component').then((m) => m.FinanceWorkspaceComponent)
+            loadComponent: () => import('../finance/finance-workspace/finance-workspace.component').then((m) => m.FinanceWorkspaceComponent)
           },
           {
             path: 'revenues',
             data: { section: 'revenues' },
-            loadComponent: () => import('../finance/finance-workspace.component').then((m) => m.FinanceWorkspaceComponent)
+            loadComponent: () => import('../finance/finance-workspace/finance-workspace.component').then((m) => m.FinanceWorkspaceComponent)
           },
           {
             path: 'budget',
             data: { section: 'budget' },
-            loadComponent: () => import('../finance/finance-workspace.component').then((m) => m.FinanceWorkspaceComponent)
+            loadComponent: () => import('../finance/finance-workspace/finance-workspace.component').then((m) => m.FinanceWorkspaceComponent)
           },
           {
             path: 'reports/pnl',
             data: { report: 'pnl' },
-            loadComponent: () => import('../finance/finance-reports.component').then((m) => m.FinanceReportsComponent)
+            loadComponent: () => import('../finance/finance-reports/finance-reports.component').then((m) => m.FinanceReportsComponent)
           },
           {
             path: 'reports/cashflow',
             data: { report: 'cashflow' },
-            loadComponent: () => import('../finance/finance-reports.component').then((m) => m.FinanceReportsComponent)
+            loadComponent: () => import('../finance/finance-reports/finance-reports.component').then((m) => m.FinanceReportsComponent)
           },
           {
             path: 'reports/owner-statement',
             data: { report: 'owner-statement' },
-            loadComponent: () => import('../finance/finance-reports.component').then((m) => m.FinanceReportsComponent)
+            loadComponent: () => import('../finance/finance-reports/finance-reports.component').then((m) => m.FinanceReportsComponent)
           },
           {
             path: 'overdue-payments',
@@ -236,12 +236,12 @@ export const ADMIN_ROUTES: Routes = [
           {
             path: 'list',
             data: { section: 'list' },
-            loadComponent: () => import('../vacancies/vacancy-workspace.component').then((m) => m.VacancyWorkspaceComponent)
+            loadComponent: () => import('../vacancies/vacancy-workspace/vacancy-workspace.component').then((m) => m.VacancyWorkspaceComponent)
           },
           {
             path: ':id/inquiries',
             data: { section: 'inquiries' },
-            loadComponent: () => import('../vacancies/vacancy-workspace.component').then((m) => m.VacancyWorkspaceComponent)
+            loadComponent: () => import('../vacancies/vacancy-workspace/vacancy-workspace.component').then((m) => m.VacancyWorkspaceComponent)
           }
         ]
       },
@@ -253,17 +253,17 @@ export const ADMIN_ROUTES: Routes = [
           {
             path: 'dashboard',
             data: { section: 'dashboard' },
-            loadComponent: () => import('../owner-portal/owner-portal-workspace.component').then((m) => m.OwnerPortalWorkspaceComponent)
+            loadComponent: () => import('../owner-portal/owner-portal-workspace/owner-portal-workspace.component').then((m) => m.OwnerPortalWorkspaceComponent)
           },
           {
             path: 'statements',
             data: { section: 'statements' },
-            loadComponent: () => import('../owner-portal/owner-portal-workspace.component').then((m) => m.OwnerPortalWorkspaceComponent)
+            loadComponent: () => import('../owner-portal/owner-portal-workspace/owner-portal-workspace.component').then((m) => m.OwnerPortalWorkspaceComponent)
           },
           {
             path: 'properties',
             data: { section: 'properties' },
-            loadComponent: () => import('../owner-portal/owner-portal-workspace.component').then((m) => m.OwnerPortalWorkspaceComponent)
+            loadComponent: () => import('../owner-portal/owner-portal-workspace/owner-portal-workspace.component').then((m) => m.OwnerPortalWorkspaceComponent)
           }
         ]
       },

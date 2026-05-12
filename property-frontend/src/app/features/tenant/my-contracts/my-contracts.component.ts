@@ -7,6 +7,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { SearchDropdownComponent, SearchDropdownItem } from '../../../shared/components/search-dropdown/search-dropdown.component';
 import { TenantPortalService } from '../../../core/services/tenant-portal.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { LeaseContract } from '../../../core/models/contract.model';
@@ -17,7 +18,7 @@ import { LeaseContract } from '../../../core/models/contract.model';
   imports: [
     NgIf, NgFor, NgClass, DatePipe, DecimalPipe, RouterLink,
     TranslateModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule,
-    PageHeaderComponent
+    PageHeaderComponent, SearchDropdownComponent
   ],
   templateUrl: './my-contracts.component.html',
   styleUrl: './my-contracts.component.scss'
@@ -25,6 +26,7 @@ import { LeaseContract } from '../../../core/models/contract.model';
 export class MyContractsComponent implements OnInit {
   loading = true;
   contracts: LeaseContract[] = [];
+  selectedContractId: number | null = null;
 
   constructor(
     private readonly portalSvc: TenantPortalService,
@@ -35,6 +37,7 @@ export class MyContractsComponent implements OnInit {
     this.portalSvc.getMyContracts().subscribe({
       next: (res) => {
         this.contracts = res.data ?? [];
+        this.selectedContractId = null;
         this.loading = false;
       },
       error: () => { this.loading = false; }
@@ -45,8 +48,27 @@ export class MyContractsComponent implements OnInit {
     return this.i18n.instant(`CONTRACTS.STATUS_${s}`);
   }
 
-  get activeContract(): LeaseContract | null {
-    return this.contracts.find((c) => c.status === 'ACTIVE') ?? this.contracts[0] ?? null;
+  get selectedContract(): LeaseContract | null {
+    return this.selectableContracts.find(c => c.id === this.selectedContractId) ?? null;
+  }
+
+  get selectableContracts(): LeaseContract[] {
+    return this.contracts.filter(c => c.status === 'ACTIVE');
+  }
+
+  get contractDropdownItems(): SearchDropdownItem[] {
+    return this.selectableContracts.map(c => ({
+      label: c.contractNumber,
+      subLabel: [c.propertyName, c.unitNumber ? (this.i18n.currentLang === 'ar' ? 'وحدة ' : 'Unit ') + c.unitNumber : null]
+        .filter(Boolean).join(' · '),
+      badge: this.statusLabel(c.status),
+      badgeClass: 'st-' + c.status,
+      data: c
+    }));
+  }
+
+  onContractSelect(contract: LeaseContract | null): void {
+    this.selectedContractId = contract?.id ?? null;
   }
 
   /** 0..3 — which stage highlight in the tenant contract timeline. */

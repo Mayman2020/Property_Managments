@@ -68,6 +68,10 @@ export class UnitService {
     return this.api.patch(AppConstants.API.UNIT_RENTAL_STATUS(id, rented));
   }
 
+  toggleActive(id: number): Observable<ApiResponse<Unit>> {
+    return this.api.patch(AppConstants.API.UNIT_TOGGLE_ACTIVE(id));
+  }
+
   delete(id: number): Observable<ApiResponse<void>> {
     return this.api.delete(AppConstants.API.UNIT_BY_ID(id));
   }
