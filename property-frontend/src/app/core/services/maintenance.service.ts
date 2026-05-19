@@ -62,6 +62,16 @@ export interface RatingForm {
   comment?: string;
 }
 
+export interface PropertyRoutingInfo {
+  hasOfficer: boolean;
+  hasCompany: boolean;
+  officerUserId?: number;
+  officerName?: string;
+  companyId?: number;
+  companyNameAr?: string;
+  companyNameEn?: string;
+}
+
 export interface RequestForm {
   propertyId: number;
   unitId: number;
@@ -71,6 +81,7 @@ export interface RequestForm {
   description: string;
   priority: RequestPriority;
   tenantNotes?: string;
+  routingTarget?: 'OFFICER' | 'COMPANY';
 }
 
 export interface ScheduleForm {
@@ -129,6 +140,10 @@ export class MaintenanceService {
 
   getById(id: number): Observable<ApiResponse<MaintenanceRequest>> {
     return this.api.get(AppConstants.API.MAINTENANCE_REQUEST_BY_ID(id));
+  }
+
+  getRoutingInfo(propertyId: number): Observable<ApiResponse<PropertyRoutingInfo>> {
+    return this.api.get(`${AppConstants.API.MAINTENANCE_REQUESTS}/routing-info`, { propertyId });
   }
 
   create(form: RequestForm): Observable<ApiResponse<MaintenanceRequest>> {

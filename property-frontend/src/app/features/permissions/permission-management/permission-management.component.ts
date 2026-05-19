@@ -67,11 +67,11 @@ interface PermissionRoleDialogData {
     <mat-dialog-content class="permission-dialog-body">
       <div class="dialog-summary">
         <div>
-          <span>{{ isAr ? 'الموديولات المفعلة' : 'Enabled Modules' }}</span>
+          <span>{{ ('INLINE_TEXT.ENABLED_MODULES' | translate) }}</span>
           <strong>{{ enabledModulesCount }} / {{ data.modules.length }}</strong>
         </div>
         <div>
-          <span>{{ isAr ? 'إجمالي الصلاحيات' : 'Enabled Actions' }}</span>
+          <span>{{ ('INLINE_TEXT.ENABLED_ACTIONS' | translate) }}</span>
           <strong>{{ enabledActionsCount }}</strong>
         </div>
       </div>
@@ -114,7 +114,7 @@ interface PermissionRoleDialogData {
       <button mat-stroked-button type="button" (click)="ref.close()">{{ 'ACTIONS.CANCEL' | translate }}</button>
       <button mat-flat-button type="button" (click)="ref.close(data.permissions)">
         <span class="material-icons">done</span>
-        {{ isAr ? 'تطبيق' : 'Apply' }}
+        {{ ('INLINE_TEXT.APPLY' | translate) }}
       </button>
     </mat-dialog-actions>
   `,
@@ -313,9 +313,9 @@ export class PermissionRoleDialogComponent {
             <thead>
               <tr>
                 <th>#</th>
-                <th>{{ isAr ? 'الرول' : 'Role' }}</th>
-                <th>{{ isAr ? 'الموديولات المفعلة' : 'Enabled Modules' }}</th>
-                <th>{{ isAr ? 'إجمالي الصلاحيات' : 'Enabled Actions' }}</th>
+                <th>{{ ('INLINE_TEXT.ROLE' | translate) }}</th>
+                <th>{{ ('INLINE_TEXT.ENABLED_MODULES' | translate) }}</th>
+                <th>{{ ('INLINE_TEXT.ENABLED_ACTIONS' | translate) }}</th>
                 <th>{{ 'COMMON.ACTIONS' | translate }}</th>
               </tr>
             </thead>
@@ -336,7 +336,7 @@ export class PermissionRoleDialogComponent {
                 <td>
                   <button mat-stroked-button type="button" (click)="openRole(role); $event.stopPropagation()">
                     <mat-icon>tune</mat-icon>
-                    {{ isAr ? 'التفاصيل' : 'Details' }}
+                    {{ ('INLINE_TEXT.DETAILS_2' | translate) }}
                   </button>
                 </td>
               </tr>
@@ -418,6 +418,7 @@ export class PermissionRoleDialogComponent {
 export class PermissionManagementComponent implements OnInit {
   readonly roles: PermissionRoleConfig[] = [
     { key: 'SUPER_ADMIN', icon: 'admin_panel_settings' },
+    { key: 'GENERAL_MANAGER', icon: 'supervisor_account' },
     { key: 'ACCOUNTANT', icon: 'payments' },
     { key: 'MAINTENANCE_OFFICER_INTERNAL', icon: 'plumbing' },
     { key: 'MAINTENANCE_OFFICER_COMPANY', icon: 'engineering' },
@@ -439,6 +440,7 @@ export class PermissionManagementComponent implements OnInit {
     { key: 'users', icon: 'manage_accounts' },
     { key: 'lookups', icon: 'public' },
     { key: 'contractors', icon: 'engineering' },
+    { key: 'contracts', icon: 'description' },
     { key: 'vacancies', icon: 'door_open' },
     { key: 'ratings', icon: 'star_rate' },
     { key: 'finance', icon: 'bar_chart' },
@@ -507,10 +509,10 @@ export class PermissionManagementComponent implements OnInit {
 
   get exportColumns(): ExportColumn<PermissionRoleConfig>[] {
     return [
-      { header: this.isAr ? 'الرول' : 'Role', value: (row) => this.roleLabel(row.key) },
-      { header: this.isAr ? 'الكود' : 'Code', value: 'key' },
-      { header: this.isAr ? 'الموديولات المفعلة' : 'Enabled Modules', value: (row) => `${this.enabledModulesCount(row.key)} / ${this.modules.length}` },
-      { header: this.isAr ? 'إجمالي الصلاحيات' : 'Enabled Actions', value: (row) => this.enabledActionsCount(row.key) }
+      { header: this.i18n.instant('INLINE_TEXT.ROLE'), value: (row) => this.roleLabel(row.key) },
+      { header: this.i18n.instant('INLINE_TEXT.CODE'), value: 'key' },
+      { header: this.i18n.instant('INLINE_TEXT.ENABLED_MODULES'), value: (row) => `${this.enabledModulesCount(row.key)} / ${this.modules.length}` },
+      { header: this.i18n.instant('INLINE_TEXT.ENABLED_ACTIONS'), value: (row) => this.enabledActionsCount(row.key) }
     ];
   }
 

@@ -29,6 +29,9 @@ import { PermissionService } from '../../../core/services/permission.service';
 import { DeleteConfirmService } from '../../../core/services/delete-confirm.service';
 import { SnackService } from '../../../core/services/snack.service';
 import { EmployeeDialogComponent } from '../employee-dialog/employee-dialog.component';
+import { LeaveRequestDialogComponent } from '../leave-request-dialog/leave-request-dialog.component';
+import { ContractorCompanyService, AllCompanyOfficer } from '../../../core/services/contractor-company.service';
+import { forkJoin, catchError, of } from 'rxjs';
 
 @Component({
   selector: 'app-hr-workspace',
@@ -66,10 +69,20 @@ import { EmployeeDialogComponent } from '../employee-dialog/employee-dialog.comp
           <mat-icon>add</mat-icon>
           {{ 'HR.GENERATE_PAYROLL' | translate }}
         </button>
+        <button mat-flat-button class="navy-btn" type="button" *ngIf="section === 'leaves' && canAddLeaveRequest()" (click)="openAddLeaveRequest()">
+          <mat-icon>add</mat-icon>
+          {{ 'HR.ADD_LEAVE_REQUEST' | translate }}
+        </button>
       </app-page-header>
 
-      <div class="workspace-filter-bar" *ngIf="section === 'payroll-list' && properties.length > 1">
-        <app-filter-bar [filters]="pageFilters" [filterValues]="currentFilterValues" (filtersChange)="onFilterBarChange($event)"></app-filter-bar>
+      <div class="finance-filter-strip" *ngIf="section === 'payroll-list' && properties.length > 0">
+        <label>{{ 'REQUEST_FORM.PROPERTY' | translate }}</label>
+        <select [(ngModel)]="filterPropertyId" (change)="onFilterBarChange({filterPropertyId: filterPropertyId})" class="estate-property-select">
+          <option [ngValue]="null">{{ 'COMMON.ALL_PROPERTIES' | translate }}</option>
+          <option *ngFor="let p of properties" [ngValue]="p.id">
+            {{ i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName) }}
+          </option>
+        </select>
       </div>
 
       <div class="loading-center" *ngIf="loading && (section === 'employees-list' || section === 'employee-detail')">
@@ -143,7 +156,7 @@ import { EmployeeDialogComponent } from '../employee-dialog/employee-dialog.comp
                   <button class="app-icon-btn" type="button" *ngIf="canEditEmployee()" (click)="openEditEmployee(item)" [matTooltip]="'ACTIONS.EDIT' | translate">
                     <mat-icon>edit</mat-icon>
                   </button>
-                  <button class="app-icon-btn danger" type="button" *ngIf="isSuperAdmin" (click)="removeEmployee(item)" [matTooltip]="'ACTIONS.DELETE' | translate">
+                  <button class="app-icon-btn danger" type="button" *ngIf="canDeleteEmployee()" (click)="removeEmployee(item)" [matTooltip]="'ACTIONS.DELETE' | translate">
                     <mat-icon>delete</mat-icon>
                   </button>
                 </td>
@@ -170,6 +183,56 @@ import { EmployeeDialogComponent } from '../employee-dialog/employee-dialog.comp
             [message]="'HR.NO_DATA_DESC' | translate">
           </app-empty-state>
         </ng-template>
+      </div>
+
+      <!-- Company Officers Section -->
+      <div class="app-card table-card directory-table-card" *ngIf="!loading && (section === 'employees-list' || section === 'employee-detail') && filteredOfficers.length > 0">
+        <div class="estate-table-toolbar directory-toolbar">
+          <div class="directory-toolbar-top">
+            <div class="section-label">
+              <mat-icon>engineering</mat-icon>
+              <span>{{ 'HR.COMPANY_OFFICERS_SECTION' | translate }}</span>
+              <span class="count-chip">{{ filteredOfficers.length }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="app-table-wrap">
+          <table class="app-data-table">
+            <thead>
+              <tr>
+                <th>{{ 'HR.EMPLOYEE_COL' | translate }}</th>
+                <th>{{ 'CONTRACTORS.NAME' | translate }}</th>
+                <th>{{ 'REQUEST_FORM.PROPERTY' | translate }}</th>
+                <th>{{ 'HR.EMAIL_COL' | translate }}</th>
+                <th>{{ 'HR.STATUS_COL' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let o of filteredOfficers">
+                <td>
+                  <div class="employee-name-cell">
+                    <img *ngIf="o.profileImageUrl" [src]="o.profileImageUrl" class="employee-avatar" alt="">
+                    <span class="avatar-placeholder" *ngIf="!o.profileImageUrl">
+                      {{ officerName(o).charAt(0).toUpperCase() }}
+                    </span>
+                    <strong>{{ officerName(o) }}</strong>
+                  </div>
+                </td>
+                <td>
+                  <span class="company-tag">{{ officerCompanyName(o) }}</span>
+                </td>
+                <td>{{ officerPropertyName(o) }}</td>
+                <td>{{ o.email || '--' }}</td>
+                <td>
+                  <span class="badge" [class.badge-success]="o.active" [class.badge-muted]="!o.active">
+                    <mat-icon>{{ o.active ? 'check_circle' : 'cancel' }}</mat-icon>
+                    {{ (o.active ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') | translate }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div class="app-card" *ngIf="section === 'leaves'">
@@ -275,18 +338,56 @@ import { EmployeeDialogComponent } from '../employee-dialog/employee-dialog.comp
         </div>
       </ng-template>
     </div>
+
+    <!-- ATTENDANCE -->
+    <div class="app-card table-card" *ngIf="section === 'attendance'">
+      <div class="app-table-wrap" *ngIf="!loading && attendanceRecords.length > 0; else emptyAttendanceTpl">
+        <table class="app-data-table">
+          <thead>
+            <tr>
+              <th>{{ 'HR.ATTENDANCE_EMPLOYEE' | translate }}</th>
+              <th>{{ 'HR.ATTENDANCE_DATE' | translate }}</th>
+              <th>{{ 'HR.ATTENDANCE_CHECK_IN' | translate }}</th>
+              <th>{{ 'HR.ATTENDANCE_CHECK_OUT' | translate }}</th>
+              <th>{{ 'HR.ATTENDANCE_LATE' | translate }}</th>
+              <th>{{ 'HR.ATTENDANCE_STATUS' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let rec of attendanceRecords">
+              <td><strong>{{ rec.employeeName || '—' }}</strong></td>
+              <td>{{ rec.attendanceDate | date:'mediumDate' }}</td>
+              <td>{{ rec.checkIn || '—' }}</td>
+              <td>{{ rec.checkOut || '—' }}</td>
+              <td>{{ rec.lateMinutes != null ? (rec.lateMinutes + ' ' + ('HR.MINUTES' | translate)) : '—' }}</td>
+              <td>
+                <span class="badge"
+                      [class.badge-success]="rec.status === 'PRESENT'"
+                      [class.badge-muted]="rec.status !== 'PRESENT'">
+                  {{ rec.status || '—' }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <ng-template #emptyAttendanceTpl>
+        <div *ngIf="!loading" class="app-empty-state">
+          <span class="material-icons empty-icon">schedule</span>
+          <h4>{{ 'HR.NO_ATTENDANCE' | translate }}</h4>
+        </div>
+      </ng-template>
+    </div>
   `,
   styles: [`
     .navy-btn { background: var(--navy-800) !important; color: white !important; }
     .navy-btn mat-icon { margin-inline-end: 6px; }
-    .workspace-filter-bar {
-      display: flex;
-      justify-content: flex-end;
-      margin: -2px 0 18px;
+    .finance-filter-strip {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      margin: 0 0 16px; padding: 12px 16px;
+      border: 1px solid var(--line, #e4d8c8); background: var(--surface, #fffdf8); border-radius: 8px;
     }
-    .workspace-filter-bar app-filter-bar {
-      min-width: min(300px, 100%);
-    }
+    .finance-filter-strip label { color: var(--text-muted); font-weight: 700; }
     .loading-center { display: flex; justify-content: center; padding: 48px; }
     .badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem; padding: 2px 8px; border-radius: 12px; font-weight: 500; }
     .badge mat-icon { font-size: 14px; width: 14px; height: 14px; }
@@ -295,7 +396,7 @@ import { EmployeeDialogComponent } from '../employee-dialog/employee-dialog.comp
     .actions-cell {
       display: flex;
       gap: 4px;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       align-items: center;
     }
     .app-icon-btn.danger mat-icon { color: var(--error, #d32f2f); }
@@ -317,6 +418,10 @@ import { EmployeeDialogComponent } from '../employee-dialog/employee-dialog.comp
     .payroll-summary span {
       color: var(--text-muted);
     }
+    .section-label { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--navy-800); font-size: 0.95rem; }
+    .section-label mat-icon { color: var(--navy-600); font-size: 20px; width: 20px; height: 20px; }
+    .count-chip { background: var(--navy-100); color: var(--navy-800); border-radius: 12px; padding: 2px 8px; font-size: 0.78rem; font-weight: 700; }
+    .company-tag { background: #e8f5e9; color: #2e7d32; border-radius: 12px; padding: 2px 8px; font-size: 0.8rem; font-weight: 600; white-space: nowrap; }
     @media (max-width: 1000px) {
     }
     @media (max-width: 800px) {
@@ -326,18 +431,24 @@ import { EmployeeDialogComponent } from '../employee-dialog/employee-dialog.comp
 export class HrWorkspaceComponent implements OnInit {
   section = 'employees-list';
   employees: EmployeeItem[] = [];
+  companyOfficers: AllCompanyOfficer[] = [];
   loading = true;
   readonly pageSize = 10;
   pageIndex = 0;
   properties: Property[] = [];
   filterPropertyId: number | null = null;
-  currentFilterValues: Record<string, unknown> = { filterPropertyId: null };
+  filterStatus: string | null = null;
+  currentFilterValues: Record<string, unknown> = { filterPropertyId: null, filterStatus: null };
   searchTerm = '';
   pageFilters: FilterSpec[] = [];
   leaveRequests: LeaveRequestItem[] = [];
   leaveBalanceByEmployeeId = new Map<number, LeaveBalanceItem>();
   payrollRuns: PayrollRunItem[] = [];
   payrollDetail: PayrollRunDetail | null = null;
+  attendanceRecords: import('../../../core/services/hr.service').AttendanceItem[] = [];
+  attendancePage = 0;
+  attendanceTotal = 0;
+  readonly attendancePageSize = 20;
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -350,10 +461,15 @@ export class HrWorkspaceComponent implements OnInit {
     private readonly permissions: PermissionService,
     private readonly router: Router,
     private readonly snack: SnackService,
-    private readonly deleteConfirm: DeleteConfirmService
+    private readonly deleteConfirm: DeleteConfirmService,
+    private readonly contractorSvc: ContractorCompanyService
   ) {}
 
   get isSuperAdmin(): boolean { return this.auth.isSuperAdmin(); }
+
+  canDeleteEmployee(): boolean {
+    return this.permissions.can('hr', 'delete');
+  }
 
   get pagedEmployees(): EmployeeItem[] {
     const start = this.pageIndex * this.pageSize;
@@ -362,14 +478,7 @@ export class HrWorkspaceComponent implements OnInit {
 
   get filteredEmployees(): EmployeeItem[] {
     const q = this.searchTerm.trim().toLowerCase();
-    if (!q) return this.employees;
-    return this.employees.filter((employee) =>
-      this.employeeName(employee).toLowerCase().includes(q) ||
-      this.employeeJobTitle(employee).toLowerCase().includes(q) ||
-      (employee.email ?? '').toLowerCase().includes(q) ||
-      (employee.phone ?? '').toLowerCase().includes(q) ||
-      (employee.nationalId ?? '').toLowerCase().includes(q)
-    );
+    return this.employees.filter((employee) => this.matchesEmployeeFilters(employee, q));
   }
 
   get employeeExportColumns(): ExportColumn<EmployeeItem>[] {
@@ -391,13 +500,29 @@ export class HrWorkspaceComponent implements OnInit {
       'employee-detail': 'HR.EMPLOYEE_DETAIL_TITLE',
       'payroll-list': 'HR.PAYROLL_LIST_TITLE',
       'payroll-detail': 'HR.PAYROLL_DETAIL_TITLE',
-      leaves: 'HR.LEAVES_TITLE'
+      leaves: 'HR.LEAVES_TITLE',
+      attendance: 'HR.ATTENDANCE_TITLE'
     };
     return this.translate.instant(map[this.section] ?? 'HR.EMPLOYEES_TITLE');
   }
 
   canApproveLeave(): boolean {
     return !this.auth.hasRole('ACCOUNTANT');
+  }
+
+  canAddLeaveRequest(): boolean {
+    return this.permissions.can('hr', 'create');
+  }
+
+  openAddLeaveRequest(): void {
+    this.dialog.open(LeaveRequestDialogComponent, {
+      data: { employees: this.employees },
+      width: '500px',
+      panelClass: 'app-dialog-panel',
+      disableClose: true
+    }).afterClosed().subscribe((ok) => {
+      if (ok) this.reloadLeaves();
+    });
   }
 
   canAddEmployee(): boolean {
@@ -416,6 +541,23 @@ export class HrWorkspaceComponent implements OnInit {
     return this.canManagePayroll() && run.status === 'APPROVED';
   }
 
+  loadAttendance(): void {
+    this.loading = true;
+    this.service.getAttendance({ page: this.attendancePage, size: this.attendancePageSize }).subscribe({
+      next: (res) => {
+        this.attendanceRecords = res.data?.content ?? [];
+        this.attendanceTotal = res.data?.totalElements ?? 0;
+        this.loading = false;
+      },
+      error: () => { this.attendanceRecords = []; this.loading = false; }
+    });
+  }
+
+  onAttendancePage(page: number): void {
+    this.attendancePage = page;
+    this.loadAttendance();
+  }
+
   ngOnInit(): void {
     this.section = this.route.snapshot.data['section'] ?? 'employees-list';
 
@@ -423,9 +565,6 @@ export class HrWorkspaceComponent implements OnInit {
       this.propertySvc.getAll(0, 500).subscribe({
         next: (res) => {
           this.properties = res.data?.content ?? [];
-          if (this.properties.length === 1) {
-            this.filterPropertyId = this.properties[0].id;
-          }
           this.syncFilterValues();
           this.setupFilters();
         },
@@ -441,10 +580,17 @@ export class HrWorkspaceComponent implements OnInit {
     if (this.section === 'payroll-detail') {
       this.loadPayrollDetail(Number(this.route.snapshot.paramMap.get('id')));
     }
+    if (this.section === 'attendance') {
+      this.loadAttendance();
+    }
     if (this.section === 'leaves') {
       this.service.getLeaveRequests({ page: 0, size: 50 }).subscribe({
         next: (res) => { this.leaveRequests = res.data?.content ?? []; },
         error: () => { this.leaveRequests = []; }
+      });
+      this.service.getEmployees({ page: 0, size: 200 }).subscribe({
+        next: (res) => { this.employees = res.data?.content ?? []; },
+        error: () => {}
       });
     }
   }
@@ -490,8 +636,9 @@ export class HrWorkspaceComponent implements OnInit {
   }
 
   private setupFilters(): void {
-    this.pageFilters = this.properties.length > 1 ? [
-      {
+    const filters: FilterSpec[] = [];
+    if (this.properties.length > 0) {
+      filters.push({
         key: 'filterPropertyId',
         label: 'REQUEST_FORM.PROPERTY',
         type: 'select',
@@ -499,16 +646,27 @@ export class HrWorkspaceComponent implements OnInit {
           value: p.id,
           label: this.i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName)
         }))
-      }
-    ] : [];
+      });
+    }
+    filters.push({
+      key: 'filterStatus',
+      label: 'HR.STATUS_COL',
+      type: 'select',
+      options: [
+        { value: 'ACTIVE', label: this.i18n.instant('COMMON.ACTIVE') },
+        { value: 'INACTIVE', label: this.i18n.instant('COMMON.INACTIVE') }
+      ]
+    });
+    this.pageFilters = filters;
   }
 
   onFilterBarChange(values: any): void {
     if (values?.filterPropertyId !== undefined) {
       this.filterPropertyId = values.filterPropertyId;
-      this.syncFilterValues();
-      this.pageIndex = 0;
     }
+    if (values?.filterStatus !== undefined) this.filterStatus = values.filterStatus;
+    this.syncFilterValues();
+    this.pageIndex = 0;
     if (this.section === 'payroll-list') {
       this.loadPayrollRuns();
     } else {
@@ -523,19 +681,21 @@ export class HrWorkspaceComponent implements OnInit {
 
   clearFiltersFromBar(): void {
     this.searchTerm = '';
-    this.filterPropertyId = this.properties.length === 1 ? this.properties[0].id : null;
+    this.filterPropertyId = null;
+    this.filterStatus = null;
     this.syncFilterValues();
     this.pageIndex = 0;
     this.loadEmployees();
   }
 
   hasFiltersBar(): boolean {
-    return !!(this.searchTerm || (this.properties.length > 1 && this.filterPropertyId !== null));
+    return !!(this.searchTerm || (this.properties.length > 0 && this.filterPropertyId !== null) || this.filterStatus !== null);
   }
 
   private syncFilterValues(): void {
     this.currentFilterValues = {
-      filterPropertyId: this.filterPropertyId
+      filterPropertyId: this.filterPropertyId,
+      filterStatus: this.filterStatus
     };
   }
 
@@ -550,14 +710,18 @@ export class HrWorkspaceComponent implements OnInit {
     if (this.filterPropertyId) {
       params['propertyId'] = this.filterPropertyId;
     }
-    this.service.getEmployees(params).subscribe({
-      next: (res) => {
-        this.employees = res.data?.content ?? [];
-        this.pageIndex = 0;
-        this.loading = false;
-        this.loadLeaveBalances();
-      },
-      error: () => { this.employees = []; this.loading = false; }
+    forkJoin({
+      employees: this.service.getEmployees(params).pipe(catchError(() => of({ data: { content: [] as EmployeeItem[] } }))),
+      officers: this.contractorSvc.getAllOfficers().pipe(catchError(() => of({ data: [] as AllCompanyOfficer[] })))
+    }).subscribe(({ employees, officers }) => {
+      this.employees = employees.data?.content ?? [];
+      this.companyOfficers = officers.data ?? [];
+      if (this.filterPropertyId) {
+        this.companyOfficers = this.companyOfficers.filter(o => o.propertyId === this.filterPropertyId);
+      }
+      this.pageIndex = 0;
+      this.loading = false;
+      this.loadLeaveBalances();
     });
   }
 
@@ -689,6 +853,48 @@ export class HrWorkspaceComponent implements OnInit {
       : (en || ar || fallback || '-');
   }
 
+  private matchesEmployeeFilters(employee: EmployeeItem, query: string): boolean {
+    if (this.filterStatus && (employee.status ?? 'ACTIVE') !== this.filterStatus) return false;
+    if (!query) return true;
+    return this.employeeName(employee).toLowerCase().includes(query) ||
+      this.employeeJobTitle(employee).toLowerCase().includes(query) ||
+      (employee.email ?? '').toLowerCase().includes(query) ||
+      (employee.phone ?? '').toLowerCase().includes(query) ||
+      (employee.nationalId ?? '').toLowerCase().includes(query);
+  }
+
+  officerName(o: AllCompanyOfficer): string {
+    const ar = o.fullNameAr?.trim();
+    const en = o.fullNameEn?.trim();
+    const fallback = o.fullName?.trim();
+    return this.i18n.currentLang === 'ar'
+      ? (ar || en || fallback || '-')
+      : (en || ar || fallback || '-');
+  }
+
+  officerCompanyName(o: AllCompanyOfficer): string {
+    return this.i18n.currentLang === 'ar'
+      ? (o.companyNameAr || o.companyNameEn || '-')
+      : (o.companyNameEn || o.companyNameAr || '-');
+  }
+
+  officerPropertyName(o: AllCompanyOfficer): string {
+    return this.i18n.currentLang === 'ar'
+      ? (o.propertyNameAr || o.propertyNameEn || '-')
+      : (o.propertyNameEn || o.propertyNameAr || '-');
+  }
+
+  get filteredOfficers(): AllCompanyOfficer[] {
+    const q = this.searchTerm.trim().toLowerCase();
+    return this.companyOfficers.filter(o => {
+      if (!q) return true;
+      return this.officerName(o).toLowerCase().includes(q) ||
+        this.officerCompanyName(o).toLowerCase().includes(q) ||
+        (o.email ?? '').toLowerCase().includes(q) ||
+        (o.phone ?? '').toLowerCase().includes(q);
+    });
+  }
+
   private toYmd(date: Date): string {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
@@ -696,9 +902,15 @@ export class HrWorkspaceComponent implements OnInit {
   }
 
   removeEmployee(item: EmployeeItem): void {
+    const ar = this.i18n.currentLang === 'ar';
+    const name = this.employeeName(item);
+    const hasUser = !!item.email;
+    const baseLine = ar ? `هل تريد حذف الموظف "${name}"؟` : `Delete employee "${name}"?`;
+    const userLine = hasUser
+      ? (this.i18n.instant('INLINE_TEXT.THIS_WILL_ALSO_DELETE_THE_LINKED_USER_ACCOUNT_2'))
+      : '';
     this.deleteConfirm.openDeleteConfirm({
-      messageKey: 'HR.CONFIRM_DELETE',
-      messageParams: { name: this.employeeName(item) }
+      message: [baseLine, userLine].filter(Boolean).join('\n')
     }).subscribe((ok) => {
       if (!ok) return;
       this.service.deleteEmployee(item.id).subscribe({

@@ -16,6 +16,10 @@ export const OFFICER_ROUTES: Routes = [
         loadComponent: () => import('../maintenance/request-list/request-list.component').then((m) => m.RequestListComponent)
       },
       {
+        path: 'my-requests',
+        loadComponent: () => import('../my-requests/my-requests-page/my-requests-page.component').then((m) => m.MyRequestsPageComponent)
+      },
+      {
         canActivate: [permissionGuard],
         data: { permission: 'schedule', permissionAction: 'view' },
         path: 'schedule',
@@ -50,6 +54,14 @@ export const OFFICER_ROUTES: Routes = [
         data: { permission: 'profile', permissionAction: 'view' },
         path: 'profile',
         loadComponent: () => import('../profile/profile/profile.component').then((m) => m.ProfileComponent)
+      },
+      {
+        path: 'my-staff',
+        loadComponent: () => import('./company-staff/company-staff.component').then((m) => m.CompanyStaffComponent)
+      },
+      {
+        path: 'notifications',
+        loadComponent: () => import('../notifications/notifications-page/notifications-page.component').then((m) => m.NotificationsPageComponent)
       }
     ]
   }

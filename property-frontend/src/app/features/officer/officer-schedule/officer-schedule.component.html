@@ -10,6 +10,16 @@
     </button>
   </app-page-header>
 
+  <div class="contract-property-filter" *ngIf="properties.length > 0">
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'REQUEST_FORM.PROPERTY' | translate }}</mat-label>
+      <mat-select [(ngModel)]="selectedPropertyId" (selectionChange)="onPropertyFilterChange($event.value)">
+        <mat-option [value]="null">{{ 'COMMON.ALL' | translate }}</mat-option>
+        <mat-option *ngFor="let p of properties" [value]="p.id">{{ propertyLabel(p) }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
   <div class="loading-center" *ngIf="loading">
     <mat-spinner diameter="40"></mat-spinner>
   </div>

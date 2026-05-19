@@ -9,6 +9,15 @@
 </app-page-header>
 
 <div class="page-content">
+  <div class="contract-property-filter" *ngIf="properties.length > 0">
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'REQUEST_FORM.PROPERTY' | translate }}</mat-label>
+      <mat-select [value]="selectedPropertyId" (selectionChange)="onPropertyFilterChange($event.value)">
+        <mat-option [value]="null">{{ 'COMMON.ALL' | translate }}</mat-option>
+        <mat-option *ngFor="let p of properties" [value]="p.id">{{ propertyLabel(p) }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
 
   <!-- Submit form -->
   <div class="form-card" *ngIf="showForm">
@@ -39,8 +48,7 @@
       <mat-form-field appearance="outline" *ngIf="properties.length > 0">
         <mat-label>{{ 'INVOICE_PORTAL.PROPERTY' | translate }}</mat-label>
         <mat-select formControlName="propertyId">
-          <mat-option [value]="null">{{ 'COMMON.ALL' | translate }}</mat-option>
-          <mat-option *ngFor="let p of properties" [value]="p.id">{{ p.propertyName }}</mat-option>
+          <mat-option *ngFor="let p of properties" [value]="p.id">{{ propertyLabel(p) }}</mat-option>
         </mat-select>
       </mat-form-field>
 
@@ -83,9 +91,6 @@
   <div *ngIf="!loading && invoices.length === 0 && !showForm" class="empty-state">
     <mat-icon>receipt_long</mat-icon>
     <p>{{ 'INVOICE_PORTAL.NO_INVOICES' | translate }}</p>
-    <button mat-flat-button color="primary" (click)="showForm = true">
-      {{ 'INVOICE_PORTAL.NEW_INVOICE' | translate }}
-    </button>
   </div>
 
   <div *ngIf="!loading && invoices.length > 0" class="invoices-list">
@@ -95,7 +100,7 @@
         <div>
           <div class="inv-number">{{ inv.invoiceNumber }}</div>
           <div class="inv-period">{{ monthLabel(inv.periodMonth) }} {{ inv.periodYear }}</div>
-          <div class="inv-property" *ngIf="inv.propertyName">{{ inv.propertyName }}</div>
+          <div class="inv-property" *ngIf="inv.propertyName">{{ invoicePropertyLabel(inv) }}</div>
         </div>
       </div>
 

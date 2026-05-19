@@ -18,15 +18,15 @@
     <section class="app-card picker-card">
       <div class="section-card-header">
         <div>
-          <div class="section-mini-label">{{ i18n.currentLang === 'ar' ? 'العقود' : 'Contracts' }}</div>
-          <h3>{{ i18n.currentLang === 'ar' ? 'اختر عقدًا لعرض تفاصيله' : 'Select a contract to view details' }}</h3>
+          <div class="section-mini-label">{{ ('INLINE_TEXT.CONTRACTS' | translate) }}</div>
+          <h3>{{ ('INLINE_TEXT.SELECT_A_CONTRACT_TO_VIEW_DETAILS' | translate) }}</h3>
         </div>
         <span class="contract-count-badge">{{ selectableContracts.length }}</span>
       </div>
       <div class="picker-wrap">
         <app-search-dropdown
           [items]="contractDropdownItems"
-          [placeholder]="i18n.currentLang === 'ar' ? 'ابحث عن عقد...' : 'Search contracts...'"
+          [placeholder]="('INLINE_TEXT.SEARCH_CONTRACTS' | translate)"
           (selectionChange)="onContractSelect($event)">
         </app-search-dropdown>
       </div>
@@ -95,7 +95,7 @@
     <!-- Empty state when no contract selected -->
     <div class="no-selection app-card" *ngIf="!selectedContract">
       <mat-icon>description</mat-icon>
-      <p>{{ i18n.currentLang === 'ar' ? 'اختر عقدًا من القائمة أعلاه' : 'Select a contract from the list above' }}</p>
+      <p>{{ ('INLINE_TEXT.SELECT_A_CONTRACT_FROM_THE_LIST_ABOVE' | translate) }}</p>
     </div>
   </ng-container>
 </div>

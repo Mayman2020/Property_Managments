@@ -1,0 +1,474 @@
+﻿<div class="app-page maintenance-contract-detail-page">
+  <div *ngIf="loading" class="loading-wrap">
+    <mat-spinner diameter="48"></mat-spinner>
+  </div>
+
+  <ng-container *ngIf="!loading && contract">
+    <app-page-header
+      [title]="contract.contractNumber"
+      [subtitle]="companyName() + ' - ' + propertyName()"
+      [showBack]="true"
+      (backClick)="goBack()">
+    </app-page-header>
+
+    <div class="contract-hero-grid">
+      <article class="contract-stat-card navy">
+        <div class="csc-icon"><mat-icon>engineering</mat-icon></div>
+        <div class="csc-body">
+          <div class="csc-label">{{ 'CONTRACTORS.COMPANY' | translate }}</div>
+          <div class="csc-value text-value">{{ companyName() }}</div>
+          <div class="csc-foot">{{ 'CONTRACTS.MAINTENANCE_CONTRACT' | translate }}</div>
+        </div>
+      </article>
+
+      <article class="contract-stat-card gold">
+        <div class="csc-icon"><mat-icon>payments</mat-icon></div>
+        <div class="csc-body">
+          <div class="csc-label">{{ 'CONTRACTS.CONTRACT_VALUE' | translate }}</div>
+          <div class="csc-value">{{ contract.contractValue | number:'1.2-2' }}</div>
+          <div class="csc-foot">{{ contract.currency || 'SAR' }}</div>
+        </div>
+      </article>
+
+      <article class="contract-stat-card teal">
+        <div class="csc-icon"><mat-icon>apartment</mat-icon></div>
+        <div class="csc-body">
+          <div class="csc-label">{{ 'COMMON.PROPERTY' | translate }}</div>
+          <div class="csc-value text-value">{{ propertyName() }}</div>
+          <div class="csc-foot">{{ propertyCode() }}</div>
+        </div>
+      </article>
+
+      <article class="contract-stat-card" [class.danger]="(daysUntilExpiry() ?? 9999) <= 30 && (daysUntilExpiry() ?? -1) >= 0">
+        <div class="csc-icon"><mat-icon>event_upcoming</mat-icon></div>
+        <div class="csc-body">
+          <div class="csc-label">{{ 'CONTRACTS.DAYS_LEFT' | translate }}</div>
+          <div class="csc-value">{{ daysUntilExpiry() ?? '-' }}</div>
+          <div class="csc-foot">{{ contract.endDate | date:'dd/MM/yyyy' }}</div>
+        </div>
+      </article>
+    </div>
+
+    <div class="action-bar app-card">
+      <span class="status-chip" [ngClass]="getStatusClass(contract.status)">
+        {{ statusLabel(contract.status) }}
+      </span>
+
+      <div class="ab-divider"></div>
+
+      <div class="ab-meta">
+        <span class="ab-meta-item">
+          <mat-icon>calendar_today</mat-icon>
+          {{ contract.startDate | date:'dd/MM/yyyy' }} - {{ contract.endDate | date:'dd/MM/yyyy' }}
+        </span>
+        <span class="ab-meta-item">
+          <mat-icon>receipt_long</mat-icon>
+          {{ contract.invoiceCount || 0 }} {{ 'MAINTENANCE_CONTRACT.INVOICES' | translate }}
+        </span>
+      </div>
+
+      <div class="ab-spacer"></div>
+
+      <div class="ab-actions">
+        <button mat-stroked-button type="button" *ngIf="canRequestRenewal()" (click)="requestRenewal()" [disabled]="actionLoading">
+          <mat-icon>autorenew</mat-icon>
+          {{ 'CONTRACTS.RENEW' | translate }}
+        </button>
+
+        <button mat-stroked-button color="warn" type="button" *ngIf="canRequestTermination()" (click)="requestTermination()" [disabled]="actionLoading">
+          <mat-icon>cancel_schedule_send</mat-icon>
+          {{ 'CONTRACTS.TERMINATE_CONTRACT' | translate }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Pending owner approval banner -->
+    <div class="info-section app-card pending-termination-banner" *ngIf="isPendingOwnerApproval()">
+      <div class="app-card-header">
+        <span class="app-card-title">
+          <mat-icon class="section-icon">hourglass_top</mat-icon>
+          {{ ('INLINE_TEXT.PENDING_OWNER_APPROVAL' | translate) }}
+        </span>
+      </div>
+      <div class="app-card-body">
+        <p class="legacy-hint">
+          {{ ('INLINE_TEXT.THIS_CONTRACT_HAS_BEEN_SENT_TO_THE_OWNER_FOR_REVIEW_THE' | translate) }}
+        </p>
+        <div class="owner-decision-actions" *ngIf="canDecideOwnerApproval()">
+          <button mat-flat-button type="button" (click)="approveContract()" [disabled]="actionLoading">
+            <mat-spinner diameter="16" *ngIf="actionLoading"></mat-spinner>
+            <mat-icon *ngIf="!actionLoading">check_circle</mat-icon>
+            {{ ('INLINE_TEXT.APPROVE_CONTRACT' | translate) }}
+          </button>
+          <button mat-stroked-button color="warn" type="button" (click)="rejectContract()" [disabled]="actionLoading">
+            <mat-icon>block</mat-icon>
+            {{ ('INLINE_TEXT.REJECT_CONTRACT' | translate) }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-section app-card pending-renewal-banner" *ngIf="isRenewalPending()">
+      <div class="app-card-header">
+        <span class="app-card-title">
+          <mat-icon class="section-icon">autorenew</mat-icon>
+          {{ 'MAINTENANCE_CONTRACT.RENEWAL_PENDING_TITLE' | translate }}
+        </span>
+      </div>
+      <div class="app-card-body">
+        <p class="legacy-hint">{{ 'MAINTENANCE_CONTRACT.RENEWAL_PENDING_BODY' | translate }}</p>
+        <div class="info-grid">
+          <div class="info-cell" *ngIf="contract.renewalProposedStartDate">
+            <div class="ic-label">{{ 'CONTRACT.RENEWAL.PENDING_BANNER.PROPOSED_START_DATE' | translate }}</div>
+            <div class="ic-value">{{ contract.renewalProposedStartDate | date:'dd/MM/yyyy' }}</div>
+          </div>
+          <div class="info-cell" *ngIf="contract.renewalProposedEndDate">
+            <div class="ic-label">{{ 'CONTRACT.RENEWAL.PENDING_BANNER.PROPOSED_END_DATE' | translate }}</div>
+            <div class="ic-value">{{ contract.renewalProposedEndDate | date:'dd/MM/yyyy' }}</div>
+          </div>
+          <div class="info-cell" *ngIf="contract.renewalProposedValue != null">
+            <div class="ic-label">{{ 'CONTRACT.RENEWAL.PENDING_BANNER.PROPOSED_RENT' | translate }}</div>
+            <div class="ic-value">{{ contract.renewalProposedValue | number:'1.2-2' }} {{ contract.currency || 'SAR' }}</div>
+          </div>
+          <div class="info-cell full-span" *ngIf="contract.renewalRequestedNote">
+            <div class="ic-label">{{ 'CONTRACT.RENEWAL.PENDING_BANNER.REQUEST_NOTE' | translate }}</div>
+            <div class="ic-value notes-text">{{ contract.renewalRequestedNote }}</div>
+          </div>
+        </div>
+        <div class="owner-decision-actions" *ngIf="canDecideRenewal()">
+          <button mat-flat-button type="button" (click)="approveRenewal()" [disabled]="actionLoading">
+            <mat-spinner diameter="16" *ngIf="actionLoading"></mat-spinner>
+            <mat-icon *ngIf="!actionLoading">check_circle</mat-icon>
+            {{ 'INLINE_TEXT.APPROVE_CONTRACT' | translate }}
+          </button>
+          <button mat-stroked-button color="warn" type="button" (click)="rejectRenewal()" [disabled]="actionLoading">
+            <mat-icon>block</mat-icon>
+            {{ 'OWNER_PORTAL.REJECT' | translate }}
+          </button>
+          <button mat-stroked-button type="button" *ngIf="canCancelRenewalRequest()" (click)="cancelRenewalRequest()" [disabled]="actionLoading">
+            <mat-icon>undo</mat-icon>
+            {{ 'CONTRACTS.CANCEL_REQUEST' | translate }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-section app-card pending-termination-banner" *ngIf="isTerminationPending()">
+      <div class="app-card-header">
+        <span class="app-card-title">
+          <mat-icon class="section-icon">hourglass_top</mat-icon>
+          {{ 'MAINTENANCE_CONTRACT.TERMINATION_PENDING_TITLE' | translate }}
+        </span>
+      </div>
+      <div class="app-card-body">
+        <p class="legacy-hint">{{ 'MAINTENANCE_CONTRACT.TERMINATION_PENDING_BODY' | translate }}</p>
+        <div class="info-grid">
+          <div class="info-cell" *ngIf="contract.terminationProposedDate">
+            <div class="ic-label">{{ 'CONTRACTS.TERMINATION_DATE' | translate }}</div>
+            <div class="ic-value">{{ contract.terminationProposedDate | date:'dd/MM/yyyy' }}</div>
+          </div>
+          <div class="info-cell full-span" *ngIf="contract.terminationRequestNotes">
+            <div class="ic-label">{{ 'CONTRACTS.TERMINATION_REASON' | translate }}</div>
+            <div class="ic-value notes-text">{{ contract.terminationRequestNotes }}</div>
+          </div>
+        </div>
+        <div class="owner-decision-actions" *ngIf="canDecideTermination()">
+          <button mat-flat-button type="button" (click)="approveTermination()" [disabled]="actionLoading">
+            <mat-spinner diameter="16" *ngIf="actionLoading"></mat-spinner>
+            <mat-icon *ngIf="!actionLoading">check_circle</mat-icon>
+            {{ 'INLINE_TEXT.APPROVE_CONTRACT' | translate }}
+          </button>
+          <button mat-stroked-button color="warn" type="button" (click)="rejectTermination()" [disabled]="actionLoading">
+            <mat-icon>block</mat-icon>
+            {{ 'OWNER_PORTAL.REJECT' | translate }}
+          </button>
+          <button mat-stroked-button type="button" *ngIf="canCancelTerminationRequest()" (click)="cancelTerminationRequest()" [disabled]="actionLoading">
+            <mat-icon>undo</mat-icon>
+            {{ 'CONTRACTS.CANCEL_REQUEST' | translate }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <section class="info-section app-card">
+      <div class="app-card-header">
+        <span class="app-card-title">
+          <mat-icon class="section-icon">info</mat-icon>
+          {{ 'CONTRACTS.DETAILS' | translate }}
+        </span>
+      </div>
+      <div class="app-card-body">
+        <div class="info-grid">
+          <div class="info-cell">
+            <div class="ic-label">{{ 'CONTRACTS.CONTRACT_NUMBER' | translate }}</div>
+            <div class="ic-value">{{ contract.contractNumber }}</div>
+          </div>
+          <div class="info-cell">
+            <div class="ic-label">{{ 'CONTRACTS.START_DATE' | translate }}</div>
+            <div class="ic-value">{{ contract.startDate | date:'dd/MM/yyyy' }}</div>
+          </div>
+          <div class="info-cell">
+            <div class="ic-label">{{ 'CONTRACTS.END_DATE' | translate }}</div>
+            <div class="ic-value">{{ contract.endDate | date:'dd/MM/yyyy' }}</div>
+          </div>
+          <div class="info-cell">
+            <div class="ic-label">{{ 'MAINTENANCE_CONTRACT.SLA_HOURS' | translate }}</div>
+            <div class="ic-value">{{ contract.slaHours || '-' }}</div>
+          </div>
+          <div class="info-cell full-span" *ngIf="contract.notes">
+            <div class="ic-label">{{ 'CONTRACTS.NOTES' | translate }}</div>
+            <div class="ic-value notes-text">{{ contract.notes }}</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="info-section app-card">
+      <div class="app-card-header">
+        <span class="app-card-title">
+          <mat-icon class="section-icon">apartment</mat-icon>
+          {{ ('INLINE_TEXT.LINKED_PROPERTY_DETAILS' | translate) }}
+        </span>
+      </div>
+      <div class="app-card-body">
+        <div class="info-grid">
+          <div class="info-cell">
+            <div class="ic-label">{{ ('INLINE_TEXT.PROPERTY_CODE' | translate) }}</div>
+            <div class="ic-value">{{ propertyCode() }}</div>
+          </div>
+          <div class="info-cell">
+            <div class="ic-label">{{ ('INLINE_TEXT.PROPERTY_NAME' | translate) }}</div>
+            <div class="ic-value">{{ propertyName() }}</div>
+          </div>
+          <div class="info-cell">
+            <div class="ic-label">{{ ('INLINE_TEXT.TOTAL_UNITS_2' | translate) }}</div>
+            <div class="ic-value">{{ contract.propertyTotalUnits ?? 0 }}</div>
+          </div>
+          <div class="info-cell">
+            <div class="ic-label">{{ ('INLINE_TEXT.VACANT_UNITS_2' | translate) }}</div>
+            <div class="ic-value">{{ contract.propertyVacantUnits ?? 0 }}</div>
+          </div>
+          <div class="info-cell">
+            <div class="ic-label">{{ ('INLINE_TEXT.NON_VACANT_UNITS' | translate) }}</div>
+            <div class="ic-value">{{ contract.propertyNonVacantUnits ?? 0 }}</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="info-section app-card">
+      <div class="app-card-header">
+        <span class="app-card-title">
+          <mat-icon class="section-icon">payments</mat-icon>
+          {{ ('INLINE_TEXT.MAINTENANCE_COMPANY_PAYMENTS' | translate) }}
+        </span>
+      </div>
+      <div class="app-card-body">
+        <div class="empty-inline" *ngIf="invoices.length === 0">
+          {{ ('INLINE_TEXT.NO_INVOICES_OR_PAYMENTS_RECORDED_FOR_THIS_CONTRACT' | translate) }}
+        </div>
+        <div class="invoice-list" *ngIf="invoices.length > 0">
+          <article class="invoice-row" *ngFor="let inv of invoices" [class.invoice-row--target]="isTargetInvoice(inv)">
+            <div>
+              <strong>{{ inv.invoiceNumber }}</strong>
+              <span>{{ inv.invoiceMonth }}/{{ inv.invoiceYear }}</span>
+            </div>
+            <div>{{ inv.amount | number:'1.2-2' }} {{ contract.currency || 'SAR' }}</div>
+            <div>
+              <span class="status-chip" [ngClass]="inv.status === 'PAID' ? 'chip-success' : getStatusClass(inv.status)">
+                {{ invoiceStatusLabel(inv.status) }}
+              </span>
+            </div>
+            <div>
+              <div>{{ inv.paidDate ? (inv.paidDate | date:'dd/MM/yyyy') : '-' }}</div>
+              <small *ngIf="hasPaymentPlan(inv)">
+                {{ 'MAINTENANCE_INVOICE_PAYMENT.PAID' | translate }}:
+                {{ (inv.paidAmount || 0) | number:'1.2-2' }} /
+                {{ inv.amount | number:'1.2-2' }} {{ contract.currency || 'SAR' }}
+              </small>
+            </div>
+            <div class="invoice-payment-box" *ngIf="canMarkInvoicePaid(inv)">
+              <button
+                mat-flat-button
+                type="button"
+                color="primary"
+                *ngIf="permissions.can('maintenance', 'manage') && !hasPaymentPlan(inv)"
+                (click)="markInvoicePaid(inv)"
+                [disabled]="payingInvoiceId === inv.invoiceId">
+                <mat-icon>paid</mat-icon>
+                {{ 'MAINTENANCE_INVOICE_PAYMENT.OPEN_PAYMENT' | translate }}
+              </button>
+              <div class="payment-schedule" *ngIf="hasPaymentPlan(inv)">
+                <div class="payment-row" *ngFor="let payment of inv.payments">
+                  <span>#{{ payment.installmentNo }}</span>
+                  <strong>{{ payment.amount | number:'1.2-2' }} {{ contract.currency || 'SAR' }}</strong>
+                  <span>{{ payment.dueDate | date:'dd/MM/yyyy' }}</span>
+                  <span class="status-chip" [ngClass]="payment.status === 'PAID' ? 'chip-success' : 'chip-warn'">
+                    {{ ('MAINTENANCE_INVOICE_PAYMENT.STATUS_' + payment.status) | translate }}
+                  </span>
+                  <button
+                    mat-stroked-button
+                    type="button"
+                    *ngIf="payment.status === 'PENDING' && permissions.can('maintenance', 'manage')"
+                    (click)="payInstallment(inv, payment.id)"
+                    [disabled]="payingInvoiceId === inv.invoiceId">
+                    <mat-icon>receipt_long</mat-icon>
+                    {{ 'MAINTENANCE_INVOICE_PAYMENT.PAY_INSTALLMENT' | translate }}
+                  </button>
+                </div>
+              </div>
+            </div>
+            <a class="receipt-link" *ngIf="inv.receiptUrl" [href]="inv.receiptUrl" target="_blank" rel="noopener">
+              <mat-icon>attach_file</mat-icon>
+              {{ ('INLINE_TEXT.VIEW_RECEIPT_2' | translate) }}
+            </a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="info-section app-card" *ngIf="attachmentList().length > 0">
+      <div class="app-card-header">
+        <span class="app-card-title">
+          <mat-icon class="section-icon">attach_file</mat-icon>
+          {{ ('INLINE_TEXT.CONTRACT_ATTACHMENTS' | translate) }}
+        </span>
+      </div>
+      <div class="app-card-body">
+        <div class="attachment-list">
+          <a class="attachment-link" *ngFor="let url of attachmentList()" [href]="url" target="_blank" rel="noopener">
+            <mat-icon>insert_drive_file</mat-icon>
+            <span>{{ fileNameFromUrl(url) }}</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Registration + cancellation logs (side‑by‑side tabs) -->
+    <section class="info-section app-card"
+             *ngIf="registrationLog().length > 0 || terminationLog().length > 0 || renewalLog().length > 0">
+      <mat-tab-group [(selectedIndex)]="logTab" class="maintenance-log-tabs">
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon class="tab-ico">assignment</mat-icon>
+            {{ ('INLINE_TEXT.REGISTRATION_LOG_2' | translate) }}
+          </ng-template>
+          <div class="app-table-wrap staff-log-wrap tab-panel">
+            <div class="empty-inline" *ngIf="registrationLog().length === 0 && renewalLog().length === 0" style="margin:16px">
+              {{ ('INLINE_TEXT.NO_ACTIONS_RECORDED' | translate) }}
+            </div>
+            <table class="app-data-table staff-log-table" *ngIf="registrationLog().length > 0">
+              <thead>
+                <tr>
+                  <th>{{ ('INLINE_TEXT.ACTOR' | translate) }}</th>
+                  <th>{{ ('INLINE_TEXT.TIME' | translate) }}</th>
+                  <th>{{ ('INLINE_TEXT.ACTION' | translate) }}</th>
+                  <th>{{ ('INLINE_TEXT.DETAILS_2' | translate) }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let entry of registrationLog()">
+                  <td>
+                    <div class="staff-log-actor">
+                      <span class="staff-log-avatar material-icons">person</span>
+                      <div>
+                        <strong>{{ entry.actor || '-' }}</strong>
+                        <span>{{ ('INLINE_TEXT.ACTION_OWNER' | translate) }}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="log-time">{{ entry.date || '-' }}</span></td>
+                  <td><span class="status-badge log-action-chip chip-default">{{ entry.action || '-' }}</span></td>
+                  <td><span class="log-detail">{{ entry.detail || '-' }}</span></td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="renewal-inline-log" *ngIf="renewalLog().length > 0">
+              <h4 class="sub-log-title">
+                <mat-icon>autorenew</mat-icon>
+                {{ ('INLINE_TEXT.RENEWAL_LOG_2' | translate) }}
+              </h4>
+              <table class="app-data-table staff-log-table">
+                <thead>
+                  <tr>
+                    <th>{{ ('INLINE_TEXT.ACTOR' | translate) }}</th>
+                    <th>{{ ('INLINE_TEXT.TIME' | translate) }}</th>
+                    <th>{{ ('INLINE_TEXT.ACTION' | translate) }}</th>
+                    <th>{{ ('INLINE_TEXT.DETAILS_2' | translate) }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let entry of renewalLog()">
+                    <td>
+                      <div class="staff-log-actor">
+                        <span class="staff-log-avatar material-icons">person</span>
+                        <div>
+                          <strong>{{ entry.actor || '-' }}</strong>
+                          <span>{{ ('INLINE_TEXT.ACTION_OWNER' | translate) }}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td><span class="log-time">{{ entry.date || '-' }}</span></td>
+                    <td><span class="status-badge log-action-chip chip-default">{{ entry.action || '-' }}</span></td>
+                    <td><span class="log-detail">{{ entry.detail || '-' }}</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </mat-tab>
+
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon class="tab-ico">cancel</mat-icon>
+            {{ ('INLINE_TEXT.CANCELLATION_LOG_2' | translate) }}
+          </ng-template>
+          <div class="app-table-wrap staff-log-wrap tab-panel">
+            <div class="empty-inline" *ngIf="terminationLog().length === 0" style="margin:16px">
+              {{ ('INLINE_TEXT.NO_CANCELLATION_ACTIONS_RECORDED' | translate) }}
+            </div>
+            <table class="app-data-table staff-log-table" *ngIf="terminationLog().length > 0">
+              <thead>
+                <tr>
+                  <th>{{ ('INLINE_TEXT.ACTOR' | translate) }}</th>
+                  <th>{{ ('INLINE_TEXT.TIME' | translate) }}</th>
+                  <th>{{ ('INLINE_TEXT.ACTION' | translate) }}</th>
+                  <th>{{ ('INLINE_TEXT.DETAILS_2' | translate) }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let entry of terminationLog()">
+                  <td>
+                    <div class="staff-log-actor">
+                      <span class="staff-log-avatar material-icons">person</span>
+                      <div>
+                        <strong>{{ entry.actor || '-' }}</strong>
+                        <span>{{ ('INLINE_TEXT.ACTION_OWNER' | translate) }}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="log-time">{{ entry.date || '-' }}</span></td>
+                  <td><span class="status-badge log-action-chip chip-default">{{ entry.action || '-' }}</span></td>
+                  <td><span class="log-detail">{{ entry.detail || '-' }}</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+    </section>
+
+    <app-audit-trail
+      [createdAt]="contract.createdAt"
+      [updatedAt]="contract.updatedAt"
+      [createdBy]="contract.createdByUserId ?? null"
+      [createdByName]="contract.createdByName ?? null"
+      [modifiedBy]="contract.modifiedBy ?? null"
+      [modifiedByName]="contract.modifiedByName ?? null"
+      [approvedBy]="contract.approvedBy ?? null"
+      [approvedByName]="contract.approvedByName ?? null">
+    </app-audit-trail>
+  </ng-container>
+</div>
+

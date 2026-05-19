@@ -1,4 +1,14 @@
 .company-queue-page {
+  .contract-property-filter {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 16px;
+
+    mat-form-field {
+      width: min(360px, 100%);
+    }
+  }
+
   .queue-list {
     display: grid;
     gap: 1rem;

@@ -10,16 +10,14 @@
       <span class="material-icons">domain</span>
       <div>
         <strong>{{ (mode === 'create' ? 'MAINTENANCE.CONTRACT_NEW' : 'MAINTENANCE.CONTRACT_EDIT') | translate }}</strong>
-        <p>{{ i18n.currentLang === 'ar' 
-          ? 'أدخل بيانات العقد مع شركة الصيانة (العقار، الشركة، التواريخ، والقيمة).' 
-          : 'Enter maintenance contract details (property, company, dates, and value).' }}</p>
+        <p>{{ 'MAINTENANCE.CONTRACT_DIALOG_HINT' | translate }}</p>
       </div>
     </div>
 
     <mat-form-field appearance="outline" class="full">
       <mat-label>{{ 'COMMON.PROPERTY' | translate }}</mat-label>
       <mat-select formControlName="propertyId">
-        <mat-option>{{ 'COMMON.SELECT' | translate }}</mat-option>
+        <mat-option [value]="null">{{ 'COMMON.SELECT' | translate }}</mat-option>
         <mat-option *ngFor="let prop of properties" [value]="prop.id">
           {{ propertyLabel(prop) }}
         </mat-option>
@@ -30,7 +28,7 @@
     <mat-form-field appearance="outline" class="full">
       <mat-label>{{ 'CONTRACTORS.COMPANY' | translate }}</mat-label>
       <mat-select formControlName="contractorCompanyId">
-        <mat-option>{{ 'COMMON.SELECT' | translate }}</mat-option>
+        <mat-option [value]="null">{{ 'COMMON.SELECT' | translate }}</mat-option>
         <mat-option *ngFor="let company of contractorCompanies" [value]="company.id">
           {{ companyLabel(company) }}
         </mat-option>
@@ -77,6 +75,20 @@
       <mat-label>{{ 'CONTRACTS.NOTES' | translate }}</mat-label>
       <textarea matInput formControlName="notes" rows="3"></textarea>
     </mat-form-field>
+
+    <div class="upload-section">
+      <div class="upload-label">
+        <mat-icon>attach_file</mat-icon>
+        {{ ('INLINE_TEXT.ATTACHMENTS_OPTIONAL' | translate) }}
+      </div>
+      <app-upload-zone
+        [multiple]="true"
+        [urlList]="attachmentUrls"
+        (urlListChange)="attachmentUrls = $event"
+        [label]="('INLINE_TEXT.ATTACH_CONTRACT_FILES' | translate)"
+        accept="image/*,.pdf,.doc,.docx">
+      </app-upload-zone>
+    </div>
   </form>
 </mat-dialog-content>
 

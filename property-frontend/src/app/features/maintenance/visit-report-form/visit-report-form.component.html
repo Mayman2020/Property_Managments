@@ -37,6 +37,36 @@
           <textarea matInput formControlName="officerNotes" rows="3" [placeholder]="'VISIT.NOTES_PLACEHOLDER' | translate"></textarea>
         </mat-form-field>
 
+        <!-- Inventory deduction section -->
+        <div class="inventory-section" *ngIf="inventoryItems.length > 0">
+          <div class="section-label">{{ 'VISIT.INVENTORY_USED' | translate }}</div>
+
+          <div class="inventory-add-row" *ngIf="availableItems.length > 0">
+            <select [(ngModel)]="selectedItemId" [ngModelOptions]="{standalone: true}" class="inv-select">
+              <option [ngValue]="null">{{ 'VISIT.SELECT_ITEM' | translate }}</option>
+              <option *ngFor="let item of availableItems" [ngValue]="item.id">
+                {{ itemName(item) }} ({{ 'VISIT.AVAILABLE' | translate }}: {{ item.quantity }})
+              </option>
+            </select>
+            <input type="number" [(ngModel)]="selectedQty" [ngModelOptions]="{standalone: true}"
+              class="inv-qty" min="1" [placeholder]="'VISIT.QTY' | translate">
+            <button mat-stroked-button type="button" (click)="addInventoryLine()" [disabled]="!selectedItemId">
+              <mat-icon>add</mat-icon>
+              {{ 'VISIT.ADD_ITEM' | translate }}
+            </button>
+          </div>
+
+          <div class="inventory-lines" *ngIf="usedLines.length > 0">
+            <div class="inv-line" *ngFor="let line of usedLines; let i = index">
+              <span class="inv-name">{{ itemName(line.item) }}</span>
+              <span class="inv-qty-badge">{{ line.quantity | number }} {{ line.item.unitOfMeasure || '' }}</span>
+              <button mat-icon-button type="button" (click)="removeInventoryLine(i)" class="inv-remove">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+
         <div class="purchase-section">
           <mat-checkbox formControlName="hasPurchase" color="primary">
             {{ 'VISIT.HAS_PURCHASE' | translate }}

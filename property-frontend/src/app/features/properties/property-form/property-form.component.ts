@@ -33,6 +33,7 @@ import { MaintenanceContractResponse, MaintenanceContractService } from '../../.
 import { MaintenanceContractInvoiceResponse, MaintenanceContractInvoiceService } from '../../../core/services/maintenance-contract-invoice.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { Owner, OwnerService, ownerDisplayName } from '../../../core/services/owner.service';
+import { LegalEntity, LegalEntityService } from '../../../core/services/legal-entity.service';
 import { ApiResponse, PagedResponse } from '../../../core/models/api-response.model';
 import { UploadZoneComponent } from '../../../shared/components/upload-zone/upload-zone.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
@@ -122,6 +123,7 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
   generatingInvoices: Record<number, boolean> = {};
   contractorCompanies: ContractorCompany[] = [];
   maintenanceCompanies: ContractorCompany[] = [];
+  legalEntities: LegalEntity[] = [];
   internalOfficerOptions: User[] = [];
   floorUnitsConfig: Record<number, number> = {};
   liveUnitCount: number | null = null;
@@ -155,6 +157,9 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
     createdByName?: string;
     modifiedBy?: number;
     modifiedByName?: string;
+    legalEntityId?: number;
+    legalEntityNameAr?: string;
+    legalEntityNameEn?: string;
   } | null = null;
 
   propertyTypes: LookupItem[] = [];
@@ -273,6 +278,7 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
     private readonly invoiceSvc: MaintenanceContractInvoiceService,
     private readonly authSvc: AuthService,
     private readonly ownerSvc: OwnerService,
+    private readonly legalEntitySvc: LegalEntityService,
     private readonly router: Router,
     private readonly route: ActivatedRoute,
     private readonly cdr: ChangeDetectorRef,
@@ -292,7 +298,8 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
       googleMapUrl: [''],
       coverImageUrl: [''],
       totalFloors: [1],
-      description: ['']
+      description: [''],
+      legalEntityId: [null]
     });
   }
 
@@ -312,6 +319,7 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
     this.loadContractorCompanies();
     this.loadOwners();
     this.loadMaintenanceOfficers();
+    this.loadLegalEntities();
 
     this.form.get('googleMapUrl')?.valueChanges
       .pipe(debounceTime(600), distinctUntilChanged())
@@ -694,17 +702,9 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
     });
   }
 
-  markInvoicePaid(contractId: number, invoice: MaintenanceContractInvoiceResponse): void {
-    this.invoiceSvc.markPaid(invoice.invoiceId).subscribe({
-      next: (res) => {
-        if (res.data) {
-          this.invoicesByContract[contractId] = (this.invoicesByContract[contractId] ?? []).map(
-            (inv) => inv.invoiceId === invoice.invoiceId ? res.data! : inv
-          );
-        }
-        this.snack.success(this.i18n.instant('MAINTENANCE_CONTRACT.INVOICE_PAID'));
-      },
-      error: (err: Error) => { this.snack.error(err.message || this.i18n.instant('MAINTENANCE_CONTRACT.INVOICE_ERROR')); }
+  openMaintenanceInvoice(contractId: number, invoice: MaintenanceContractInvoiceResponse): void {
+    void this.router.navigate(['/admin/contracts/maintenance', contractId], {
+      queryParams: { invoiceId: invoice.invoiceId }
     });
   }
 
@@ -801,7 +801,8 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
       maintenanceProviderType: this.selectedMaintenanceProviders.length > 0 ? this.maintenanceProviderType : undefined,
       maintenanceProviderIds: this.selectedMaintenanceProviders.length > 0
         ? this.selectedMaintenanceProviders.map((p) => p.id)
-        : undefined
+        : undefined,
+      legalEntityId: raw.legalEntityId || undefined
     };
 
     this.submitting = true;
@@ -882,6 +883,13 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
         this.snack.error(this.i18n.instant('PROPERTY_FORM.LOAD_LOCATION_ERROR'));
         this.cdr.markForCheck();
       }
+    });
+  }
+
+  private loadLegalEntities(): void {
+    this.legalEntitySvc.getAll().subscribe({
+      next: (res) => { this.legalEntities = res.data ?? []; this.cdr.markForCheck(); },
+      error: () => { this.legalEntities = []; }
     });
   }
 
@@ -976,7 +984,8 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
           googleMapUrl: property.googleMapUrl || '',
           coverImageUrl: property.coverImageUrl || '',
           totalFloors: property.totalFloors,
-          description: property.description || ''
+          description: property.description || '',
+          legalEntityId: property.legalEntityId ?? null
         });
         if (property.maintenanceProviders && property.maintenanceProviders.length > 0) {
           this.maintenanceProviderType = property.maintenanceProviders[0].providerType;

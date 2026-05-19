@@ -1,12 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { DatePipe, DecimalPipe, NgFor, NgIf, NgClass } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
 import { forkJoin } from 'rxjs';
@@ -59,9 +56,8 @@ interface UnifiedRatingItem {
   selector: 'app-ratings-dashboard',
   standalone: true,
   imports: [
-    NgFor, NgIf, NgClass, DatePipe, DecimalPipe, TranslateModule,
-    MatButtonModule, MatDatepickerModule, MatFormFieldModule, MatIconModule,
-    MatInputModule, MatProgressSpinnerModule, MatSelectModule, MatTooltipModule,
+    NgFor, NgIf, NgClass, DatePipe, DecimalPipe, FormsModule, TranslateModule,
+    MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule,
     PageHeaderComponent, EmptyStateComponent
   ],
   templateUrl: './ratings-dashboard.component.html',
@@ -82,8 +78,8 @@ export class RatingsDashboardComponent implements OnInit {
   selectedUnitId: number | null = null;
   selectedStars: number | null = null;
   searchTerm = '';
-  dateFrom: Date | null = null;
-  dateTo: Date | null = null;
+  dateFromStr = '';
+  dateToStr = '';
 
   readonly stars = [4, 3, 2, 1];
 
@@ -120,17 +116,13 @@ export class RatingsDashboardComponent implements OnInit {
 
   setTab(tab: RatingTab): void {
     this.activeTab = tab;
-    this.resetFilters(false);
+    this.resetFilters();
   }
 
   applyFilters(): void {
     const query = this.searchTerm.trim().toLowerCase();
-    const fromDate = this.dateFrom
-      ? new Date(this.dateFrom.getFullYear(), this.dateFrom.getMonth(), this.dateFrom.getDate())
-      : null;
-    const toDate = this.dateTo
-      ? new Date(this.dateTo.getFullYear(), this.dateTo.getMonth(), this.dateTo.getDate(), 23, 59, 59)
-      : null;
+    const fromDate = this.dateFromStr ? new Date(this.dateFromStr) : null;
+    const toDate = this.dateToStr ? new Date(this.dateToStr + 'T23:59:59') : null;
 
     this.filteredRatings = this.activeSource.filter((item) => {
       if (this.selectedPropertyId && item.propertyId !== this.selectedPropertyId) return false;
@@ -161,16 +153,15 @@ export class RatingsDashboardComponent implements OnInit {
     });
   }
 
-  resetFilters(apply = true): void {
+  resetFilters(): void {
     this.selectedPropertyId = null;
     this.selectedUnitId = null;
     this.unitOptions = [];
     this.selectedStars = null;
     this.searchTerm = '';
-    this.dateFrom = null;
-    this.dateTo = null;
-    if (apply) this.applyFilters();
-    if (!apply) this.applyFilters();
+    this.dateFromStr = '';
+    this.dateToStr = '';
+    this.applyFilters();
   }
 
   onPropertyChange(propertyId: number | null): void {
@@ -232,19 +223,19 @@ export class RatingsDashboardComponent implements OnInit {
   complaintRatingLabel(value: string): string {
     const ar = this.i18n.currentLang === 'ar';
     const map: Record<string, string> = {
-      VERY_SATISFIED: ar ? 'راض جدا' : 'Very satisfied',
-      SATISFIED: ar ? 'راض' : 'Satisfied',
-      DISSATISFIED: ar ? 'غير راض' : 'Dissatisfied',
-      VERY_DISSATISFIED: ar ? 'غير راض جدا' : 'Very dissatisfied'
+      VERY_SATISFIED: this.i18n.instant('INLINE_TEXT.VERY_SATISFIED'),
+      SATISFIED: this.i18n.instant('INLINE_TEXT.SATISFIED'),
+      DISSATISFIED: this.i18n.instant('INLINE_TEXT.DISSATISFIED'),
+      VERY_DISSATISFIED: this.i18n.instant('INLINE_TEXT.VERY_DISSATISFIED')
     };
     return map[value] ?? value;
   }
 
   tabTitle(): string {
     if (this.activeTab === 'complaints') {
-      return this.i18n.currentLang === 'ar' ? 'تقييمات الشكاوى' : 'Complaint ratings';
+      return this.i18n.instant('INLINE_TEXT.COMPLAINT_RATINGS');
     }
-    return this.i18n.currentLang === 'ar' ? 'تقييمات الزيارات' : 'Visit ratings';
+    return this.i18n.instant('INLINE_TEXT.VISIT_RATINGS');
   }
 
   private loadUnits(propertyId: number): void {

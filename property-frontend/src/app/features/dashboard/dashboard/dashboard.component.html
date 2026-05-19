@@ -26,7 +26,7 @@
         <div class="estate-stat-value">{{ summary.totalProperties }}</div>
         <div class="estate-stat-foot">
           <span class="material-icons kpi-nav-arrow">arrow_forward</span>
-          <span>{{ i18n.currentLang === 'ar' ? 'عرض العقارات' : 'View properties' }}</span>
+          <span>{{ ('INLINE_TEXT.VIEW_PROPERTIES' | translate) }}</span>
         </div>
       </article>
 
@@ -67,7 +67,7 @@
         <div class="estate-stat-value">{{ summary.pendingRequests }}</div>
         <div class="estate-stat-foot">
           <span class="material-icons kpi-nav-arrow">arrow_forward</span>
-          <span>{{ i18n.currentLang === 'ar' ? 'عرض الطلبات المعلقة' : 'View pending' }}</span>
+          <span>{{ ('INLINE_TEXT.VIEW_PENDING' | translate) }}</span>
         </div>
       </article>
 

@@ -19,7 +19,7 @@ export interface FilterSpec {
   standalone: true,
   imports: [CommonModule, FormsModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatOptionModule, TranslateModule],
   template: `
-    <div class="estate-filter-bar" style="display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:8px 0 0;">
+    <div class="estate-filter-bar">
       <ng-container *ngFor="let f of filters">
         <mat-form-field appearance="outline" [class]="'filter-field filter-field--' + f.key" floatLabel="always" *ngIf="f.type !== 'select'">
           <mat-label>{{ f.label | translate }}</mat-label>
@@ -36,8 +36,63 @@ export interface FilterSpec {
     </div>
   `,
   styles: [`
-    .estate-filter-bar { align-items: center; }
-    .filter-field { width: 240px; min-width: 180px; }
+    .estate-filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      padding: 0;
+    }
+
+    .filter-field {
+      flex: 0 1 auto;
+      width: 180px;
+      min-width: 0;
+      margin-bottom: 0;
+    }
+
+    .filter-field .mat-mdc-form-field-wrapper {
+      padding-bottom: 0;
+    }
+
+    .filter-field .mat-mdc-text-field-wrapper {
+      height: 40px !important;
+      background: var(--surface-2) !important;
+      border-radius: 6px;
+    }
+
+    .filter-field .mat-mdc-form-field-flex {
+      height: 40px !important;
+      align-items: center !important;
+    }
+
+    .filter-field .mat-mdc-form-field-infix {
+      display: flex;
+      align-items: center;
+      min-height: 40px !important;
+      padding: 10px 0 6px !important;
+      font-size: 0.82rem;
+    }
+
+    .filter-field .mat-mdc-form-field-subscript-wrapper {
+      display: none;
+    }
+
+    .filter-field .mat-mdc-floating-label {
+      font-size: 0.72rem;
+    }
+
+    .filter-field .mat-mdc-select-trigger {
+      height: 22px;
+      display: flex;
+      align-items: center;
+    }
+
+    .filter-field .mat-mdc-select-value,
+    .filter-field input {
+      font-size: 0.82rem;
+      line-height: 20px;
+    }
   `]
 })
 export class FilterBarComponent implements OnChanges {

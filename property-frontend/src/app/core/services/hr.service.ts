@@ -225,6 +225,19 @@ export class HrService {
     return this.api.post(AppConstants.API.HR_PAYROLL_MARK_PAID(payrollId), payload);
   }
 
+  rejectPayroll(payrollId: number, reason?: string): Observable<ApiResponse<PayrollRunDetail>> {
+    const url = AppConstants.API.HR_PAYROLL_REJECT(payrollId) + (reason ? `?reason=${encodeURIComponent(reason)}` : '');
+    return this.api.post(url, {});
+  }
+
+  getMyPayslips(): Observable<ApiResponse<PayslipItem[]>> {
+    return this.api.get(AppConstants.API.HR_MY_PAYSLIPS);
+  }
+
+  getMyPayslipById(id: number): Observable<ApiResponse<PayslipItem>> {
+    return this.api.get(AppConstants.API.HR_MY_PAYSLIP_BY_ID(id));
+  }
+
   getLeaveRequests(params: Record<string, string | number> = {}): Observable<ApiResponse<PagedResponse<LeaveRequestItem>>> {
     return this.api.get(AppConstants.API.HR_LEAVES, params);
   }

@@ -135,7 +135,7 @@ export interface TenantDialogData {
             </div>
             <div class="detail-item">
               <span class="detail-label">{{ 'UNIT_DETAILS.ORIGINAL_RENT' | translate }}</span>
-              <span class="detail-value rent-value">{{ selectedUnit.rentAmount }} {{ selectedUnit.currency || 'OMR' }}</span>
+              <span class="detail-value rent-value">{{ selectedUnit.rentAmount }} {{ selectedUnit.currency || 'SAR' }}</span>
             </div>
             <div class="detail-item" *ngIf="selectedUnit.areaSqm">
               <span class="detail-label">{{ 'UNIT_DETAILS.AREA' | translate }}</span>
@@ -169,7 +169,7 @@ export interface TenantDialogData {
           <mat-label>{{ 'CONTRACTS.MONTHLY_RENT' | translate }}</mat-label>
           <input matInput type="number" min="0" formControlName="monthlyRent" />
           <mat-hint *ngIf="selectedUnit?.rentAmount" class="rent-hint">
-            {{ 'UNIT_DETAILS.RENT_MAX_HINT' | translate }} {{ selectedUnit?.rentAmount }} {{ selectedUnit?.currency || 'OMR' }}
+            {{ 'UNIT_DETAILS.RENT_MAX_HINT' | translate }} {{ selectedUnit?.rentAmount }} {{ selectedUnit?.currency || 'SAR' }}
           </mat-hint>
           <mat-error *ngIf="form.get('monthlyRent')?.hasError('required')">{{ 'COMMON.REQUIRED' | translate }}</mat-error>
           <mat-error *ngIf="form.get('monthlyRent')?.hasError('exceedsMax')">{{ rentExceedsMaxMsg }}</mat-error>
@@ -604,3 +604,4 @@ export class TenantDialogComponent implements OnInit {
     return `${y}-${m}-${day}`;
   }
 }
+

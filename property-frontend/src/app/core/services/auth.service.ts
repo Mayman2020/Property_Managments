@@ -5,6 +5,7 @@ import { ApiService } from './api.service';
 import { AppConstants } from '../constants/app-constants';
 import { TokenStorageService } from '../auth/token-storage.service';
 import { JwtUtils } from '../utils/jwt-utils';
+import { normalizeFileUrlsInValue } from '../utils/file-url-utils';
 import { ApiResponse } from '../models/api-response.model';
 import { ClientModuleMap, CurrentUser, LoginRequest, LoginResponse, PermissionMap, UserRole } from '../models/user.model';
 
@@ -22,7 +23,9 @@ export class AuthService {
   ) {}
 
   login(request: LoginRequest): Observable<LoginResponse> {
-    return this.api.post<ApiResponse<LoginResponse>>(AppConstants.API.AUTH_LOGIN, request).pipe(
+    const email = request.email?.trim();
+    const payload: LoginRequest = { ...request, email, username: email };
+    return this.api.post<ApiResponse<LoginResponse>>(AppConstants.API.AUTH_LOGIN, payload).pipe(
       tap((res) => {
         if (res.data?.accessToken) {
           this.tokenStorage.setToken(res.data.accessToken);
@@ -67,6 +70,7 @@ export class AuthService {
   }
 
   logout(): void {
+    this.api.post<ApiResponse<void>>(AppConstants.API.AUTH_LOGOUT, {}).subscribe({ error: () => {} });
     this.tokenStorage.clearAll();
     void this.router.navigateByUrl('/auth/login');
   }
@@ -78,7 +82,11 @@ export class AuthService {
   }
 
   getCurrentUser(): CurrentUser | null {
-    return this.tokenStorage.getUser<CurrentUser>();
+    const user = this.tokenStorage.getUser<CurrentUser>();
+    if (!user) return null;
+    const normalized = normalizeFileUrlsInValue(user);
+    if (normalized !== user) this.tokenStorage.setUser(normalized);
+    return normalized;
   }
 
   getRole(): UserRole | null {

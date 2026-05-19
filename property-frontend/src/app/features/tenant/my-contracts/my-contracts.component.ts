@@ -37,7 +37,8 @@ export class MyContractsComponent implements OnInit {
     this.portalSvc.getMyContracts().subscribe({
       next: (res) => {
         this.contracts = res.data ?? [];
-        this.selectedContractId = null;
+        const first = this.contracts.find(c => c.status === 'ACTIVE') ?? this.contracts[0];
+        this.selectedContractId = first?.id ?? null;
         this.loading = false;
       },
       error: () => { this.loading = false; }
@@ -59,7 +60,7 @@ export class MyContractsComponent implements OnInit {
   get contractDropdownItems(): SearchDropdownItem[] {
     return this.selectableContracts.map(c => ({
       label: c.contractNumber,
-      subLabel: [c.propertyName, c.unitNumber ? (this.i18n.currentLang === 'ar' ? 'وحدة ' : 'Unit ') + c.unitNumber : null]
+      subLabel: [c.propertyName, c.unitNumber ? (this.i18n.instant('INLINE_TEXT.UNIT_3')) + c.unitNumber : null]
         .filter(Boolean).join(' · '),
       badge: this.statusLabel(c.status),
       badgeClass: 'st-' + c.status,

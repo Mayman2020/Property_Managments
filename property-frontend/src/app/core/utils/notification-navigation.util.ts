@@ -14,6 +14,7 @@ function num(v: unknown): number | undefined {
 function idsFromPayload(n: AppNotification): {
   contractId?: number;
   maintenanceContractId?: number;
+  invoiceId?: number;
   scheduleId?: number;
   unitId?: number;
   tenantId?: number;
@@ -25,6 +26,7 @@ function idsFromPayload(n: AppNotification): {
   return {
     contractId: num(p['contractId'] ?? vars['contractId']),
     maintenanceContractId: num(p['maintenanceContractId'] ?? vars['maintenanceContractId']),
+    invoiceId: num(p['invoiceId'] ?? vars['invoiceId']),
     scheduleId: num(p['scheduleId'] ?? vars['scheduleId']),
     unitId: num(p['unitId'] ?? vars['unitId']),
     tenantId: num(p['tenantId'] ?? vars['tenantId']),
@@ -53,7 +55,24 @@ export function resolveNotificationTargetUrl(n: AppNotification, auth: AuthServi
     return `/admin/maintenance/${reqId}`;
   }
 
-  const { contractId, scheduleId, propertyId } = idsFromPayload(n);
+  const { contractId, maintenanceContractId, invoiceId, scheduleId, propertyId } = idsFromPayload(n);
+
+  if (maintenanceContractId != null) {
+    if (
+      role === 'SUPER_ADMIN' ||
+      role === 'GENERAL_MANAGER' ||
+      role === 'ACCOUNTANT' ||
+      role === 'OWNER' ||
+      role === 'PROCEDURES_CLERK' ||
+      role === 'MAINTENANCE_OFFICER_INTERNAL' ||
+      role === 'MAINTENANCE_OFFICER_COMPANY' ||
+      role === 'MAINTENANCE_COMPANY'
+    ) {
+      const invoiceQuery = invoiceId != null ? `?invoiceId=${invoiceId}` : '';
+      return `/admin/contracts/maintenance/${maintenanceContractId}${invoiceQuery}`;
+    }
+    return null;
+  }
 
   if (contractId != null) {
     const scheduleQuery = scheduleId != null ? `?tab=schedule&scheduleId=${scheduleId}` : '';

@@ -66,17 +66,17 @@ interface ScreenDetailsDialogData {
           </strong>
         </div>
         <div>
-          <span>{{ isAr ? 'المستخدمين الذين يرونها' : 'Users who can see' }}</span>
+          <span>{{ ('INLINE_TEXT.USERS_WHO_CAN_SEE' | translate) }}</span>
           <strong>{{ data.visibleUsersCount }}</strong>
         </div>
         <div>
-          <span>{{ isAr ? 'المستخدمين الذين لا يرونها' : 'Users who cannot see' }}</span>
+          <span>{{ ('INLINE_TEXT.USERS_WHO_CANNOT_SEE' | translate) }}</span>
           <strong>{{ data.hiddenUsersCount }}</strong>
         </div>
       </div>
 
       <section class="role-section">
-        <h3>{{ isAr ? 'تظهر لمين' : 'Visible Roles' }}</h3>
+        <h3>{{ ('INLINE_TEXT.VISIBLE_ROLES' | translate) }}</h3>
         <div class="role-list" *ngIf="visibleRoles.length; else noVisibleTpl">
           <div class="role-row visible" *ngFor="let role of visibleRoles">
             <span>{{ data.roleLabel(role) }}</span>
@@ -91,7 +91,7 @@ interface ScreenDetailsDialogData {
       </section>
 
       <section class="role-section">
-        <h3>{{ isAr ? 'مش تظهر لمين' : 'Hidden Roles' }}</h3>
+        <h3>{{ ('INLINE_TEXT.HIDDEN_ROLES' | translate) }}</h3>
         <div class="role-list" *ngIf="hiddenRoles.length; else noHiddenTpl">
           <div class="role-row hidden" *ngFor="let role of hiddenRoles">
             <span>{{ data.roleLabel(role) }}</span>
@@ -106,11 +106,11 @@ interface ScreenDetailsDialogData {
       </section>
 
       <ng-template #noVisibleTpl>
-        <p class="empty-line">{{ isAr ? 'لا توجد أدوار مفعلة لهذه الشاشة.' : 'No roles can see this screen.' }}</p>
+        <p class="empty-line">{{ ('INLINE_TEXT.NO_ROLES_CAN_SEE_THIS_SCREEN' | translate) }}</p>
       </ng-template>
 
       <ng-template #noHiddenTpl>
-        <p class="empty-line">{{ isAr ? 'كل الأدوار المختارة يمكنها رؤية هذه الشاشة.' : 'All listed roles can see this screen.' }}</p>
+        <p class="empty-line">{{ ('INLINE_TEXT.ALL_LISTED_ROLES_CAN_SEE_THIS_SCREEN' | translate) }}</p>
       </ng-template>
     </mat-dialog-content>
 
@@ -275,11 +275,11 @@ export class ScreenDetailsDialogComponent {
             <thead>
               <tr>
                 <th>#</th>
-                <th>{{ isAr ? 'الشاشة' : 'Screen' }}</th>
+                <th>{{ ('INLINE_TEXT.SCREEN' | translate) }}</th>
                 <th>{{ 'SCREENS.GLOBAL' | translate }}</th>
-                <th>{{ isAr ? 'المستخدمين الذين يرونها' : 'Users who can see' }}</th>
-                <th>{{ isAr ? 'المستخدمين الذين لا يرونها' : 'Users who cannot see' }}</th>
-                <th>{{ isAr ? 'التفاصيل' : 'Details' }}</th>
+                <th>{{ ('INLINE_TEXT.USERS_WHO_CAN_SEE' | translate) }}</th>
+                <th>{{ ('INLINE_TEXT.USERS_WHO_CANNOT_SEE' | translate) }}</th>
+                <th>{{ ('INLINE_TEXT.DETAILS_2' | translate) }}</th>
               </tr>
             </thead>
             <tbody>
@@ -421,6 +421,7 @@ export class ScreenManagementComponent implements OnInit {
 
   readonly roleOptions: UserRole[] = [
     'SUPER_ADMIN',
+    'GENERAL_MANAGER',
     'ACCOUNTANT',
     'MAINTENANCE_OFFICER_INTERNAL',
     'MAINTENANCE_OFFICER_COMPANY',
@@ -441,6 +442,7 @@ export class ScreenManagementComponent implements OnInit {
     { key: 'users', icon: 'manage_accounts' },
     { key: 'lookups', icon: 'public' },
     { key: 'contractors', icon: 'engineering' },
+    { key: 'contracts', icon: 'description' },
     { key: 'vacancies', icon: 'door_open' },
     { key: 'ratings', icon: 'star_rate' },
     { key: 'finance', icon: 'bar_chart' },
@@ -503,11 +505,11 @@ export class ScreenManagementComponent implements OnInit {
 
   get exportColumns(): ExportColumn<ScreenConfig>[] {
     return [
-      { header: this.isAr ? 'الشاشة' : 'Screen', value: (row) => this.i18n.instant(this.screenTitle(row.key)) },
-      { header: this.isAr ? 'الكود' : 'Code', value: 'key' },
+      { header: this.i18n.instant('INLINE_TEXT.SCREEN'), value: (row) => this.i18n.instant(this.screenTitle(row.key)) },
+      { header: this.i18n.instant('INLINE_TEXT.CODE'), value: 'key' },
       { header: this.i18n.instant('SCREENS.GLOBAL'), value: (row) => this.screenSettings[row.key] === false ? this.i18n.instant('COMMON.INACTIVE') : this.i18n.instant('COMMON.ACTIVE') },
-      { header: this.isAr ? 'المستخدمين الذين يرونها' : 'Users who can see', value: (row) => this.visibleCount(row.key) },
-      { header: this.isAr ? 'المستخدمين الذين لا يرونها' : 'Users who cannot see', value: (row) => this.hiddenCount(row.key) }
+      { header: this.i18n.instant('INLINE_TEXT.USERS_WHO_CAN_SEE'), value: (row) => this.visibleCount(row.key) },
+      { header: this.i18n.instant('INLINE_TEXT.USERS_WHO_CANNOT_SEE'), value: (row) => this.hiddenCount(row.key) }
     ];
   }
 
@@ -560,9 +562,20 @@ export class ScreenManagementComponent implements OnInit {
   }
 
   private userCanSeeScreen(user: User, screenKey: string): boolean {
-    const rolePermissions = this.rolePermissions[user.role];
-    if (!rolePermissions) return false;
-    return rolePermissions[screenKey]?.enabled === true;
+    if (this.screenSettings[screenKey] === false) return false;
+    return this.rolesFromUser(user).some((role) => this.rolePermissions[role]?.[screenKey]?.enabled === true);
+  }
+
+  private rolesFromUser(user: User): UserRole[] {
+    const out: UserRole[] = [];
+    const seen = new Set<UserRole>();
+    for (const role of [user.role, ...(user.extraRoles ?? [])]) {
+      if (role && !seen.has(role)) {
+        seen.add(role);
+        out.push(role);
+      }
+    }
+    return out;
   }
 
   roleLabel(role: UserRole): string {

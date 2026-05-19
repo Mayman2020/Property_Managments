@@ -21,10 +21,6 @@ export interface ExportColumn<T = unknown> {
         <span class="material-icons">table_view</span>
         Excel
       </button>
-      <button mat-stroked-button *ngIf="showPdf" mat-stroked-button type="button" (click)="exportPdf()" [disabled]="disabled || !hasRows" [matTooltip]="pdfLabel">
-        <span class="material-icons">picture_as_pdf</span>
-        PDF
-      </button>
     </div>
   `,
   styles: [`
@@ -62,8 +58,6 @@ export class TableExportToolbarComponent<T = unknown> {
   @Input() rows: T[] = [];
   @Input() loadRows?: () => Promise<T[]>;
   @Input() disabled = false;
-  // PDF export is disabled by default to align with the new standard (privacy/size considerations).
-  @Input() showPdf = false;
 
   constructor(
     private readonly permissions: PermissionService,
@@ -82,10 +76,6 @@ export class TableExportToolbarComponent<T = unknown> {
     return this.i18n.instant('COMMON.EXPORT_EXCEL');
   }
 
-  get pdfLabel(): string {
-    return this.i18n.instant('COMMON.EXPORT_PDF');
-  }
-
   async exportExcel(): Promise<void> {
     const table = this.tableRows(await this.resolveRows());
     import('xlsx').then((XLSX) => {
@@ -93,35 +83,6 @@ export class TableExportToolbarComponent<T = unknown> {
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, this.sheetName());
       XLSX.writeFile(wb, `${this.safeFileName()}-${this.fileDate()}.xlsx`);
-    });
-  }
-
-  async exportPdf(): Promise<void> {
-    const table = this.tableRows(await this.resolveRows());
-    import('jspdf').then(({ default: jsPDF }) => {
-      import('jspdf-autotable').then(() => {
-        const doc = new jsPDF({ orientation: this.headers().length > 5 ? 'landscape' : 'portrait' });
-        doc.setFontSize(15);
-        doc.text(this.title || this.fileName, 14, 18);
-        doc.setFontSize(9);
-        doc.text(this.fileDate('/'), 14, 25);
-
-        (doc as any).autoTable({
-          startY: 32,
-          head: [this.headers()],
-          body: table,
-          styles: { font: 'helvetica', fontSize: 8, cellPadding: 2 },
-          headStyles: { fillColor: [19, 78, 74], textColor: 255 },
-          didDrawPage: () => {
-            const pageCount = (doc as any).internal.getNumberOfPages();
-            const pageSize = doc.internal.pageSize;
-            doc.setFontSize(8);
-            doc.text(`${pageCount}`, pageSize.getWidth() - 14, pageSize.getHeight() - 8);
-          }
-        });
-
-        doc.save(`${this.safeFileName()}-${this.fileDate()}.pdf`);
-      });
     });
   }
 

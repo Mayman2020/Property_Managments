@@ -62,7 +62,7 @@ export interface ExpenseDialogData {
         <mat-form-field appearance="outline">
           <mat-label>{{ 'FINANCE.CURRENCY' | translate }}</mat-label>
           <mat-select formControlName="currency">
-            <mat-option value="OMR">OMR</mat-option>
+            <mat-option value="SAR">SAR</mat-option>
             <mat-option value="SAR">SAR</mat-option>
             <mat-option value="USD">USD</mat-option>
             <mat-option value="AED">AED</mat-option>
@@ -100,7 +100,7 @@ export class ExpenseDialogComponent {
     propertyId: [null as number | null, Validators.required],
     description: ['', [Validators.required, Validators.maxLength(500)]],
     amount: [null as number | null, [Validators.required, Validators.min(0.01)]],
-    currency: ['OMR'],
+    currency: ['SAR'],
     expenseDate: [new Date(), Validators.required]
   });
 
@@ -132,7 +132,7 @@ export class ExpenseDialogComponent {
       currency: v.currency,
       expenseDate: this.toYmd(v.expenseDate)
     }).subscribe({
-      next: () => { this.saving = false; this.snack.success(this.isAr ? 'تم الحفظ' : 'Saved'); this.ref.close(true); },
+      next: () => { this.saving = false; this.snack.success(this.i18n.instant('INLINE_TEXT.SAVED_2')); this.ref.close(true); },
       error: () => { this.saving = false; }
     });
   }
@@ -144,3 +144,4 @@ export class ExpenseDialogComponent {
     return `${value.getFullYear()}-${month}-${day}`;
   }
 }
+

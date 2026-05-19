@@ -5,27 +5,47 @@
 </app-page-header>
 
 <div class="page-content">
-  <!-- Filter -->
-  <div class="filter-bar" [formGroup]="filterForm">
-    <mat-form-field appearance="outline" class="filter-field">
-      <mat-label>{{ 'COMMON.YEAR' | translate }}</mat-label>
-      <mat-select formControlName="year">
-        <mat-option [value]="null">{{ 'COMMON.ALL' | translate }}</mat-option>
-        <mat-option *ngFor="let y of years" [value]="y">{{ y }}</mat-option>
-      </mat-select>
-    </mat-form-field>
+  <div class="finance-filter-strip" [formGroup]="filterForm">
+    <label *ngIf="properties.length">{{ 'REQUEST_FORM.PROPERTY' | translate }}</label>
+    <select *ngIf="properties.length" formControlName="propertyId" (change)="onPropertyChange(filterForm.value.propertyId)" class="estate-property-select">
+      <option [ngValue]="null">{{ 'COMMON.ALL_PROPERTIES' | translate }}</option>
+      <option *ngFor="let p of properties" [ngValue]="p.id">{{ propertyLabel(p) }}</option>
+    </select>
 
-    <mat-form-field appearance="outline" class="filter-field">
-      <mat-label>{{ 'COMMON.MONTH' | translate }}</mat-label>
-      <mat-select formControlName="month">
-        <mat-option [value]="null">{{ 'COMMON.ALL' | translate }}</mat-option>
-        <mat-option *ngFor="let m of months" [value]="m">{{ monthLabel(m) }}</mat-option>
-      </mat-select>
-    </mat-form-field>
+    <label *ngIf="companies.length">{{ 'MAINTENANCE_INVOICES.CONTRACTOR_COMPANY' | translate }}</label>
+    <select *ngIf="companies.length" formControlName="companyId" class="estate-property-select">
+      <option [ngValue]="null">{{ 'COMMON.ALL' | translate }}</option>
+      <option *ngFor="let c of companies" [ngValue]="c.id">{{ companyLabel(c) }}</option>
+    </select>
 
-    <button mat-flat-button color="primary" (click)="load()">
+    <label>{{ 'COMMON.YEAR' | translate }}</label>
+    <select formControlName="year" class="estate-property-select">
+      <option [ngValue]="null">{{ 'COMMON.ALL' | translate }}</option>
+      <option *ngFor="let y of years" [ngValue]="y">{{ y }}</option>
+    </select>
+
+    <label>{{ 'COMMON.MONTH' | translate }}</label>
+    <select formControlName="month" class="estate-property-select">
+      <option [ngValue]="null">{{ 'COMMON.ALL' | translate }}</option>
+      <option *ngFor="let m of months" [ngValue]="m">{{ monthLabel(m) }}</option>
+    </select>
+
+    <button mat-stroked-button (click)="load()" style="margin-inline-start:auto">
       <mat-icon>search</mat-icon>
       {{ 'COMMON.SEARCH' | translate }}
+    </button>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn" [class.active]="activeTab === 'contractor'" (click)="activeTab = 'contractor'">
+      <mat-icon>engineering</mat-icon>
+      {{ 'MAINTENANCE_INVOICES.CONTRACTOR_INVOICES_TAB' | translate }}
+      <span class="tab-count">{{ invoices.length }}</span>
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'contract'" (click)="activeTab = 'contract'">
+      <mat-icon>receipt_long</mat-icon>
+      {{ 'MAINTENANCE_INVOICES.CONTRACT_PAYMENTS_TAB' | translate }}
+      <span class="tab-count">{{ contractInvoices.length }}</span>
     </button>
   </div>
 
@@ -33,68 +53,188 @@
     <mat-spinner diameter="48"></mat-spinner>
   </div>
 
-  <div *ngIf="!loading && invoices.length === 0" class="empty-state">
-    <mat-icon>inbox</mat-icon>
-    <p>{{ 'MAINTENANCE_INVOICES.NO_INVOICES' | translate }}</p>
-  </div>
+  <ng-container *ngIf="!loading && activeTab === 'contractor'">
+    <div *ngIf="invoices.length === 0" class="empty-state">
+      <mat-icon>inbox</mat-icon>
+      <p>{{ 'MAINTENANCE_INVOICES.NO_INVOICES' | translate }}</p>
+    </div>
 
-  <div *ngIf="!loading && invoices.length > 0" class="invoices-grid">
-    <div class="invoice-card" *ngFor="let inv of invoices">
+    <div *ngIf="invoices.length > 0" class="contracts-grid">
+      <div class="contract-card" *ngFor="let inv of pagedInvoices">
+        <div class="card-header">
+          <div class="contract-info">
+            <mat-icon class="contract-icon">engineering</mat-icon>
+            <div>
+              <div class="contract-number">{{ inv.invoiceNumber }}</div>
+              <div class="tenant-name">{{ inv.companyName || ('COMMON.UNKNOWN' | translate) }}</div>
+            </div>
+          </div>
+          <span class="status-badge" [ngClass]="statusClass(inv.status)">
+            {{ ('RECEIPT_STATUS.' + inv.status) | translate }}
+          </span>
+        </div>
 
-      <div class="card-header">
-        <div class="company-info">
-          <mat-icon class="co-icon">engineering</mat-icon>
-          <div>
-            <div class="co-name">{{ inv.companyName || ('COMMON.UNKNOWN' | translate) }}</div>
-            <div class="inv-number">{{ inv.invoiceNumber }}</div>
+        <div class="card-body">
+          <div class="property-summary" *ngIf="inv.propertyName || inv.unitNumber">
+            <div class="property-title">
+              <mat-icon>apartment</mat-icon>
+              <div>
+                <span>{{ 'MAINTENANCE_INVOICES.PROPERTY_DETAILS' | translate }}</span>
+                <strong>{{ inv.propertyName || ('COMMON.UNKNOWN' | translate) }}</strong>
+              </div>
+            </div>
+            <div class="property-stats">
+              <div *ngIf="inv.unitNumber">
+                <span>{{ 'MAINTENANCE_INVOICES.UNIT' | translate }}</span>
+                <strong>{{ inv.unitNumber }}</strong>
+              </div>
+              <div>
+                <span>{{ 'MAINTENANCE_INVOICES.PERIOD' | translate }}</span>
+                <strong>{{ monthLabel(inv.periodMonth) }} {{ inv.periodYear }}</strong>
+              </div>
+              <div>
+                <span>{{ 'MAINTENANCE_INVOICES.AMOUNT' | translate }}</span>
+                <strong>{{ inv.amount | number:'1.2-2' }} {{ 'COMMON.OMR' | translate }}</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="info-row amount-row">
+            <mat-icon>payments</mat-icon>
+            <span class="rent-amount">{{ inv.amount | number:'1.2-2' }} {{ 'COMMON.OMR' | translate }}</span>
+          </div>
+          <div class="info-row" *ngIf="inv.description">
+            <mat-icon>description</mat-icon>
+            <span class="reason-text">{{ inv.description }}</span>
+          </div>
+          <div class="info-row" *ngIf="inv.notes && inv.status !== 'PENDING'">
+            <mat-icon>notes</mat-icon>
+            <span class="reason-text">{{ displayNote(inv.notes) }}</span>
+          </div>
+          <div class="info-row">
+            <mat-icon>schedule</mat-icon>
+            <span>{{ inv.createdAt | date:'dd/MM/yyyy' }}</span>
           </div>
         </div>
-        <span class="status-badge" [ngClass]="statusClass(inv.status)">
-          {{ ('RECEIPT_STATUS.' + inv.status) | translate }}
-        </span>
-      </div>
 
-      <div class="card-body">
-        <div class="info-row">
-          <mat-icon>calendar_month</mat-icon>
-          <span>{{ monthLabel(inv.periodMonth) }} {{ inv.periodYear }}</span>
+        <div class="card-actions">
+          <button mat-stroked-button *ngIf="inv.fileUrl" (click)="viewFile(inv.fileUrl)">
+            <mat-icon>open_in_new</mat-icon>
+            {{ 'COMMON.VIEW_FILE' | translate }}
+          </button>
+          <button mat-flat-button class="activate-btn" *ngIf="inv.status === 'PENDING' && permissions.can('maintenance', 'approve')" (click)="openReview(inv)">
+            <mat-icon>rate_review</mat-icon>
+            {{ 'ACCOUNTANT_PORTAL.REVIEW' | translate }}
+          </button>
         </div>
-        <div class="info-row amount-row">
-          <mat-icon>payments</mat-icon>
-          <span class="amount">{{ inv.amount | number:'1.2-2' }} {{ 'COMMON.OMR' | translate }}</span>
-        </div>
-        <div class="info-row" *ngIf="inv.propertyName">
-          <mat-icon>apartment</mat-icon>
-          <span>{{ inv.propertyName }}</span>
-        </div>
-        <div class="info-row" *ngIf="inv.unitNumber">
-          <mat-icon>meeting_room</mat-icon>
-          <span>{{ 'INVOICE_PORTAL.UNIT' | translate }}: {{ inv.unitNumber }}</span>
-        </div>
-        <div class="info-row" *ngIf="inv.description">
-          <mat-icon>description</mat-icon>
-          <span>{{ inv.description }}</span>
-        </div>
-        <div class="info-row" *ngIf="inv.notes && inv.status !== 'PENDING'">
-          <mat-icon>notes</mat-icon>
-          <span>{{ inv.notes }}</span>
-        </div>
-        <div class="info-row">
-          <mat-icon>schedule</mat-icon>
-          <span>{{ inv.createdAt | date:'dd/MM/yyyy' }}</span>
-        </div>
-      </div>
-
-      <div class="card-actions">
-        <button mat-stroked-button *ngIf="inv.fileUrl" (click)="viewFile(inv.fileUrl)">
-          <mat-icon>open_in_new</mat-icon>
-          {{ 'COMMON.VIEW_FILE' | translate }}
-        </button>
-        <button mat-flat-button color="primary" *ngIf="inv.status === 'PENDING'" (click)="openReview(inv)">
-          <mat-icon>rate_review</mat-icon>
-          {{ 'ACCOUNTANT_PORTAL.REVIEW' | translate }}
-        </button>
       </div>
     </div>
-  </div>
+    <app-table-pager *ngIf="invoices.length > pageSize" [length]="invoices.length" [pageSize]="pageSize" [pageIndex]="invoicePage" (pageIndexChange)="invoicePage = $event"></app-table-pager>
+  </ng-container>
+
+  <ng-container *ngIf="!loading && activeTab === 'contract'">
+    <div *ngIf="contractInvoices.length === 0" class="empty-state">
+      <mat-icon>inbox</mat-icon>
+      <p>{{ 'MAINTENANCE_INVOICES.NO_CONTRACT_PAYMENTS' | translate }}</p>
+    </div>
+
+    <div *ngIf="contractInvoices.length > 0" class="contracts-grid">
+      <div class="contract-card" *ngFor="let inv of pagedContractInvoices">
+        <div class="card-header">
+          <div class="contract-info">
+            <mat-icon class="contract-icon">handshake</mat-icon>
+            <div>
+              <div class="contract-number">{{ inv.invoiceNumber }}</div>
+              <div class="tenant-name">{{ companyName(inv) }}</div>
+            </div>
+          </div>
+          <span class="status-badge" [ngClass]="contractInvoiceStatusClass(inv.status)">
+            {{ contractInvoiceStatusLabel(inv.status) }}
+          </span>
+        </div>
+
+        <div class="card-body">
+          <div class="property-summary">
+            <div class="property-title">
+              <mat-icon>receipt_long</mat-icon>
+              <div>
+                <span>{{ 'MAINTENANCE_INVOICES.INVOICE_DETAILS' | translate }}</span>
+                <strong>{{ invoiceDescription(inv) }}</strong>
+              </div>
+            </div>
+            <div class="property-stats">
+              <div>
+                <span>{{ 'MAINTENANCE_INVOICES.PERIOD' | translate }}</span>
+                <strong>{{ monthLabel(inv.invoiceMonth) }} {{ inv.invoiceYear }}</strong>
+              </div>
+              <div>
+                <span>{{ 'MAINTENANCE_INVOICES.CONTRACT' | translate }}</span>
+                <strong>{{ inv.contractNumber || '-' }}</strong>
+              </div>
+              <div>
+                <span>{{ 'MAINTENANCE_INVOICES.AMOUNT' | translate }}</span>
+                <strong>{{ inv.amount | number:'1.2-2' }} {{ 'COMMON.OMR' | translate }}</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="info-row amount-row">
+            <mat-icon>payments</mat-icon>
+            <span class="rent-amount">{{ inv.amount | number:'1.2-2' }} {{ 'COMMON.OMR' | translate }}</span>
+          </div>
+          <div class="info-row" *ngIf="hasPaymentPlan(inv)">
+            <mat-icon>account_balance_wallet</mat-icon>
+            <span>
+              {{ 'MAINTENANCE_INVOICE_PAYMENT.PAID' | translate }}:
+              {{ (inv.paidAmount || 0) | number:'1.2-2' }}
+              /
+              {{ inv.amount | number:'1.2-2' }} {{ 'COMMON.OMR' | translate }}
+            </span>
+          </div>
+          <div class="info-row" *ngIf="inv.dueDate">
+            <mat-icon>event</mat-icon>
+            <span>{{ 'MAINTENANCE_INVOICES.DUE_DATE' | translate }} {{ inv.dueDate | date:'dd/MM/yyyy' }}</span>
+          </div>
+          <div class="info-row" *ngIf="inv.paidDate">
+            <mat-icon>check_circle</mat-icon>
+            <span>{{ 'MAINTENANCE_INVOICES.PAID_ON' | translate }} {{ inv.paidDate | date:'dd/MM/yyyy' }}</span>
+          </div>
+          <div class="info-row" *ngIf="inv.notes">
+            <mat-icon>notes</mat-icon>
+            <span class="reason-text">{{ displayNote(inv.notes) }}</span>
+          </div>
+        </div>
+
+        <div class="payment-schedule" *ngIf="hasPaymentPlan(inv)">
+          <div class="payment-row" *ngFor="let payment of inv.payments">
+            <span>#{{ payment.installmentNo }}</span>
+            <strong>{{ payment.amount | number:'1.2-2' }} {{ 'COMMON.OMR' | translate }}</strong>
+            <span>{{ payment.dueDate | date:'dd/MM/yyyy' }}</span>
+            <span class="status-badge" [ngClass]="payment.status === 'PAID' ? 'approved' : 'pending'">
+              {{ ('MAINTENANCE_INVOICE_PAYMENT.STATUS_' + payment.status) | translate }}
+            </span>
+            <button
+              mat-stroked-button
+              *ngIf="payment.status === 'PENDING'"
+              (click)="payContractInstallment(inv, payment.id)">
+              <mat-icon>receipt_long</mat-icon>
+              {{ 'MAINTENANCE_INVOICE_PAYMENT.PAY_INSTALLMENT' | translate }}
+            </button>
+          </div>
+        </div>
+
+        <div class="card-actions">
+          <a mat-stroked-button *ngIf="inv.receiptUrl" [href]="inv.receiptUrl" target="_blank" rel="noopener">
+            <mat-icon>attach_file</mat-icon>
+            {{ 'MAINTENANCE_INVOICES.VIEW_RECEIPT' | translate }}
+          </a>
+          <button mat-flat-button class="activate-btn" *ngIf="canPayContractInvoice(inv) && !hasPaymentPlan(inv)" (click)="openContractInvoicePayment(inv)">
+            <mat-icon>paid</mat-icon>
+            {{ 'MAINTENANCE_INVOICE_PAYMENT.OPEN_PAYMENT' | translate }}
+          </button>
+        </div>
+      </div>
+    </div>
+    <app-table-pager *ngIf="contractInvoices.length > pageSize" [length]="contractInvoices.length" [pageSize]="pageSize" [pageIndex]="contractPage" (pageIndexChange)="contractPage = $event"></app-table-pager>
+  </ng-container>
 </div>

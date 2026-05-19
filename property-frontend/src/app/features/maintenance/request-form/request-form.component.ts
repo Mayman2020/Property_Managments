@@ -13,7 +13,7 @@ import { TranslateModule } from '@ngx-translate/core';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { UploadZoneComponent, UploadedFile } from '../../../shared/components/upload-zone/upload-zone.component';
-import { MaintenanceService, RequestForm } from '../../../core/services/maintenance.service';
+import { MaintenanceService, RequestForm, PropertyRoutingInfo } from '../../../core/services/maintenance.service';
 import { TenantPortalService } from '../../../core/services/tenant-portal.service';
 import { SnackService } from '../../../core/services/snack.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -50,6 +50,8 @@ export class RequestFormComponent implements OnInit, OnDestroy {
   selectedCategoryIds = new Set<number>();
   tenantContract: LeaseContract | null = null;
   tenantContracts: LeaseContract[] = [];
+  routingInfo: PropertyRoutingInfo | null = null;
+  routingTarget: 'OFFICER' | 'COMPANY' | null = null;
 
   private readonly destroy$ = new Subject<void>();
 
@@ -92,9 +94,26 @@ export class RequestFormComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe((propertyId: number | null) => {
         this.units = [];
+        this.routingInfo = null;
+        this.routingTarget = null;
         this.form.patchValue({ unitId: null }, { emitEvent: false });
         if (propertyId) {
           this.loadUnitsByProperty(propertyId);
+          if (!this.auth.isTenant()) {
+            this.maintSvc.getRoutingInfo(propertyId).subscribe({
+              next: (res) => {
+                this.routingInfo = res.data ?? null;
+                if (this.routingInfo?.hasOfficer && !this.routingInfo.hasCompany) {
+                  this.routingTarget = 'OFFICER';
+                } else if (this.routingInfo?.hasCompany && !this.routingInfo.hasOfficer) {
+                  this.routingTarget = 'COMPANY';
+                } else {
+                  this.routingTarget = null;
+                }
+              },
+              error: () => { this.routingInfo = null; }
+            });
+          }
         }
       });
   }
@@ -116,7 +135,10 @@ export class RequestFormComponent implements OnInit, OnDestroy {
     if (this.form.invalid || this.submitting || !this.canSubmitRequest()) return;
     this.submitting = true;
 
-    const payload: RequestForm = this.form.getRawValue();
+    const payload: RequestForm = {
+      ...this.form.getRawValue(),
+      ...(this.routingTarget ? { routingTarget: this.routingTarget } : {})
+    };
 
     this.maintSvc.create(payload).pipe(
       switchMap((res) => {
@@ -150,6 +172,17 @@ export class RequestFormComponent implements OnInit, OnDestroy {
         this.snack.error(err.message || this.i18n.instant('REQUEST_FORM.SEND_ERROR'));
       }
     });
+  }
+
+  get showRoutingChoice(): boolean {
+    return !this.auth.isTenant() && !!this.routingInfo?.hasOfficer && !!this.routingInfo.hasCompany;
+  }
+
+  routingCompanyName(): string {
+    if (!this.routingInfo) return '';
+    return this.i18n.currentLang === 'ar'
+      ? (this.routingInfo.companyNameAr || this.routingInfo.companyNameEn || '')
+      : (this.routingInfo.companyNameEn || this.routingInfo.companyNameAr || '');
   }
 
   goBack(): void { this.location.back(); }

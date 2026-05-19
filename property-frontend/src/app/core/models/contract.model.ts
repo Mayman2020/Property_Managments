@@ -50,8 +50,15 @@ export interface LeaseContract {
   terminationHasDamages?: boolean | null;
   terminationDamagesAmount?: number | null;
   terminationDamagesTenantPaid?: boolean | null;
+  terminationDamagesReceiptUrl?: string | null;
+  terminationDamageNotes?: string | null;
   terminatedBy?: number | null;
   terminatedByName?: string | null;
+  noRenewalIntentAt?: string | null;
+  noRenewalIntentBy?: number | null;
+  noRenewalIntentByName?: string | null;
+  depositIncomeRecorded?: boolean | null;
+  depositExpenseRecorded?: boolean | null;
   /** Staff user who submitted the termination request (when status = PENDING_TERMINATION_APPROVAL). */
   terminationRequestedBy?: number | null;
   terminationRequestedByName?: string | null;
@@ -86,6 +93,8 @@ export interface LeaseContract {
   ownerChangeLog?: string;
   /** Staff audit log (timestamp | user | action | detail). */
   staffChangeLog?: string;
+  escalationType?: string;
+  escalationRate?: number;
   daysUntilExpiry: number;
   createdAt: string;
   updatedAt: string;
@@ -111,6 +120,7 @@ export interface ContractSummary {
   currency: string;
   status: ContractStatus;
   daysUntilExpiry: number;
+  ownerApprovalStatus?: string | null;
 }
 
 export interface RentPaymentSchedule {
@@ -144,6 +154,9 @@ export interface RentPaymentSchedule {
   rejectionReason?: string;
   proofUrls?: string[];
   proofPaymentDate?: string;
+  propertyId?: number;
+  propertyNameAr?: string;
+  propertyNameEn?: string;
 }
 
 export interface RentPayment {
@@ -248,6 +261,8 @@ export interface CreateContractRequest {
   staffModificationReason?: string;
   employeeDiscountPercent?: number;
   linkedEmployeeId?: number;
+  escalationType?: string;
+  escalationRate?: number | null;
 }
 
 export interface RecordPaymentRequest {

@@ -56,7 +56,14 @@
               <div class="user-cell">
                 <div class="user-avatar">{{ userInitials(user) }}</div>
                 <div class="user-info">
-                  <div class="user-name">{{ user.fullName }}</div>
+                  <div class="user-name-row">
+                    <span class="user-name">{{ user.fullName }}</span>
+                    <span class="company-badge"
+                      *ngIf="(user.role === 'MAINTENANCE_OFFICER_COMPANY' || user.role === 'MAINTENANCE_COMPANY') && user.maintenanceCompanyName">
+                      <span class="material-icons company-arrow">chevron_right</span>
+                      {{ user.maintenanceCompanyName }}
+                    </span>
+                  </div>
                   <div class="user-meta">
                     <span *ngIf="user.fullNameAr">{{ user.fullNameAr }}</span>
                     <span *ngIf="user.fullNameEn">{{ user.fullNameEn }}</span>

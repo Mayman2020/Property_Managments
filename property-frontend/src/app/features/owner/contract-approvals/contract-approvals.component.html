@@ -1,4 +1,4 @@
-<app-page-header
+﻿<app-page-header
   [title]="'OWNER_PORTAL.APPROVALS_TITLE' | translate"
   [subtitle]="'OWNER_PORTAL.APPROVALS_SUBTITLE' | translate"
   icon="approval">
@@ -18,7 +18,7 @@
   </div>
 
   <h3 class="section-heading" *ngIf="!loadingMaintenanceDrafts && maintenanceDrafts.length > 0">
-    {{ i18n.currentLang === 'ar' ? 'عقود الصيانة الجديدة بانتظار الموافقة' : 'Maintenance Contracts Awaiting Approval' }}
+    {{ ('INLINE_TEXT.MAINTENANCE_CONTRACTS_AWAITING_APPROVAL' | translate) }}
   </h3>
 
   <div *ngIf="loadingMaintenanceDrafts" class="loading-center">
@@ -26,7 +26,7 @@
   </div>
 
   <div *ngIf="!loadingMaintenanceDrafts && maintenanceDrafts.length > 0" class="contracts-grid">
-    <div class="contract-card" *ngFor="let c of maintenanceDrafts">
+    <div class="contract-card" *ngFor="let c of pagedMaintenanceDrafts">
       <div class="card-header">
         <div class="contract-info">
           <mat-icon class="contract-icon">engineering</mat-icon>
@@ -38,13 +38,32 @@
         <span class="draft-badge">{{ 'CONTRACTS.STATUS_DRAFT' | translate }}</span>
       </div>
       <div class="card-body">
-        <div class="info-row">
-          <mat-icon>apartment</mat-icon>
-          <span>#{{ c.propertyId }}</span>
+        <div class="property-summary">
+          <div class="property-title">
+            <mat-icon>apartment</mat-icon>
+            <div>
+              <span>{{ ('INLINE_TEXT.PROPERTY_DETAILS' | translate) }}</span>
+              <strong>{{ maintenancePropertyName(c) }}</strong>
+            </div>
+          </div>
+          <div class="property-stats">
+            <div>
+              <span>{{ ('INLINE_TEXT.PROPERTY_CODE' | translate) }}</span>
+              <strong>{{ maintenancePropertyCode(c) }}</strong>
+            </div>
+            <div>
+              <span>{{ ('INLINE_TEXT.VACANT' | translate) }}</span>
+              <strong>{{ c.propertyVacantUnits ?? 0 }}</strong>
+            </div>
+            <div>
+              <span>{{ ('INLINE_TEXT.NON_VACANT' | translate) }}</span>
+              <strong>{{ c.propertyNonVacantUnits ?? 0 }}</strong>
+            </div>
+          </div>
         </div>
         <div class="info-row">
           <mat-icon>date_range</mat-icon>
-          <span>{{ c.startDate | date:'dd/MM/yyyy' }} â€” {{ c.endDate | date:'dd/MM/yyyy' }}</span>
+          <span>{{ c.startDate | date:'dd/MM/yyyy' }} - {{ c.endDate | date:'dd/MM/yyyy' }}</span>
         </div>
         <div class="info-row" *ngIf="c.contractValue != null">
           <mat-icon>payments</mat-icon>
@@ -72,13 +91,14 @@
       </div>
     </div>
   </div>
+  <app-table-pager *ngIf="maintenanceDrafts.length > pageSize" [length]="maintenanceDrafts.length" [pageSize]="pageSize" [pageIndex]="maintenanceDraftsPage" (pageIndexChange)="maintenanceDraftsPage = $event"></app-table-pager>
 
   <h3 class="section-heading" *ngIf="!loading && contracts.length > 0">
     {{ 'OWNER_PORTAL.PENDING_DRAFTS_HEADING' | translate }}
   </h3>
 
   <div *ngIf="!loading && contracts.length > 0" class="contracts-grid">
-    <div class="contract-card" *ngFor="let c of contracts">
+    <div class="contract-card" *ngFor="let c of pagedContracts">
       <div class="card-header">
         <div class="contract-info">
           <mat-icon class="contract-icon">description</mat-icon>
@@ -102,11 +122,11 @@
         </div>
         <div class="info-row">
           <mat-icon>date_range</mat-icon>
-          <span>{{ c.startDate | date:'dd/MM/yyyy' }} — {{ c.endDate | date:'dd/MM/yyyy' }}</span>
+          <span>{{ c.startDate | date:'dd/MM/yyyy' }} - {{ c.endDate | date:'dd/MM/yyyy' }}</span>
         </div>
         <div class="info-row">
           <mat-icon>payments</mat-icon>
-          <span class="rent-amount">{{ c.monthlyRent | number:'1.2-2' }} {{ c.currency || 'OMR' }}</span>
+          <span class="rent-amount">{{ c.monthlyRent | number:'1.2-2' }} {{ c.currency || 'SAR' }}</span>
           <span class="badge badge-warn" *ngIf="c.rentDiscountReason">
             <mat-icon>local_offer</mat-icon>
             {{ discountLabel(c.rentDiscountReason) }}
@@ -119,7 +139,7 @@
         <!-- Security deposit -->
         <div class="info-row" *ngIf="c.securityDeposit">
           <mat-icon>security</mat-icon>
-          <span>{{ 'CONTRACTS.SECURITY_DEPOSIT' | translate }}: {{ c.securityDeposit | number:'1.2-2' }} {{ c.currency || 'OMR' }}</span>
+          <span>{{ 'CONTRACTS.SECURITY_DEPOSIT' | translate }}: {{ c.securityDeposit | number:'1.2-2' }} {{ c.currency || 'SAR' }}</span>
         </div>
       </div>
 
@@ -152,13 +172,14 @@
       </div>
     </div>
   </div>
+  <app-table-pager *ngIf="contracts.length > pageSize" [length]="contracts.length" [pageSize]="pageSize" [pageIndex]="contractsPage" (pageIndexChange)="contractsPage = $event"></app-table-pager>
 
   <h3 class="section-heading" *ngIf="!loadingMaintenanceTerminations && maintenancePendingTerminations.length > 0">
-    {{ i18n.currentLang === 'ar' ? 'طلبات إنهاء عقود الصيانة' : 'Maintenance Contract Termination Requests' }}
+    {{ ('INLINE_TEXT.MAINTENANCE_CONTRACT_TERMINATION_REQUESTS' | translate) }}
   </h3>
 
   <div *ngIf="!loadingMaintenanceTerminations && maintenancePendingTerminations.length > 0" class="contracts-grid">
-    <div class="contract-card pending-termination" *ngFor="let c of maintenancePendingTerminations">
+    <div class="contract-card pending-termination" *ngFor="let c of pagedMaintenanceTerminations">
       <div class="card-header">
         <div class="contract-info">
           <mat-icon class="contract-icon">cancel_schedule_send</mat-icon>
@@ -170,6 +191,29 @@
         <span class="badge badge-warn">{{ 'CONTRACTS.STATUS_PENDING_TERMINATION_APPROVAL' | translate }}</span>
       </div>
       <div class="card-body">
+        <div class="property-summary">
+          <div class="property-title">
+            <mat-icon>apartment</mat-icon>
+            <div>
+              <span>{{ ('INLINE_TEXT.PROPERTY_DETAILS' | translate) }}</span>
+              <strong>{{ maintenancePropertyName(c) }}</strong>
+            </div>
+          </div>
+          <div class="property-stats">
+            <div>
+              <span>{{ ('INLINE_TEXT.PROPERTY_CODE' | translate) }}</span>
+              <strong>{{ maintenancePropertyCode(c) }}</strong>
+            </div>
+            <div>
+              <span>{{ ('INLINE_TEXT.VACANT' | translate) }}</span>
+              <strong>{{ c.propertyVacantUnits ?? 0 }}</strong>
+            </div>
+            <div>
+              <span>{{ ('INLINE_TEXT.NON_VACANT' | translate) }}</span>
+              <strong>{{ c.propertyNonVacantUnits ?? 0 }}</strong>
+            </div>
+          </div>
+        </div>
         <div class="info-row">
           <mat-icon>event_busy</mat-icon>
           <span>{{ 'CONTRACTS.TERMINATION_DATE' | translate }}: {{ c.terminationProposedDate | date:'dd/MM/yyyy' }}</span>
@@ -195,6 +239,7 @@
       </div>
     </div>
   </div>
+  <app-table-pager *ngIf="maintenancePendingTerminations.length > pageSize" [length]="maintenancePendingTerminations.length" [pageSize]="pageSize" [pageIndex]="maintenanceTerminationsPage" (pageIndexChange)="maintenanceTerminationsPage = $event"></app-table-pager>
 
   <!-- Pending termination requests section -->
   <h3 class="section-heading"
@@ -207,7 +252,7 @@
   </div>
 
   <div *ngIf="!loadingTerminations && pendingTerminations.length > 0" class="contracts-grid">
-    <div class="contract-card pending-termination" *ngFor="let c of pendingTerminations">
+    <div class="contract-card pending-termination" *ngFor="let c of pagedTerminations">
       <div class="card-header">
         <div class="contract-info">
           <mat-icon class="contract-icon">cancel_schedule_send</mat-icon>
@@ -250,7 +295,7 @@
           <mat-icon>report</mat-icon>
           <span>
             {{ 'CONTRACTS.HANDOVER_DAMAGES_AMOUNT' | translate }}:
-            {{ c.terminationDamagesAmount | number:'1.2-2' }} {{ c.currency || 'OMR' }}
+            {{ c.terminationDamagesAmount | number:'1.2-2' }} {{ c.currency || 'SAR' }}
             ({{ (c.terminationDamagesTenantPaid ? 'CONTRACTS.RENEW_VAL_YES' : 'CONTRACTS.RENEW_VAL_NO') | translate }})
           </span>
         </div>
@@ -277,6 +322,7 @@
       </div>
     </div>
   </div>
+  <app-table-pager *ngIf="pendingTerminations.length > pageSize" [length]="pendingTerminations.length" [pageSize]="pageSize" [pageIndex]="terminationsPage" (pageIndexChange)="terminationsPage = $event"></app-table-pager>
 
   <h3 class="section-heading" *ngIf="!loadingRenewals && pendingRenewals.length > 0">
     {{ 'OWNER_PORTAL.RENEWALS.TITLE' | translate }}
@@ -287,7 +333,7 @@
   </div>
 
   <div *ngIf="!loadingRenewals && pendingRenewals.length > 0" class="contracts-grid">
-    <div class="contract-card pending-renewal" *ngFor="let c of pendingRenewals">
+    <div class="contract-card pending-renewal" *ngFor="let c of pagedRenewals">
       <div class="card-header">
         <div class="contract-info">
           <mat-icon class="contract-icon">autorenew</mat-icon>
@@ -322,7 +368,7 @@
         </div>
         <div class="info-row" *ngIf="c.renewalProposedRentAmount != null">
           <mat-icon>payments</mat-icon>
-          <span>{{ 'OWNER_PORTAL.RENEWALS.PROPOSED_RENT' | translate }}: {{ c.renewalProposedRentAmount | number:'1.2-2' }} {{ c.currency || 'OMR' }}</span>
+          <span>{{ 'OWNER_PORTAL.RENEWALS.PROPOSED_RENT' | translate }}: {{ c.renewalProposedRentAmount | number:'1.2-2' }} {{ c.currency || 'SAR' }}</span>
         </div>
         <div class="info-row" *ngIf="c.renewalRequestedNote">
           <mat-icon>description</mat-icon>
@@ -351,13 +397,14 @@
       </div>
     </div>
   </div>
+  <app-table-pager *ngIf="pendingRenewals.length > pageSize" [length]="pendingRenewals.length" [pageSize]="pageSize" [pageIndex]="renewalsPage" (pageIndexChange)="renewalsPage = $event"></app-table-pager>
 
   <h3 class="section-heading" *ngIf="!loadingMaintenanceRenewals && maintenancePendingRenewals.length > 0">
-    {{ i18n.currentLang === 'ar' ? 'طلبات تجديد عقود الصيانة' : 'Maintenance Contract Renewal Requests' }}
+    {{ ('INLINE_TEXT.MAINTENANCE_CONTRACT_RENEWAL_REQUESTS' | translate) }}
   </h3>
 
   <div *ngIf="!loadingMaintenanceRenewals && maintenancePendingRenewals.length > 0" class="contracts-grid">
-    <div class="contract-card pending-renewal" *ngFor="let c of maintenancePendingRenewals">
+    <div class="contract-card pending-renewal" *ngFor="let c of pagedMaintenanceRenewals">
       <div class="card-header">
         <div class="contract-info">
           <mat-icon class="contract-icon">autorenew</mat-icon>
@@ -369,6 +416,29 @@
         <span class="badge badge-warn">{{ 'CONTRACTS.STATUS_PENDING_RENEWAL_APPROVAL' | translate }}</span>
       </div>
       <div class="card-body">
+        <div class="property-summary">
+          <div class="property-title">
+            <mat-icon>apartment</mat-icon>
+            <div>
+              <span>{{ ('INLINE_TEXT.PROPERTY_DETAILS' | translate) }}</span>
+              <strong>{{ maintenancePropertyName(c) }}</strong>
+            </div>
+          </div>
+          <div class="property-stats">
+            <div>
+              <span>{{ ('INLINE_TEXT.PROPERTY_CODE' | translate) }}</span>
+              <strong>{{ maintenancePropertyCode(c) }}</strong>
+            </div>
+            <div>
+              <span>{{ ('INLINE_TEXT.VACANT' | translate) }}</span>
+              <strong>{{ c.propertyVacantUnits ?? 0 }}</strong>
+            </div>
+            <div>
+              <span>{{ ('INLINE_TEXT.NON_VACANT' | translate) }}</span>
+              <strong>{{ c.propertyNonVacantUnits ?? 0 }}</strong>
+            </div>
+          </div>
+        </div>
         <div class="info-row" *ngIf="c.renewalProposedStartDate">
           <mat-icon>event_available</mat-icon>
           <span>{{ 'OWNER_PORTAL.RENEWALS.PROPOSED_START_DATE' | translate }}: {{ c.renewalProposedStartDate | date:'dd/MM/yyyy' }}</span>
@@ -402,5 +472,8 @@
       </div>
     </div>
   </div>
+  <app-table-pager *ngIf="maintenancePendingRenewals.length > pageSize" [length]="maintenancePendingRenewals.length" [pageSize]="pageSize" [pageIndex]="maintenanceRenewalsPage" (pageIndexChange)="maintenanceRenewalsPage = $event"></app-table-pager>
 
 </div>
+
+

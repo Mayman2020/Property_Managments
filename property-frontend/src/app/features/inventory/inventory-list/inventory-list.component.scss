@@ -24,6 +24,25 @@
   flex: 0 1 300px;
 }
 
+.finance-filter-strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--line-2, #e4d8c8);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+
+  label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+}
+
 .source-table tbody tr:hover {
   background: rgba(14, 31, 51, 0.03);
 }

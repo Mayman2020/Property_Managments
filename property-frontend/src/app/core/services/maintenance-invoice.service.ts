@@ -11,6 +11,8 @@ export interface MaintenanceInvoice {
   companyName?: string;
   propertyId?: number;
   propertyName?: string;
+  propertyNameAr?: string;
+  propertyNameEn?: string;
   unitId?: number;
   unitNumber?: string;
   periodMonth: number;
@@ -38,7 +40,21 @@ export interface SubmitInvoicePayload {
 export interface CompanyProperty {
   id: number;
   propertyName: string;
+  propertyNameAr?: string;
+  propertyNameEn?: string;
   propertyCode?: string;
+}
+
+export interface MaintenanceInvoiceFilterOption {
+  id: number;
+  name: string | null;
+  nameAr: string | null;
+  nameEn: string | null;
+}
+
+export interface MaintenanceInvoiceFilterOptions {
+  properties: MaintenanceInvoiceFilterOption[];
+  companies: MaintenanceInvoiceFilterOption[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -51,10 +67,11 @@ export class MaintenanceInvoiceService {
   }
 
   // Contractor company officer — view own invoices
-  getMyInvoices(year?: number, month?: number): Observable<ApiResponse<MaintenanceInvoice[]>> {
+  getMyInvoices(year?: number, month?: number, propertyId?: number | null): Observable<ApiResponse<MaintenanceInvoice[]>> {
     const params: Record<string, string> = {};
     if (year != null) params['year'] = String(year);
     if (month != null) params['month'] = String(month);
+    if (propertyId != null) params['propertyId'] = String(propertyId);
     return this.api.get(AppConstants.API.MAINTENANCE_INVOICES_MY, params);
   }
 
@@ -64,11 +81,20 @@ export class MaintenanceInvoiceService {
   }
 
   // Accountant — view all maintenance invoices
-  getAllInvoices(year?: number, month?: number): Observable<ApiResponse<MaintenanceInvoice[]>> {
+  getAllInvoices(year?: number, month?: number, propertyId?: number | null, companyId?: number | null): Observable<ApiResponse<MaintenanceInvoice[]>> {
     const params: Record<string, string> = {};
     if (year != null) params['year'] = String(year);
     if (month != null) params['month'] = String(month);
+    if (propertyId != null) params['propertyId'] = String(propertyId);
+    if (companyId != null) params['companyId'] = String(companyId);
     return this.api.get(AppConstants.API.ACCOUNTANT_PORTAL_MAINTENANCE_INVOICES, params);
+  }
+
+  // Accountant — get filter options (properties with active contracts, and companies for a property)
+  getFilterOptions(propertyId?: number | null): Observable<ApiResponse<MaintenanceInvoiceFilterOptions>> {
+    const params: Record<string, string> = {};
+    if (propertyId != null) params['propertyId'] = String(propertyId);
+    return this.api.get(AppConstants.API.ACCOUNTANT_PORTAL_MAINTENANCE_INVOICE_FILTER_OPTIONS, params);
   }
 
   // Accountant — review invoice

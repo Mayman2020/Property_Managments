@@ -41,6 +41,9 @@ export interface Property {
   coverImageUrls?: string[];
   ownerDocumentFiles?: string[];
   isActive: boolean;
+  legalEntityId?: number;
+  legalEntityNameAr?: string;
+  legalEntityNameEn?: string;
   createdAt: string;
   updatedAt?: string;
   createdBy?: number;
@@ -67,6 +70,7 @@ export interface PropertyForm {
   ownerDocumentFiles: string[];
   maintenanceProviderType?: string;
   maintenanceProviderIds?: number[];
+  legalEntityId?: number;
 }
 
 @Injectable({ providedIn: 'root' })

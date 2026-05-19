@@ -16,8 +16,10 @@ import { forkJoin, of } from 'rxjs';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
 import { ExportColumn, TableExportToolbarComponent } from '../../../shared/components/table-export-toolbar/table-export-toolbar.component';
+import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { LookupItem, LookupService, LookupType } from '../../../core/services/lookup.service';
+import { PermissionService } from '../../../core/services/permission.service';
 import { SnackService } from '../../../core/services/snack.service';
 import { DeleteConfirmService } from '../../../core/services/delete-confirm.service';
 import { LookupDialogComponent, LookupDialogData } from '../lookup-dialog/lookup-dialog.component';
@@ -53,7 +55,8 @@ interface ClassificationList {
     MatTooltipModule,
     PageHeaderComponent,
     TablePagerComponent,
-    TableExportToolbarComponent
+    TableExportToolbarComponent,
+    HasPermissionDirective
   ],
   templateUrl: './lookup-management.component.html',
   styleUrl: './lookup-management.component.scss'
@@ -105,7 +108,8 @@ export class LookupManagementComponent implements OnInit {
     private readonly lookups: LookupService,
     private readonly snack: SnackService,
     private readonly deleteConfirm: DeleteConfirmService,
-    readonly i18n: I18nService
+    readonly i18n: I18nService,
+    readonly permissions: PermissionService
   ) {}
 
   ngOnInit(): void {

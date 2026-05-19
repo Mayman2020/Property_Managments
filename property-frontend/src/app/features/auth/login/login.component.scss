@@ -50,11 +50,8 @@
   border-radius: 8px;
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, var(--brass-400), var(--brass-600));
-  color: var(--navy-900);
-  font-family: var(--font-display);
-  font-size: 26px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  background: #e8622a;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .hero-brand-name {

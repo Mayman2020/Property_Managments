@@ -20,7 +20,7 @@ const STORAGE_KEY = 'pm_lang';
 @Injectable({ providedIn: 'root' })
 export class I18nService {
   readonly languages: LanguageOption[] = [
-    { code: 'ar', label: 'Arabic (Oman)', nativeLabel: 'العربية (سلطنة عُمان)', dir: 'rtl', flagUrl: 'assets/flags/om.svg' },
+    { code: 'ar', label: 'Arabic (Saudi Arabia)', nativeLabel: 'العربية (السعودية)', dir: 'rtl', flagUrl: 'assets/flags/sa.svg' },
     { code: 'en', label: 'English', nativeLabel: 'English', dir: 'ltr', flagUrl: 'assets/flags/gb.svg' }
   ];
 

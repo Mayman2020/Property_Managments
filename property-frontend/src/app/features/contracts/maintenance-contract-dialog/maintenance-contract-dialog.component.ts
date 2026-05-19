@@ -1,4 +1,4 @@
-import { Component, Inject, OnDestroy, OnInit, Optional } from '@angular/core';
+﻿import { Component, Inject, OnDestroy, OnInit, Optional } from '@angular/core';
 import { NgIf, NgFor, DecimalPipe } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -15,6 +15,7 @@ import { forkJoin, of, Subscription } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { UploadZoneComponent } from '../../../shared/components/upload-zone/upload-zone.component';
 import { ContractorCompanyService, ContractorCompany } from '../../../core/services/contractor-company.service';
 import { MaintenanceContractService, MaintenanceContractResponse } from '../../../core/services/maintenance-contract.service';
 import { PropertyService, Property } from '../../../core/services/property.service';
@@ -38,7 +39,7 @@ export interface MaintenanceContractDialogData {
     MatButtonModule, MatIconModule, MatInputModule, MatSelectModule,
     MatDatepickerModule, MatNativeDateModule, MatFormFieldModule,
     MatProgressSpinnerModule, MatDialogModule,
-    TranslateModule, PageHeaderComponent
+    TranslateModule, PageHeaderComponent, UploadZoneComponent
   ],
   templateUrl: './maintenance-contract-dialog.component.html',
   styleUrl: './maintenance-contract-dialog.component.scss'
@@ -52,6 +53,7 @@ export class MaintenanceContractDialogComponent implements OnInit, OnDestroy {
   properties: Property[] = [];
   contractorCompanies: ContractorCompany[] = [];
   currencies: LookupItem[] = [];
+  attachmentUrls: string[] = [];
 
   private allProps: Property[] = [];
   private allContracts: MaintenanceContractResponse[] = [];
@@ -82,7 +84,7 @@ export class MaintenanceContractDialogComponent implements OnInit, OnDestroy {
       startDate: [null, Validators.required],
       endDate: [null, Validators.required],
       contractValue: [null, [Validators.required, Validators.min(0)]],
-      currency: ['OMR', Validators.required],
+      currency: ['SAR', Validators.required],
       notes: ['']
     });
   }
@@ -105,14 +107,14 @@ export class MaintenanceContractDialogComponent implements OnInit, OnDestroy {
       activeContracts: this.maintenanceContractSvc.listAll().pipe(
         catchError(() => of({ data: [] }))
       ),
-      currencies: this.lookupCache.items('CURRENCY').length > 0
-        ? of({ data: this.lookupCache.items('CURRENCY') })
-        : of({ data: [] })
+      currencies: this.lookupCache.preload('CURRENCY').pipe(
+        catchError(() => of([] as LookupItem[]))
+      )
     }).subscribe(({ properties, companies, activeContracts, currencies }) => {
       this.allProps = properties.data?.content ?? [];
       this.allContracts = activeContracts.data ?? [];
       this.contractorCompanies = companies.data ?? [];
-      this.currencies = currencies.data ?? [];
+      this.currencies = Array.isArray(currencies) ? currencies : [];
 
       if (this.mode === 'create') {
         const initialCompanyId = this.data?.contractorCompanyId ?? null;
@@ -221,9 +223,16 @@ export class MaintenanceContractDialogComponent implements OnInit, OnDestroy {
             startDate: contract.startDate ? new Date(contract.startDate) : null,
             endDate: contract.endDate ? new Date(contract.endDate) : null,
             contractValue: contract.contractValue,
-            currency: contract.currency || 'OMR',
+            currency: contract.currency || 'SAR',
             notes: contract.notes || ''
           });
+          if (contract.attachmentUrls) {
+            try {
+              this.attachmentUrls = JSON.parse(contract.attachmentUrls);
+            } catch {
+              this.attachmentUrls = [];
+            }
+          }
         }
         this.loading = false;
       },
@@ -273,7 +282,8 @@ export class MaintenanceContractDialogComponent implements OnInit, OnDestroy {
       endDate: formValue.endDate ? this.formatDate(formValue.endDate) : null,
       contractValue: formValue.contractValue,
       currency: formValue.currency,
-      notes: formValue.notes || null
+      notes: formValue.notes || null,
+      attachmentUrls: this.attachmentUrls.length > 0 ? JSON.stringify(this.attachmentUrls) : null
     };
 
     const request$ = this.data?.contractId && this.mode === 'edit'
@@ -302,3 +312,4 @@ export class MaintenanceContractDialogComponent implements OnInit, OnDestroy {
     return `${year}-${month}-${day}`;
   }
 }
+

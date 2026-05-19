@@ -41,6 +41,25 @@ function parseYmd(s: string | undefined | null): Date | null {
   return new Date(y, m - 1, d);
 }
 
+function parseFlexibleDate(value: string | undefined | null): Date | null {
+  const raw = (value ?? '').trim();
+  const match = raw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (!match) return null;
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const year = Number(match[3]);
+  if (!day || !month || month < 1 || month > 12) return null;
+  const parsed = new Date(year, month - 1, day);
+  if (
+    parsed.getFullYear() !== year ||
+    parsed.getMonth() !== month - 1 ||
+    parsed.getDate() !== day
+  ) {
+    return null;
+  }
+  return parsed;
+}
+
 @Component({
   selector: 'app-contractor-company-dialog',
   standalone: true,
@@ -99,13 +118,13 @@ function parseYmd(s: string | undefined | null): Date | null {
 
         <mat-form-field appearance="outline">
           <mat-label>{{ 'CONTRACTORS.CONTRACT_START' | translate }}</mat-label>
-          <input matInput [matDatepicker]="p1" formControlName="contractStart" />
+          <input matInput [matDatepicker]="p1" formControlName="contractStart" (blur)="normalizeDateInput('contractStart', $event)" />
           <mat-datepicker-toggle matIconSuffix [for]="p1"></mat-datepicker-toggle>
           <mat-datepicker #p1></mat-datepicker>
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>{{ 'CONTRACTORS.CONTRACT_END' | translate }}</mat-label>
-          <input matInput [matDatepicker]="p2" formControlName="contractEnd" />
+          <input matInput [matDatepicker]="p2" formControlName="contractEnd" (blur)="normalizeDateInput('contractEnd', $event)" />
           <mat-datepicker-toggle matIconSuffix [for]="p2"></mat-datepicker-toggle>
           <mat-datepicker #p2></mat-datepicker>
         </mat-form-field>
@@ -118,7 +137,6 @@ function parseYmd(s: string | undefined | null): Date | null {
         <mat-form-field appearance="outline" class="full" *ngIf="!data.company">
           <mat-label>{{ 'CONTRACTORS.SELECT_PROPERTY' | translate }}</mat-label>
           <mat-select formControlName="propertyId">
-            <mat-option [value]="null">— {{ 'CONTRACTORS.NONE' | translate }} —</mat-option>
             <mat-option *ngFor="let p of properties" [value]="p.id">
               {{ propertyLabel(p) }}
             </mat-option>
@@ -223,7 +241,7 @@ export class ContractorCompanyDialogComponent implements OnInit {
     nameAr: ['', [Validators.required, Validators.maxLength(200)]],
     nameEn: ['', [Validators.required, Validators.maxLength(200)]],
     phone: ['', [Validators.maxLength(40)]],
-    email: ['', [Validators.maxLength(150)]],
+    email: ['', [Validators.email, Validators.maxLength(150)]],
     notes: [''],
     contractStart: [null as Date | null, [Validators.required]],
     contractEnd: [null as Date | null, [Validators.required]],
@@ -259,6 +277,12 @@ export class ContractorCompanyDialogComponent implements OnInit {
     if (data.readOnly) {
       this.form.disable();
     }
+    if (!data.company) {
+      this.form.get('email')?.addValidators(Validators.required);
+      this.form.get('email')?.updateValueAndValidity({ emitEvent: false });
+      this.form.get('propertyId')?.addValidators(Validators.required);
+      this.form.get('propertyId')?.updateValueAndValidity({ emitEvent: false });
+    }
   }
 
   ngOnInit(): void {
@@ -271,6 +295,16 @@ export class ContractorCompanyDialogComponent implements OnInit {
 
   propertyLabel(p: Property): string {
     return (this.i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName)) || '-';
+  }
+
+  normalizeDateInput(controlName: 'contractStart' | 'contractEnd', event: Event): void {
+    const input = event.target as HTMLInputElement | null;
+    const parsed = parseFlexibleDate(input?.value);
+    if (parsed) {
+      this.form.get(controlName)?.setValue(parsed);
+      this.form.get(controlName)?.markAsDirty();
+      this.form.get(controlName)?.updateValueAndValidity();
+    }
   }
 
   save(): void {
@@ -304,7 +338,8 @@ export class ContractorCompanyDialogComponent implements OnInit {
       contractEnd: end,
       attachmentFiles: [...this.attachmentUrls],
       profileImageUrl: (this.profileImageUrl ?? '').trim(),
-      civilIdImageUrl: (this.civilIdImageUrl ?? '').trim()
+      civilIdImageUrl: (this.civilIdImageUrl ?? '').trim(),
+      portalPropertyId: v.propertyId ?? null
     };
 
     const req$ = this.data.company ? this.svc.update(this.data.company.id, body) : this.svc.create(body);

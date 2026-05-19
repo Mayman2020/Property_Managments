@@ -153,7 +153,7 @@ export class UnitManagementComponent implements OnInit {
     const filters: FilterSpec[] = [
       { key: 'filterUnitNumber', label: 'UNITS.UNIT_NUMBER', type: 'text' }
     ];
-    if (this.properties.length > 1) {
+    if (this.properties.length > 0) {
       filters.push({
         key: 'selectedPropertyId',
         label: 'REQUEST_FORM.PROPERTY',
@@ -192,7 +192,7 @@ export class UnitManagementComponent implements OnInit {
           { value: 'true',  label: this.i18n.instant('COMMON.ACTIVE') },
           { value: 'false', label: this.i18n.instant('COMMON.INACTIVE') }
         ]
-      }
+      },
     );
     this.unitFilters = filters;
   }
@@ -214,7 +214,7 @@ export class UnitManagementComponent implements OnInit {
   clearFiltersFromBar(): void {
     this.filterBar?.clear();
     this.filterUnitNumber = '';
-    this.selectedPropertyId = this.properties.length === 1 ? this.properties[0].id : null;
+    this.selectedPropertyId = null;
     this.filterFloor = null;
     this.filterUnitType = null;
     this.filterStatus = null;
@@ -226,7 +226,7 @@ export class UnitManagementComponent implements OnInit {
   hasFiltersBar(): boolean {
     return !!(
       this.filterUnitNumber ||
-      (this.properties.length > 1 && this.selectedPropertyId) ||
+      (this.properties.length > 0 && this.selectedPropertyId) ||
       this.filterFloor !== null ||
       this.filterUnitType ||
       this.filterStatus ||
@@ -486,9 +486,6 @@ export class UnitManagementComponent implements OnInit {
 
         if (!this.properties.some((property) => property.id === this.selectedPropertyId)) {
           this.selectedPropertyId = null;
-        }
-        if (this.properties.length === 1) {
-          this.selectedPropertyId = this.properties[0].id;
         }
 
         this.loadAllUnits();

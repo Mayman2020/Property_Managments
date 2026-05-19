@@ -1,4 +1,4 @@
-<!-- Page mode (standalone route) -->
+﻿<!-- Page mode (standalone route) -->
 <div class="app-page contract-form-page" *ngIf="!isDialog">
   <app-page-header
     [eyebrow]="'NAV_SECTION.CONTRACTS' | translate"
@@ -250,7 +250,7 @@
               </div>
               <div class="detail-item">
                 <span class="label">{{ 'UNIT_DETAILS.ORIGINAL_RENT' | translate }}</span>
-                <span class="value">{{ selectedUnit.rentAmount }} {{ selectedUnit.currency || 'OMR' }}</span>
+                <span class="value">{{ selectedUnit.rentAmount }} {{ selectedUnit.currency || 'SAR' }}</span>
               </div>
               <div class="detail-item">
                 <span class="label">{{ 'UNIT_DETAILS.AREA' | translate }}</span>
@@ -326,6 +326,26 @@
             <textarea matInput formControlName="otherReasonText" rows="2"></textarea>
           </mat-form-field>
 
+          <!-- Annual Escalation -->
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'CONTRACTS.ESCALATION_TYPE' | translate }}</mat-label>
+            <mat-select formControlName="escalationType">
+              <mat-option value="NONE">{{ 'CONTRACTS.ESCALATION_NONE' | translate }}</mat-option>
+              <mat-option value="PERCENTAGE">{{ 'CONTRACTS.ESCALATION_PERCENTAGE' | translate }}</mat-option>
+              <mat-option value="FIXED_AMOUNT">{{ 'CONTRACTS.ESCALATION_FIXED' | translate }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" *ngIf="financialForm.get('escalationType')?.value !== 'NONE'">
+            <mat-label>{{ 'CONTRACTS.ESCALATION_RATE' | translate }}</mat-label>
+            <input matInput type="number" min="0" formControlName="escalationRate">
+            <mat-hint>
+              {{ financialForm.get('escalationType')?.value === 'PERCENTAGE'
+                  ? ('CONTRACTS.ESCALATION_RATE_HINT_PCT' | translate)
+                  : ('CONTRACTS.ESCALATION_RATE_HINT_FIXED' | translate) }}
+            </mat-hint>
+          </mat-form-field>
+
           <div *ngIf="errorMsg" class="error-msg">{{ errorMsg }}</div>
 
           <div class="step-actions">
@@ -346,3 +366,4 @@
     </mat-stepper>
   </div>
 </ng-template>
+

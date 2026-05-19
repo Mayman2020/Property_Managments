@@ -1,0 +1,54 @@
+<app-page-header
+  [title]="('INLINE_TEXT.MY_REQUESTS' | translate)"
+  [subtitle]="('INLINE_TEXT.TRACK_EVERY_REQUEST_YOU_SUBMITTED_AND_WHERE_IT_CURRENTL' | translate)"
+  icon="assignment">
+</app-page-header>
+
+<div class="my-requests-page">
+  <div *ngIf="loading" class="loading-center">
+    <mat-spinner diameter="44"></mat-spinner>
+  </div>
+
+  <section *ngIf="!loading && requests.length === 0" class="empty-state">
+    <mat-icon>assignment_turned_in</mat-icon>
+    <h3>{{ ('INLINE_TEXT.NO_SUBMITTED_REQUESTS_YET' | translate) }}</h3>
+    <p>{{ ('INLINE_TEXT.ANY_REQUEST_YOU_SUBMIT_WILL_APPEAR_HERE_AS_A_QUICK_REFE' | translate) }}</p>
+  </section>
+
+  <section *ngIf="!loading && requests.length > 0" class="requests-list">
+    <article class="request-row" *ngFor="let item of requests; trackBy: trackByRequest">
+      <div class="request-icon" [ngClass]="statusTone(item.status)">
+        <mat-icon>assignment</mat-icon>
+      </div>
+
+      <div class="request-main">
+        <div class="request-topline">
+          <span class="request-type">{{ typeLabel(item) }}</span>
+          <span class="status-chip" [ngClass]="statusTone(item.status)">{{ statusLabel(item.status) }}</span>
+        </div>
+        <h3>{{ item.subject || item.title }}</h3>
+        <div class="request-meta">
+          <span *ngIf="item.referenceNumber">
+            <mat-icon>tag</mat-icon>
+            {{ item.referenceNumber }}
+          </span>
+          <span *ngIf="item.targetLabel">
+            <mat-icon>apartment</mat-icon>
+            {{ item.targetLabel }}
+          </span>
+          <span *ngIf="item.requestedAt">
+            <mat-icon>event</mat-icon>
+            {{ item.requestedAt | date:'dd/MM/yyyy HH:mm' }}
+          </span>
+        </div>
+        <p class="progress-text">{{ item.progress || (('INLINE_TEXT.REQUEST_REGISTERED' | translate)) }}</p>
+        <p class="notes-text" *ngIf="item.notes">{{ item.notes }}</p>
+      </div>
+
+      <a *ngIf="itemRoute(item)" mat-stroked-button [routerLink]="itemRoute(item)" class="open-link">
+        <mat-icon>open_in_new</mat-icon>
+        {{ ('INLINE_TEXT.OPEN_2' | translate) }}
+      </a>
+    </article>
+  </section>
+</div>

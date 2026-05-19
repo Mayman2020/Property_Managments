@@ -254,6 +254,16 @@ export class TopbarComponent implements OnInit, OnDestroy {
     if (role === 'TENANT') {
       return '/tenant/notifications';
     }
+    if (
+      role === 'MAINTENANCE_OFFICER_INTERNAL' ||
+      role === 'MAINTENANCE_OFFICER_COMPANY' ||
+      role === 'MAINTENANCE_COMPANY'
+    ) {
+      return '/officer/notifications';
+    }
+    if (role === 'EMPLOYEE') {
+      return '/employee/notifications';
+    }
     return this.auth.getDashboardRoute();
   }
 }

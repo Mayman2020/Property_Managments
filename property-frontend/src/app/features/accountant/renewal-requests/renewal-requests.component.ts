@@ -13,6 +13,7 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
 import { AccountantPortalService, RenewalRequestWithDetails, ProcessRenewalPayload } from '../../../core/services/accountant-portal.service';
 import { SnackService } from '../../../core/services/snack.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
+import { PermissionService } from '../../../core/services/permission.service';
 import { ProcessRenewalDialogComponent } from '../process-renewal-dialog/process-renewal-dialog.component';
 
 @Component({
@@ -35,7 +36,8 @@ export class RenewalRequestsComponent implements OnInit {
     private readonly svc: AccountantPortalService,
     private readonly snack: SnackService,
     private readonly dialog: MatDialog,
-    readonly i18n: I18nService
+    readonly i18n: I18nService,
+    readonly permissions: PermissionService
   ) {}
 
   ngOnInit(): void {

@@ -15,14 +15,14 @@
   <section class="app-card contracts-card" *ngIf="!loadingContracts && selectableContracts.length > 0">
     <div class="section-card-header">
       <div>
-        <div class="section-mini-label">{{ i18n.currentLang === 'ar' ? 'العقود' : 'Contracts' }}</div>
-        <h3>{{ i18n.currentLang === 'ar' ? 'اختر العقد المطلوب' : 'Choose a contract' }}</h3>
+        <div class="section-mini-label">{{ ('INLINE_TEXT.CONTRACTS' | translate) }}</div>
+        <h3>{{ ('INLINE_TEXT.CHOOSE_A_CONTRACT' | translate) }}</h3>
       </div>
     </div>
     <div class="contract-picker-wrap">
       <app-search-dropdown
         [items]="contractDropdownItems"
-        [placeholder]="i18n.currentLang === 'ar' ? 'ابحث عن عقد...' : 'Search contracts...'"
+        [placeholder]="('INLINE_TEXT.SEARCH_CONTRACTS' | translate)"
         (selectionChange)="onContractDropdownSelect($event)">
       </app-search-dropdown>
     </div>
@@ -37,24 +37,24 @@
     <span class="material-icons">description</span>
     <div>
       <strong>{{ c.contractNumber }}</strong>
-      <p>{{ c.propertyName || '-' }} - {{ i18n.currentLang === 'ar' ? 'وحدة' : 'Unit' }} {{ c.unitNumber || '-' }}</p>
+      <p>{{ c.propertyName || '-' }} - {{ ('INLINE_TEXT.UNIT_2' | translate) }} {{ c.unitNumber || '-' }}</p>
     </div>
     <button mat-flat-button class="navy-btn" type="button" (click)="openChooser()">
       <span class="material-icons">rule</span>
-      {{ i18n.currentLang === 'ar' ? 'طلب تجديد العقد أو إلغائه' : 'Request renewal or termination' }}
+      {{ ('INLINE_TEXT.REQUEST_RENEWAL_OR_TERMINATION' | translate) }}
     </button>
   </div>
 
   <div class="empty app-card" *ngIf="!loadingContracts && selectableContracts.length > 0 && !selectedContractId">
     <span class="material-icons">touch_app</span>
-    <p>{{ i18n.currentLang === 'ar' ? 'اختر عقدًا من القائمة لبدء طلب التجديد أو الإلغاء.' : 'Select a contract from the list to start a renewal or termination request.' }}</p>
+    <p>{{ ('INLINE_TEXT.SELECT_A_CONTRACT_FROM_THE_LIST_TO_START_A_RENEWAL_OR_T' | translate) }}</p>
   </div>
 
   <div class="request-dialog-backdrop" *ngIf="chooserOpen" (click)="chooserOpen = false">
     <div class="request-dialog" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
       <div class="request-dialog-title">
         <mat-icon class="dialog-title-icon">rule</mat-icon>
-        <span>{{ i18n.currentLang === 'ar' ? 'نوع طلب العقد' : 'Contract request type' }}</span>
+        <span>{{ ('INLINE_TEXT.CONTRACT_REQUEST_TYPE' | translate) }}</span>
         <button class="dialog-close" type="button" (click)="chooserOpen = false">
           <span class="material-icons">close</span>
         </button>
@@ -63,8 +63,8 @@
         <div class="dialog-intro">
           <span class="material-icons">rule</span>
           <div>
-            <h3>{{ i18n.currentLang === 'ar' ? 'اختر الإجراء المطلوب' : 'Choose the required action' }}</h3>
-            <p>{{ i18n.currentLang === 'ar' ? 'عاوز تقدم طلب تجديد ولا إلغاء للعقد المختار؟' : 'Do you want to request renewal or termination for the selected contract?' }}</p>
+            <h3>{{ ('INLINE_TEXT.CHOOSE_THE_REQUIRED_ACTION' | translate) }}</h3>
+            <p>{{ ('INLINE_TEXT.DO_YOU_WANT_TO_REQUEST_RENEWAL_OR_TERMINATION_FOR_THE_S' | translate) }}</p>
           </div>
         </div>
       </div>
@@ -111,7 +111,7 @@
             <input matInput [matDatepicker]="terminationDatePicker" formControlName="requestedDate">
             <mat-datepicker-toggle matIconSuffix [for]="terminationDatePicker"></mat-datepicker-toggle>
             <mat-datepicker #terminationDatePicker></mat-datepicker>
-            <mat-error>{{ i18n.currentLang === 'ar' ? 'هذا الحقل مطلوب' : 'This field is required' }}</mat-error>
+            <mat-error>{{ ('INLINE_TEXT.THIS_FIELD_IS_REQUIRED' | translate) }}</mat-error>
           </mat-form-field>
           <mat-form-field appearance="outline">
             <mat-label>{{ 'TENANT_PORTAL.REASON' | translate }}</mat-label>
@@ -120,7 +120,7 @@
                 {{ i18n.currentLang === 'ar' ? r.labelAr : r.labelEn }}
               </mat-option>
             </mat-select>
-            <mat-error>{{ i18n.currentLang === 'ar' ? 'هذا الحقل مطلوب' : 'This field is required' }}</mat-error>
+            <mat-error>{{ ('INLINE_TEXT.THIS_FIELD_IS_REQUIRED' | translate) }}</mat-error>
           </mat-form-field>
           <mat-form-field appearance="outline" class="full">
             <mat-label>{{ 'COMMON.NOTES' | translate }}</mat-label>
@@ -139,7 +139,7 @@
 
       <div class="dialog-actions">
         <button mat-stroked-button type="button" (click)="closeRequestDetails()" [disabled]="submitting">
-          {{ i18n.currentLang === 'ar' ? 'إلغاء' : 'Cancel' }}
+          {{ ('INLINE_TEXT.CANCEL' | translate) }}
         </button>
         <button mat-flat-button [class.btn-danger]="activeTab === 'TERMINATION'" [class.navy-btn]="activeTab === 'RENEWAL'" (click)="submit()" [disabled]="submitting">
           <mat-spinner *ngIf="submitting" diameter="20"></mat-spinner>

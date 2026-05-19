@@ -3,6 +3,7 @@ import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
 import { AppConstants } from '../constants/app-constants';
 import { ApiResponse } from '../models/api-response.model';
+import { CompanyOfficer } from './company-staff.service';
 
 export interface ContractorCompany {
   id: number;
@@ -20,6 +21,10 @@ export interface ContractorCompany {
   latestMaintenanceContractNumber?: string;
   contractStart?: string;
   contractEnd?: string;
+  latestContractStart?: string;
+  latestContractEnd?: string;
+  latestContractValue?: number;
+  propertiesCount?: number;
   attachmentFiles?: string[];
   createdAt?: string;
   updatedAt?: string;
@@ -27,6 +32,37 @@ export interface ContractorCompany {
   createdByName?: string;
   modifiedBy?: number;
   modifiedByName?: string;
+}
+
+export interface AllCompanyOfficer {
+  id: number;
+  fullName?: string;
+  fullNameAr?: string;
+  fullNameEn?: string;
+  email?: string;
+  phone?: string;
+  active: boolean;
+  profileImageUrl?: string;
+  propertyId?: number;
+  propertyNameAr?: string;
+  propertyNameEn?: string;
+  companyId: number;
+  companyNameAr?: string;
+  companyNameEn?: string;
+}
+
+export interface ContractorPropertyContract {
+  contractId: number;
+  contractNumber?: string;
+  propertyId: number;
+  propertyNameAr?: string;
+  propertyNameEn?: string;
+  startDate?: string;
+  endDate?: string;
+  status?: string;
+  slaHours?: number;
+  contractValue?: number;
+  createdAt?: string;
 }
 
 export interface ContractorCompanyForm {
@@ -42,6 +78,7 @@ export interface ContractorCompanyForm {
   contractStart?: string;
   contractEnd?: string;
   attachmentFiles?: string[];
+  portalPropertyId?: number | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -69,5 +106,17 @@ export class ContractorCompanyService {
 
   delete(id: number): Observable<ApiResponse<null>> {
     return this.api.delete(AppConstants.API.CONTRACTOR_COMPANY_BY_ID(id));
+  }
+
+  getOfficers(id: number): Observable<ApiResponse<CompanyOfficer[]>> {
+    return this.api.get(AppConstants.API.CONTRACTOR_COMPANY_OFFICERS(id));
+  }
+
+  getMaintenanceContracts(id: number): Observable<ApiResponse<ContractorPropertyContract[]>> {
+    return this.api.get(`${AppConstants.API.CONTRACTOR_COMPANIES}/${id}/maintenance-contracts`);
+  }
+
+  getAllOfficers(): Observable<ApiResponse<AllCompanyOfficer[]>> {
+    return this.api.get(`${AppConstants.API.CONTRACTOR_COMPANIES}/officers`);
   }
 }

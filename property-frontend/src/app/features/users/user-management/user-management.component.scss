@@ -12,6 +12,16 @@
 .user-info { display: flex; flex-direction: column; gap: 2px; }
 .user-name { font-weight: 700; color: var(--text-main); font-size: 0.92rem; }
 .user-email { font-size: 0.78rem; color: var(--text-muted); }
+.user-name-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.company-badge {
+  display: inline-flex; align-items: center; gap: 2px;
+  padding: 2px 8px 2px 4px; border-radius: 20px;
+  background: rgba(var(--teal-rgb, 0, 128, 128), 0.1);
+  border: 1px solid rgba(var(--teal-rgb, 0, 128, 128), 0.25);
+  color: var(--teal-700, #0f766e);
+  font-size: 0.72rem; font-weight: 600;
+}
+.company-arrow { font-size: 14px !important; color: var(--teal-600, #0d9488); }
 
 .role-badge { display: inline-flex; padding: 4px 10px; border-radius: 6px; background: var(--surface-2); border: 1px solid var(--line); font-size: 0.8rem; font-weight: 600; color: var(--text-main); }
 .property-tag { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 6px; background: rgba(0, 0, 0, 0.03); color: var(--text-main); font-size: 0.82rem; font-weight: 500; }

@@ -37,6 +37,7 @@ export class InvoicePortalComponent implements OnInit {
   loading = true;
   submitting = false;
   showForm = false;
+  selectedPropertyId: number | null = null;
 
   form: FormGroup;
   uploadedFile: UploadedFile | null = null;
@@ -58,7 +59,7 @@ export class InvoicePortalComponent implements OnInit {
       periodMonth: [new Date().getMonth() + 1, Validators.required],
       periodYear: [this.currentYear, Validators.required],
       amount: [null, [Validators.required, Validators.min(0.01)]],
-      propertyId: [null],
+      propertyId: [null, Validators.required],
       unitId: [null],
       description: [''],
       notes: ['']
@@ -72,16 +73,28 @@ export class InvoicePortalComponent implements OnInit {
 
   loadProperties(): void {
     this.svc.getMyProperties().subscribe({
-      next: res => this.properties = res.data ?? []
+      next: res => {
+        this.properties = res.data ?? [];
+        if (this.properties.length === 1) {
+          this.selectedPropertyId = this.properties[0].id;
+          this.form.patchValue({ propertyId: this.properties[0].id });
+          this.loadInvoices();
+        }
+      }
     });
   }
 
   loadInvoices(): void {
     this.loading = true;
-    this.svc.getMyInvoices().subscribe({
+    this.svc.getMyInvoices(undefined, undefined, this.selectedPropertyId).subscribe({
       next: res => { this.invoices = res.data ?? []; this.loading = false; },
       error: () => { this.loading = false; }
     });
+  }
+
+  onPropertyFilterChange(propertyId: number | null): void {
+    this.selectedPropertyId = propertyId;
+    this.loadInvoices();
   }
 
   onFilesChange(files: UploadedFile[]): void {
@@ -121,7 +134,11 @@ export class InvoicePortalComponent implements OnInit {
       this.showForm = false;
       this.uploadedFile = null;
       this.uploadedUrl = null;
-      this.form.reset({ periodMonth: new Date().getMonth() + 1, periodYear: this.currentYear });
+      this.form.reset({
+        periodMonth: new Date().getMonth() + 1,
+        periodYear: this.currentYear,
+        propertyId: this.selectedPropertyId ?? (this.properties.length === 1 ? this.properties[0].id : null)
+      });
       this.loadInvoices();
     } catch (err: any) {
       this.snack.error(err?.error?.message || this.i18n.instant('COMMON.ERROR'));
@@ -131,11 +148,8 @@ export class InvoicePortalComponent implements OnInit {
   }
 
   monthLabel(m: number): string {
-    const names: Record<string, string[]> = {
-      ar: ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'],
-      en: ['January','February','March','April','May','June','July','August','September','October','November','December']
-    };
-    return names[this.i18n.currentLang === 'ar' ? 'ar' : 'en'][m - 1];
+    if (m < 1 || m > 12) return String(m);
+    return this.i18n.instant(`MONTHS.${m}`);
   }
 
   statusClass(s: string): string {
@@ -144,5 +158,17 @@ export class InvoicePortalComponent implements OnInit {
 
   viewFile(url: string): void {
     window.open(url, '_blank');
+  }
+
+  propertyLabel(p: CompanyProperty): string {
+    return this.i18n.currentLang === 'ar'
+      ? (p.propertyNameAr || p.propertyName)
+      : (p.propertyNameEn || p.propertyName);
+  }
+
+  invoicePropertyLabel(inv: MaintenanceInvoice): string {
+    return this.i18n.currentLang === 'ar'
+      ? (inv.propertyNameAr || inv.propertyName || '')
+      : (inv.propertyNameEn || inv.propertyName || '');
   }
 }

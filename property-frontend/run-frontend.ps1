@@ -87,8 +87,23 @@ function Test-BackendBaseUrlReachable {
             "Access-Control-Request-Method" = "POST"
         } -UseBasicParsing -TimeoutSec 3
         $allowOrigin = $resp.Headers["Access-Control-Allow-Origin"]
-        return ($resp.StatusCode -ge 200 -and $resp.StatusCode -lt 300 -and -not [string]::IsNullOrWhiteSpace($allowOrigin))
+        if (-not ($resp.StatusCode -ge 200 -and $resp.StatusCode -lt 300 -and -not [string]::IsNullOrWhiteSpace($allowOrigin))) {
+            return $false
+        }
     } catch {
+        return $false
+    }
+
+    # OPTIONS can succeed on a stale backend even when the file route is locked or misconfigured.
+    # The frontend needs /files to be publicly readable for avatars and uploaded documents.
+    try {
+        $fileProbeUrl = "$BaseUrl/files/__frontend_probe__.png"
+        $null = Invoke-WebRequest -Uri $fileProbeUrl -UseBasicParsing -TimeoutSec 3
+        return $true
+    } catch {
+        if ($_.Exception.Response -and $_.Exception.Response.StatusCode.value__ -eq 404) {
+            return $true
+        }
         return $false
     }
 }
@@ -191,9 +206,10 @@ if (Test-Path $RuntimeStateFile) {
 if (-not (Test-BackendBaseUrlReachable -BaseUrl $backendApiUrl)) {
     Write-Warn "Runtime backend URL is not reachable: $backendApiUrl"
     $candidates = @(
+        "http://localhost:8082/api/v1",
+        "http://localhost:8083/api/v1",
         "http://localhost:8081/api/v1",
-        "http://localhost:8080/api/v1",
-        "http://localhost:8082/api/v1"
+        "http://localhost:8080/api/v1"
     )
     $found = $null
     foreach ($candidate in $candidates) {

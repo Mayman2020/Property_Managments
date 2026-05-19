@@ -111,6 +111,19 @@ export interface UnitDialogData {
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="full">
+          <mat-label>{{ 'UNITS.FLOOR_PLAN_URL' | translate }}</mat-label>
+          <input matInput formControlName="floorPlanUrl" [placeholder]="'UNITS.FLOOR_PLAN_URL_HINT' | translate" />
+          <mat-icon matSuffix>architecture</mat-icon>
+        </mat-form-field>
+
+        <div *ngIf="data.readOnly && data.unit?.floorPlanUrl" class="floor-plan-preview full">
+          <span class="d-label">{{ 'UNITS.FLOOR_PLAN_URL' | translate }}</span>
+          <a [href]="data.unit!.floorPlanUrl" target="_blank" rel="noopener" class="floor-plan-link">
+            <mat-icon>open_in_new</mat-icon> {{ 'UNITS.VIEW_FLOOR_PLAN' | translate }}
+          </a>
+        </div>
+
+        <mat-form-field appearance="outline" class="full">
           <mat-label>{{ 'MAINTENANCE.DESCRIPTION' | translate }}</mat-label>
           <textarea matInput rows="2" formControlName="notes"></textarea>
         </mat-form-field>
@@ -226,6 +239,10 @@ export interface UnitDialogData {
     .muted-hint { font-size: 0.88rem; color: var(--text-muted); margin: 0 0 8px; }
     .lease-snapshot { margin-top: 6px; }
     .open-contract-btn { margin-top: 8px; }
+    .floor-plan-preview { display: flex; flex-direction: column; gap: 4px; margin-bottom: 4px; }
+    .floor-plan-link { display: inline-flex; align-items: center; gap: 4px; color: var(--navy-800); font-size: 0.9rem; text-decoration: none; }
+    .floor-plan-link:hover { text-decoration: underline; }
+    .floor-plan-link mat-icon { font-size: 16px; width: 16px; height: 16px; }
   `]
 })
 export class UnitDialogComponent implements OnInit {
@@ -268,8 +285,9 @@ export class UnitDialogComponent implements OnInit {
     floorId: [this.data.unit?.floorId ?? null as number | null],
     areaSqm: [this.data.unit?.areaSqm ?? null as number | null],
     rentAmount: [this.data.unit?.rentAmount ?? null as number | null],
-    currency: [this.data.unit?.currency ?? 'OMR'],
-    notes: [this.data.unit?.notes ?? '']
+    currency: [this.data.unit?.currency ?? 'SAR'],
+    notes: [this.data.unit?.notes ?? ''],
+    floorPlanUrl: [this.data.unit?.floorPlanUrl ?? '']
   });
 
   constructor(
@@ -369,3 +387,4 @@ export class UnitDialogComponent implements OnInit {
     });
   }
 }
+

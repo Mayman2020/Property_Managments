@@ -112,10 +112,10 @@ export class TenantComplaintsPageComponent implements OnInit {
   statusLabel(s: string): string {
     const ar = this.i18n.currentLang === 'ar';
     const map: Record<string, string> = {
-      OPEN:       ar ? 'مفتوحة'      : 'Open',
-      IN_REVIEW:  ar ? 'قيد المراجعة' : 'In Review',
-      RESOLVED:   ar ? 'محلولة'       : 'Resolved',
-      CLOSED:     ar ? 'مغلقة'        : 'Closed',
+      OPEN:       this.i18n.instant('INLINE_TEXT.OPEN'),
+      IN_REVIEW:  this.i18n.instant('INLINE_TEXT.IN_REVIEW'),
+      RESOLVED:   this.i18n.instant('INLINE_TEXT.RESOLVED'),
+      CLOSED:     this.i18n.instant('INLINE_TEXT.CLOSED_2'),
     };
     return map[s] ?? s;
   }
@@ -124,12 +124,12 @@ export class TenantComplaintsPageComponent implements OnInit {
     if (!t) return '—';
     const ar = this.i18n.currentLang === 'ar';
     const map: Record<string, string> = {
-      MAINTENANCE: ar ? 'صيانة'        : 'Maintenance',
-      NOISE:       ar ? 'ضوضاء'        : 'Noise',
-      CLEANLINESS: ar ? 'نظافة'        : 'Cleanliness',
-      BILLING:     ar ? 'فواتير'       : 'Billing',
-      MANAGEMENT:  ar ? 'إدارة'        : 'Management',
-      OTHER:       ar ? 'أخرى'         : 'Other',
+      MAINTENANCE: this.i18n.instant('INLINE_TEXT.MAINTENANCE_3'),
+      NOISE:       this.i18n.instant('INLINE_TEXT.NOISE'),
+      CLEANLINESS: this.i18n.instant('INLINE_TEXT.CLEANLINESS'),
+      BILLING:     this.i18n.instant('INLINE_TEXT.BILLING'),
+      MANAGEMENT:  this.i18n.instant('INLINE_TEXT.MANAGEMENT'),
+      OTHER:       this.i18n.instant('INLINE_TEXT.OTHER'),
     };
     return map[t] ?? t;
   }
@@ -281,7 +281,7 @@ export class TenantComplaintsPageComponent implements OnInit {
         this.closing = false;
         const updated = res?.data ?? res;
         this.selected = { ...this.selected, status: updated.status, resolvedAt: updated.resolvedAt };
-        this.snack.success(this.i18n.currentLang === 'ar' ? 'تم إغلاق الشكوى' : 'Complaint closed');
+        this.snack.success(this.i18n.instant('INLINE_TEXT.COMPLAINT_CLOSED'));
         this.load();
         this.ratingForId = this.selected.id;
         this.selectedRating = null;

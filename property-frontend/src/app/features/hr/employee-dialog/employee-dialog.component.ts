@@ -131,13 +131,14 @@ function parseYmd(value?: string | null): Date | null {
           <mat-label>{{ 'HR.SYSTEM_ROLE' | translate }}</mat-label>
           <mat-select formControlName="systemRole">
             <mat-option [value]="null">{{ 'HR.SYSTEM_ROLE_NONE' | translate }}</mat-option>
-            <mat-option value="ACCOUNTANT">{{ 'ROLE.ACCOUNTANT' | translate }}</mat-option>
+            <mat-option value="OWNER">{{ 'ROLE.OWNER' | translate }}</mat-option>
             <mat-option value="GENERAL_MANAGER">{{ 'ROLE.GENERAL_MANAGER' | translate }}</mat-option>
+            <mat-option value="ACCOUNTANT">{{ 'ROLE.ACCOUNTANT' | translate }}</mat-option>
+            <mat-option value="PROCEDURES_CLERK">{{ 'ROLE.PROCEDURES_CLERK' | translate }}</mat-option>
             <mat-option value="MAINTENANCE_OFFICER_INTERNAL">{{ 'ROLE.MAINTENANCE_OFFICER_INTERNAL' | translate }}</mat-option>
             <mat-option value="MAINTENANCE_OFFICER_COMPANY">{{ 'ROLE.MAINTENANCE_OFFICER_COMPANY' | translate }}</mat-option>
             <mat-option value="MAINTENANCE_COMPANY">{{ 'ROLE.MAINTENANCE_COMPANY' | translate }}</mat-option>
             <mat-option value="PROPERTY_GUARD">{{ 'ROLE.PROPERTY_GUARD' | translate }}</mat-option>
-            <mat-option value="PROCEDURES_CLERK">{{ 'ROLE.PROCEDURES_CLERK' | translate }}</mat-option>
           </mat-select>
           <mat-hint>{{ 'HR.PORTAL_ROLE_HINT' | translate }}</mat-hint>
         </mat-form-field>
@@ -322,7 +323,10 @@ export class EmployeeDialogComponent {
         this.snack.success(this.i18n.instant('COMMON.SAVED'));
         this.ref.close(true);
       },
-      error: () => { this.saving = false; }
+      error: (e: any) => {
+        this.saving = false;
+        this.snack.error(e?.error?.message || this.i18n.instant('COMMON.ERROR'));
+      }
     });
   }
 

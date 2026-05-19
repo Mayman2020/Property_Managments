@@ -13,8 +13,10 @@ import { TranslateModule } from '@ngx-translate/core';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { PaymentService } from '../../../core/services/payment.service';
+import { PropertyService, Property } from '../../../core/services/property.service';
 import { SnackService } from '../../../core/services/snack.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
+import { PermissionService } from '../../../core/services/permission.service';
 import { ReviewDialogComponent, ReviewDialogData } from '../review-dialog/review-dialog.component';
 import { StaffUploadReceiptDialogComponent } from '../staff-upload-receipt-dialog/staff-upload-receipt-dialog.component';
 import { RentPaymentSchedule } from '../../../core/models/contract.model';
@@ -33,6 +35,7 @@ import { RentPaymentSchedule } from '../../../core/models/contract.model';
 })
 export class RentConfirmationComponent implements OnInit {
   receipts: RentPaymentSchedule[] = [];
+  properties: Property[] = [];
   loading = true;
   filterForm: FormGroup;
 
@@ -43,37 +46,49 @@ export class RentConfirmationComponent implements OnInit {
   constructor(
     private readonly fb: FormBuilder,
     private readonly svc: PaymentService,
+    private readonly propertySvc: PropertyService,
     private readonly snack: SnackService,
     private readonly dialog: MatDialog,
-    readonly i18n: I18nService
+    readonly i18n: I18nService,
+    readonly permissions: PermissionService
   ) {
     this.filterForm = this.fb.group({
       year: [null],
-      month: [null]
+      month: [null],
+      propertyId: [null]
     });
   }
 
   ngOnInit(): void {
+    this.propertySvc.getAll(0, 500).subscribe({
+      next: (res) => { this.properties = res.data?.content ?? []; },
+      error: () => { this.properties = []; }
+    });
     this.load();
   }
 
   get filteredReceipts(): RentPaymentSchedule[] {
-    const { year, month } = this.filterForm.value;
+    const { year, month, propertyId } = this.filterForm.value;
     return this.receipts.filter((receipt) => {
       if (year != null) {
         const dueYear = new Date(receipt.dueDate).getFullYear();
-        if (dueYear !== Number(year)) {
-          return false;
-        }
+        if (dueYear !== Number(year)) return false;
       }
       if (month != null) {
         const dueMonth = new Date(receipt.dueDate).getMonth() + 1;
-        if (dueMonth !== Number(month)) {
-          return false;
-        }
+        if (dueMonth !== Number(month)) return false;
+      }
+      if (propertyId != null && receipt.propertyId != null) {
+        if (receipt.propertyId !== Number(propertyId)) return false;
       }
       return true;
     });
+  }
+
+  propertyLabel(p: Property): string {
+    return this.i18n.currentLang === 'ar'
+      ? (p.propertyNameAr || p.propertyName)
+      : (p.propertyNameEn || p.propertyName);
   }
 
   load(): void {
@@ -101,12 +116,8 @@ export class RentConfirmationComponent implements OnInit {
   }
 
   monthLabel(m: number): string {
-    const names: Record<string, string[]> = {
-      ar: ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'],
-      en: ['January','February','March','April','May','June','July','August','September','October','November','December']
-    };
-    const lang = this.i18n.currentLang === 'ar' ? 'ar' : 'en';
-    return names[lang][m - 1];
+    if (m < 1 || m > 12) return String(m);
+    return this.i18n.instant(`MONTHS.${m}`);
   }
 
   statusClass(s: string): string {

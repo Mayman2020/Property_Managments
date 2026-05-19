@@ -20,7 +20,10 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 
       const { errorCode, message: rawMsg } = readApiErrorBody(err);
       const message = translateBackendError(errorCode, rawMsg, translate);
-      return throwError(() => new Error(message));
+      const normalizedError = new Error(message) as Error & { status?: number; errorCode?: string };
+      normalizedError.status = err.status;
+      normalizedError.errorCode = errorCode;
+      return throwError(() => normalizedError);
     })
   );
 };

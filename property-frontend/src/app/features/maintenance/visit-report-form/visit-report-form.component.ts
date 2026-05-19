@@ -1,6 +1,6 @@
-﻿import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { NgFor, NgIf } from '@angular/common';
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
+import { DecimalPipe, NgFor, NgIf } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -15,14 +15,20 @@ import { TranslateModule } from '@ngx-translate/core';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { UploadZoneComponent } from '../../../shared/components/upload-zone/upload-zone.component';
 import { MaintenanceService } from '../../../core/services/maintenance.service';
+import { InventoryService, InventoryItem } from '../../../core/services/inventory.service';
 import { SnackService } from '../../../core/services/snack.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
+
+interface UsedInventoryLine {
+  item: InventoryItem;
+  quantity: number;
+}
 
 @Component({
   selector: 'app-visit-report-form',
   standalone: true,
   imports: [
-    NgFor, NgIf, ReactiveFormsModule, RouterLink, TranslateModule,
+    NgFor, NgIf, DecimalPipe, ReactiveFormsModule, FormsModule, RouterLink, TranslateModule,
     MatDatepickerModule, MatFormFieldModule, MatInputModule, MatSelectModule,
     MatButtonModule, MatIconModule, MatCheckboxModule, MatProgressSpinnerModule,
     PageHeaderComponent, UploadZoneComponent
@@ -35,6 +41,10 @@ export class VisitReportFormComponent implements OnInit {
   submitting = false;
   requestId = 0;
   receiptUrl = '';
+  inventoryItems: InventoryItem[] = [];
+  usedLines: UsedInventoryLine[] = [];
+  selectedItemId: number | null = null;
+  selectedQty = 1;
 
   readonly outcomes = [
     { value: 'COMPLETED', labelKey: 'VISIT.OUTCOME_COMPLETED', icon: 'task_alt' },
@@ -49,8 +59,9 @@ export class VisitReportFormComponent implements OnInit {
     private readonly fb: FormBuilder,
     private readonly route: ActivatedRoute,
     private readonly maintSvc: MaintenanceService,
+    private readonly inventorySvc: InventoryService,
     private readonly snack: SnackService,
-    private readonly i18n: I18nService,
+    readonly i18n: I18nService,
     private readonly router: Router
   ) {
     this.form = this.fb.group({
@@ -66,10 +77,49 @@ export class VisitReportFormComponent implements OnInit {
 
   ngOnInit(): void {
     this.requestId = Number(this.route.snapshot.paramMap.get('id'));
+    this.maintSvc.getById(this.requestId).subscribe({
+      next: (res) => {
+        const propertyId = res.data?.propertyId;
+        if (propertyId) {
+          this.inventorySvc.getItems(propertyId, 0, 200).subscribe({
+            next: (r) => { this.inventoryItems = r.data?.content ?? []; },
+            error: () => {}
+          });
+        }
+      },
+      error: () => {}
+    });
   }
 
   get hasPurchase(): boolean {
     return !!this.form.get('hasPurchase')?.value;
+  }
+
+  itemName(item: InventoryItem): string {
+    return this.i18n.currentLang === 'ar' ? (item.itemNameAr || item.itemNameEn || '') : (item.itemNameEn || item.itemNameAr || '');
+  }
+
+  get availableItems(): InventoryItem[] {
+    const usedIds = new Set(this.usedLines.map(l => l.item.id));
+    return this.inventoryItems.filter(i => !usedIds.has(i.id));
+  }
+
+  addInventoryLine(): void {
+    if (!this.selectedItemId) return;
+    const item = this.inventoryItems.find(i => i.id === this.selectedItemId);
+    if (!item) return;
+    const qty = Number(this.selectedQty) || 1;
+    if (qty <= 0 || qty > item.quantity) {
+      this.snack.error(this.i18n.instant('VISIT.INVALID_QUANTITY'));
+      return;
+    }
+    this.usedLines.push({ item, quantity: qty });
+    this.selectedItemId = null;
+    this.selectedQty = 1;
+  }
+
+  removeInventoryLine(index: number): void {
+    this.usedLines.splice(index, 1);
   }
 
   private toDateString(d: Date | string | null): string | undefined {
@@ -87,12 +137,24 @@ export class VisitReportFormComponent implements OnInit {
 
   submit(): void {
     if (this.form.invalid || this.submitting) return;
+    if (this.hasPurchase) {
+      const amount = Number(this.form.get('purchaseAmount')?.value);
+      if (!amount || amount <= 0) {
+        this.snack.error(this.i18n.instant('VISIT.PURCHASE_AMOUNT') + ' ' + this.i18n.instant('COMMON.REQUIRED'));
+        return;
+      }
+      if (!this.receiptUrl) {
+        this.snack.error(this.i18n.instant('VISIT.RECEIPT_URL') + ' ' + this.i18n.instant('COMMON.REQUIRED'));
+        return;
+      }
+    }
     this.submitting = true;
     const raw = this.form.value;
     const payload = {
       ...raw,
       visitDate: this.toDateString(raw.visitDate),
-      receiptUrl: this.receiptUrl || undefined
+      receiptUrl: this.receiptUrl || undefined,
+      items: this.usedLines.map(l => ({ itemId: l.item.id, quantityUsed: l.quantity }))
     };
     this.maintSvc.submitVisitReport(this.requestId, payload).subscribe({
       next: () => {

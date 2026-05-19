@@ -1,64 +1,262 @@
 .page-content { padding: 24px; }
 
-.filter-bar {
-  display: flex; align-items: center; gap: 16px; margin-bottom: 24px; flex-wrap: wrap;
-  .filter-field { width: 160px; }
+.finance-filter-strip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--line, #e4d8c8);
+  background: var(--surface, #fffdf8);
+  border-radius: 8px;
+
+  label { color: var(--text-muted); font-weight: 700; }
+}
+
+.tab-bar {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 24px;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  transition: color 0.2s, border-color 0.2s;
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+
+  .tab-count {
+    background: var(--surface-hover);
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 10px;
+  }
+
+  &.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+
+    .tab-count { background: var(--primary); color: #fff; }
+  }
 }
 
 .loading-center { display: flex; justify-content: center; padding: 64px; }
 
 .empty-state {
-  text-align: center; padding: 64px; color: var(--text-secondary);
-  mat-icon { font-size: 48px; width: 48px; height: 48px; margin-bottom: 12px; }
+  text-align: center;
+  padding: 64px;
+  color: var(--text-secondary);
+
+  mat-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    margin-bottom: 12px;
+    color: var(--success, #4caf50);
+  }
 }
 
-.invoices-grid {
+.contracts-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
   gap: 20px;
 }
 
-.invoice-card {
+.contract-card {
   background: var(--surface-card);
   border-radius: 12px;
-  border: 1px solid var(--border-color);
+  border: 2px solid var(--primary-light, rgba(var(--primary-rgb, 0,51,102), 0.3));
   overflow: hidden;
-  display: flex; flex-direction: column;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
 }
 
 .card-header {
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   padding: 16px 20px;
   border-bottom: 1px solid var(--border-color);
-  background: var(--surface-hover);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark, #001a33) 100%);
+  color: white;
 }
 
-.company-info {
-  display: flex; align-items: center; gap: 10px;
-  .co-icon { color: var(--primary); font-size: 28px; width: 28px; height: 28px; }
-  .co-name { font-weight: 600; font-size: 15px; }
-  .inv-number { font-size: 12px; color: var(--text-secondary); }
+.contract-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+
+  .contract-icon { font-size: 28px; width: 28px; height: 28px; opacity: 0.9; flex: 0 0 auto; }
+  .contract-number { font-weight: 800; font-size: 15px; overflow-wrap: anywhere; }
+  .tenant-name { font-size: 13px; opacity: 0.85; overflow-wrap: anywhere; }
 }
 
 .status-badge {
-  padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;
-  &.pending { background: rgba(255,193,7,0.15); color: #b8860b; }
-  &.approved { background: rgba(76,175,80,0.15); color: #2e7d32; }
-  &.rejected { background: rgba(244,67,54,0.15); color: #c62828; }
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+
+  &.pending { background: rgba(255, 193, 7, 0.9); color: #333; }
+  &.approved { background: rgba(243, 244, 246, 0.9); color: #166534; }
+  &.rejected { background: rgba(254, 226, 226, 0.95); color: #991b1b; }
 }
 
 .card-body {
-  padding: 16px 20px; flex: 1;
-  display: flex; flex-direction: column; gap: 10px;
+  padding: 16px 20px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.property-summary {
+  border: 1px solid #e5d6b6;
+  border-radius: 8px;
+  background: #fffaf1;
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.property-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+
+  mat-icon {
+    width: 22px;
+    height: 22px;
+    font-size: 22px;
+    color: var(--gold, #b8860b);
+    flex: 0 0 auto;
+  }
+
+  span {
+    display: block;
+    color: #8a6a2a;
+    font-size: 11px;
+    font-weight: 800;
+  }
+
+  strong {
+    display: block;
+    color: #0f2237;
+    font-size: 14px;
+    overflow-wrap: anywhere;
+  }
+}
+
+.property-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+
+  div {
+    border: 1px solid #eadcaf;
+    border-radius: 8px;
+    background: #fffdf8;
+    padding: 8px 10px;
+    min-width: 0;
+  }
+
+  span {
+    display: block;
+    color: #8a6a2a;
+    font-size: 11px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  strong {
+    display: block;
+    color: #10253a;
+    font-size: 14px;
+    overflow-wrap: anywhere;
+  }
 }
 
 .info-row {
-  display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text-secondary);
+
   mat-icon { font-size: 18px; width: 18px; height: 18px; color: var(--primary); }
-  &.amount-row .amount { font-size: 18px; font-weight: 700; color: var(--primary); }
+  a { color: var(--primary); text-decoration: none; }
 }
 
+.reason-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--ink-700, #334155);
+}
+
+.rent-amount { font-weight: 800; color: var(--primary); }
+
 .card-actions {
-  padding: 12px 20px; border-top: 1px solid var(--border-color);
-  display: flex; gap: 8px; justify-content: flex-end;
+  padding: 12px 20px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.payment-schedule {
+  margin: 0 20px 14px;
+  border: 1px solid #e5d6b6;
+  border-radius: 8px;
+  background: #fffaf1;
+  overflow: hidden;
+}
+
+.payment-row {
+  display: grid;
+  grid-template-columns: 48px minmax(90px, 1fr) minmax(100px, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #eadcaf;
+  color: #10253a;
+  font-size: 13px;
+
+  &:last-child { border-bottom: 0; }
+
+  button { justify-self: end; }
+}
+
+.activate-btn {
+  background: var(--navy-900, #0c2340) !important;
+  color: #f4e7c4 !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+@media (max-width: 520px) {
+  .contracts-grid { grid-template-columns: 1fr; }
+  .property-stats { grid-template-columns: 1fr; }
+  .payment-row { grid-template-columns: 1fr; }
 }

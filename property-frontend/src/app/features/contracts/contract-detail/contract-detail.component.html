@@ -177,7 +177,7 @@
         </div>
         <div class="info-cell full-span" *ngIf="contract.terminationReason">
           <div class="ic-label">{{ 'CONTRACTS.TERMINATION_REASON' | translate }}</div>
-          <div class="ic-value notes-text">{{ contract.terminationReason }}</div>
+          <div class="ic-value notes-text">{{ translateTerminationReason(contract.terminationReason) }}</div>
         </div>
         <div class="info-cell">
           <div class="ic-label">{{ 'CONTRACTS.HANDOVER_DEPOSIT' | translate }}</div>
@@ -227,6 +227,17 @@
       <span class="csn-ico"><mat-icon>chat_bubble_outline</mat-icon></span>
       <span class="csn-label">{{ 'CONTRACTS.COMPLAINTS_TITLE' | translate }}</span>
     </button>
+    <button type="button" class="csn-tile" [class.csn-tile--active]="section === 'annexes'" (click)="setSection('annexes')">
+      <span class="csn-ico"><mat-icon>attach_file</mat-icon></span>
+      <span class="csn-label">{{ 'CONTRACTS.TAB_ANNEXES' | translate }}</span>
+    </button>
+    <button type="button" class="csn-tile" [class.csn-tile--active]="section === 'fees'" (click)="setSection('fees')">
+      <span class="csn-ico">
+        <mat-icon>receipt_long</mat-icon>
+        <span class="csn-badge" *ngIf="fees.length > 0">{{ fees.length }}</span>
+      </span>
+      <span class="csn-label">{{ 'CONTRACTS.TAB_FEES' | translate }}</span>
+    </button>
   </nav>
 
   <!-- Section: Info -->
@@ -247,7 +258,7 @@
           </div>
           <div class="info-cell full-span">
             <div class="ic-label">{{ 'CONTRACTS.TERMINATION_REASON' | translate }}</div>
-            <div class="ic-value notes-text">{{ contract.terminationReason }}</div>
+            <div class="ic-value notes-text">{{ translateTerminationReason(contract.terminationReason) }}</div>
           </div>
           <div class="info-cell">
             <div class="ic-label">{{ 'CONTRACTS.HANDOVER_DEPOSIT' | translate }}</div>
@@ -283,11 +294,105 @@
             </div>
             <div class="info-cell full-span" *ngIf="contract.terminationReason">
               <div class="ic-label">{{ 'CONTRACTS.TERMINATION_REASON' | translate }}</div>
-              <div class="ic-value notes-text">{{ contract.terminationReason }}</div>
+              <div class="ic-value notes-text">{{ translateTerminationReason(contract.terminationReason) }}</div>
             </div>
           </div>
         </div>
       </ng-template>
+    </div>
+
+    <!-- Handover Actions: deposit return, damages, confirmation, unit clearance -->
+    <div class="info-section app-card handover-actions-card"
+         *ngIf="contract.status === 'TERMINATED' || contract.status === 'EXPIRED' || contract.status === 'CANCELLED'">
+      <div class="app-card-header">
+        <span class="app-card-title">
+          <mat-icon class="section-icon">home_work</mat-icon>
+          {{ ('INLINE_TEXT.HANDOVER_DEPOSIT_ACTIONS' | translate) }}
+        </span>
+      </div>
+      <div class="app-card-body handover-body">
+
+        <!-- Security deposit section -->
+        <div class="handover-row" *ngIf="(contract.securityDeposit ?? 0) > 0">
+          <div class="handover-info">
+            <mat-icon class="hw-icon">shield</mat-icon>
+            <div>
+              <strong>{{ ('INLINE_TEXT.DEPOSIT' | translate) }}{{ contract.securityDeposit | number:'1.2-2' }} {{ contract.currency }}</strong>
+              <span class="hw-status chip-success" *ngIf="contract.depositExpenseRecorded">{{ ('INLINE_TEXT.RETURNED' | translate) }}</span>
+              <span class="hw-status chip-warn" *ngIf="!contract.depositExpenseRecorded">{{ ('INLINE_TEXT.NOT_YET_RETURNED' | translate) }}</span>
+            </div>
+          </div>
+          <button mat-stroked-button color="primary" *ngIf="!contract.depositExpenseRecorded"
+                  [disabled]="actionLoading" (click)="returnDeposit()">
+            <mat-icon>reply</mat-icon>
+            {{ ('INLINE_TEXT.RETURN_DEPOSIT' | translate) }}
+          </button>
+        </div>
+
+        <!-- No-renewal intent indicator -->
+        <div class="handover-row" *ngIf="contract.noRenewalIntentAt">
+          <div class="handover-info">
+            <mat-icon class="hw-icon">event_busy</mat-icon>
+            <div>
+              <strong>{{ ('INLINE_TEXT.TENANT_EXPRESSED_NO_RENEWAL_INTENT' | translate) }}</strong>
+              <span class="text-muted">{{ contract.noRenewalIntentAt | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Damage reporting section -->
+        <div class="handover-row">
+          <div class="handover-info">
+            <mat-icon class="hw-icon">build</mat-icon>
+            <div>
+              <strong>{{ ('INLINE_TEXT.UNIT_CONDITION_DAMAGES' | translate) }}</strong>
+              <ng-container *ngIf="contract.terminationHasDamages">
+                <div class="hw-damage-amount">
+                  <span class="chip-warn">{{ ('INLINE_TEXT.DAMAGES' | translate) }}{{ contract.terminationDamagesAmount | number:'1.2-2' }} {{ contract.currency }}</span>
+                  <span class="chip-success" *ngIf="contract.terminationDamagesTenantPaid">{{ ('INLINE_TEXT.PAID' | translate) }}</span>
+                  <span class="chip-warn" *ngIf="!contract.terminationDamagesTenantPaid">{{ ('INLINE_TEXT.TENANT_UNPAID' | translate) }}</span>
+                </div>
+                <p *ngIf="contract.terminationDamageNotes" class="text-muted">{{ contract.terminationDamageNotes }}</p>
+                <div *ngIf="contract.terminationDamagesReceiptUrl && !contract.terminationDamagesTenantPaid" class="hw-receipt">
+                  <a [href]="contract.terminationDamagesReceiptUrl" target="_blank" rel="noopener">
+                    <mat-icon>receipt</mat-icon>{{ ('INLINE_TEXT.VIEW_RECEIPT' | translate) }}
+                  </a>
+                </div>
+              </ng-container>
+              <span *ngIf="!contract.terminationHasDamages" class="text-muted">{{ ('INLINE_TEXT.NO_DAMAGES_RECORDED' | translate) }}</span>
+            </div>
+          </div>
+          <div class="handover-btns">
+            <button mat-stroked-button color="warn" *ngIf="!contract.terminationHasDamages"
+                    [disabled]="actionLoading" (click)="openReportDamagesDialog()">
+              <mat-icon>warning</mat-icon>
+              {{ ('INLINE_TEXT.REPORT_DAMAGES' | translate) }}
+            </button>
+            <button mat-stroked-button color="accent"
+                    *ngIf="contract.terminationHasDamages && !contract.terminationDamagesTenantPaid && contract.terminationDamagesReceiptUrl"
+                    [disabled]="actionLoading" (click)="confirmDamagePayment()">
+              <mat-icon>check_circle</mat-icon>
+              {{ ('INLINE_TEXT.CONFIRM_DAMAGE_PAYMENT' | translate) }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Unit clearance -->
+        <div class="handover-row">
+          <div class="handover-info">
+            <mat-icon class="hw-icon">apartment</mat-icon>
+            <div>
+              <strong>{{ ('INLINE_TEXT.UNIT_CLEARANCE' | translate) }}</strong>
+              <span class="text-muted">{{ ('INLINE_TEXT.AFTER_INSPECTION_RELEASE_THE_UNIT_TO_MAKE_IT_AVAILABLE_' | translate) }}</span>
+            </div>
+          </div>
+          <button mat-flat-button (click)="clearUnit()" [disabled]="actionLoading">
+            <mat-icon>check</mat-icon>
+            {{ ('INLINE_TEXT.CLEAR_RELEASE_UNIT' | translate) }}
+          </button>
+        </div>
+
+      </div>
     </div>
 
     <div class="info-section app-card">
@@ -378,6 +483,21 @@
           <div class="ic-label">{{ 'CONTRACTS.SECURITY_DEPOSIT' | translate }}</div>
           <div class="ic-value">{{ contract.securityDeposit | number }} <span class="ic-currency">{{ contract.currency }}</span></div>
         </div>
+        <div class="info-cell" *ngIf="contract.escalationType && contract.escalationType !== 'NONE'">
+          <div class="ic-label">{{ 'CONTRACTS.ESCALATION_TYPE' | translate }}</div>
+          <div class="ic-value">
+            {{ contract.escalationType === 'PERCENTAGE'
+                ? ('CONTRACTS.ESCALATION_PERCENTAGE' | translate)
+                : ('CONTRACTS.ESCALATION_FIXED' | translate) }}
+          </div>
+        </div>
+        <div class="info-cell" *ngIf="contract.escalationType && contract.escalationType !== 'NONE' && contract.escalationRate">
+          <div class="ic-label">{{ 'CONTRACTS.ESCALATION_RATE' | translate }}</div>
+          <div class="ic-value">
+            {{ contract.escalationRate | number }}
+            <span class="ic-currency">{{ contract.escalationType === 'PERCENTAGE' ? '%' : contract.currency }}</span>
+          </div>
+        </div>
         <div class="info-cell full-span" *ngIf="contract.notes">
           <div class="ic-label">{{ 'CONTRACTS.NOTES' | translate }}</div>
           <div class="ic-value notes-text">{{ contract.notes }}</div>
@@ -389,47 +509,117 @@
       </div>
     </div>
 
-    <!-- Staff activity log table -->
+    <!-- Staff activity log — Registration -->
     <div class="info-section app-card" *ngIf="contract.staffChangeLog">
       <div class="app-card-header">
         <span class="app-card-title">
-          <mat-icon class="section-icon">history</mat-icon>
-          {{ 'CONTRACTS.STAFF_ACTIVITY_LOG' | translate }}
+          <mat-icon class="section-icon">assignment</mat-icon>
+          {{ ('INLINE_TEXT.REGISTRATION_LOG' | translate) }}
         </span>
       </div>
       <div class="app-table-wrap staff-log-wrap">
         <table class="app-data-table staff-log-table">
           <thead>
             <tr>
-              <th>{{ 'CONTRACTS.LOG_TIME' | translate }}</th>
               <th>{{ 'CONTRACTS.LOG_ACTOR' | translate }}</th>
+              <th>{{ 'CONTRACTS.LOG_TIME' | translate }}</th>
               <th>{{ 'CONTRACTS.LOG_ACTION' | translate }}</th>
               <th>{{ 'CONTRACTS.LOG_DETAIL' | translate }}</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let row of parsedStaffLog()">
-              <td>
-                <span class="log-time">{{ row.timestamp || '-' }}</span>
-              </td>
+            <tr *ngFor="let row of registrationLog()">
               <td>
                 <div class="staff-log-actor">
                   <span class="staff-log-avatar material-icons">person</span>
                   <div>
                     <strong>{{ row.actor || '-' }}</strong>
-                    <span>{{ i18n.currentLang === 'ar' ? 'منفذ الإجراء' : 'Action owner' }}</span>
+                    <span>{{ ('INLINE_TEXT.ACTION_OWNER' | translate) }}</span>
                   </div>
                 </div>
               </td>
-              <td>
-                <span class="status-badge log-action-chip" data-status="INFO">{{ row.action || '-' }}</span>
-              </td>
-              <td>
-                <span class="log-detail">{{ row.detail || '-' }}</span>
-              </td>
+              <td><span class="log-time">{{ row.timestamp || '-' }}</span></td>
+              <td><span class="status-badge log-action-chip" data-status="INFO">{{ row.action || '-' }}</span></td>
+              <td><span class="log-detail">{{ row.detail || '-' }}</span></td>
             </tr>
-            <tr *ngIf="parsedStaffLog().length === 0">
+            <tr *ngIf="registrationLog().length === 0">
               <td colspan="4" class="empty-row">{{ 'COMMON.NO_DATA' | translate }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Staff activity log — Renewal -->
+    <div class="info-section app-card" *ngIf="renewalLog().length > 0">
+      <div class="app-card-header">
+        <span class="app-card-title">
+          <mat-icon class="section-icon">autorenew</mat-icon>
+          {{ ('INLINE_TEXT.RENEWAL_LOG' | translate) }}
+        </span>
+      </div>
+      <div class="app-table-wrap staff-log-wrap">
+        <table class="app-data-table staff-log-table">
+          <thead>
+            <tr>
+              <th>{{ 'CONTRACTS.LOG_ACTOR' | translate }}</th>
+              <th>{{ 'CONTRACTS.LOG_TIME' | translate }}</th>
+              <th>{{ 'CONTRACTS.LOG_ACTION' | translate }}</th>
+              <th>{{ 'CONTRACTS.LOG_DETAIL' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of renewalLog()">
+              <td>
+                <div class="staff-log-actor">
+                  <span class="staff-log-avatar material-icons">person</span>
+                  <div>
+                    <strong>{{ row.actor || '-' }}</strong>
+                    <span>{{ ('INLINE_TEXT.ACTION_OWNER' | translate) }}</span>
+                  </div>
+                </div>
+              </td>
+              <td><span class="log-time">{{ row.timestamp || '-' }}</span></td>
+              <td><span class="status-badge log-action-chip" data-status="INFO">{{ row.action || '-' }}</span></td>
+              <td><span class="log-detail">{{ row.detail || '-' }}</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Staff activity log — Cancellation / Termination -->
+    <div class="info-section app-card" *ngIf="terminationLog().length > 0">
+      <div class="app-card-header">
+        <span class="app-card-title">
+          <mat-icon class="section-icon">cancel</mat-icon>
+          {{ ('INLINE_TEXT.CANCELLATION_LOG' | translate) }}
+        </span>
+      </div>
+      <div class="app-table-wrap staff-log-wrap">
+        <table class="app-data-table staff-log-table">
+          <thead>
+            <tr>
+              <th>{{ 'CONTRACTS.LOG_ACTOR' | translate }}</th>
+              <th>{{ 'CONTRACTS.LOG_TIME' | translate }}</th>
+              <th>{{ 'CONTRACTS.LOG_ACTION' | translate }}</th>
+              <th>{{ 'CONTRACTS.LOG_DETAIL' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of terminationLog()">
+              <td>
+                <div class="staff-log-actor">
+                  <span class="staff-log-avatar material-icons">person</span>
+                  <div>
+                    <strong>{{ row.actor || '-' }}</strong>
+                    <span>{{ ('INLINE_TEXT.ACTION_OWNER' | translate) }}</span>
+                  </div>
+                </div>
+              </td>
+              <td><span class="log-time">{{ row.timestamp || '-' }}</span></td>
+              <td><span class="status-badge log-action-chip" data-status="INFO">{{ row.action || '-' }}</span></td>
+              <td><span class="log-detail">{{ row.detail || '-' }}</span></td>
             </tr>
           </tbody>
         </table>
@@ -485,7 +675,7 @@
                   <span class="waived-label" *ngIf="s.status === 'WAIVED'">{{ 'CONTRACTS.SCHED_WAIVED' | translate }}</span>
                   <span class="pending-proof-label" *ngIf="s.status === 'PENDING_CONFIRMATION'">
                     <mat-icon>priority_high</mat-icon>
-                    {{ i18n.currentLang === 'ar' ? 'بانتظار مراجعة إثبات الدفع' : 'Payment proof pending review' }}
+                    {{ ('INLINE_TEXT.PAYMENT_PROOF_PENDING_REVIEW' | translate) }}
                   </span>
                 </div>
                 <div class="proof-review-box" *ngIf="hasProof(s)">
@@ -495,23 +685,23 @@
                     </span>
                     <button type="button" mat-stroked-button (click)="openProofDetails(s)">
                       <mat-icon>info</mat-icon>
-                      {{ i18n.currentLang === 'ar' ? 'تفاصيل' : 'Details' }}
+                      {{ ('INLINE_TEXT.DETAILS' | translate) }}
                     </button>
                     <button type="button" mat-stroked-button *ngFor="let url of proofUrls(s); let i = index" (click)="viewProof(url)">
                       <mat-icon>visibility</mat-icon>
-                      {{ i18n.currentLang === 'ar' ? 'عرض المرفق' : 'View attachment' }} {{ proofUrls(s).length > 1 ? i + 1 : '' }}
+                      {{ ('INLINE_TEXT.VIEW_ATTACHMENT' | translate) }} {{ proofUrls(s).length > 1 ? i + 1 : '' }}
                     </button>
                     <a mat-stroked-button *ngFor="let url of proofUrls(s); let i = index" [href]="url" download>
                       <mat-icon>download</mat-icon>
-                      {{ i18n.currentLang === 'ar' ? 'تحميل' : 'Download' }} {{ proofUrls(s).length > 1 ? i + 1 : '' }}
+                      {{ ('INLINE_TEXT.DOWNLOAD' | translate) }} {{ proofUrls(s).length > 1 ? i + 1 : '' }}
                     </a>
                     <button type="button" mat-flat-button color="primary" *ngIf="canReviewProof(s)" (click)="reviewProof(s, 'APPROVED')">
                       <mat-icon>check_circle</mat-icon>
-                      {{ i18n.currentLang === 'ar' ? 'موافقة' : 'Approve' }}
+                      {{ ('INLINE_TEXT.APPROVE' | translate) }}
                     </button>
                     <button type="button" mat-stroked-button color="warn" *ngIf="canReviewProof(s)" (click)="reviewProof(s, 'REJECTED')">
                       <mat-icon>cancel</mat-icon>
-                      {{ i18n.currentLang === 'ar' ? 'رفض' : 'Reject' }}
+                      {{ ('INLINE_TEXT.REJECT' | translate) }}
                     </button>
                   </div>
                   <p class="sm-notes rejected-note" *ngIf="s.status === 'PAYMENT_REJECTED' && s.rejectionReason">{{ s.rejectionReason }}</p>
@@ -621,6 +811,149 @@
       </div>
     </ng-template>
   </div>
+
+  <!-- Section: Annexes -->
+  <div class="section-panel" *ngIf="section === 'annexes'">
+    <!-- Add annex form -->
+    <div class="app-card annex-add-card" *ngIf="canManageAnnexes()">
+      <div class="annex-form-title">{{ 'CONTRACTS.ADD_ANNEX' | translate }}</div>
+      <div class="annex-form-grid">
+        <input class="estate-input" [(ngModel)]="annexNumber" [placeholder]="'CONTRACTS.ANNEX_NUMBER' | translate" />
+        <input class="estate-input" [(ngModel)]="annexTitle" [placeholder]="'CONTRACTS.ANNEX_TITLE' | translate" required />
+        <input class="estate-input" type="date" [(ngModel)]="annexEffectiveDate" [placeholder]="'CONTRACTS.ANNEX_EFFECTIVE_DATE' | translate" />
+        <input class="estate-input" [(ngModel)]="annexDocumentUrl" [placeholder]="'CONTRACTS.ANNEX_DOCUMENT_URL' | translate" />
+        <textarea class="estate-input full-span" [(ngModel)]="annexDescription" rows="2" [placeholder]="'CONTRACTS.ANNEX_DESCRIPTION' | translate"></textarea>
+        <div class="full-span" style="display:flex;justify-content:flex-end">
+          <button mat-flat-button class="navy-btn" (click)="submitAnnex()" [disabled]="!annexTitle.trim() || savingAnnex">
+            {{ 'ACTIONS.SAVE' | translate }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="app-card" *ngIf="annexes.length > 0; else emptyAnnexes">
+      <div class="app-table-wrap">
+        <table class="app-data-table">
+          <thead>
+            <tr>
+              <th>{{ 'CONTRACTS.ANNEX_NUMBER' | translate }}</th>
+              <th>{{ 'CONTRACTS.ANNEX_TITLE' | translate }}</th>
+              <th>{{ 'CONTRACTS.ANNEX_EFFECTIVE_DATE' | translate }}</th>
+              <th>{{ 'CONTRACTS.ANNEX_DESCRIPTION' | translate }}</th>
+              <th>{{ 'CONTRACTS.ANNEX_DOCUMENT' | translate }}</th>
+              <th *ngIf="canManageAnnexes()">{{ 'COMMON.ACTIONS' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let a of annexes">
+              <td>{{ a.annexNumber || '—' }}</td>
+              <td>{{ a.title }}</td>
+              <td>{{ a.effectiveDate || '—' }}</td>
+              <td>{{ a.description || '—' }}</td>
+              <td>
+                <a *ngIf="a.documentUrl" [href]="a.documentUrl" target="_blank" rel="noopener" class="doc-link">
+                  <mat-icon>open_in_new</mat-icon>
+                </a>
+                <span *ngIf="!a.documentUrl">—</span>
+              </td>
+              <td *ngIf="canManageAnnexes()">
+                <button mat-icon-button class="app-icon-btn danger" (click)="deleteAnnex(a.id)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <ng-template #emptyAnnexes>
+      <div class="empty-state app-card">
+        <mat-icon>attach_file</mat-icon>
+        <p>{{ 'CONTRACTS.NO_ANNEXES' | translate }}</p>
+      </div>
+    </ng-template>
+  </div>
+
+  <!-- Section: Fees -->
+  <div class="section-panel" *ngIf="section === 'fees'">
+
+    <!-- Add fee form -->
+    <div class="app-card annex-add-card" *ngIf="canManageFees()">
+      <h4 class="annex-form-title">{{ 'CONTRACTS.ADD_FEE' | translate }}</h4>
+      <div class="annex-form-grid">
+        <div class="field-col">
+          <label>{{ 'CONTRACTS.FEE_TYPE' | translate }}</label>
+          <input class="estate-input" [(ngModel)]="feeType" [placeholder]="'CONTRACTS.FEE_TYPE_HINT' | translate">
+        </div>
+        <div class="field-col">
+          <label>{{ 'CONTRACTS.FEE_AMOUNT' | translate }} *</label>
+          <input class="estate-input" type="number" min="0.01" [(ngModel)]="feeAmount">
+        </div>
+        <div class="field-col">
+          <label>{{ 'CONTRACTS.FEE_DUE_DATE' | translate }}</label>
+          <input class="estate-input" type="date" [(ngModel)]="feeDueDate">
+        </div>
+        <div class="field-col full-col">
+          <label>{{ 'CONTRACTS.FEE_DESCRIPTION' | translate }}</label>
+          <input class="estate-input" [(ngModel)]="feeDescription">
+        </div>
+      </div>
+      <div class="annex-form-actions">
+        <button mat-flat-button class="navy-btn" (click)="submitFee()"
+                [disabled]="savingFee || !feeAmount || feeAmount <= 0">
+          <mat-spinner *ngIf="savingFee" diameter="16" style="display:inline-block;margin-inline-end:6px"></mat-spinner>
+          {{ 'ACTIONS.SAVE' | translate }}
+        </button>
+      </div>
+    </div>
+
+    <div class="app-card" *ngIf="fees.length > 0; else emptyFees">
+      <div class="app-table-wrap">
+        <table class="app-data-table">
+          <thead>
+            <tr>
+              <th>{{ 'CONTRACTS.FEE_TYPE' | translate }}</th>
+              <th>{{ 'CONTRACTS.FEE_DESCRIPTION' | translate }}</th>
+              <th>{{ 'CONTRACTS.FEE_AMOUNT' | translate }}</th>
+              <th>{{ 'CONTRACTS.FEE_DUE_DATE' | translate }}</th>
+              <th>{{ 'COMMON.STATUS' | translate }}</th>
+              <th *ngIf="canManageFees()">{{ 'COMMON.ACTIONS' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let f of fees">
+              <td>{{ f.feeType || '—' }}</td>
+              <td>{{ f.description || '—' }}</td>
+              <td><strong>{{ f.amount | number }} {{ contract.currency }}</strong></td>
+              <td>{{ f.dueDate ? (f.dueDate | date:'mediumDate') : '—' }}</td>
+              <td>
+                <span class="badge" [class.badge-success]="f.paid" [class.badge-warn]="!f.paid">
+                  {{ (f.paid ? 'CONTRACTS.FEE_PAID' : 'CONTRACTS.FEE_UNPAID') | translate }}
+                </span>
+              </td>
+              <td *ngIf="canManageFees()" class="actions-cell">
+                <button mat-icon-button class="app-icon-btn accent" *ngIf="!f.paid"
+                        (click)="markFeePaid(f)" [matTooltip]="'CONTRACTS.MARK_PAID' | translate">
+                  <mat-icon>check_circle</mat-icon>
+                </button>
+                <button mat-icon-button class="app-icon-btn danger"
+                        (click)="deleteFee(f.id)" [matTooltip]="'ACTIONS.DELETE' | translate">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <ng-template #emptyFees>
+      <div class="empty-state app-card">
+        <mat-icon>receipt_long</mat-icon>
+        <p>{{ 'CONTRACTS.NO_FEES' | translate }}</p>
+      </div>
+    </ng-template>
+  </div>
+
 </ng-container>
 
 </div>

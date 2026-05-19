@@ -108,6 +108,8 @@ export class TenantManagementComponent implements OnInit {
   propertyById: Record<number, Property> = {};
   unitById: Record<number, Unit> = {};
   filterPropertyId: number | null = null;
+  filterActive: boolean | null = null;
+  filterPortal: boolean | null = null;
   searchTerm = '';
   pageIndex = 0;
   pageFilters: FilterSpec[] = [];
@@ -312,36 +314,68 @@ export class TenantManagementComponent implements OnInit {
   }
 
   private setupFilters(): void {
-    this.pageFilters = this.properties.length > 1 ? [{
-      key: 'filterPropertyId',
-      label: 'REQUEST_FORM.PROPERTY',
-      type: 'select',
-      options: this.properties.map(p => ({
-        value: p.id,
-        label: this.i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName)
-      }))
-    }] : [];
+    const filters: FilterSpec[] = [];
+    if (this.properties.length > 0) {
+      filters.push({
+        key: 'filterPropertyId',
+        label: 'REQUEST_FORM.PROPERTY',
+        type: 'select',
+        options: this.properties.map(p => ({
+          value: p.id,
+          label: this.i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName)
+        }))
+      });
+    }
+    filters.push(
+      {
+        key: 'filterPortal',
+        label: 'TENANTS.PORTAL_LOGIN',
+        type: 'select',
+        options: [
+          { value: true, label: this.i18n.instant('COMMON.ACTIVE') },
+          { value: false, label: this.i18n.instant('COMMON.INACTIVE') }
+        ]
+      },
+      {
+        key: 'filterActive',
+        label: 'COMMON.ACTIVE',
+        type: 'select',
+        options: [
+          { value: true, label: this.i18n.instant('COMMON.ACTIVE') },
+          { value: false, label: this.i18n.instant('COMMON.INACTIVE') }
+        ]
+      }
+    );
+    this.pageFilters = filters;
   }
 
   onFilterBarChange(values: any): void {
     const prev = this.filterPropertyId;
     if (values?.filterPropertyId !== undefined) this.filterPropertyId = values.filterPropertyId;
+    if (values?.filterPortal !== undefined) this.filterPortal = values.filterPortal;
+    if (values?.filterActive !== undefined) this.filterActive = values.filterActive;
     this.pageIndex = 0;
     if (prev !== this.filterPropertyId) this.loadTenants();
     else this.applyFilters();
   }
 
   clearFiltersFromBar(): void {
-    this.filterPropertyId = this.properties.length === 1 ? this.properties[0].id : null;
+    this.filterPropertyId = null;
+    this.filterPortal = null;
+    this.filterActive = null;
     this.pageIndex = 0;
     this.loadTenants();
   }
 
-  hasFiltersBar(): boolean { return this.properties.length > 1 && !!this.filterPropertyId; }
+  hasFiltersBar(): boolean {
+    return !!this.searchTerm || !!this.filterPropertyId || this.filterPortal !== null || this.filterActive !== null;
+  }
 
   get filterValues(): Record<string, unknown> {
     return {
-      filterPropertyId: this.filterPropertyId
+      filterPropertyId: this.filterPropertyId,
+      filterPortal: this.filterPortal,
+      filterActive: this.filterActive
     };
   }
 
@@ -372,6 +406,8 @@ export class TenantManagementComponent implements OnInit {
   private applyFilters(): void {
     const q = this.searchTerm.trim().toLowerCase();
     this.filteredTenants = this.tenants.filter((t) => {
+      if (this.filterPortal !== null && this.tenantPortalLoginActive(t) !== this.filterPortal) return false;
+      if (this.filterActive !== null && this.tenantRowEffectiveActive(t) !== this.filterActive) return false;
       if (!q) return true;
       return t.fullName.toLowerCase().includes(q)
         || (t.fullNameAr ?? '').toLowerCase().includes(q)
@@ -388,9 +424,15 @@ export class TenantManagementComponent implements OnInit {
   }
 
   remove(t: Tenant): void {
+    const ar = this.isAr;
+    const hasUser = !!t.userId;
+    const baseLine = ar ? `هل تريد حذف المستأجر "${t.fullName}"؟` : `Delete tenant "${t.fullName}"?`;
+    const userLine = hasUser
+      ? (this.i18n.instant('INLINE_TEXT.THIS_WILL_ALSO_DELETE_THE_LINKED_TENANT_PORTAL_USER_ACC'))
+      : '';
+    const warningLine = this.i18n.instant('INLINE_TEXT.DELETION_WILL_BE_BLOCKED_IF_THEY_HAVE_AN_ACTIVE_LEASE_C');
     this.deleteConfirm.openDeleteConfirm({
-      messageKey: 'DIALOG.DELETE_NAMED',
-      messageParams: { name: t.fullName }
+      message: [baseLine, userLine, warningLine].filter(Boolean).join('\n')
     }).subscribe((ok) => {
       if (!ok) return;
       this.tenantSvc.delete(t.id).subscribe({
@@ -417,9 +459,6 @@ export class TenantManagementComponent implements OnInit {
       .subscribe((res: any) => {
         this.properties = res.data?.content ?? [];
         this.propertyById = this.properties.reduce((acc: Record<number, Property>, p: Property) => { acc[p.id] = p; return acc; }, {} as Record<number, Property>);
-        if (this.properties.length === 1) {
-          this.filterPropertyId = this.properties[0].id;
-        }
         this.setupFilters();
         this.loadAllUnits();
         this.loadTenants();

@@ -29,5 +29,13 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadChildren: () => import('./features/tenant/tenant.routes').then((m) => m.TENANT_ROUTES)
   },
+  {
+    path: 'employee',
+    canActivate: [authGuard],
+    loadChildren: () =>
+      import('./features/employee-portal/employee-portal.routes').then(
+        (m) => m.EMPLOYEE_PORTAL_ROUTES
+      )
+  },
   { path: '**', redirectTo: 'auth/login' }
 ];

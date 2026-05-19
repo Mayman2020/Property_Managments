@@ -17,14 +17,14 @@
     <section class="app-card contracts-card">
       <div class="section-card-header">
         <div>
-          <div class="section-mini-label">{{ i18n.currentLang === 'ar' ? 'العقود' : 'Contracts' }}</div>
-          <h3>{{ i18n.currentLang === 'ar' ? 'اختر الوحدة لعرض جدول الإيجار' : 'Choose a unit to view rent schedule' }}</h3>
+          <div class="section-mini-label">{{ ('INLINE_TEXT.CONTRACTS' | translate) }}</div>
+          <h3>{{ ('INLINE_TEXT.CHOOSE_A_UNIT_TO_VIEW_RENT_SCHEDULE' | translate) }}</h3>
         </div>
       </div>
       <div class="contract-picker-wrap">
         <app-search-dropdown
           [items]="contractDropdownItems"
-          [placeholder]="i18n.currentLang === 'ar' ? 'ابحث عن عقد...' : 'Search contracts...'"
+          [placeholder]="('INLINE_TEXT.SEARCH_CONTRACTS' | translate)"
           (selectionChange)="onContractDropdownSelect($event)">
         </app-search-dropdown>
       </div>
@@ -34,7 +34,7 @@
       <div class="summary-main">
         <span class="material-icons">receipt_long</span>
         <div>
-          <strong>{{ contract.propertyName || '-' }} - {{ i18n.currentLang === 'ar' ? 'وحدة' : 'Unit' }} {{ contract.unitNumber || '-' }}</strong>
+          <strong>{{ contract.propertyName || '-' }} - {{ ('INLINE_TEXT.UNIT_2' | translate) }} {{ contract.unitNumber || '-' }}</strong>
           <p>{{ contract.contractNumber }}</p>
         </div>
       </div>
@@ -47,13 +47,13 @@
 
     <div class="empty-state app-card" *ngIf="!selectedContractId">
       <span class="material-icons">touch_app</span>
-      <p>{{ i18n.currentLang === 'ar' ? 'اختر عقدًا من القائمة لعرض جدول الدفعات.' : 'Select a contract from the list to view its payment schedule.' }}</p>
+      <p>{{ ('INLINE_TEXT.SELECT_A_CONTRACT_FROM_THE_LIST_TO_VIEW_ITS_PAYMENT_SCH' | translate) }}</p>
     </div>
 
     <section class="app-card schedule-card" *ngIf="selectedContractId">
       <div class="section-card-header">
         <div>
-          <div class="section-mini-label">{{ i18n.currentLang === 'ar' ? 'الإيجار' : 'Rent' }}</div>
+          <div class="section-mini-label">{{ ('INLINE_TEXT.RENT' | translate) }}</div>
           <h3>{{ 'CONTRACTS.PAYMENT_SCHEDULE' | translate }}</h3>
         </div>
       </div>

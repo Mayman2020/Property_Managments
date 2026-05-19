@@ -13,6 +13,14 @@ export const authGuard: CanActivateFn = () => {
   return true;
 };
 
+/** Prevents already-authenticated users from seeing the login page — sends them to their dashboard. */
+export const guestGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  if (auth.isAuthenticated()) return router.createUrlTree([auth.getDashboardRoute()]);
+  return true;
+};
+
 export const roleGuard = (allowedRoles: UserRole[]): CanActivateFn => () => {
   const auth = inject(AuthService);
   const permissions = inject(PermissionService);
@@ -74,6 +82,16 @@ export const officerGuard: CanActivateFn = roleGuard([
   'MAINTENANCE_COMPANY'
 ]);
 export const tenantGuard: CanActivateFn = roleGuard(['SUPER_ADMIN', 'GENERAL_MANAGER', 'TENANT']);
+export const employeePortalGuard: CanActivateFn = roleGuard([
+  'SUPER_ADMIN',
+  'GENERAL_MANAGER',
+  'ACCOUNTANT',
+  'MAINTENANCE_OFFICER_INTERNAL',
+  'MAINTENANCE_OFFICER_COMPANY',
+  'MAINTENANCE_COMPANY',
+  'PROPERTY_GUARD',
+  'PROCEDURES_CLERK'
+]);
 export const ownerGuard: CanActivateFn = roleGuard(['OWNER']);
 export const superAdminGuard: CanActivateFn = roleGuard(['SUPER_ADMIN']);
 export const contractsGuard: CanActivateFn = roleGuard([

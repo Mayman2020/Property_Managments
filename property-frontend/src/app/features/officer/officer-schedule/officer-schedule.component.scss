@@ -1,4 +1,14 @@
 .officer-schedule-page {
+  .contract-property-filter {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 16px;
+
+    mat-form-field {
+      width: min(360px, 100%);
+    }
+  }
+
   .schedule-grid {
     display: grid;
     grid-template-columns: 2fr 1fr;

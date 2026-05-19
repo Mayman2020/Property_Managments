@@ -258,14 +258,14 @@ export class TenantDashboardComponent implements OnInit {
   get unitDropdownItems(): SearchDropdownItem[] {
     return this.uniqueUnits.map((unit) => ({
       label: `${unit.unitNumber} - ${unit.propertyName}`,
-      subLabel: this.i18n.currentLang === 'ar' ? 'وحدة مرتبطة بعقدك' : 'Unit linked to your contract',
+      subLabel: this.i18n.instant('INLINE_TEXT.UNIT_LINKED_TO_YOUR_CONTRACT'),
       data: unit
     }));
   }
 
   get activeUnitLabel(): string {
     const c = this.activeContract;
-    if (!c) return this.i18n.currentLang === 'ar' ? 'اختر وحدة...' : 'Choose a unit...';
+    if (!c) return this.i18n.instant('INLINE_TEXT.CHOOSE_A_UNIT_2');
     return `${c.unitNumber || '-'} - ${c.propertyName || '-'}`;
   }
 

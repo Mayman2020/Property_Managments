@@ -95,12 +95,10 @@ export class ContractRenewalFormComponent implements OnInit {
       maxWidth: '95vw',
       panelClass: 'app-dialog-panel',
       data: {
-        title: this.i18n.currentLang === 'ar' ? 'تأكيد طلب التجديد' : 'Confirm Renewal Request',
-        message: this.i18n.currentLang === 'ar'
-          ? 'هل أنت متأكد من حفظ وإرسال طلب تجديد العقد؟'
-          : 'Are you sure you want to save and submit this renewal request?',
-        confirmLabel: this.i18n.currentLang === 'ar' ? 'موافق' : 'OK',
-        cancelLabel: this.i18n.currentLang === 'ar' ? 'إلغاء' : 'Cancel',
+        title: this.i18n.instant('INLINE_TEXT.CONFIRM_RENEWAL_REQUEST'),
+        message: this.i18n.instant('INLINE_TEXT.ARE_YOU_SURE_YOU_WANT_TO_SAVE_AND_SUBMIT_THIS_RENEWAL_R'),
+        confirmLabel: this.i18n.instant('INLINE_TEXT.OK'),
+        cancelLabel: this.i18n.instant('INLINE_TEXT.CANCEL'),
         icon: 'warning'
       } as ConfirmDialogData
     }).afterClosed().subscribe((ok) => {

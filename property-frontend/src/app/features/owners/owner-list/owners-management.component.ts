@@ -1,5 +1,6 @@
-﻿import { Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -10,11 +11,11 @@ import { TranslateModule } from '@ngx-translate/core';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
-import { FilterBarComponent, FilterSpec } from '../../../shared/components/filter-bar/filter-bar.component';
 import { ExportColumn, TableExportToolbarComponent } from '../../../shared/components/table-export-toolbar/table-export-toolbar.component';
 import { Owner, OwnerService, ownerDisplayName } from '../../../core/services/owner.service';
 import { Property, PropertyService } from '../../../core/services/property.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { PermissionService } from '../../../core/services/permission.service';
 import { SnackService } from '../../../core/services/snack.service';
 import { DeleteConfirmService } from '../../../core/services/delete-confirm.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
@@ -25,10 +26,10 @@ import { OwnerLinkUserDialogComponent, OwnerLinkUserDialogData } from '../owner-
   selector: 'app-owners-management',
   standalone: true,
   imports: [
-    NgFor, NgIf,
+    NgFor, NgIf, FormsModule,
     TranslateModule,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule,
-    PageHeaderComponent, EmptyStateComponent, TablePagerComponent, FilterBarComponent, TableExportToolbarComponent
+    PageHeaderComponent, EmptyStateComponent, TablePagerComponent, TableExportToolbarComponent
   ],
   template: `
     <div class="app-page">
@@ -63,7 +64,15 @@ import { OwnerLinkUserDialogComponent, OwnerLinkUserDialogData } from '../owner-
               <span class="material-icons">search</span>
               <input [value]="searchTerm" (input)="onSearch($any($event.target).value)" [placeholder]="'ACTIONS.SEARCH' | translate">
             </div>
-            <app-filter-bar *ngIf="pageFilters.length" [filters]="pageFilters" [filterValues]="filterValues" (filtersChange)="onFilterBarChange($event)"></app-filter-bar>
+            <div class="finance-filter-strip" *ngIf="properties.length > 1">
+              <label>{{ 'REQUEST_FORM.PROPERTY' | translate }}</label>
+              <select [(ngModel)]="filterPropertyId" (change)="onPropertyChange()" class="estate-property-select">
+                <option [ngValue]="null">{{ 'COMMON.ALL' | translate }}</option>
+                <option *ngFor="let p of properties" [ngValue]="p.id">
+                  {{ i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName) }}
+                </option>
+              </select>
+            </div>
             <button mat-icon-button class="clear-filters-btn" (click)="clearFiltersFromBar()" *ngIf="hasFiltersBar()" [matTooltip]="'ACTIONS.CLEAR_FILTERS' | translate">
               <mat-icon>filter_alt_off</mat-icon>
             </button>
@@ -82,6 +91,7 @@ import { OwnerLinkUserDialogComponent, OwnerLinkUserDialogData } from '../owner-
               <tr>
                 <th>#</th>
                 <th>{{ 'OWNERS.NAME_COL' | translate }}</th>
+                <th>{{ 'REQUEST_FORM.PROPERTY' | translate }}</th>
                 <th>{{ 'OWNERS.NATIONAL_ID' | translate }}</th>
                 <th>{{ 'OWNERS.PHONE' | translate }}</th>
                 <th>{{ 'OWNERS.EMAIL' | translate }}</th>
@@ -101,6 +111,12 @@ import { OwnerLinkUserDialogComponent, OwnerLinkUserDialogData } from '../owner-
                     </span>
                     <strong>{{ ownerLabel(o) }}</strong>
                   </div>
+                </td>
+                <td>
+                  <span *ngFor="let p of (o.properties || []); let last = last" class="prop-chip">
+                    {{ i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyNameEn) : (p.propertyNameEn || p.propertyNameAr) }}<ng-container *ngIf="!last">, </ng-container>
+                  </span>
+                  <span *ngIf="!o.properties || o.properties.length === 0" class="text-muted">--</span>
                 </td>
                 <td>{{ o.nationalId || '--' }}</td>
                 <td>{{ o.phone || '--' }}</td>
@@ -127,13 +143,13 @@ import { OwnerLinkUserDialogComponent, OwnerLinkUserDialogData } from '../owner-
                   <button class="app-icon-btn" type="button" (click)="openLinkUser(o)" [matTooltip]="'OWNERS.LINK_USER_TITLE' | translate">
                     <mat-icon>link</mat-icon>
                   </button>
-                  <button class="app-icon-btn danger" type="button" *ngIf="isSuperAdmin" (click)="remove(o)" [matTooltip]="'ACTIONS.DELETE' | translate">
+                  <button class="app-icon-btn danger" type="button" *ngIf="canDeleteOwner()" (click)="remove(o)" [matTooltip]="'ACTIONS.DELETE' | translate">
                     <mat-icon>delete</mat-icon>
                   </button>
                 </td>
               </tr>
               <tr *ngIf="filteredOwners.length === 0">
-                <td colspan="8" class="empty-row">{{ 'COMMON.NO_DATA' | translate }}</td>
+                <td colspan="9" class="empty-row">{{ 'COMMON.NO_DATA' | translate }}</td>
               </tr>
             </tbody>
           </table>
@@ -160,6 +176,10 @@ import { OwnerLinkUserDialogComponent, OwnerLinkUserDialogData } from '../owner-
     .owner-name-cell { display: flex; align-items: center; gap: 10px; }
     .owner-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 1px solid var(--line); flex-shrink: 0; }
     .avatar-placeholder { width: 36px; height: 36px; border-radius: 50%; background: var(--navy-800); color: white; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 700; flex-shrink: 0; }
+    .finance-filter-strip { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 12px; border-radius: 12px; background: rgba(255,255,255,0.72); border: 1px solid var(--line-2, #e4d8c8); box-shadow: inset 0 1px 0 rgba(255,255,255,0.7); }
+    .finance-filter-strip label { font-size: 12px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+    .prop-chip { font-size: 0.82rem; color: var(--navy-800); font-weight: 500; }
+    .text-muted { color: var(--text-muted); }
   `]
 })
 export class OwnersManagementComponent implements OnInit {
@@ -167,7 +187,6 @@ export class OwnersManagementComponent implements OnInit {
   properties: Property[] = [];
   filterPropertyId: number | null = null;
   searchTerm = '';
-  pageFilters: FilterSpec[] = [];
   loading = true;
   readonly pageSize = 10;
   pageIndex = 0;
@@ -178,25 +197,23 @@ export class OwnersManagementComponent implements OnInit {
     private readonly dialog: MatDialog,
     private readonly snack: SnackService,
     private readonly deleteConfirm: DeleteConfirmService,
-    private readonly i18n: I18nService,
-    readonly auth: AuthService
+    readonly i18n: I18nService,
+    readonly auth: AuthService,
+    readonly permissions: PermissionService
   ) {}
 
   get isSuperAdmin(): boolean { return this.auth.isSuperAdmin(); }
+
+  canDeleteOwner(): boolean { return this.permissions.can('properties', 'delete'); }
 
   ownerLabel(o: Owner): string {
     return ownerDisplayName(o, this.i18n.currentLang);
   }
 
-  /** Portal login allowed: flag on + linked user + that user account active in Users. */
   ownerPortalLoginActive(o: Owner): boolean {
     return !!(o.portalAccess && o.userId && o.linkedUserActive);
   }
 
-  /**
-   * Shown in «نشط»: owner record must be active; if portal access is on, linked user must exist and be active
-   * (matches disabling the user in Users — no more «نشط» while portal shows غير نشط).
-   */
   ownerRowEffectiveActive(o: Owner): boolean {
     if (!o.active) return false;
     if (o.portalAccess) {
@@ -253,37 +270,18 @@ export class OwnersManagementComponent implements OnInit {
         if (this.properties.length === 1) {
           this.filterPropertyId = this.properties[0].id;
         }
-        this.setupFilters();
         this.load();
       },
       error: () => {
         this.properties = [];
-        this.setupFilters();
         this.load();
       }
     });
   }
 
-  private setupFilters(): void {
-    this.pageFilters = this.properties.length > 1 ? [
-      {
-        key: 'filterPropertyId',
-        label: 'REQUEST_FORM.PROPERTY',
-        type: 'select',
-        options: this.properties.map((p) => ({
-          value: p.id,
-          label: this.i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName)
-        }))
-      }
-    ] : [];
-  }
-
-  onFilterBarChange(values: any): void {
-    if (values?.filterPropertyId !== undefined) {
-      this.filterPropertyId = values.filterPropertyId;
-      this.pageIndex = 0;
-      this.load();
-    }
+  onPropertyChange(): void {
+    this.pageIndex = 0;
+    this.load();
   }
 
   onSearch(term: string): void {
@@ -300,12 +298,6 @@ export class OwnersManagementComponent implements OnInit {
 
   hasFiltersBar(): boolean {
     return !!(this.searchTerm || (this.properties.length > 1 && this.filterPropertyId !== null));
-  }
-
-  get filterValues(): Record<string, unknown> {
-    return {
-      filterPropertyId: this.filterPropertyId
-    };
   }
 
   openDialog(owner: Owner | null): void {
@@ -343,9 +335,16 @@ export class OwnersManagementComponent implements OnInit {
   }
 
   remove(owner: Owner): void {
+    const ar = this.i18n.currentLang === 'ar';
+    const name = this.ownerLabel(owner);
+    const hasUser = !!owner.userId;
+    const baseLine = ar ? `هل تريد حذف المالك "${name}"؟` : `Delete owner "${name}"?`;
+    const userLine = hasUser
+      ? (this.i18n.instant('INLINE_TEXT.THIS_WILL_ALSO_DELETE_THE_LINKED_OWNER_PORTAL_USER_ACCO'))
+      : '';
+    const warningLine = this.i18n.instant('INLINE_TEXT.DELETION_WILL_BE_BLOCKED_IF_THEY_ARE_THE_SOLE_OWNER_OF_');
     this.deleteConfirm.openDeleteConfirm({
-      messageKey: 'OWNERS.CONFIRM_DELETE',
-      messageParams: { name: this.ownerLabel(owner) }
+      message: [baseLine, userLine, warningLine].filter(Boolean).join('\n')
     }).subscribe((ok) => {
       if (!ok) return;
       this.svc.delete(owner.id).subscribe({

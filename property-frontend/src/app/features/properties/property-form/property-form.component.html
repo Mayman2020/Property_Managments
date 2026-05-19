@@ -32,6 +32,16 @@
             <input matInput formControlName="totalFloors" type="number" min="1">
           </mat-form-field>
 
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'PROPERTY_FORM.LEGAL_ENTITY' | translate }}</mat-label>
+            <mat-select formControlName="legalEntityId">
+              <mat-option [value]="null">— {{ 'PROPERTY_FORM.NO_LEGAL_ENTITY' | translate }} —</mat-option>
+              <mat-option *ngFor="let e of legalEntities" [value]="e.id">
+                {{ i18n.currentLang === 'ar' ? e.nameAr : (e.nameEn || e.nameAr) }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
           <div class="planned-units-summary full-col">
             <div class="planned-units-row">
               <span class="planned-units-label">{{ 'PROPERTY_FORM.PLANNED_TOTAL_UNITS_LABEL' | translate }}</span>
@@ -475,6 +485,10 @@
               <label>{{ 'PROPERTY_FORM.PLANNED_TOTAL_UNITS_LABEL' | translate }}</label>
               <span>{{ plannedTotalUnitsForView() }}</span>
             </div>
+            <div class="detail-item" *ngIf="propertyRecord.legalEntityId">
+              <label>{{ 'PROPERTY_FORM.LEGAL_ENTITY' | translate }}</label>
+              <span>{{ i18n.currentLang === 'ar' ? propertyRecord.legalEntityNameAr : (propertyRecord.legalEntityNameEn || propertyRecord.legalEntityNameAr) }}</span>
+            </div>
             <div class="detail-item full">
               <label>{{ 'PROPERTY_FORM.DESCRIPTION' | translate }}</label>
               <span>{{ propertyRecord.description || '-' }}</span>
@@ -845,9 +859,9 @@
                       <div class="invoice-actions" *ngIf="canManageAssignments">
                         <button mat-icon-button type="button"
                                 *ngIf="inv.status !== 'PAID' && inv.status !== 'CANCELLED'"
-                                [matTooltip]="'MAINTENANCE_CONTRACT.MARK_PAID' | translate"
-                                (click)="markInvoicePaid(c.contractId, inv)">
-                          <span class="material-icons">check_circle</span>
+                                [matTooltip]="'ACTIONS.VIEW' | translate"
+                                (click)="openMaintenanceInvoice(c.contractId, inv)">
+                          <span class="material-icons">open_in_new</span>
                         </button>
                         <button mat-icon-button type="button" color="warn"
                                 *ngIf="inv.status !== 'PAID' && inv.status !== 'CANCELLED'"

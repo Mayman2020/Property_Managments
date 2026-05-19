@@ -71,6 +71,74 @@
 
 .receipt-upload { margin-top: 4px; }
 
+.inventory-section {
+  margin: 16px 0;
+  padding: 16px;
+  background: var(--surface-2);
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+}
+
+.inventory-add-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.inv-select {
+  flex: 1;
+  min-width: 180px;
+  min-height: 42px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  font: inherit;
+  color: var(--text-main);
+}
+
+.inv-qty {
+  width: 80px;
+  min-height: 42px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  font: inherit;
+  color: var(--text-main);
+}
+
+.inventory-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.inv-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.inv-name { flex: 1; font-weight: 600; font-size: 0.9rem; }
+
+.inv-qty-badge {
+  background: var(--navy-100, #e8eef5);
+  color: var(--navy-800);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.inv-remove { color: var(--error, #d32f2f); flex-shrink: 0; }
+
 .form-actions {
   display: flex;
   gap: 12px;

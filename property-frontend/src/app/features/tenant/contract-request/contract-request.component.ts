@@ -204,7 +204,7 @@ export class ContractRequestComponent implements OnInit {
   get contractDropdownItems(): SearchDropdownItem[] {
     return this.selectableContracts.map(c => ({
       label: c.contractNumber,
-      subLabel: [c.propertyName, c.unitNumber ? (this.i18n.currentLang === 'ar' ? 'وحدة ' : 'Unit ') + c.unitNumber : null]
+      subLabel: [c.propertyName, c.unitNumber ? (this.i18n.instant('INLINE_TEXT.UNIT_3')) + c.unitNumber : null]
         .filter(Boolean).join(' · '),
       badge: this.contractStatusLabel(c.status),
       badgeClass: 'st-' + c.status,
@@ -270,10 +270,10 @@ export class ContractRequestComponent implements OnInit {
 
   requestProgressLabel(req: ContractActionRequest): string {
     const ar = this.i18n.currentLang === 'ar';
-    if (req.status === 'APPROVED') return ar ? 'وافق المالك وتم تنفيذ الطلب' : 'Owner approved and the request was applied';
-    if (req.status === 'REJECTED') return ar ? 'رفض المالك الطلب' : 'Owner rejected the request';
-    if (req.status === 'CANCELLED') return ar ? 'تم إلغاء الطلب' : 'Request cancelled';
-    return ar ? 'بانتظار موافقة المالك' : 'Waiting for owner approval';
+    if (req.status === 'APPROVED') return this.i18n.instant('INLINE_TEXT.OWNER_APPROVED_AND_THE_REQUEST_WAS_APPLIED');
+    if (req.status === 'REJECTED') return this.i18n.instant('INLINE_TEXT.OWNER_REJECTED_THE_REQUEST');
+    if (req.status === 'CANCELLED') return this.i18n.instant('INLINE_TEXT.REQUEST_CANCELLED');
+    return this.i18n.instant('INLINE_TEXT.WAITING_FOR_OWNER_APPROVAL');
   }
 
   contractStatusLabel(status: string): string {

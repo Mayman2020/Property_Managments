@@ -57,6 +57,35 @@
           </div>
         </section>
 
+        <!-- Routing choice — only shown when property has BOTH officer and company -->
+        <section class="request-form-section routing-section" *ngIf="showRoutingChoice">
+          <div class="section-label">{{ 'REQUEST_FORM.ROUTING_TITLE' | translate }}</div>
+          <div class="routing-choice-row">
+            <button
+              type="button"
+              class="routing-pill"
+              [class.selected]="routingTarget === 'OFFICER'"
+              (click)="routingTarget = 'OFFICER'">
+              <span class="material-icons">person</span>
+              <div>
+                <strong>{{ 'REQUEST_FORM.ROUTE_TO_OFFICER' | translate }}</strong>
+                <span *ngIf="routingInfo?.officerName">{{ routingInfo!.officerName }}</span>
+              </div>
+            </button>
+            <button
+              type="button"
+              class="routing-pill"
+              [class.selected]="routingTarget === 'COMPANY'"
+              (click)="routingTarget = 'COMPANY'">
+              <span class="material-icons">engineering</span>
+              <div>
+                <strong>{{ 'REQUEST_FORM.ROUTE_TO_COMPANY' | translate }}</strong>
+                <span *ngIf="routingCompanyName()">{{ routingCompanyName() }}</span>
+              </div>
+            </button>
+          </div>
+        </section>
+
         <section class="request-form-section">
           <label class="field-shell full-width">
             <span>{{ 'REQUEST_FORM.REQUEST_TITLE' | translate }}</span>

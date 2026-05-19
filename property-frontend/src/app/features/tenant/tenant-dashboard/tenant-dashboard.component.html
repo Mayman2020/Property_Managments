@@ -8,7 +8,7 @@
 
   <ng-container *ngIf="!loading && !missingTenantLink">
     <app-page-header
-      [eyebrow]="i18n.currentLang === 'ar' ? 'نظرة عامة' : 'Overview'"
+      [eyebrow]="('INLINE_TEXT.OVERVIEW' | translate)"
       [title]="('TENANT_DASHBOARD.WELCOME' | translate) + ' ' + currentUserName"
       [subtitle]="'TENANT_DASHBOARD.SUBTITLE' | translate">
     </app-page-header>
@@ -16,7 +16,7 @@
     <section class="app-card unit-selector-card" *ngIf="uniqueUnits.length > 0">
       <div class="section-card-header">
         <div>
-          <div class="section-mini-label">{{ i18n.currentLang === 'ar' ? 'الوحدات' : 'Units' }}</div>
+          <div class="section-mini-label">{{ ('INLINE_TEXT.UNITS_2' | translate) }}</div>
           <h3>{{ 'TENANT_DASHBOARD.SELECT_UNIT' | translate }}</h3>
         </div>
       </div>
@@ -31,7 +31,7 @@
 
     <div class="no-selection app-card" *ngIf="!selectedUnitId">
       <span class="material-icons">touch_app</span>
-      <p>{{ i18n.currentLang === 'ar' ? 'اختر وحدة من القائمة لعرض التفاصيل وطلبات الصيانة.' : 'Select a unit from the list to view details and maintenance requests.' }}</p>
+      <p>{{ ('INLINE_TEXT.SELECT_A_UNIT_FROM_THE_LIST_TO_VIEW_DETAILS_AND_MAINTEN' | translate) }}</p>
     </div>
 
     <section class="app-card unit-overview-card" *ngIf="selectedUnitId">
@@ -65,43 +65,43 @@
           <strong>{{ previousRequests.length }}</strong>
         </div>
         <div class="unit-summary-item">
-          <span>{{ i18n.currentLang === 'ar' ? 'آخر طلب صيانة' : 'Latest maintenance request' }}</span>
+          <span>{{ ('INLINE_TEXT.LATEST_MAINTENANCE_REQUEST' | translate) }}</span>
           <strong *ngIf="latestMaintenanceRequest">{{ statusLabel(latestMaintenanceRequest.status) }}</strong>
-          <strong *ngIf="!latestMaintenanceRequest">{{ i18n.currentLang === 'ar' ? 'لا يوجد' : 'None' }}</strong>
+          <strong *ngIf="!latestMaintenanceRequest">{{ ('INLINE_TEXT.NONE' | translate) }}</strong>
         </div>
         <div class="unit-summary-item">
-          <span>{{ i18n.currentLang === 'ar' ? 'آخر موعد صيانة' : 'Latest maintenance visit' }}</span>
+          <span>{{ ('INLINE_TEXT.LATEST_MAINTENANCE_VISIT' | translate) }}</span>
           <strong *ngIf="latestMaintenanceVisit">{{ latestMaintenanceVisit.scheduledDate | date:'dd/MM/yyyy' }}</strong>
-          <strong *ngIf="!latestMaintenanceVisit">{{ i18n.currentLang === 'ar' ? 'غير محدد' : 'Not scheduled' }}</strong>
+          <strong *ngIf="!latestMaintenanceVisit">{{ ('INLINE_TEXT.NOT_SCHEDULED' | translate) }}</strong>
         </div>
         <div class="unit-summary-item">
-          <span>{{ i18n.currentLang === 'ar' ? 'موعد تجديد العقد' : 'Contract renewal date' }}</span>
+          <span>{{ ('INLINE_TEXT.CONTRACT_RENEWAL_DATE' | translate) }}</span>
           <strong *ngIf="activeContract?.endDate">{{ activeContract?.endDate | date:'dd/MM/yyyy' }}</strong>
           <strong *ngIf="!activeContract?.endDate">{{ '-' }}</strong>
         </div>
         <div class="unit-summary-item">
-          <span>{{ i18n.currentLang === 'ar' ? 'آخر دفعة إيجار مقبولة' : 'Latest accepted rent payment' }}</span>
+          <span>{{ ('INLINE_TEXT.LATEST_ACCEPTED_RENT_PAYMENT' | translate) }}</span>
           <strong *ngIf="latestAcceptedRentPayment">{{ latestAcceptedRentPayment.amount }} {{ activeContract?.currency || '' }}</strong>
-          <strong *ngIf="!latestAcceptedRentPayment">{{ i18n.currentLang === 'ar' ? 'لا يوجد' : 'None' }}</strong>
+          <strong *ngIf="!latestAcceptedRentPayment">{{ ('INLINE_TEXT.NONE' | translate) }}</strong>
         </div>
         <div class="unit-summary-item">
-          <span>{{ i18n.currentLang === 'ar' ? 'تاريخ دفع آخر دفعة مقبولة' : 'Latest accepted payment date' }}</span>
+          <span>{{ ('INLINE_TEXT.LATEST_ACCEPTED_PAYMENT_DATE' | translate) }}</span>
           <strong *ngIf="latestAcceptedRentPaymentDate">{{ latestAcceptedRentPaymentDate | date:'dd/MM/yyyy' }}</strong>
           <strong *ngIf="!latestAcceptedRentPaymentDate">{{ '-' }}</strong>
         </div>
         <div class="unit-summary-item">
-          <span>{{ i18n.currentLang === 'ar' ? 'مقبولة بواسطة' : 'Accepted by' }}</span>
+          <span>{{ ('INLINE_TEXT.ACCEPTED_BY' | translate) }}</span>
           <strong class="summary-text">{{ latestAcceptedRentReviewer }}</strong>
         </div>
         <div class="unit-summary-item">
-          <span>{{ i18n.currentLang === 'ar' ? 'تاريخ قبول آخر دفعة' : 'Latest payment accepted at' }}</span>
+          <span>{{ ('INLINE_TEXT.LATEST_PAYMENT_ACCEPTED_AT' | translate) }}</span>
           <strong *ngIf="latestAcceptedRentReviewedAt">{{ latestAcceptedRentReviewedAt | date:'dd/MM/yyyy' }}</strong>
           <strong *ngIf="!latestAcceptedRentReviewedAt">{{ '-' }}</strong>
         </div>
         <div class="unit-summary-item">
-          <span>{{ i18n.currentLang === 'ar' ? 'آخر شكوى للوحدة' : 'Latest unit complaint' }}</span>
+          <span>{{ ('INLINE_TEXT.LATEST_UNIT_COMPLAINT' | translate) }}</span>
           <strong class="summary-text" *ngIf="latestUnitComplaint">{{ latestUnitComplaint.title }}</strong>
-          <strong *ngIf="!latestUnitComplaint">{{ i18n.currentLang === 'ar' ? 'لا يوجد' : 'None' }}</strong>
+          <strong *ngIf="!latestUnitComplaint">{{ ('INLINE_TEXT.NONE' | translate) }}</strong>
         </div>
       </div>
     </section>

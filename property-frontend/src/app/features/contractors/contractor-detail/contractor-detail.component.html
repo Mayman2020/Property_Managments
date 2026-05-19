@@ -1,0 +1,189 @@
+<div class="app-page" *ngIf="!loading && company">
+  <app-page-header
+    [title]="companyName()"
+    [subtitle]="company.email || ''"
+    [breadcrumbs]="[
+      { label: ('NAV.DASHBOARD' | translate), route: '/admin/dashboard' },
+      { label: ('CONTRACTORS.TITLE' | translate), route: '/admin/contractors' },
+      { label: companyName() }
+    ]">
+    <button mat-stroked-button type="button" (click)="openEdit()">
+      <mat-icon>edit</mat-icon>
+      {{ 'ACTIONS.EDIT' | translate }}
+    </button>
+  </app-page-header>
+
+  <!-- Status chips -->
+  <div class="company-chips">
+    <span class="badge" [ngClass]="company.active ? 'badge-success' : 'badge-muted'">
+      <mat-icon>{{ company.active ? 'check_circle' : 'cancel' }}</mat-icon>
+      {{ (company.active ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') | translate }}
+    </span>
+    <span class="chip-stat" *ngIf="(company.propertiesCount ?? 0) > 0">
+      <mat-icon>apartment</mat-icon>
+      {{ company.propertiesCount }} {{ 'CONTRACTORS.PROPERTIES_COUNT' | translate }}
+    </span>
+    <span class="chip-stat" *ngIf="staff.length > 0">
+      <mat-icon>groups</mat-icon>
+      {{ staff.length }} {{ 'CONTRACTORS.STAFF_COUNT' | translate }}
+    </span>
+  </div>
+
+  <!-- Tab nav -->
+  <nav class="contract-section-nav">
+    <button type="button" [class.active]="activeTab === 'info'" (click)="activeTab = 'info'">
+      <mat-icon>info</mat-icon>
+      {{ 'CONTRACTORS.TAB_INFO' | translate }}
+    </button>
+    <button type="button" [class.active]="activeTab === 'contracts'" (click)="activeTab = 'contracts'">
+      <mat-icon>handshake</mat-icon>
+      {{ 'CONTRACTORS.TAB_CONTRACTS' | translate }}
+      <span class="nav-badge" *ngIf="contracts.length > 0">{{ contracts.length }}</span>
+    </button>
+    <button type="button" [class.active]="activeTab === 'staff'" (click)="activeTab = 'staff'">
+      <mat-icon>groups</mat-icon>
+      {{ 'CONTRACTORS.TAB_STAFF' | translate }}
+      <span class="nav-badge" *ngIf="staff.length > 0">{{ staff.length }}</span>
+    </button>
+  </nav>
+
+  <!-- ===== INFO TAB ===== -->
+  <div class="app-card info-section" *ngIf="activeTab === 'info'">
+    <div class="info-header">
+      <img *ngIf="company.profileImageUrl" [src]="company.profileImageUrl" class="company-avatar-lg" alt="">
+      <div class="avatar-placeholder-lg" *ngIf="!company.profileImageUrl">
+        {{ companyName().charAt(0).toUpperCase() }}
+      </div>
+      <div class="info-header-text">
+        <h2>{{ company.nameAr }}</h2>
+        <p>{{ company.nameEn }}</p>
+      </div>
+    </div>
+    <div class="info-grid">
+      <div class="info-item">
+        <span class="info-label">{{ 'CONTRACTORS.PHONE' | translate }}</span>
+        <span class="info-value">{{ company.phone || '-' }}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">{{ 'CONTRACTORS.EMAIL' | translate }}</span>
+        <span class="info-value">{{ company.email || '-' }}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">{{ 'CONTRACTORS.CONTRACT_START' | translate }}</span>
+        <span class="info-value">{{ formatDate(company.latestContractStart || company.contractStart) }}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">{{ 'CONTRACTORS.CONTRACT_END' | translate }}</span>
+        <span class="info-value">{{ formatDate(company.latestContractEnd || company.contractEnd) }}</span>
+      </div>
+      <div class="info-item full" *ngIf="company.notes">
+        <span class="info-label">{{ 'CONTRACTORS.NOTES' | translate }}</span>
+        <span class="info-value">{{ company.notes }}</span>
+      </div>
+    </div>
+
+    <!-- Attachments -->
+    <div class="attachments-section" *ngIf="company.attachmentFiles && company.attachmentFiles.length > 0">
+      <p class="section-label">{{ 'CONTRACTORS.CONTRACT_ATTACHMENTS' | translate }}</p>
+      <div class="attachment-chips">
+        <a *ngFor="let url of company.attachmentFiles" [href]="url" target="_blank" class="attachment-chip">
+          <mat-icon>attach_file</mat-icon>
+          <span>{{ 'ACTIONS.VIEW' | translate }}</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CONTRACTS TAB ===== -->
+  <div *ngIf="activeTab === 'contracts'">
+    <div class="tab-toolbar">
+      <button mat-flat-button class="navy-btn" type="button" (click)="openAddContract()">
+        <mat-icon>add</mat-icon>
+        {{ 'CONTRACTORS.ADD_PROPERTY_CONTRACT' | translate }}
+      </button>
+    </div>
+
+    <div class="app-card table-card" *ngIf="contracts.length > 0">
+      <div class="app-table-wrap">
+        <table class="app-data-table">
+          <thead>
+            <tr>
+              <th>{{ 'MAINTENANCE_CONTRACT.CONTRACT_NUMBER' | translate }}</th>
+              <th>{{ 'REQUEST_FORM.PROPERTY' | translate }}</th>
+              <th>{{ 'CONTRACTORS.CONTRACT_START' | translate }}</th>
+              <th>{{ 'CONTRACTORS.CONTRACT_END' | translate }}</th>
+              <th>{{ 'CONTRACTORS.CONTRACT_VALUE' | translate }}</th>
+              <th>{{ 'COMMON.STATUS' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let mc of contracts">
+              <td><strong>{{ mc.contractNumber || '-' }}</strong></td>
+              <td>{{ propertyName(mc) }}</td>
+              <td>{{ formatDate(mc.startDate) }}</td>
+              <td>{{ formatDate(mc.endDate) }}</td>
+              <td>{{ mc.contractValue != null ? (mc.contractValue | number:'1.0-2') : '-' }}</td>
+              <td>
+                <span class="badge" [ngClass]="contractStatusClass(mc.status)">
+                  {{ contractStatusLabel(mc.status) }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="empty-contracts" *ngIf="contracts.length === 0">
+      <mat-icon>handshake</mat-icon>
+      <p>{{ 'CONTRACTORS.NO_CONTRACTS' | translate }}</p>
+    </div>
+  </div>
+
+  <!-- ===== STAFF TAB ===== -->
+  <div *ngIf="activeTab === 'staff'">
+    <div class="app-card table-card" *ngIf="staff.length > 0">
+      <div class="app-table-wrap">
+        <table class="app-data-table">
+          <thead>
+            <tr>
+              <th>{{ 'HR.EMPLOYEE_NAME' | translate }}</th>
+              <th>{{ 'CONTRACTORS.PHONE' | translate }}</th>
+              <th>{{ 'CONTRACTORS.EMAIL' | translate }}</th>
+              <th>{{ 'COMMON.STATUS' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let s of staff">
+              <td>
+                <div class="staff-name-cell">
+                  <img *ngIf="s.profileImageUrl" [src]="s.profileImageUrl" class="staff-avatar" alt="">
+                  <span class="avatar-sm" *ngIf="!s.profileImageUrl">
+                    {{ (s.fullNameAr || s.fullName || '?').charAt(0).toUpperCase() }}
+                  </span>
+                  <span>{{ s.fullNameAr || s.fullName }}</span>
+                </div>
+              </td>
+              <td>{{ s.phone || '-' }}</td>
+              <td>{{ s.email || '-' }}</td>
+              <td>
+                <span class="badge" [ngClass]="s.active ? 'badge-success' : 'badge-muted'">
+                  {{ (s.active ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') | translate }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="empty-contracts" *ngIf="staff.length === 0">
+      <mat-icon>groups</mat-icon>
+      <p>{{ 'CONTRACTORS.NO_STAFF' | translate }}</p>
+    </div>
+  </div>
+</div>
+
+<div class="loading-center" *ngIf="loading">
+  <mat-spinner diameter="40"></mat-spinner>
+</div>

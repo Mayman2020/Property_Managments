@@ -1,12 +1,10 @@
-﻿import { Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { forkJoin } from 'rxjs';
 import { NgFor, NgIf, DatePipe, Location } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatSelectModule } from '@angular/material/select';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatTabsModule } from '@angular/material/tabs';
@@ -16,18 +14,19 @@ import { MatDialog } from '@angular/material/dialog';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
-import { FilterBarComponent, FilterSpec } from '../../../shared/components/filter-bar/filter-bar.component';
 import { SearchDropdownComponent, SearchDropdownItem } from '../../../shared/components/search-dropdown/search-dropdown.component';
 import { MaintenanceService, MaintenanceRequest } from '../../../core/services/maintenance.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { PropertyService, Property } from '../../../core/services/property.service';
+import { MaintenanceInvoiceService, CompanyProperty } from '../../../core/services/maintenance-invoice.service';
 import { RequestTimelineDialogComponent } from '../request-timeline-dialog/request-timeline-dialog.component';
 import { TenantPortalService } from '../../../core/services/tenant-portal.service';
 import { LeaseContract } from '../../../core/models/contract.model';
 
 import { MaintenanceRequestDialogComponent } from '../maintenance-request-dialog/maintenance-request-dialog.component';
+import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
 
 export type RequestListContext = 'admin' | 'tenant' | 'officer';
 
@@ -39,7 +38,8 @@ const ACTIVE_STATUSES = new Set(['PENDING', 'ASSIGNED', 'SCHEDULED', 'IN_PROGRES
   imports: [
     NgFor, NgIf, DatePipe, FormsModule, RouterLink, TranslateModule,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule, MatTabsModule,
-    PageHeaderComponent, EmptyStateComponent, TablePagerComponent, FilterBarComponent, SearchDropdownComponent
+    PageHeaderComponent, EmptyStateComponent, TablePagerComponent, SearchDropdownComponent,
+    HasPermissionDirective
   ],
   templateUrl: './request-list.component.html',
   styleUrl: './request-list.component.scss'
@@ -58,8 +58,7 @@ export class RequestListComponent implements OnInit {
   adminPageIndex = 0;
   tenantCurrentPageIndex = 0;
   tenantPreviousPageIndex = 0;
-  properties: Property[] = [];
-  pageFilters: FilterSpec[] = [];
+  properties: Array<Property | CompanyProperty> = [];
   tenantContracts: LeaseContract[] = [];
   selectedTenantPropertyId: number | null = null;
   selectedTenantUnitId: number | null = null;
@@ -90,6 +89,7 @@ export class RequestListComponent implements OnInit {
     private readonly route: ActivatedRoute,
     readonly auth: AuthService,
     private readonly propertySvc: PropertyService,
+    private readonly invoiceSvc: MaintenanceInvoiceService,
     private readonly portalSvc: TenantPortalService,
     private readonly location: Location,
     private readonly router: Router,
@@ -110,9 +110,16 @@ export class RequestListComponent implements OnInit {
     }
     if (this.listContext === 'admin') {
       this.propertySvc.getAll(0, 500).subscribe({
+        next: (res) => { this.properties = res.data?.content ?? []; }
+      });
+    } else if (this.listContext === 'officer') {
+      this.invoiceSvc.getMyProperties().subscribe({
         next: (res) => {
-          this.properties = res.data?.content ?? [];
-          this.setupFilters();
+          this.properties = res.data ?? [];
+          if (this.properties.length === 1) {
+            this.filterPropertyId = this.properties[0].id;
+          }
+          if (this.filterPropertyId) this.load();
         }
       });
     }
@@ -183,24 +190,16 @@ export class RequestListComponent implements OnInit {
           this.resetPagerIndexes();
           this.loading = false;
         },
-        error: () => {
-          this.loading = false;
-        }
+        error: () => { this.loading = false; }
       });
       return;
     }
 
     if (this.listContext === 'officer') {
       const officerId = this.auth.getCurrentUser()?.id;
-      if (officerId == null) {
-        this.loading = false;
-        return;
-      }
-      const mergedParams: Record<string, string | number | boolean> = {
-        ...params,
-        page: 0,
-        size: 500
-      };
+      if (officerId == null) { this.loading = false; return; }
+      const mergedParams: Record<string, string | number | boolean> = { ...params, page: 0, size: 500 };
+      if (this.filterPropertyId != null) mergedParams['propertyId'] = this.filterPropertyId;
       forkJoin({
         mine: this.maintSvc.getByOfficer(officerId, mergedParams),
         queue: this.maintSvc.getCompanyQueue(mergedParams)
@@ -218,9 +217,7 @@ export class RequestListComponent implements OnInit {
           this.resetPagerIndexes();
           this.loading = false;
         },
-        error: () => {
-          this.loading = false;
-        }
+        error: () => { this.loading = false; }
       });
       return;
     }
@@ -232,49 +229,12 @@ export class RequestListComponent implements OnInit {
         this.resetPagerIndexes();
         this.loading = false;
       },
-      error: () => {
-        this.loading = false;
-      }
+      error: () => { this.loading = false; }
     });
   }
 
-  private setupFilters(): void {
-    this.pageFilters = [
-      {
-        key: 'filterPropertyId',
-        label: 'REQUEST_FORM.PROPERTY',
-        type: 'select',
-        options: this.properties.map(p => ({
-          value: p.id,
-          label: this.i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName)
-        }))
-      },
-      {
-        key: 'filterStatus',
-        label: 'MAINTENANCE.STATUS',
-        type: 'select',
-        options: this.statuses.filter(s => s.value).map(s => ({
-          value: s.value,
-          label: this.i18n.instant(s.labelKey)
-        }))
-      },
-      {
-        key: 'filterPriority',
-        label: 'MAINTENANCE.PRIORITY',
-        type: 'select',
-        options: this.priorities.filter(p => p.value).map(p => ({
-          value: p.value,
-          label: this.i18n.instant(p.labelKey)
-        }))
-      }
-    ];
-  }
-
-  onFilterBarChange(values: any): void {
-    if (values?.filterPropertyId !== undefined) this.filterPropertyId = values.filterPropertyId;
-    if (values?.filterStatus !== undefined) this.filterStatus = values.filterStatus ?? '';
-    if (values?.filterPriority !== undefined) this.filterPriority = values.filterPriority ?? '';
-    this.applyFilter();
+  hasFiltersBar(): boolean {
+    return !!(this.filterPropertyId || this.filterStatus || this.filterPriority || this.searchTerm);
   }
 
   clearFiltersFromBar(): void {
@@ -282,19 +242,11 @@ export class RequestListComponent implements OnInit {
     this.filterStatus = '';
     this.filterPriority = '';
     this.searchTerm = '';
+    if (this.listContext === 'officer') {
+      this.load();
+      return;
+    }
     this.applyFilter();
-  }
-
-  hasFiltersBar(): boolean {
-    return !!(this.filterPropertyId || this.filterStatus || this.filterPriority || this.searchTerm);
-  }
-
-  get filterValues(): Record<string, unknown> {
-    return {
-      filterPropertyId: this.filterPropertyId,
-      filterStatus: this.filterStatus || null,
-      filterPriority: this.filterPriority || null
-    };
   }
 
   applyFilter(): void {
@@ -413,7 +365,7 @@ export class RequestListComponent implements OnInit {
 
   get selectedTenantUnitLabel(): string {
     const c = this.selectedTenantContract;
-    if (!c) return this.i18n.currentLang === 'ar' ? 'اختر وحدة...' : 'Choose a unit...';
+    if (!c) return this.i18n.instant('INLINE_TEXT.CHOOSE_A_UNIT_2');
     return `${c.unitNumber || '-'} - ${c.propertyName || '-'}`;
   }
 

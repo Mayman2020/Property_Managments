@@ -63,11 +63,11 @@ interface UserAccessDetailsData {
     <mat-dialog-content>
       <div class="dialog-summary">
         <div class="summary-item">
-          <span>{{ isAr ? 'الموديولات المفعلة' : 'Enabled Modules' }}</span>
+          <span>{{ ('INLINE_TEXT.ENABLED_MODULES' | translate) }}</span>
           <strong>{{ enabledModulesCount }} / {{ data.modules.length }}</strong>
         </div>
         <div class="summary-item">
-          <span>{{ isAr ? 'إجمالي الصلاحيات' : 'Enabled Actions' }}</span>
+          <span>{{ ('INLINE_TEXT.ENABLED_ACTIONS' | translate) }}</span>
           <strong>{{ enabledActionsCount }}</strong>
         </div>
       </div>
@@ -345,6 +345,7 @@ export class UserAccessManagementComponent implements OnInit {
     { key: 'users', icon: 'manage_accounts' },
     { key: 'lookups', icon: 'public' },
     { key: 'contractors', icon: 'engineering' },
+    { key: 'contracts', icon: 'description' },
     { key: 'vacancies', icon: 'door_open' },
     { key: 'ratings', icon: 'star_rate' },
     { key: 'finance', icon: 'bar_chart' },

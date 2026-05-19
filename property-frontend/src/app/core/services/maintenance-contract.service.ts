@@ -11,6 +11,10 @@ export interface MaintenanceContractResponse {
   contractorCompanyName: string | null;
   contractorCompanyNameAr: string | null;
   contractorCompanyNameEn: string | null;
+  propertyCode?: string | null;
+  propertyName?: string | null;
+  propertyNameAr?: string | null;
+  propertyNameEn?: string | null;
   assignmentId: number | null;
   contractNumber: string;
   startDate: string;
@@ -20,18 +24,39 @@ export interface MaintenanceContractResponse {
   currency?: string | null;
   status: string;
   notes: string | null;
+  staffChangeLog?: string | null;
   createdAt: string;
   invoiceCount: number;
   previousContractId?: number | null;
   ownerApprovalStatus?: string | null;
   ownerApprovalNotes?: string | null;
+  terminationRequestedBy?: number | null;
+  terminationRequestedByName?: string | null;
+  terminationRequestedAt?: string | null;
   terminationProposedDate?: string | null;
   terminationRequestNotes?: string | null;
+  renewalRequestedBy?: number | null;
+  renewalRequestedByName?: string | null;
+  renewalRequestedAt?: string | null;
   renewalProposedStartDate?: string | null;
   renewalProposedEndDate?: string | null;
   renewalProposedValue?: number | null;
   renewalRequestedNote?: string | null;
   renewalDecisionStatus?: string | null;
+  propertyTotalUnits?: number | null;
+  propertyVacantUnits?: number | null;
+  propertyNonVacantUnits?: number | null;
+  otherActiveMaintenanceContractsForProperty?: number | null;
+  propertyWillBeWithoutMaintenanceAfterTermination?: boolean | null;
+  attachmentUrls?: string | null;
+  updatedAt?: string | null;
+  createdByUserId?: number | null;
+  createdByName?: string | null;
+  modifiedBy?: number | null;
+  modifiedByName?: string | null;
+  approvedBy?: number | null;
+  approvedByName?: string | null;
+  settlementAmount?: number | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -124,6 +149,20 @@ export class MaintenanceContractService {
   decideRenewal(id: number, decision: 'APPROVED' | 'REJECTED', notes?: string): Observable<ApiResponse<MaintenanceContractResponse>> {
     return this.api.post<ApiResponse<MaintenanceContractResponse>>(
       AppConstants.API.OWNER_PORTAL_MAINTENANCE_CONTRACT_RENEWAL_DECISION(id),
+      { decision, notes }
+    );
+  }
+
+  staffDecideTermination(id: number, decision: 'APPROVED' | 'REJECTED', notes?: string, settlementAmount?: number | null): Observable<ApiResponse<MaintenanceContractResponse>> {
+    return this.api.post<ApiResponse<MaintenanceContractResponse>>(
+      AppConstants.API.MAINTENANCE_CONTRACT_TERMINATION_DECISION(id),
+      { decision, notes, settlementAmount: settlementAmount ?? null }
+    );
+  }
+
+  staffDecideRenewal(id: number, decision: 'APPROVED' | 'REJECTED', notes?: string): Observable<ApiResponse<MaintenanceContractResponse>> {
+    return this.api.post<ApiResponse<MaintenanceContractResponse>>(
+      AppConstants.API.MAINTENANCE_CONTRACT_RENEWAL_DECISION(id),
       { decision, notes }
     );
   }

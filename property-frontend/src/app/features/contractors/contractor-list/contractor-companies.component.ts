@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { NgClass, NgFor, NgIf } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -8,13 +10,14 @@ import { TranslateModule } from '@ngx-translate/core';
 import { MatDialog } from '@angular/material/dialog';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
-import { FilterBarComponent, FilterSpec } from '../../../shared/components/filter-bar/filter-bar.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
 import { ExportColumn, TableExportToolbarComponent } from '../../../shared/components/table-export-toolbar/table-export-toolbar.component';
+import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
 import { ContractorCompany, ContractorCompanyService } from '../../../core/services/contractor-company.service';
 import { Property, PropertyService } from '../../../core/services/property.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { PermissionService } from '../../../core/services/permission.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { SnackService } from '../../../core/services/snack.service';
 import { DeleteConfirmService } from '../../../core/services/delete-confirm.service';
@@ -23,6 +26,7 @@ import {
   ContractorCompanyDialogData
 } from '../contractor-company-dialog/contractor-company-dialog.component';
 import { MaintenanceContractDialogComponent } from '../../contracts/maintenance-contract-dialog/maintenance-contract-dialog.component';
+import { ContractorCompanyStaffDialogComponent } from '../contractor-company-staff-dialog.component';
 
 @Component({
   selector: 'app-contractor-companies',
@@ -31,6 +35,7 @@ import { MaintenanceContractDialogComponent } from '../../contracts/maintenance-
     NgFor,
     NgIf,
     NgClass,
+    FormsModule,
     TranslateModule,
     MatButtonModule,
     MatProgressSpinnerModule,
@@ -40,7 +45,7 @@ import { MaintenanceContractDialogComponent } from '../../contracts/maintenance-
     EmptyStateComponent,
     TablePagerComponent,
     TableExportToolbarComponent,
-    FilterBarComponent
+    HasPermissionDirective
   ],
   templateUrl: './contractor-companies.component.html',
   styleUrl: './contractor-companies.component.scss'
@@ -55,15 +60,16 @@ export class ContractorCompaniesComponent implements OnInit {
   searchTerm = '';
   filterActive: boolean | null = null;
   filterPropertyId: number | null = null;
-  pageFilters: FilterSpec[] = [];
 
   constructor(
     private readonly svc: ContractorCompanyService,
     private readonly propertySvc: PropertyService,
     private readonly dialog: MatDialog,
+    private readonly router: Router,
     private readonly snack: SnackService,
     private readonly deleteConfirm: DeleteConfirmService,
     readonly auth: AuthService,
+    readonly permissions: PermissionService,
     readonly i18n: I18nService
   ) {}
 
@@ -78,8 +84,8 @@ export class ContractorCompaniesComponent implements OnInit {
   get exportColumns(): ExportColumn<ContractorCompany>[] {
     return [
       { header: this.i18n.instant('CONTRACTORS.NAME'), value: (row) => this.companyName(row) },
-      { header: this.i18n.instant('CONTRACTORS.CONTRACT_START'), value: (row) => this.formatDate(row.contractStart) },
-      { header: this.i18n.instant('CONTRACTORS.CONTRACT_END'), value: (row) => this.formatDate(row.contractEnd) },
+      { header: this.i18n.instant('CONTRACTORS.CONTRACT_START'), value: (row) => this.formatDate(row.latestContractStart || row.contractStart) },
+      { header: this.i18n.instant('CONTRACTORS.CONTRACT_END'), value: (row) => this.formatDate(row.latestContractEnd || row.contractEnd) },
       { header: this.i18n.instant('CONTRACTORS.PHONE'), value: (row) => row.phone || '-' },
       { header: this.i18n.instant('CONTRACTORS.EMAIL'), value: (row) => row.email || '-' },
       { header: this.i18n.instant('CONTRACTORS.CONTRACT_STATUS'), value: (row) => this.companyStatusLabel(row) }
@@ -90,45 +96,9 @@ export class ContractorCompaniesComponent implements OnInit {
     this.loadProperties();
   }
 
-  private setupFilters(): void {
-    const filters: FilterSpec[] = [];
-    if (this.properties.length > 1) {
-      filters.push({
-        key: 'filterPropertyId',
-        label: 'REQUEST_FORM.PROPERTY',
-        type: 'select',
-        options: this.properties.map((p) => ({
-          value: p.id,
-          label: this.i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName)
-        }))
-      });
-    }
-    filters.push(
-      {
-        key: 'filterActive',
-        label: 'MAINTENANCE.STATUS',
-        type: 'select',
-        options: [
-          { value: true, label: this.i18n.instant('COMMON.ACTIVE') },
-          { value: false, label: this.i18n.instant('COMMON.INACTIVE') }
-        ]
-      }
-    );
-    this.pageFilters = filters;
-  }
-
-  onFilterBarChange(values: any): void {
-    const previousPropertyId = this.filterPropertyId;
-    if (values?.filterPropertyId !== undefined) {
-      this.filterPropertyId = values.filterPropertyId;
-    }
-    if (values?.filterActive !== undefined) this.filterActive = values.filterActive;
+  onPropertyChange(): void {
     this.pageIndex = 0;
-    if (previousPropertyId !== this.filterPropertyId) {
-      this.load();
-    } else {
-      this.applyFilters();
-    }
+    this.load();
   }
 
   onSearch(term: string): void {
@@ -137,23 +107,21 @@ export class ContractorCompaniesComponent implements OnInit {
     this.applyFilters();
   }
 
+  onStatusChange(): void {
+    this.pageIndex = 0;
+    this.applyFilters();
+  }
+
   clearFiltersFromBar(): void {
     this.searchTerm = '';
     this.filterActive = null;
-    this.filterPropertyId = this.properties.length === 1 ? this.properties[0].id : null;
+    this.filterPropertyId = null;
     this.pageIndex = 0;
     this.load();
   }
 
   hasFiltersBar(): boolean {
-    return !!(this.searchTerm || this.filterActive !== null || (this.properties.length > 1 && this.filterPropertyId !== null));
-  }
-
-  get filterValues(): Record<string, unknown> {
-    return {
-      filterPropertyId: this.filterPropertyId,
-      filterActive: this.filterActive
-    };
+    return !!(this.searchTerm || this.filterActive !== null || (this.properties.length > 0 && this.filterPropertyId !== null));
   }
 
   private applyFilters(): void {
@@ -187,15 +155,10 @@ export class ContractorCompaniesComponent implements OnInit {
     this.propertySvc.getAll(0, 500).subscribe({
       next: (res) => {
         this.properties = res.data?.content ?? [];
-        if (this.properties.length === 1) {
-          this.filterPropertyId = this.properties[0].id;
-        }
-        this.setupFilters();
         this.load();
       },
       error: () => {
         this.properties = [];
-        this.setupFilters();
         this.load();
       }
     });
@@ -229,12 +192,7 @@ export class ContractorCompaniesComponent implements OnInit {
   }
 
   openView(company: ContractorCompany): void {
-    this.svc.getById(company.id).subscribe({
-      next: (res) => {
-        this.openCompanyDialog(res.data ?? company, true);
-      },
-      error: () => this.snack.error(this.i18n.instant('COMMON.ERROR'))
-    });
+    this.router.navigate(['/admin/contractors', company.id]);
   }
 
   openContractDialog(company: ContractorCompany): void {
@@ -251,16 +209,32 @@ export class ContractorCompaniesComponent implements OnInit {
     });
   }
 
+  openStaffDialog(company: ContractorCompany): void {
+    this.dialog.open(ContractorCompanyStaffDialogComponent, {
+      width: '820px',
+      maxWidth: '95vw',
+      panelClass: 'app-dialog-panel',
+      data: { company }
+    });
+  }
+
   remove(c: ContractorCompany): void {
     if (!this.canHardDelete) return;
+    const ar = this.isArabic;
+    const name = this.companyName(c);
+    const hasUser = !!c.email;
+    const baseLine = ar ? `هل تريد حذف شركة الصيانة "${name}"؟` : `Delete maintenance company "${name}"?`;
+    const userLine = hasUser
+      ? (this.i18n.instant('INLINE_TEXT.THIS_WILL_ALSO_DELETE_THE_LINKED_USER_ACCOUNT'))
+      : '';
+    const warningLine = this.i18n.instant('INLINE_TEXT.DELETION_WILL_BE_BLOCKED_IF_AN_ACTIVE_MAINTENANCE_CONTR');
     this.deleteConfirm.openDeleteConfirm({
-      messageKey: 'DIALOG.DELETE_NAMED',
-      messageParams: { name: this.companyName(c) }
+      message: [baseLine, userLine, warningLine].filter(Boolean).join('\n')
     }).subscribe((ok) => {
       if (!ok) return;
       this.svc.delete(c.id).subscribe({
         next: () => {
-        this.snack.success(this.i18n.instant('COMMON.SUCCESS'));
+          this.snack.success(this.i18n.instant('COMMON.SUCCESS'));
           this.load();
         },
         error: (err: Error) => this.deleteConfirm.handleDeleteError(err, this.snack)

@@ -6,6 +6,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
+import { ExportColumn, TableExportToolbarComponent } from '../../../shared/components/table-export-toolbar/table-export-toolbar.component';
 import { FinancialReportRow, FinanceService } from '../../../core/services/finance.service';
 import { Property, PropertyService } from '../../../core/services/property.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
@@ -13,7 +14,7 @@ import { I18nService } from '../../../core/i18n/i18n.service';
 @Component({
   selector: 'app-finance-reports',
   standalone: true,
-  imports: [NgIf, NgFor, DecimalPipe, FormsModule, MatButtonModule, TranslateModule, PageHeaderComponent, TablePagerComponent],
+  imports: [NgIf, NgFor, DecimalPipe, FormsModule, MatButtonModule, TranslateModule, PageHeaderComponent, TablePagerComponent, TableExportToolbarComponent],
   template: `
     <div class="app-page">
       <app-page-header
@@ -35,14 +36,13 @@ import { I18nService } from '../../../core/i18n/i18n.service';
           <option *ngFor="let year of years" [ngValue]="year">{{ 'FINANCE.TO_LABEL' | translate }} {{ year }}</option>
         </select>
 
-        <button mat-stroked-button type="button" (click)="exportExcel()" title="Export Excel">
-          <span class="material-icons">table_view</span>
-          Excel
-        </button>
-        <button mat-stroked-button type="button" (click)="exportPdf()" title="Export PDF">
-          <span class="material-icons">picture_as_pdf</span>
-          PDF
-        </button>
+        <app-table-export-toolbar
+          permissionKey="finance"
+          [title]="title"
+          [fileName]="'finance-' + report"
+          [columns]="exportColumns"
+          [rows]="rows">
+        </app-table-export-toolbar>
       </app-page-header>
 
       <div class="app-card" *ngIf="rows.length; else emptyTpl">
@@ -191,55 +191,14 @@ export class FinanceReportsComponent implements OnInit {
     return Array.from(grouped.values());
   }
 
-  exportExcel(): void {
-    import('xlsx').then(XLSX => {
-      const propCol = this.translate.instant('FINANCE.PROP_OWNER_COL');
-      const periodCol = this.translate.instant('FINANCE.PERIOD_COL');
-      const revCol = this.translate.instant('FINANCE.REVENUE_COL');
-      const expCol = this.translate.instant('FINANCE.EXPENSES_COL');
-      const netCol = this.translate.instant('FINANCE.NET_COL');
-      const data = this.rows.map(r => ({
-        [propCol]: r.propertyName || r.ownerName || '-',
-        [periodCol]: this.periodLabel(r),
-        [revCol]: r.totalRevenue ?? r.cashIn ?? 0,
-        [expCol]: r.totalExpenses ?? r.cashOut ?? 0,
-        [netCol]: r.netIncome ?? r.ownerNetAmount ?? 0
-      }));
-      const ws = XLSX.utils.json_to_sheet(data);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, this.title.slice(0, 31));
-      XLSX.writeFile(wb, `finance-${this.report}-${this.fileDate()}.xlsx`);
-    });
-  }
-
-  exportPdf(): void {
-    import('jspdf').then(({ default: jsPDF }) => {
-      import('jspdf-autotable').then(() => {
-        const doc = new jsPDF({ orientation: 'landscape' });
-        doc.setFontSize(16);
-        doc.text(this.title, 14, 18);
-        (doc as any).autoTable({
-          startY: 28,
-          head: [[
-            this.translate.instant('FINANCE.PROP_OWNER_COL'),
-            this.translate.instant('FINANCE.PERIOD_COL'),
-            this.translate.instant('FINANCE.REVENUE_COL'),
-            this.translate.instant('FINANCE.EXPENSES_COL'),
-            this.translate.instant('FINANCE.NET_COL')
-          ]],
-          body: this.rows.map(r => [
-            r.propertyName || r.ownerName || '-',
-            this.periodLabel(r),
-            (r.totalRevenue ?? r.cashIn ?? 0).toFixed(2),
-            (r.totalExpenses ?? r.cashOut ?? 0).toFixed(2),
-            (r.netIncome ?? r.ownerNetAmount ?? 0).toFixed(2)
-          ]),
-          styles: { font: 'helvetica', fontSize: 9 },
-          headStyles: { fillColor: [245, 158, 11], textColor: 255 }
-        });
-        doc.save(`finance-${this.report}-${this.fileDate()}.pdf`);
-      });
-    });
+  get exportColumns(): ExportColumn<FinancialReportRow>[] {
+    return [
+      { header: this.translate.instant('FINANCE.PROP_OWNER_COL'), value: (row) => row.propertyName || row.ownerName || '-' },
+      { header: this.translate.instant('FINANCE.PERIOD_COL'), value: (row) => this.periodLabel(row) },
+      { header: this.translate.instant('FINANCE.REVENUE_COL'), value: (row) => row.totalRevenue ?? row.cashIn ?? 0 },
+      { header: this.translate.instant('FINANCE.EXPENSES_COL'), value: (row) => row.totalExpenses ?? row.cashOut ?? 0 },
+      { header: this.translate.instant('FINANCE.NET_COL'), value: (row) => row.netIncome ?? row.ownerNetAmount ?? 0 }
+    ];
   }
 
   private normalizeYears(): void {
@@ -255,10 +214,4 @@ export class FinanceReportsComponent implements OnInit {
     return Number.isFinite(value) && value > 0 ? value : undefined;
   }
 
-  private fileDate(): string {
-    const date = new Date();
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    return `${day}-${month}-${date.getFullYear()}`;
-  }
 }

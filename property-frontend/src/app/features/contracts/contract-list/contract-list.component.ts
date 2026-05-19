@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { DatePipe, DecimalPipe, NgClass, NgFor, NgIf, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -17,6 +17,7 @@ import { Subject, catchError, debounceTime, forkJoin, map, of, switchMap } from 
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { ContractFormComponent } from '../contract-form/contract-form.component';
 import { MaintenanceContractDialogComponent } from '../maintenance-contract-dialog/maintenance-contract-dialog.component';
+import { ContractTypeChoiceDialogComponent } from '../contract-type-choice-dialog/contract-type-choice-dialog.component';
 
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { ContractSummary, ContractStatus } from '../../../core/models/contract.model';
@@ -28,6 +29,7 @@ import { TablePagerComponent } from '../../../shared/components/table-pager/tabl
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { PermissionService } from '../../../core/services/permission.service';
 import { SnackService } from '../../../core/services/snack.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 type ContractTypeFilter = '' | 'LEASE' | 'MAINTENANCE';
 
@@ -45,6 +47,7 @@ interface UnifiedContractRow {
   monthlyRent?: number | null;
   currency: string;
   status: string;
+  ownerApprovalStatus?: string | null;
   createdAt?: string | null;
 }
 
@@ -92,7 +95,7 @@ export class ContractListComponent implements OnInit {
   private readonly search$ = new Subject<void>();
 
   displayedColumns = ['contractNumber', 'tenant', 'unit', 'dates', 'rent', 'status', 'actions'];
-  statusOptions = ['DRAFT', 'PENDING_OWNER_APPROVAL', 'PENDING_TERMINATION_APPROVAL', 'PENDING_RENEWAL_APPROVAL', 'ACTIVE', 'EXPIRED', 'TERMINATED', 'ENDED', 'CANCELLED', 'RENEWED', 'SUSPENDED'];
+  statusOptions = ['DRAFT', 'PENDING_OWNER_APPROVAL', 'PENDING_TERMINATION_APPROVAL', 'PENDING_RENEWAL_APPROVAL', 'ACTIVE', 'EXPIRED', 'TERMINATED', 'ENDED', 'CANCELLED', 'RENEWED', 'SUSPENDED', 'OWNER_REJECTED'];
 
   constructor(
     private readonly contractSvc: ContractService,
@@ -104,6 +107,7 @@ export class ContractListComponent implements OnInit {
     private readonly router: Router,
     readonly i18n: I18nService,
     private readonly permissions: PermissionService,
+    private readonly auth: AuthService,
     private readonly snack: SnackService
   ) {}
 
@@ -111,12 +115,16 @@ export class ContractListComponent implements OnInit {
     return this.permissions.can('contracts', 'create');
   }
 
+  canCreateMaintenanceContract(): boolean {
+    return this.permissions.can('maintenance', 'create');
+  }
+
   goBack(): void { this.location.back(); }
 
   ngOnInit(): void {
     // Pre-select status filter from query param (e.g. ?status=ACTIVE from dashboard KPI cards)
     const qStatus = this.route.snapshot.queryParamMap.get('status');
-    if (qStatus && this.statusOptions.includes(qStatus as ContractStatus)) {
+    if (qStatus && this.statusOptions.includes(qStatus)) {
       this.filterStatus = qStatus;
     }
     const qType = this.route.snapshot.queryParamMap.get('type');
@@ -132,7 +140,7 @@ export class ContractListComponent implements OnInit {
     this.loadContracts();
 
     const openDialog = this.route.snapshot.queryParamMap.get('openDialog');
-    if (openDialog === '1' && this.filterType === 'MAINTENANCE' && this.canCreateContract()) {
+    if (openDialog === '1' && this.filterType === 'MAINTENANCE' && this.canCreateMaintenanceContract()) {
       queueMicrotask(() => this.openMaintenanceCreateFromRoute());
     }
   }
@@ -192,6 +200,17 @@ export class ContractListComponent implements OnInit {
     this.search$.next();
   }
 
+  clearFilters(): void {
+    this.filterStatus = '';
+    this.filterType = '';
+    this.searchQuery = '';
+    this.onFilterChange();
+  }
+
+  hasActiveFilters(): boolean {
+    return !!this.searchQuery.trim() || !!this.filterStatus || !!this.filterType;
+  }
+
   getStatusClass(status: string): string {
     const map: Record<string, string> = {
       ACTIVE: 'chip-success',
@@ -204,7 +223,8 @@ export class ContractListComponent implements OnInit {
       CANCELLED: 'chip-danger',
       TERMINATED: 'chip-danger',
       RENEWED: 'chip-info',
-      SUSPENDED: 'chip-warn'
+      SUSPENDED: 'chip-warn',
+      OWNER_REJECTED: 'chip-danger'
     };
     return map[status] ?? 'chip-default';
   }
@@ -213,54 +233,107 @@ export class ContractListComponent implements OnInit {
     return this.contracts.filter((contract) => contract.status === status).length;
   }
 
+  /** Status chip key for list rows (owner-rejected drafts are labelled distinctly). */
+  displayStatusKey(row: UnifiedContractRow): string {
+    if (row.ownerApprovalStatus === 'REJECTED') {
+      return 'OWNER_REJECTED';
+    }
+    return row.status;
+  }
+
   contractTypeLabel(row: UnifiedContractRow): string {
     if (row.source === 'MAINTENANCE') {
-      return this.i18n.currentLang === 'ar' ? 'صيانة / مقاولين' : 'Maintenance';
+      return this.i18n.instant('INLINE_TEXT.MAINTENANCE');
     }
-    return this.i18n.currentLang === 'ar' ? 'إيجار' : 'Lease';
+    return this.i18n.instant('INLINE_TEXT.LEASE');
   }
 
   partyHeader(): string {
-    return this.i18n.currentLang === 'ar' ? 'الطرف' : 'Party';
+    return this.i18n.instant('INLINE_TEXT.PARTY');
   }
 
-  statusLabel(status: string): string {
-    const fallback: Record<string, string> = {
-      ENDED: this.i18n.currentLang === 'ar' ? 'منتهي' : 'Ended'
+  statusLabel(status: string, source?: UnifiedContractRow['source']): string {
+    const ar = this.i18n.currentLang === 'ar';
+    const labelsAr: Record<string, string> = {
+      DRAFT: 'مسودة عقد',
+      PENDING_OWNER_APPROVAL: 'عقد جديد بانتظار المالك',
+      PENDING_TERMINATION_APPROVAL: 'طلب إلغاء بانتظار المالك',
+      PENDING_RENEWAL_APPROVAL: 'طلب تجديد بانتظار المالك',
+      ACTIVE: 'عقد نشط',
+      EXPIRED: source === 'MAINTENANCE' ? 'انتهاء عقد الصيانة' : 'انتهاء عقد الإيجار',
+      TERMINATED: source === 'MAINTENANCE' ? 'إلغاء عقد الصيانة' : 'إلغاء عقد الإيجار',
+      ENDED: source === 'LEASE' ? 'انتهاء عقد الإيجار' : 'انتهاء عقد الصيانة',
+      CANCELLED: 'إلغاء مسودة العقد',
+      OWNER_REJECTED: 'مرفوض من المالك',
+      RENEWED: 'تم تجديد العقد',
+      SUSPENDED: 'عقد معلّق'
     };
-    return fallback[status] ?? this.i18n.instant(`CONTRACTS.STATUS_${status}`);
+    const labelsEn: Record<string, string> = {
+      DRAFT: 'Draft contract',
+      PENDING_OWNER_APPROVAL: 'New contract pending owner',
+      PENDING_TERMINATION_APPROVAL: 'Cancellation pending owner',
+      PENDING_RENEWAL_APPROVAL: 'Renewal pending owner',
+      ACTIVE: 'Active contract',
+      EXPIRED: source === 'MAINTENANCE' ? 'Maintenance contract expired' : 'Lease contract expired',
+      TERMINATED: source === 'MAINTENANCE' ? 'Maintenance contract cancelled' : 'Lease contract cancelled',
+      ENDED: source === 'LEASE' ? 'Lease contract ended' : 'Maintenance contract ended',
+      CANCELLED: 'Draft contract cancelled',
+      OWNER_REJECTED: 'Rejected by owner',
+      RENEWED: 'Contract renewed',
+      SUSPENDED: 'Contract suspended'
+    };
+    return (ar ? labelsAr : labelsEn)[status] ?? this.i18n.instant(`CONTRACTS.STATUS_${status}`);
   }
 
   openAddDialog(): void {
-    // If viewing maintenance contracts, open maintenance dialog instead
-    if (this.filterType === 'MAINTENANCE') {
-      const propertyIdRaw = this.route.snapshot.queryParamMap.get('propertyId');
-      const propertyId = propertyIdRaw ? Number(propertyIdRaw) : undefined;
-      const companyIdRaw = this.route.snapshot.queryParamMap.get('contractorCompanyId');
-      const contractorCompanyId = companyIdRaw ? Number(companyIdRaw) : undefined;
-      this.dialog.open(MaintenanceContractDialogComponent, {
-        width: '600px',
-        maxWidth: '95vw',
-        panelClass: 'app-dialog-panel',
-        disableClose: true,
-        data: {
-          propertyId: Number.isFinite(propertyId) ? propertyId : undefined,
-          contractorCompanyId: Number.isFinite(contractorCompanyId) ? contractorCompanyId : undefined,
-          mode: 'create'
-        }
-      }).afterClosed().subscribe(saved => {
-        if (saved) this.loadContracts();
-      });
-      return;
-    }
+    this.dialog.open(ContractTypeChoiceDialogComponent, {
+      width: '420px',
+      maxWidth: '95vw',
+      panelClass: 'app-dialog-panel',
+      disableClose: true,
+      data: { allowMaintenance: this.canCreateMaintenanceContract() }
+    }).afterClosed().subscribe((contractType: 'rental' | 'maintenance' | null) => {
+      if (contractType === 'rental') {
+        this.openLeaseContractDialog();
+      } else if (contractType === 'maintenance') {
+        this.openMaintenanceContractDialog();
+      }
+    });
+  }
 
-    // For lease contracts, use the regular contract form
+  private openLeaseContractDialog(): void {
     this.dialog.open(ContractFormComponent, {
       width: '980px',
       maxWidth: '95vw',
       maxHeight: '95vh',
       panelClass: 'app-dialog-panel',
       disableClose: true
+    }).afterClosed().subscribe(saved => {
+      if (saved) this.loadContracts();
+    });
+  }
+
+  private openMaintenanceContractDialog(): void {
+    if (!this.canCreateMaintenanceContract()) {
+      this.snack.error(this.i18n.instant('COMMON.ACCESS_DENIED'));
+      return;
+    }
+
+    const propertyIdRaw = this.route.snapshot.queryParamMap.get('propertyId');
+    const propertyId = propertyIdRaw ? Number(propertyIdRaw) : undefined;
+    const companyIdRaw = this.route.snapshot.queryParamMap.get('contractorCompanyId');
+    const contractorCompanyId = companyIdRaw ? Number(companyIdRaw) : undefined;
+
+    this.dialog.open(MaintenanceContractDialogComponent, {
+      width: '600px',
+      maxWidth: '95vw',
+      panelClass: 'app-dialog-panel',
+      disableClose: true,
+      data: {
+        propertyId: Number.isFinite(propertyId) ? propertyId : undefined,
+        contractorCompanyId: Number.isFinite(contractorCompanyId) ? contractorCompanyId : undefined,
+        mode: 'create'
+      }
     }).afterClosed().subscribe(saved => {
       if (saved) this.loadContracts();
     });
@@ -274,7 +347,7 @@ export class ContractListComponent implements OnInit {
   }
 
   rejectMaintenance(row: UnifiedContractRow): void {
-    const reason = window.prompt(this.i18n.currentLang === 'ar' ? 'سبب الرفض' : 'Rejection reason');
+    const reason = window.prompt(this.i18n.instant('INLINE_TEXT.REJECTION_REASON'));
     if (!reason) return;
     this.maintenanceContractSvc.decideDraft(row.id, 'REJECTED', reason).subscribe({
       next: () => { this.snack.success(this.i18n.instant('OWNER_PORTAL.REJECT_OK')); this.loadContracts(); },
@@ -283,9 +356,9 @@ export class ContractListComponent implements OnInit {
   }
 
   requestMaintenanceTermination(row: UnifiedContractRow): void {
-    const terminationDate = window.prompt(this.i18n.currentLang === 'ar' ? 'تاريخ الإنهاء YYYY-MM-DD' : 'Termination date YYYY-MM-DD');
+    const terminationDate = window.prompt(this.i18n.instant('INLINE_TEXT.TERMINATION_DATE_YYYY_MM_DD'));
     if (!terminationDate) return;
-    const reason = window.prompt(this.i18n.currentLang === 'ar' ? 'سبب الإنهاء' : 'Termination reason') ?? '';
+    const reason = window.prompt(this.i18n.instant('INLINE_TEXT.TERMINATION_REASON')) ?? '';
     this.maintenanceContractSvc.terminate(row.id, { terminationDate, reason }).subscribe({
       next: () => { this.snack.success(this.i18n.instant('COMMON.SAVED')); this.loadContracts(); },
       error: () => this.snack.error(this.i18n.instant('COMMON.ERROR'))
@@ -293,12 +366,12 @@ export class ContractListComponent implements OnInit {
   }
 
   requestMaintenanceRenewal(row: UnifiedContractRow): void {
-    const proposedStartDate = window.prompt(this.i18n.currentLang === 'ar' ? 'بداية التجديد YYYY-MM-DD' : 'Renewal start YYYY-MM-DD');
+    const proposedStartDate = window.prompt(this.i18n.instant('INLINE_TEXT.RENEWAL_START_YYYY_MM_DD'));
     if (!proposedStartDate) return;
-    const proposedEndDate = window.prompt(this.i18n.currentLang === 'ar' ? 'نهاية التجديد YYYY-MM-DD' : 'Renewal end YYYY-MM-DD');
+    const proposedEndDate = window.prompt(this.i18n.instant('INLINE_TEXT.RENEWAL_END_YYYY_MM_DD'));
     if (!proposedEndDate) return;
-    const proposedValueRaw = window.prompt(this.i18n.currentLang === 'ar' ? 'قيمة العقد الجديدة' : 'New contract value');
-    const note = window.prompt(this.i18n.currentLang === 'ar' ? 'ملاحظة' : 'Note') ?? '';
+    const proposedValueRaw = window.prompt(this.i18n.instant('INLINE_TEXT.NEW_CONTRACT_VALUE'));
+    const note = window.prompt(this.i18n.instant('INLINE_TEXT.NOTE')) ?? '';
     const proposedValue = proposedValueRaw ? Number(proposedValueRaw) : undefined;
     this.maintenanceContractSvc.requestRenewal(row.id, { proposedStartDate, proposedEndDate, proposedValue, note }).subscribe({
       next: () => { this.snack.success(this.i18n.instant('COMMON.SAVED')); this.loadContracts(); },
@@ -332,6 +405,9 @@ export class ContractListComponent implements OnInit {
     const query = this.searchQuery.trim().toLowerCase();
     const filtered = this.allRows.filter((row) => {
       if (this.filterType && row.source !== this.filterType) return false;
+      if (this.filterStatus === 'OWNER_REJECTED') {
+        return row.ownerApprovalStatus === 'REJECTED';
+      }
       if (this.filterStatus && row.status !== this.filterStatus) return false;
       if (!query) return true;
       return [
@@ -361,8 +437,9 @@ export class ContractListComponent implements OnInit {
       endDate: c.endDate,
       amount: c.monthlyRent,
       monthlyRent: c.monthlyRent,
-      currency: c.currency || 'OMR',
+      currency: c.currency || 'SAR',
       status: c.status,
+      ownerApprovalStatus: c.ownerApprovalStatus ?? null,
       createdAt: c.startDate
     };
   }
@@ -374,14 +451,15 @@ export class ContractListComponent implements OnInit {
       contractNumber: c.contractNumber,
       partyName: this.contractorLabel(c),
       tenantName: this.contractorLabel(c),
-      unitNumber: this.i18n.currentLang === 'ar' ? 'كل وحدات العقار' : 'All property units',
+      unitNumber: this.i18n.instant('INLINE_TEXT.ALL_PROPERTY_UNITS'),
       propertyName: propertyMap.get(c.propertyId) ?? `#${c.propertyId}`,
       startDate: c.startDate,
       endDate: c.endDate,
       amount: c.contractValue,
       monthlyRent: c.contractValue,
-      currency: 'OMR',
+      currency: 'SAR',
       status: c.status,
+      ownerApprovalStatus: c.ownerApprovalStatus ?? null,
       createdAt: c.createdAt
     };
   }
@@ -404,3 +482,4 @@ export class ContractListComponent implements OnInit {
       : (en || ar || fallback || `#${p.id}`);
   }
 }
+

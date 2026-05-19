@@ -5,29 +5,30 @@
 </app-page-header>
 
 <div class="page-content">
-  <div class="filter-bar" [formGroup]="filterForm">
-    <mat-form-field appearance="outline" class="filter-field">
-      <mat-label>{{ 'COMMON.MONTH' | translate }}</mat-label>
-      <mat-select formControlName="month">
-        <mat-option [value]="null">{{ 'COMMON.ALL' | translate }}</mat-option>
-        <mat-option *ngFor="let m of months" [value]="m">{{ monthLabel(m) }}</mat-option>
-      </mat-select>
-    </mat-form-field>
+  <div class="finance-filter-strip" [formGroup]="filterForm">
+    <label *ngIf="properties.length">{{ 'REQUEST_FORM.PROPERTY' | translate }}</label>
+    <select *ngIf="properties.length" formControlName="propertyId" class="estate-property-select">
+      <option [ngValue]="null">{{ 'COMMON.ALL_PROPERTIES' | translate }}</option>
+      <option *ngFor="let p of properties" [ngValue]="p.id">{{ propertyLabel(p) }}</option>
+    </select>
 
-    <mat-form-field appearance="outline" class="filter-field">
-      <mat-label>{{ 'COMMON.YEAR' | translate }}</mat-label>
-      <mat-select formControlName="year">
-        <mat-option [value]="null">{{ 'COMMON.ALL' | translate }}</mat-option>
-        <mat-option *ngFor="let y of years" [value]="y">{{ y }}</mat-option>
-      </mat-select>
-    </mat-form-field>
+    <label>{{ 'COMMON.MONTH' | translate }}</label>
+    <select formControlName="month" class="estate-property-select">
+      <option [ngValue]="null">{{ 'COMMON.ALL' | translate }}</option>
+      <option *ngFor="let m of months" [ngValue]="m">{{ monthLabel(m) }}</option>
+    </select>
 
-    <button mat-flat-button color="primary" (click)="load()">
+    <label>{{ 'COMMON.YEAR' | translate }}</label>
+    <select formControlName="year" class="estate-property-select">
+      <option [ngValue]="null">{{ 'COMMON.ALL' | translate }}</option>
+      <option *ngFor="let y of years" [ngValue]="y">{{ y }}</option>
+    </select>
+
+    <button mat-icon-button (click)="load()" style="margin-inline-start:auto">
       <mat-icon>refresh</mat-icon>
-      {{ 'COMMON.REFRESH' | translate }}
     </button>
 
-    <button mat-stroked-button type="button" (click)="openStaffUpload()">
+    <button mat-stroked-button type="button" *ngIf="permissions.can('contracts', 'create')" (click)="openStaffUpload()">
       <mat-icon>upload_file</mat-icon>
       {{ 'ACCOUNTANT_PORTAL.STAFF_UPLOAD_BUTTON' | translate }}
     </button>
@@ -79,7 +80,7 @@
             <button mat-icon-button *ngIf="r.proofUrl" (click)="viewFile(r.proofUrl)" matTooltip="{{ 'COMMON.VIEW_FILE' | translate }}">
               <mat-icon>visibility</mat-icon>
             </button>
-            <button mat-icon-button color="primary" *ngIf="r.status === 'PENDING_CONFIRMATION'" (click)="openReview(r)" matTooltip="{{ 'ACCOUNTANT_PORTAL.REVIEW' | translate }}">
+            <button mat-icon-button color="primary" *ngIf="r.status === 'PENDING_CONFIRMATION' && permissions.can('contracts', 'approve')" (click)="openReview(r)" matTooltip="{{ 'ACCOUNTANT_PORTAL.REVIEW' | translate }}">
               <mat-icon>rate_review</mat-icon>
             </button>
           </td>

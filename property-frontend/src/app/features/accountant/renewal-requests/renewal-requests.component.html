@@ -57,7 +57,7 @@
           <mat-icon>attach_file</mat-icon>
           {{ 'COMMON.VIEW_FILE' | translate }}
         </button>
-        <button mat-flat-button color="primary" *ngIf="r.status === 'PENDING'" (click)="openProcess(r)">
+        <button mat-flat-button color="primary" *ngIf="r.status === 'PENDING' && permissions.can('contracts', 'approve')" (click)="openProcess(r)">
           <mat-icon>check</mat-icon>
           {{ 'ACCOUNTANT_PORTAL.PROCESS_RENEWAL' | translate }}
         </button>

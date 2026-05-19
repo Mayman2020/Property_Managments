@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CurrencyPipe, DatePipe, DecimalPipe, NgFor, NgIf } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -11,12 +12,13 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state/empt
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
 import { PaymentService } from '../../../core/services/payment.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
+import { Property, PropertyService } from '../../../core/services/property.service';
 
 @Component({
   selector: 'app-overdue-payments',
   standalone: true,
   imports: [
-    NgIf, NgFor, DatePipe, CurrencyPipe, DecimalPipe, RouterLink,
+    NgIf, NgFor, DatePipe, CurrencyPipe, DecimalPipe, RouterLink, FormsModule,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule,
     TranslateModule, PageHeaderComponent, EmptyStateComponent, TablePagerComponent
   ],
@@ -33,6 +35,14 @@ import { I18nService } from '../../../core/i18n/i18n.service';
           {{ items.length }} {{ 'OVERDUE.ITEMS_LABEL' | translate }}
         </span>
       </app-page-header>
+
+      <div class="finance-filter-strip" *ngIf="properties.length">
+        <label>{{ 'REQUEST_FORM.PROPERTY' | translate }}</label>
+        <select [(ngModel)]="selectedPropertyId" (change)="reload()" class="estate-property-select">
+          <option [ngValue]="null">{{ 'COMMON.ALL_PROPERTIES' | translate }}</option>
+          <option *ngFor="let p of properties" [ngValue]="p.id">{{ propertyLabel(p) }}</option>
+        </select>
+      </div>
 
       <div class="loading-center" *ngIf="loading">
         <mat-spinner diameter="40"></mat-spinner>
@@ -114,10 +124,18 @@ import { I18nService } from '../../../core/i18n/i18n.service';
     .row-urgent td { background: #fffafa; }
     .link-cell { color: var(--navy-800, #1a2744); text-decoration: none; font-weight: 500; }
     .link-cell:hover { text-decoration: underline; }
+    .finance-filter-strip {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      margin: 0 0 16px; padding: 12px 16px;
+      border: 1px solid var(--line, #e4d8c8); background: var(--surface, #fffdf8); border-radius: 8px;
+    }
+    .finance-filter-strip label { color: var(--text-muted); font-weight: 700; }
   `]
 })
 export class OverduePaymentsComponent implements OnInit {
   items: any[] = [];
+  properties: Property[] = [];
+  selectedPropertyId: number | null = null;
   loading = true;
   readonly pageSize = 15;
   pageIndex = 0;
@@ -129,11 +147,23 @@ export class OverduePaymentsComponent implements OnInit {
 
   constructor(
     private readonly paymentSvc: PaymentService,
+    private readonly propertySvc: PropertyService,
     readonly i18n: I18nService
   ) {}
 
   ngOnInit(): void {
-    this.paymentSvc.getOverdue().subscribe({
+    this.propertySvc.getAll(0, 500).subscribe({
+      next: (res) => { this.properties = res.data?.content ?? []; },
+      error: () => { this.properties = []; }
+    });
+    this.reload();
+  }
+
+  reload(): void {
+    this.loading = true;
+    this.pageIndex = 0;
+    const params = this.selectedPropertyId ? { propertyId: this.selectedPropertyId } : undefined;
+    this.paymentSvc.getOverdue(params).subscribe({
       next: (res) => {
         this.items = Array.isArray(res?.data) ? res.data : (res?.data?.content ?? []);
         this.loading = false;
@@ -148,5 +178,11 @@ export class OverduePaymentsComponent implements OnInit {
     const today = new Date();
     const diff = Math.floor((today.getTime() - due.getTime()) / 86400000);
     return Math.max(0, diff);
+  }
+
+  propertyLabel(property: Property): string {
+    return this.i18n.currentLang === 'ar'
+      ? (property.propertyNameAr || property.propertyNameEn || property.propertyName)
+      : (property.propertyNameEn || property.propertyNameAr || property.propertyName);
   }
 }

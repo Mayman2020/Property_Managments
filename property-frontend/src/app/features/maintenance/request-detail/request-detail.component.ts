@@ -291,7 +291,7 @@ export class RequestDetailComponent implements OnInit {
   }
 
   get detailEyebrow(): string {
-    return this.i18n.currentLang === 'ar' ? 'العمليات' : 'Operations';
+    return this.i18n.instant('INLINE_TEXT.OPERATIONS_2');
   }
 
   /** Visual for each dot: complete = green + check, current = spinner, upcoming = dim + index */
@@ -311,7 +311,7 @@ export class RequestDetailComponent implements OnInit {
       ? `${this.formatDate(request.scheduledDate)}${request.scheduledTimeFrom ? ` · ${request.scheduledTimeFrom}` : ''}`
       : '—';
     const startedAt = st === 'IN_PROGRESS' || st === 'COMPLETED'
-      ? (request.updatedAt ? this.formatDateTime(request.updatedAt) : (ar ? 'قيد التنفيذ' : 'In progress'))
+      ? (request.updatedAt ? this.formatDateTime(request.updatedAt) : (this.i18n.instant('INLINE_TEXT.IN_PROGRESS_2')))
       : '—';
     const completedAt = request.closedAt ? this.formatDateTime(request.closedAt) : '—';
 
@@ -330,11 +330,11 @@ export class RequestDetailComponent implements OnInit {
         ];
 
     const labels = [
-      ar ? 'تم الإرسال' : 'Submitted',
-      ar ? 'المراجعة والتعيين' : 'Reviewed & assigned',
-      ar ? 'الجدولة' : 'Scheduled',
-      ar ? 'الزيارة' : 'Visit',
-      ar ? 'الإنجاز' : 'Completed'
+      this.i18n.instant('INLINE_TEXT.SUBMITTED'),
+      this.i18n.instant('INLINE_TEXT.REVIEWED_ASSIGNED'),
+      this.i18n.instant('INLINE_TEXT.SCHEDULED'),
+      this.i18n.instant('INLINE_TEXT.VISIT'),
+      this.i18n.instant('INLINE_TEXT.COMPLETED_2')
     ];
 
     const dates = [
@@ -413,7 +413,7 @@ export class RequestDetailComponent implements OnInit {
     let digits = this.cleanPhone(phone).replace(/^\+/, '');
     if (digits.startsWith('00')) digits = digits.slice(2);
     if (digits.startsWith('0')) digits = digits.replace(/^0+/, '');
-    if (digits.length === 8) digits = `968${digits}`;
+    if (digits.length === 8) digits = `966${digits}`;
     return digits;
   }
 

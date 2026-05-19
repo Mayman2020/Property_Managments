@@ -1,18 +1,14 @@
-﻿import { Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { NgFor, NgIf, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
-import { FilterBarComponent, FilterSpec } from '../../../shared/components/filter-bar/filter-bar.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
 import { ExportColumn, TableExportToolbarComponent } from '../../../shared/components/table-export-toolbar/table-export-toolbar.component';
@@ -30,7 +26,7 @@ import { PermissionService } from '../../../core/services/permission.service';
   imports: [
     NgFor, NgIf, DecimalPipe, FormsModule, TranslateModule,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule,
-    PageHeaderComponent, EmptyStateComponent, TablePagerComponent, TableExportToolbarComponent, FilterBarComponent
+    PageHeaderComponent, EmptyStateComponent, TablePagerComponent, TableExportToolbarComponent
   ],
   templateUrl: './inventory-list.component.html',
   styleUrl: './inventory-list.component.scss'
@@ -43,7 +39,6 @@ export class InventoryListComponent implements OnInit {
   loading = true;
   searchTerm = '';
   filterPropertyId: number | null = null;
-  pageFilters: FilterSpec[] = [];
 
   get isAr(): boolean { return this.i18n.currentLang === 'ar'; }
 
@@ -73,10 +68,7 @@ export class InventoryListComponent implements OnInit {
     this.propertySvc.getAll(0, 100).subscribe({
       next: (res) => {
         this.properties = res.data?.content ?? [];
-        if (this.properties.length === 1) {
-          this.filterPropertyId = this.properties[0].id;
-        }
-        this.setupFilters();
+        if (this.properties.length === 1) this.filterPropertyId = this.properties[0].id;
         this.load();
       },
       error: () => this.load()
@@ -130,40 +122,10 @@ export class InventoryListComponent implements OnInit {
     });
   }
 
-  private setupFilters(): void {
-    this.pageFilters = [
-      {
-        key: 'filterPropertyId',
-        label: 'REQUEST_FORM.PROPERTY',
-        type: 'select',
-        options: this.properties.map(p => ({
-          value: p.id,
-          label: this.i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName)
-        }))
-      }
-    ];
-  }
-
-  onFilterBarChange(values: any): void {
-    if (values?.filterPropertyId !== undefined) this.filterPropertyId = values.filterPropertyId;
-    this.pageIndex = 0;
-    this.load();
-  }
-
-  clearFiltersFromBar(): void {
+  clearFilters(): void {
     this.filterPropertyId = null;
     this.pageIndex = 0;
     this.load();
-  }
-
-  hasFiltersBar(): boolean {
-    return !!this.filterPropertyId;
-  }
-
-  get filterValues(): Record<string, unknown> {
-    return {
-      filterPropertyId: this.filterPropertyId
-    };
   }
 
   onPropertyChange(): void {

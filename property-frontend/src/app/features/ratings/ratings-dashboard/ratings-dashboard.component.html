@@ -53,11 +53,11 @@
           <div class="ratings-source-switch">
             <button type="button" [class.active]="activeTab === 'visits'" (click)="setTab('visits')">
               <mat-icon>engineering</mat-icon>
-              {{ i18n.currentLang === 'ar' ? 'الزيارات' : 'Visits' }}
+              {{ ('INLINE_TEXT.VISITS' | translate) }}
             </button>
             <button type="button" [class.active]="activeTab === 'complaints'" (click)="setTab('complaints')">
               <mat-icon>forum</mat-icon>
-              {{ i18n.currentLang === 'ar' ? 'الشكاوى' : 'Complaints' }}
+              {{ ('INLINE_TEXT.COMPLAINTS' | translate) }}
             </button>
           </div>
 
@@ -71,40 +71,28 @@
           </button>
         </div>
 
-        <div class="ratings-filter-grid">
-          <mat-form-field appearance="outline" floatLabel="always" class="rating-filter-field">
-            <mat-label>{{ 'REQUEST_FORM.PROPERTY' | translate }}</mat-label>
-            <mat-select [(value)]="selectedPropertyId" (selectionChange)="onPropertyChange($event.value)">
-              <mat-option [value]="null">{{ 'ACTIONS.VIEW_ALL' | translate }}</mat-option>
-              <mat-option *ngFor="let p of propertyOptions" [value]="p.id">{{ p.name }}</mat-option>
-            </mat-select>
-          </mat-form-field>
+        <div class="finance-filter-strip ratings-filter-strip">
+          <label>{{ 'REQUEST_FORM.PROPERTY' | translate }}</label>
+          <select [(ngModel)]="selectedPropertyId" (change)="onPropertyChange(selectedPropertyId)" class="estate-property-select">
+            <option [ngValue]="null">{{ 'ACTIONS.VIEW_ALL' | translate }}</option>
+            <option *ngFor="let p of propertyOptions" [ngValue]="p.id">{{ p.name }}</option>
+          </select>
 
-          <mat-form-field appearance="outline" floatLabel="always" class="rating-filter-field">
-            <mat-label>{{ 'REQUEST_FORM.UNIT' | translate }}</mat-label>
-            <mat-select [(value)]="selectedUnitId" (selectionChange)="applyFilters()" [disabled]="!selectedPropertyId || loadingUnits">
-              <mat-option [value]="null">
-                <ng-container *ngIf="!selectedPropertyId">{{ 'REQUEST_FORM.SELECT_PROPERTY_FIRST' | translate }}</ng-container>
-                <ng-container *ngIf="selectedPropertyId && loadingUnits">{{ 'REQUEST_FORM.LOADING_UNITS' | translate }}</ng-container>
-                <ng-container *ngIf="selectedPropertyId && !loadingUnits">{{ 'ACTIONS.VIEW_ALL' | translate }}</ng-container>
-              </mat-option>
-              <mat-option *ngFor="let u of unitOptions" [value]="u.id">{{ u.name }}</mat-option>
-            </mat-select>
-          </mat-form-field>
+          <ng-container *ngIf="selectedPropertyId">
+            <label>{{ 'REQUEST_FORM.UNIT' | translate }}</label>
+            <select [(ngModel)]="selectedUnitId" (change)="applyFilters()" class="estate-property-select" [disabled]="loadingUnits">
+              <option [ngValue]="null">
+                {{ loadingUnits ? ('REQUEST_FORM.LOADING_UNITS' | translate) : ('ACTIONS.VIEW_ALL' | translate) }}
+              </option>
+              <option *ngFor="let u of unitOptions" [ngValue]="u.id">{{ u.name }}</option>
+            </select>
+          </ng-container>
 
-          <mat-form-field appearance="outline" floatLabel="always" class="rating-filter-field rating-filter-date">
-            <mat-label>{{ 'RATINGS_DASHBOARD.DATE_FROM' | translate }}</mat-label>
-            <input matInput [matDatepicker]="fromPicker" [value]="dateFrom" (dateChange)="dateFrom = $event.value; applyFilters()">
-            <mat-datepicker-toggle matIconSuffix [for]="fromPicker"></mat-datepicker-toggle>
-            <mat-datepicker #fromPicker></mat-datepicker>
-          </mat-form-field>
+          <label>{{ 'RATINGS_DASHBOARD.DATE_FROM' | translate }}</label>
+          <input type="date" [(ngModel)]="dateFromStr" (change)="applyFilters()" class="estate-property-select date-input">
 
-          <mat-form-field appearance="outline" floatLabel="always" class="rating-filter-field rating-filter-date">
-            <mat-label>{{ 'RATINGS_DASHBOARD.DATE_TO' | translate }}</mat-label>
-            <input matInput [matDatepicker]="toPicker" [value]="dateTo" (dateChange)="dateTo = $event.value; applyFilters()">
-            <mat-datepicker-toggle matIconSuffix [for]="toPicker"></mat-datepicker-toggle>
-            <mat-datepicker #toPicker></mat-datepicker>
-          </mat-form-field>
+          <label>{{ 'RATINGS_DASHBOARD.DATE_TO' | translate }}</label>
+          <input type="date" [(ngModel)]="dateToStr" (change)="applyFilters()" class="estate-property-select date-input">
         </div>
 
         <div class="contracts-filter-tray">

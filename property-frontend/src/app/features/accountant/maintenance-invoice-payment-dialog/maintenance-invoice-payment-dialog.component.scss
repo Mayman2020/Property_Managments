@@ -1,0 +1,247 @@
+.dialog-host {
+  min-width: min(680px, 92vw);
+}
+
+/* ── Header ─────────────────────────────────────────────── */
+.dialog-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0;
+  margin: 0;
+}
+
+.dialog-header-text h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-main, #0c1d33);
+}
+
+.dialog-subtitle {
+  margin: 3px 0 0;
+  font-size: 0.82rem;
+  color: #6d7c92;
+}
+
+.close-btn {
+  flex: 0 0 auto;
+  margin-top: -4px;
+}
+
+/* ── Body form ──────────────────────────────────────────── */
+mat-dialog-content {
+  padding-top: 12px !important;
+}
+
+.dialog-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ── Summary chips ──────────────────────────────────────── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.summary-chip {
+  border: 1px solid rgba(176, 138, 46, 0.22);
+  border-radius: 10px;
+  background: #fffdf8;
+  padding: 12px 14px;
+}
+
+.chip-label {
+  display: block;
+  font-size: 0.78rem;
+  color: #6d7c92;
+  margin-bottom: 5px;
+}
+
+.chip-value {
+  display: block;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #0c1d33;
+}
+
+.chip-value.accent {
+  color: #b08a2e;
+}
+
+/* ── Installment amount (installment mode) ──────────────── */
+.installment-amount-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid rgba(176, 138, 46, 0.22);
+  border-radius: 10px;
+  background: #fffdf8;
+  padding: 14px;
+  color: #0c1d33;
+
+  mat-icon {
+    color: #b08a2e;
+  }
+
+  strong {
+    font-size: 1.05rem;
+    font-weight: 800;
+  }
+}
+
+/* ── Mode cards ─────────────────────────────────────────── */
+.mode-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.mode-card {
+  border: 1px solid rgba(176, 138, 46, 0.24);
+  border-radius: 10px;
+  background: #fffdf8;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  padding: 14px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  mat-icon {
+    color: #b08a2e;
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+  }
+}
+
+.mode-card.active {
+  border-color: #0c1d33;
+  box-shadow: inset 0 0 0 1px #0c1d33;
+}
+
+.mode-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.mode-hint {
+  font-size: 0.8rem;
+  color: #6d7c92;
+  line-height: 1.45;
+}
+
+/* ── Installment count field ────────────────────────────── */
+.count-field {
+  width: 180px;
+}
+
+/* ── Installments table ─────────────────────────────────── */
+.installments-table {
+  border: 1px solid rgba(176, 138, 46, 0.22);
+  border-radius: 10px;
+  background: #fffdf8;
+  padding: 14px;
+}
+
+.it-head {
+  display: grid;
+  grid-template-columns: 40px 1fr 1.6fr;
+  gap: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(176, 138, 46, 0.15);
+  font-size: 0.8rem;
+  color: #6d7c92;
+}
+
+.it-row {
+  display: grid;
+  grid-template-columns: 40px 1fr 1.6fr;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+}
+
+.it-num {
+  font-size: 0.85rem;
+  color: #6d7c92;
+}
+
+.it-amount {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.date-fixed {
+  font-size: 0.88rem;
+  color: #6d7c92;
+}
+
+.date-field {
+  width: 100%;
+
+  ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+    display: none;
+  }
+
+  ::ng-deep .mat-mdc-text-field-wrapper {
+    padding: 0 8px;
+  }
+
+  ::ng-deep .mat-mdc-form-field-infix {
+    padding: 6px 0;
+    min-height: unset;
+  }
+}
+
+.hint-text {
+  margin: 8px 0 0;
+  font-size: 0.78rem;
+  color: #6d7c92;
+}
+
+/* ── Error ──────────────────────────────────────────────── */
+.error-text {
+  margin: -6px 0 0;
+  color: #b42318;
+  font-size: 0.8rem;
+}
+
+/* ── Full-width fields ──────────────────────────────────── */
+.full-width {
+  width: 100%;
+}
+
+/* ── Responsive ─────────────────────────────────────────── */
+@media (max-width: 560px) {
+  .dialog-host {
+    min-width: 0;
+  }
+
+  .summary-row {
+    grid-template-columns: 1fr;
+  }
+
+  .mode-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .it-head,
+  .it-row {
+    grid-template-columns: 32px 1fr;
+  }
+
+  .it-head span:last-child,
+  .it-row .date-fixed,
+  .it-row .date-field {
+    grid-column: 2;
+  }
+}

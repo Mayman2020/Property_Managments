@@ -65,6 +65,10 @@ export const TENANT_ROUTES: Routes = [
         loadComponent: () => import('../maintenance/request-list/request-list.component').then((m) => m.RequestListComponent)
       },
       {
+        path: 'my-requests',
+        loadComponent: () => import('../my-requests/my-requests-page/my-requests-page.component').then((m) => m.MyRequestsPageComponent)
+      },
+      {
         canActivate: [permissionGuard],
         data: { permission: 'my_requests', permissionAction: 'view' },
         path: 'requests/:id',

@@ -1,7 +1,7 @@
 <div class="app-page request-list-page">
   <ng-container *ngIf="listContext === 'admin'">
     <app-page-header
-      [eyebrow]="i18n.currentLang === 'ar' ? 'العمليات' : 'Operations'"
+      [eyebrow]="('INLINE_TEXT.OPERATIONS_2' | translate)"
       [title]="'REQUEST_LIST.TITLE' | translate"
       [subtitle]="'REQUEST_LIST.SUBTITLE' | translate"
       [showBack]="true"
@@ -19,7 +19,7 @@
 
   <ng-container *ngIf="listContext === 'tenant'">
     <app-page-header
-      [eyebrow]="i18n.currentLang === 'ar' ? 'نظرة عامة' : 'Overview'"
+      [eyebrow]="('INLINE_TEXT.OVERVIEW' | translate)"
       [title]="'REQUEST_LIST.TENANT_TITLE' | translate"
       [subtitle]="'REQUEST_LIST.TENANT_SUBTITLE' | translate"
       [showBack]="true"
@@ -33,7 +33,7 @@
 
   <ng-container *ngIf="listContext === 'officer'">
     <app-page-header
-      [eyebrow]="i18n.currentLang === 'ar' ? 'العمليات' : 'Operations'"
+      [eyebrow]="('INLINE_TEXT.OPERATIONS_2' | translate)"
       [title]="'REQUEST_LIST.OFFICER_TITLE' | translate"
       [subtitle]="'REQUEST_LIST.OFFICER_SUBTITLE' | translate"
       [showBack]="true"
@@ -55,8 +55,8 @@
     <section class="app-card tenant-units-card" *ngIf="tenantUnitRows.length > 0">
       <div class="section-card-header">
         <div>
-          <div class="section-mini-label">{{ i18n.currentLang === 'ar' ? 'الوحدات' : 'Units' }}</div>
-          <h3>{{ i18n.currentLang === 'ar' ? 'اختر الوحدة' : 'Choose a unit' }}</h3>
+          <div class="section-mini-label">{{ ('INLINE_TEXT.UNITS_2' | translate) }}</div>
+          <h3>{{ ('INLINE_TEXT.CHOOSE_A_UNIT' | translate) }}</h3>
         </div>
       </div>
 
@@ -71,18 +71,18 @@
 
     <div class="no-selection app-card" *ngIf="!selectedTenantUnitId">
       <span class="material-icons">touch_app</span>
-      <p>{{ i18n.currentLang === 'ar' ? 'اختر وحدة من القائمة لعرض طلبات الصيانة.' : 'Select a unit from the list to view maintenance requests.' }}</p>
+      <p>{{ ('INLINE_TEXT.SELECT_A_UNIT_FROM_THE_LIST_TO_VIEW_MAINTENANCE_REQUEST' | translate) }}</p>
     </div>
 
     <section class="app-card tenant-maintenance-card" *ngIf="selectedTenantUnitId">
       <div class="maintenance-head">
         <div>
-          <span class="section-mini-label">{{ i18n.currentLang === 'ar' ? 'الصيانة' : 'Maintenance' }}</span>
+          <span class="section-mini-label">{{ ('INLINE_TEXT.MAINTENANCE_2' | translate) }}</span>
           <h2>{{ 'TENANT_DASHBOARD.MAINTENANCE_REQUESTS' | translate }}</h2>
         </div>
         <div class="maintenance-head-actions">
           <span class="requests-total">{{ filteredRequests.length }} / {{ tenantStatusCount('') }}</span>
-          <button mat-flat-button color="primary" type="button" (click)="openNewRequest()">
+          <button mat-flat-button color="primary" type="button" (click)="openNewRequest()" *appCan="'maintenance'; action: 'create'">
             <mat-icon>add</mat-icon>
             {{ 'NAV.NEW_REQUEST' | translate }}
           </button>
@@ -95,9 +95,9 @@
           <input [value]="searchTerm" (input)="onSearch($any($event.target).value)" [placeholder]="'ACTIONS.SEARCH' | translate">
         </label>
         <div class="status-filter-inline">
-          <span class="tenant-filter-label">{{ i18n.currentLang === 'ar' ? 'الحالة' : 'Status' }}</span>
+          <span class="tenant-filter-label">{{ ('INLINE_TEXT.STATUS' | translate) }}</span>
           <div class="tenant-unit-filter status-chips">
-            <button type="button" class="status-icon-filter" [class.active]="filterStatus === ''" (click)="filterStatus = ''; applyFilter()" [matTooltip]="i18n.currentLang === 'ar' ? 'الكل' : 'All'">
+            <button type="button" class="status-icon-filter" [class.active]="filterStatus === ''" (click)="filterStatus = ''; applyFilter()" [matTooltip]="('INLINE_TEXT.ALL' | translate)">
               <span class="material-icons">apps</span>
               <strong>{{ tenantStatusCount('') }}</strong>
             </button>
@@ -116,7 +116,7 @@
         </div>
         <button type="button" class="clear-filter-btn" *ngIf="searchTerm || filterStatus" (click)="searchTerm = ''; filterStatus = ''; applyFilter()">
           <span class="material-icons">restart_alt</span>
-          {{ i18n.currentLang === 'ar' ? 'إعادة ضبط' : 'Reset' }}
+          {{ ('INLINE_TEXT.RESET' | translate) }}
         </button>
       </div>
 
@@ -185,8 +185,24 @@
         <span class="material-icons" style="font-size: 18px; color: var(--ink-400)">search</span>
         <input [value]="searchTerm" (input)="onSearch($any($event.target).value)" [placeholder]="'ACTIONS.SEARCH' | translate">
       </div>
-      <app-filter-bar *ngIf="listContext === 'admin'" [filters]="pageFilters" [filterValues]="filterValues" (filtersChange)="onFilterBarChange($event)"></app-filter-bar>
-      <button mat-icon-button class="clear-filters-btn" (click)="clearFiltersFromBar()" *ngIf="listContext === 'admin' && hasFiltersBar()" [matTooltip]="'ACTIONS.CLEAR_FILTERS' | translate">
+      <div class="finance-filter-strip" *ngIf="listContext === 'admin' && properties.length > 0">
+        <label>{{ 'REQUEST_FORM.PROPERTY' | translate }}</label>
+        <select [(ngModel)]="filterPropertyId" (change)="applyFilter()" class="estate-property-select">
+          <option [ngValue]="null">{{ 'COMMON.ALL' | translate }}</option>
+          <option *ngFor="let p of properties" [ngValue]="p.id">
+            {{ i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName) }}
+          </option>
+        </select>
+        <label>{{ 'MAINTENANCE.STATUS' | translate }}</label>
+        <select [(ngModel)]="filterStatus" (change)="applyFilter()" class="estate-property-select">
+          <option *ngFor="let s of statuses" [value]="s.value">{{ s.labelKey | translate }}</option>
+        </select>
+        <label>{{ 'MAINTENANCE.PRIORITY' | translate }}</label>
+        <select [(ngModel)]="filterPriority" (change)="applyFilter()" class="estate-property-select">
+          <option *ngFor="let p of priorities" [value]="p.value">{{ p.labelKey | translate }}</option>
+        </select>
+      </div>
+      <button mat-icon-button class="clear-filters-btn" (click)="clearFiltersFromBar()" *ngIf="hasFiltersBar()" [matTooltip]="'ACTIONS.CLEAR_FILTERS' | translate">
         <mat-icon>filter_alt_off</mat-icon>
       </button>
     </div>
@@ -211,7 +227,7 @@
             <td class="request-cell">
               <span class="req-title">{{ req.title }}</span>
             </td>
-            <td class="timeline-cell" (click)="openTimeline(req)" matTooltip="{{ i18n.currentLang === 'ar' ? 'عرض مسار الطلب' : 'View request timeline' }}">
+            <td class="timeline-cell" (click)="openTimeline(req)" matTooltip="{{ ('INLINE_TEXT.VIEW_REQUEST_TIMELINE' | translate) }}">
               <span class="property-info">{{ req.propertyName || '-' }}</span>
               <span class="unit-info">{{ req.unitNumber || '-' }}</span>
               <span class="material-icons timeline-hint">account_tree</span>

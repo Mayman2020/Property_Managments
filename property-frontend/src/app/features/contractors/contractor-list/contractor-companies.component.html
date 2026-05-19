@@ -6,7 +6,7 @@
       { label: ('NAV.DASHBOARD' | translate), route: '/admin/dashboard' },
       { label: ('NAV.CONTRACTOR_COMPANIES' | translate) }
     ]">
-    <button mat-flat-button class="navy-btn" type="button" (click)="openDialog(null)">
+    <button mat-flat-button class="navy-btn" type="button" (click)="openDialog(null)" *appCan="'contractors'; action: 'create'">
       <mat-icon>add</mat-icon>
       {{ 'CONTRACTORS.ADD' | translate }}
     </button>
@@ -28,7 +28,21 @@
           <mat-icon>search</mat-icon>
           <input [value]="searchTerm" (input)="onSearch($any($event.target).value)" [placeholder]="'ACTIONS.SEARCH' | translate">
         </div>
-        <app-filter-bar [filters]="pageFilters" [filterValues]="filterValues" (filtersChange)="onFilterBarChange($event)"></app-filter-bar>
+        <div class="finance-filter-strip" *ngIf="properties.length > 0">
+          <label>{{ 'REQUEST_FORM.PROPERTY' | translate }}</label>
+          <select [(ngModel)]="filterPropertyId" (change)="onPropertyChange()" class="estate-property-select">
+            <option [ngValue]="null">{{ 'COMMON.ALL' | translate }}</option>
+            <option *ngFor="let p of properties" [ngValue]="p.id">
+              {{ i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName) }}
+            </option>
+          </select>
+          <label>{{ 'COMMON.STATUS' | translate }}</label>
+          <select [(ngModel)]="filterActive" (change)="onStatusChange()" class="estate-property-select">
+            <option [ngValue]="null">{{ 'COMMON.ALL' | translate }}</option>
+            <option [ngValue]="true">{{ 'COMMON.ACTIVE' | translate }}</option>
+            <option [ngValue]="false">{{ 'COMMON.INACTIVE' | translate }}</option>
+          </select>
+        </div>
         <button mat-icon-button class="clear-filters-btn" (click)="clearFiltersFromBar()" *ngIf="hasFiltersBar()" [matTooltip]="'ACTIONS.CLEAR_FILTERS' | translate">
           <mat-icon>filter_alt_off</mat-icon>
         </button>
@@ -67,8 +81,8 @@
                 <strong>{{ companyName(c) }}</strong>
               </div>
             </td>
-            <td>{{ formatDate(c.contractStart) }}</td>
-            <td>{{ formatDate(c.contractEnd) }}</td>
+            <td>{{ formatDate(c.latestContractStart || c.contractStart) }}</td>
+            <td>{{ formatDate(c.latestContractEnd || c.contractEnd) }}</td>
             <td>{{ c.phone || '--' }}</td>
             <td>{{ c.email || '--' }}</td>
             <td>
@@ -78,16 +92,19 @@
               </span>
             </td>
             <td class="actions-cell">
-              <button type="button" class="app-icon-btn primary-tint" (click)="openContractDialog(c)" [matTooltip]="'CONTRACTORS.ASSIGN_PROPERTY' | translate">
+              <button type="button" class="app-icon-btn primary-tint" *appCan="'maintenance'; action: 'create'" (click)="openContractDialog(c)" [matTooltip]="'CONTRACTORS.ASSIGN_PROPERTY' | translate">
                 <mat-icon>handshake</mat-icon>
+              </button>
+              <button type="button" class="app-icon-btn primary-tint" (click)="openStaffDialog(c)" [matTooltip]="isArabic ? 'الموظفين' : 'Staff'">
+                <mat-icon>groups</mat-icon>
               </button>
               <button type="button" class="app-icon-btn accent" (click)="openView(c)" [matTooltip]="'ACTIONS.VIEW' | translate">
                 <mat-icon>visibility</mat-icon>
               </button>
-              <button type="button" class="app-icon-btn" (click)="openDialog(c)" [matTooltip]="'ACTIONS.EDIT' | translate">
+              <button type="button" class="app-icon-btn" *appCan="'contractors'; action: 'edit'" (click)="openDialog(c)" [matTooltip]="'ACTIONS.EDIT' | translate">
                 <mat-icon>edit</mat-icon>
               </button>
-              <button type="button" class="app-icon-btn danger" *ngIf="canHardDelete" (click)="remove(c)" [matTooltip]="'ACTIONS.DELETE' | translate">
+              <button type="button" class="app-icon-btn danger" *appCan="'contractors'; action: 'delete'" (click)="remove(c)" [matTooltip]="'ACTIONS.DELETE' | translate">
                 <mat-icon>delete</mat-icon>
               </button>
             </td>

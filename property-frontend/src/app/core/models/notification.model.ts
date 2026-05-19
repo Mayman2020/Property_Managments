@@ -42,6 +42,7 @@ export type NotificationType =
   | 'MAINTENANCE_CONTRACT_AWAITING_OWNER_REVIEW'
   | 'MAINTENANCE_CONTRACT_APPROVED'
   | 'MAINTENANCE_CONTRACT_REJECTED'
+  | 'MAINTENANCE_CONTRACT_PAYMENT_RECEIVED'
   | 'MAINTENANCE_CONTRACT_TERMINATION_REQUESTED'
   | 'MAINTENANCE_CONTRACT_TERMINATION_APPROVED'
   | 'MAINTENANCE_CONTRACT_TERMINATION_REJECTED'
@@ -67,6 +68,7 @@ export interface NotificationParams {
   /** Complaint-originated maintenance request flags. */
   fromComplaint?: boolean;
   complaintId?: number;
+  invoiceId?: number;
   color?: string;
 }
 

@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
 import { timeout } from 'rxjs/operators';
 import { AppConstants } from '../constants/app-constants';
+import { normalizeFileUrl, normalizeFileUrlsInValue } from '../utils/file-url-utils';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
@@ -22,27 +23,27 @@ export class ApiService {
         if (v !== undefined && v !== null) httpParams = httpParams.set(k, String(v));
       });
     }
-    return this.http.get<T>(`${this.base}${path}`, { params: httpParams });
+    return this.normalizeResponse(this.http.get<T>(`${this.base}${path}`, { params: httpParams }));
   }
 
   post<T>(path: string, body: unknown): Observable<T> {
-    return this.http.post<T>(`${this.base}${path}`, body);
+    return this.normalizeResponse(this.http.post<T>(`${this.base}${path}`, body));
   }
 
   put<T>(path: string, body: unknown): Observable<T> {
-    return this.http.put<T>(`${this.base}${path}`, body);
+    return this.normalizeResponse(this.http.put<T>(`${this.base}${path}`, body));
   }
 
   patch<T>(path: string, body?: unknown): Observable<T> {
-    return this.http.patch<T>(`${this.base}${path}`, body ?? {});
+    return this.normalizeResponse(this.http.patch<T>(`${this.base}${path}`, body ?? {}));
   }
 
   delete<T>(path: string): Observable<T> {
-    return this.http.delete<T>(`${this.base}${path}`);
+    return this.normalizeResponse(this.http.delete<T>(`${this.base}${path}`));
   }
 
   postFormData<T>(path: string, formData: FormData): Observable<T> {
-    return this.http.post<T>(`${this.base}${path}`, formData);
+    return this.normalizeResponse(this.http.post<T>(`${this.base}${path}`, formData));
   }
 
   buildUrl(path: string): string {
@@ -60,11 +61,15 @@ export class ApiService {
         map((res) => {
           const data = res?.data ?? {};
           return {
-            url: data.url ?? '',
+            url: data.url ? normalizeFileUrl(data.url) : '',
             filename: data.filename
           };
         })
       );
+  }
+
+  private normalizeResponse<T>(response: Observable<T>): Observable<T> {
+    return response.pipe(map((value) => normalizeFileUrlsInValue(value)));
   }
 
 }

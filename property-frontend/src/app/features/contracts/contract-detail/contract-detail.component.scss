@@ -3,9 +3,115 @@
   gap: 24px;
 }
 
+.badge-warn {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #fff3e0;
+  color: #e65100;
+  border: 1px solid #ffcc80;
+}
+
+.badge-success {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #a5d6a7;
+}
+
+.annex-add-card { padding: 16px; }
+.annex-form-title { font-weight: 700; margin-bottom: 12px; color: var(--navy-800); }
+.annex-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.annex-form-grid .full-span { grid-column: 1 / -1; }
+.estate-input {
+  padding: 8px 12px; border: 1px solid var(--line, #e4d8c8); border-radius: 6px;
+  font-size: 0.9rem; background: var(--surface, #fffdf8); width: 100%; box-sizing: border-box;
+}
+.estate-input:focus { outline: 2px solid var(--navy-800); border-color: transparent; }
+.navy-btn { background: var(--navy-800) !important; color: white !important; }
+.doc-link { display: inline-flex; align-items: center; color: var(--navy-800); }
+.app-icon-btn.danger mat-icon { color: var(--error, #d32f2f); }
+
 .handover-record {
   border-left: 4px solid var(--bad, #dc2626);
 }
+
+.handover-actions-card {
+  border-left: 4px solid var(--teal, #0d9488);
+}
+
+.handover-body {
+  display: grid;
+  gap: 16px;
+  padding-top: 4px;
+}
+
+.handover-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper-2);
+  flex-wrap: wrap;
+}
+
+.handover-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+
+  .hw-icon { color: var(--brass-600); margin-top: 2px; flex-shrink: 0; }
+  > div { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  strong { color: var(--text-main); }
+  .text-muted { color: var(--text-muted); font-size: 0.85rem; }
+}
+
+.handover-btns { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start; }
+
+.hw-status {
+  display: inline-flex; align-items: center; padding: 2px 10px;
+  border-radius: 20px; font-size: 12px; font-weight: 700;
+}
+
+.hw-damage-amount {
+  display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+}
+
+.hw-receipt a {
+  display: inline-flex; align-items: center; gap: 4px;
+  color: var(--navy-900); text-decoration: none; font-weight: 600; font-size: 0.85rem;
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+}
+
+/* Tenant portal: expiry & damage banners */
+.expiry-action-card,
+.damage-payment-card {
+  .eac-body {
+    display: flex; align-items: flex-start; gap: 14px;
+    padding-bottom: 12px;
+    .eac-icon { color: var(--warn); font-size: 28px; width: 28px; height: 28px; flex-shrink: 0; }
+    &.damage-icon { color: var(--bad); }
+    p { margin: 4px 0 0; color: var(--text-muted); font-size: 0.9rem; }
+    .text-success { color: var(--ok); }
+  }
+  .eac-actions {
+    display: flex; gap: 10px; flex-wrap: wrap; align-items: center; padding-top: 8px;
+    border-top: 1px solid var(--line);
+  }
+}
+
+.damage-payment-card .eac-icon { color: var(--bad); }
 
 .pending-termination-banner {
   border-left: 4px solid var(--amber-600, #d69329);

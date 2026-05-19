@@ -23,7 +23,7 @@
               <p>{{ 'LOOKUPS.ITEM_COUNT' | translate:{ count: governorates.length } }}</p>
             </div>
             <div class="lookup-head-actions">
-              <button mat-flat-button type="button" (click)="openAddGovernorate()">
+              <button mat-flat-button type="button" (click)="openAddGovernorate()" *appCan="'lookups'; action: 'create'">
                 <mat-icon>add</mat-icon>
                 {{ 'LOOKUPS.ADD_COUNTRY' | translate }}
               </button>
@@ -61,8 +61,8 @@
                   </td>
                   <td>
                     <div class="app-row-actions">
-                      <button type="button" class="app-icon-btn" (click)="openEditGovernorate(gov)" [matTooltip]="'ACTIONS.EDIT' | translate"><mat-icon>edit</mat-icon></button>
-                      <button type="button" class="app-icon-btn danger" [disabled]="gov.locked || deletingLookupId === gov.id" (click)="deleteLookup(gov)" [matTooltip]="'ACTIONS.DELETE' | translate">
+                      <button type="button" class="app-icon-btn" *appCan="'lookups'; action: 'edit'" (click)="openEditGovernorate(gov)" [matTooltip]="'ACTIONS.EDIT' | translate"><mat-icon>edit</mat-icon></button>
+                      <button type="button" class="app-icon-btn danger" *appCan="'lookups'; action: 'delete'" [disabled]="gov.locked || deletingLookupId === gov.id" (click)="deleteLookup(gov)" [matTooltip]="'ACTIONS.DELETE' | translate">
                         <mat-icon>delete</mat-icon>
                       </button>
                     </div>
@@ -97,7 +97,7 @@
                     <mat-option *ngFor="let g of governorates" [value]="g.id">{{ nameOf(g) }}</mat-option>
                   </mat-select>
                 </mat-form-field>
-                <button mat-flat-button type="button" (click)="openAddCity()">
+                <button mat-flat-button type="button" (click)="openAddCity()" *appCan="'lookups'; action: 'create'">
                   <mat-icon>add</mat-icon>
                   {{ 'LOOKUPS.ADD_CITY' | translate }}
                 </button>
@@ -137,8 +137,8 @@
                   </td>
                   <td>
                     <div class="app-row-actions">
-                      <button type="button" class="app-icon-btn" (click)="openEditCity(city)" [matTooltip]="'ACTIONS.EDIT' | translate"><mat-icon>edit</mat-icon></button>
-                      <button type="button" class="app-icon-btn danger" [disabled]="city.locked || deletingLookupId === city.id" (click)="deleteLookup(city)" [matTooltip]="'ACTIONS.DELETE' | translate">
+                      <button type="button" class="app-icon-btn" *appCan="'lookups'; action: 'edit'" (click)="openEditCity(city)" [matTooltip]="'ACTIONS.EDIT' | translate"><mat-icon>edit</mat-icon></button>
+                      <button type="button" class="app-icon-btn danger" *appCan="'lookups'; action: 'delete'" [disabled]="city.locked || deletingLookupId === city.id" (click)="deleteLookup(city)" [matTooltip]="'ACTIONS.DELETE' | translate">
                         <mat-icon>delete</mat-icon>
                       </button>
                     </div>
@@ -191,7 +191,7 @@
           <p>{{ 'LOOKUPS.ITEM_COUNT' | translate:{ count: list.items.length } }}</p>
         </div>
         <div class="lookup-head-actions">
-          <button mat-flat-button type="button" (click)="openAddClassification(list)">
+          <button mat-flat-button type="button" (click)="openAddClassification(list)" *appCan="'lookups'; action: 'create'">
             <mat-icon>add</mat-icon>
             {{ 'ACTIONS.ADD' | translate }}
           </button>
@@ -229,8 +229,8 @@
               </td>
               <td>
                 <div class="app-row-actions">
-                  <button type="button" class="app-icon-btn" (click)="openEditClassification(list, item)" [matTooltip]="'ACTIONS.EDIT' | translate"><mat-icon>edit</mat-icon></button>
-                  <button type="button" class="app-icon-btn danger" [disabled]="item.locked || deletingLookupId === item.id" (click)="deleteClassification(list, item)" [matTooltip]="'ACTIONS.DELETE' | translate">
+                  <button type="button" class="app-icon-btn" *appCan="'lookups'; action: 'edit'" (click)="openEditClassification(list, item)" [matTooltip]="'ACTIONS.EDIT' | translate"><mat-icon>edit</mat-icon></button>
+                  <button type="button" class="app-icon-btn danger" *appCan="'lookups'; action: 'delete'" [disabled]="item.locked || deletingLookupId === item.id" (click)="deleteClassification(list, item)" [matTooltip]="'ACTIONS.DELETE' | translate">
                     <mat-icon>delete</mat-icon>
                   </button>
                   <mat-icon class="lock-icon" *ngIf="item.locked" [matTooltip]="'LOOKUPS.LOCKED_ROW_HINT' | translate">lock</mat-icon>

@@ -8,7 +8,7 @@
       { label: ('NAV.CONTRACTS_DASHBOARD' | translate), route: '/admin/contracts/dashboard' },
       { label: ('CONTRACTS.TEMPLATES_TITLE' | translate) }
     ]">
-    <button mat-flat-button (click)="openNew()">
+    <button mat-flat-button *ngIf="permissions.can('contracts', 'create')" (click)="openNew()">
       <mat-icon>add</mat-icon>
       {{ 'CONTRACTS.NEW_TEMPLATE' | translate }}
     </button>
@@ -106,7 +106,7 @@
             </td>
             <td>
               <div class="table-actions">
-                <button type="button" class="app-icon-btn" (click)="openEdit(t)" [matTooltip]="'ACTIONS.EDIT' | translate">
+                <button type="button" class="app-icon-btn" *ngIf="permissions.can('contracts', 'edit')" (click)="openEdit(t)" [matTooltip]="'ACTIONS.EDIT' | translate">
                   <mat-icon>edit</mat-icon>
                 </button>
               </div>

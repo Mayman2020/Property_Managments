@@ -18,7 +18,7 @@ interface NavItem {
   route: string;
   roles: UserRole[];
   permissionKey: string;
-  sectionKey: 'NAV_SECTION.OVERVIEW' | 'NAV_SECTION.DIRECTORY' | 'NAV_SECTION.OPERATIONS' | 'NAV_SECTION.CONTRACTS' | 'NAV_SECTION.YOU';
+  sectionKey: 'NAV_SECTION.OVERVIEW' | 'NAV_SECTION.DIRECTORY' | 'NAV_SECTION.OPERATIONS' | 'NAV_SECTION.CONTRACTS' | 'NAV_SECTION.FINANCE' | 'NAV_SECTION.YOU';
   bypassPermission?: boolean;
   officerType?: 'INTERNAL_PROPERTY' | 'CONTRACTOR_COMPANY';
 }
@@ -45,6 +45,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     'NAV_SECTION.DIRECTORY',
     'NAV_SECTION.OPERATIONS',
     'NAV_SECTION.CONTRACTS',
+    'NAV_SECTION.FINANCE',
     'NAV_SECTION.YOU'
   ];
   private cacheRole: string | undefined = undefined;
@@ -61,11 +62,11 @@ export class SidebarComponent implements OnInit, OnDestroy {
     'NAV_SECTION.DIRECTORY': true,
     'NAV_SECTION.OPERATIONS': true,
     'NAV_SECTION.CONTRACTS': true,
+    'NAV_SECTION.FINANCE': true,
     'NAV_SECTION.YOU': true
   };
 
   readonly navItems: NavItem[] = [
-    { icon: 'home', labelKey: 'NAV.HOME_PORTAL', route: '/admin/home', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'PROCEDURES_CLERK', 'PROPERTY_GUARD', 'OWNER'], permissionKey: 'dashboard', sectionKey: 'NAV_SECTION.OVERVIEW' },
     { icon: 'dashboard', labelKey: 'NAV.DASHBOARD', route: '/admin/dashboard', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'PROPERTY_GUARD', 'OWNER'], permissionKey: 'dashboard', sectionKey: 'NAV_SECTION.OVERVIEW' },
     { icon: 'apartment', labelKey: 'NAV.PROPERTIES', route: '/admin/properties', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'OWNER'], permissionKey: 'properties', sectionKey: 'NAV_SECTION.DIRECTORY' },
     { icon: 'meeting_room', labelKey: 'NAV.UNITS', route: '/admin/units', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'OWNER'], permissionKey: 'units', sectionKey: 'NAV_SECTION.DIRECTORY' },
@@ -76,21 +77,29 @@ export class SidebarComponent implements OnInit, OnDestroy {
     { icon: 'person_pin', labelKey: 'NAV.OWNERS', route: '/admin/owners', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT'], permissionKey: 'properties', sectionKey: 'NAV_SECTION.DIRECTORY' },
     { icon: 'inventory_2', labelKey: 'NAV.INVENTORY', route: '/admin/inventory', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'OWNER'], permissionKey: 'inventory', sectionKey: 'NAV_SECTION.OPERATIONS' },
     { icon: 'bar_chart', labelKey: 'NAV.REPORTS', route: '/admin/reports', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'OWNER'], permissionKey: 'reports', sectionKey: 'NAV_SECTION.OPERATIONS' },
+    { icon: 'event_busy', labelKey: 'NAV.CONTRACT_EXPIRY_REPORT', route: '/admin/reports/contract-expiry', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'OWNER'], permissionKey: 'contracts', sectionKey: 'NAV_SECTION.OPERATIONS', bypassPermission: true },
+    { icon: 'domain', labelKey: 'NAV.OCCUPANCY_ANALYTICS', route: '/admin/reports/occupancy', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'OWNER'], permissionKey: 'properties', sectionKey: 'NAV_SECTION.OPERATIONS', bypassPermission: true },
+    { icon: 'handyman', labelKey: 'NAV.MAINTENANCE_REPORT', route: '/admin/reports/maintenance', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'OWNER'], permissionKey: 'maintenance', sectionKey: 'NAV_SECTION.OPERATIONS', bypassPermission: true },
+    { icon: 'assignment', labelKey: 'NAV.MY_REQUESTS', route: '/admin/my-requests', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'PROCEDURES_CLERK', 'PROPERTY_GUARD', 'OWNER'], permissionKey: 'my_requests', sectionKey: 'NAV_SECTION.YOU', bypassPermission: true },
     { icon: 'tune', labelKey: 'NAV.USERS', route: '/admin/users', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT'], permissionKey: 'users', sectionKey: 'NAV_SECTION.YOU' },
+    { icon: 'domain', labelKey: 'NAV.LEGAL_ENTITIES', route: '/admin/legal-entities', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER'], permissionKey: 'settings', sectionKey: 'NAV_SECTION.YOU', bypassPermission: true },
     { icon: 'manage_accounts', labelKey: 'NAV.USER_ACCESS', route: '/admin/user-access', roles: ['SUPER_ADMIN'], permissionKey: 'users', sectionKey: 'NAV_SECTION.YOU' },
     { icon: 'dashboard_customize', labelKey: 'NAV.SCREENS', route: '/admin/screens', roles: ['SUPER_ADMIN'], permissionKey: 'permissions', sectionKey: 'NAV_SECTION.YOU' },
     { icon: 'admin_panel_settings', labelKey: 'NAV.PERMISSIONS', route: '/admin/permissions', roles: ['SUPER_ADMIN'], permissionKey: 'permissions', sectionKey: 'NAV_SECTION.YOU' },
     { icon: 'widgets', labelKey: 'NAV.CLIENT_MODULES', route: '/admin/module-settings', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER'], permissionKey: 'permissions', sectionKey: 'NAV_SECTION.YOU', bypassPermission: true },
     { icon: 'public', labelKey: 'NAV.LOOKUPS', route: '/admin/lookups', roles: ['SUPER_ADMIN'], permissionKey: 'lookups', sectionKey: 'NAV_SECTION.YOU' },
     { icon: 'calendar_month', labelKey: 'NAV.SCHEDULE', route: '/officer/schedule', roles: ['MAINTENANCE_OFFICER_INTERNAL', 'MAINTENANCE_OFFICER_COMPANY', 'MAINTENANCE_COMPANY'], permissionKey: 'schedule', sectionKey: 'NAV_SECTION.OPERATIONS' },
-    { icon: 'assignment', labelKey: 'NAV.MY_REQUESTS', route: '/officer/requests', roles: ['MAINTENANCE_OFFICER_INTERNAL', 'MAINTENANCE_OFFICER_COMPANY', 'MAINTENANCE_COMPANY'], permissionKey: 'my_requests', sectionKey: 'NAV_SECTION.OPERATIONS' },
+    { icon: 'assignment', labelKey: 'NAV.MAINTENANCE_REQUESTS', route: '/officer/requests', roles: ['MAINTENANCE_OFFICER_INTERNAL', 'MAINTENANCE_OFFICER_COMPANY', 'MAINTENANCE_COMPANY'], permissionKey: 'my_requests', sectionKey: 'NAV_SECTION.OPERATIONS' },
+    { icon: 'fact_check', labelKey: 'NAV.MY_REQUESTS', route: '/officer/my-requests', roles: ['MAINTENANCE_OFFICER_INTERNAL', 'MAINTENANCE_OFFICER_COMPANY', 'MAINTENANCE_COMPANY'], permissionKey: 'my_requests', sectionKey: 'NAV_SECTION.YOU', bypassPermission: true },
     { icon: 'inbox', labelKey: 'NAV.COMPANY_QUEUE', route: '/officer/company-queue', roles: ['MAINTENANCE_OFFICER_COMPANY', 'MAINTENANCE_COMPANY'], permissionKey: 'my_requests', sectionKey: 'NAV_SECTION.OPERATIONS', bypassPermission: true, officerType: 'CONTRACTOR_COMPANY' },
+    { icon: 'group', labelKey: 'NAV.MY_STAFF', route: '/officer/my-staff', roles: ['MAINTENANCE_COMPANY'], permissionKey: 'my_requests', sectionKey: 'NAV_SECTION.DIRECTORY', bypassPermission: true, officerType: 'CONTRACTOR_COMPANY' },
     { icon: 'person', labelKey: 'NAV.PROFILE', route: '/officer/profile', roles: ['MAINTENANCE_OFFICER_INTERNAL', 'MAINTENANCE_OFFICER_COMPANY', 'MAINTENANCE_COMPANY'], permissionKey: 'profile', sectionKey: 'NAV_SECTION.YOU' },
     { icon: 'home', labelKey: 'NAV.MY_UNIT', route: '/tenant/my-unit', roles: ['TENANT'], permissionKey: 'my_unit', sectionKey: 'NAV_SECTION.OVERVIEW' },
     { icon: 'library_books', labelKey: 'NAV.MY_CONTRACTS', route: '/tenant/my-contracts', roles: ['TENANT'], permissionKey: 'my_unit', sectionKey: 'NAV_SECTION.OVERVIEW', bypassPermission: true },
     { icon: 'receipt_long', labelKey: 'NAV.RENT_RECEIPTS', route: '/tenant/rent-receipts', roles: ['TENANT'], permissionKey: 'my_unit', sectionKey: 'NAV_SECTION.OVERVIEW', bypassPermission: true },
     { icon: 'autorenew', labelKey: 'NAV.CONTRACT_REQUEST', route: '/tenant/contract-request', roles: ['TENANT'], permissionKey: 'my_unit', sectionKey: 'NAV_SECTION.OVERVIEW', bypassPermission: true },
     { icon: 'history', labelKey: 'NAV.MAINTENANCE_REQUESTS', route: '/tenant/requests', roles: ['TENANT'], permissionKey: 'my_requests', sectionKey: 'NAV_SECTION.OVERVIEW' },
+    { icon: 'assignment', labelKey: 'NAV.MY_REQUESTS', route: '/tenant/my-requests', roles: ['TENANT'], permissionKey: 'my_requests', sectionKey: 'NAV_SECTION.YOU', bypassPermission: true },
     { icon: 'report_problem', labelKey: 'NAV.SUBMIT_COMPLAINT', route: '/tenant/complaints', roles: ['TENANT'], permissionKey: 'my_unit', sectionKey: 'NAV_SECTION.OVERVIEW', bypassPermission: true },
     { icon: 'notifications', labelKey: 'NAV.NOTIFICATIONS', route: '/tenant/notifications', roles: ['TENANT'], permissionKey: 'notifications', sectionKey: 'NAV_SECTION.YOU', bypassPermission: true },
     { icon: 'person', labelKey: 'NAV.PROFILE', route: '/tenant/profile', roles: ['TENANT'], permissionKey: 'profile', sectionKey: 'NAV_SECTION.YOU' },
@@ -101,21 +110,27 @@ export class SidebarComponent implements OnInit, OnDestroy {
     { icon: 'chat_bubble_outline', labelKey: 'NAV.COMPLAINTS', route: '/admin/contracts/complaints', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'OWNER'], permissionKey: 'contracts', sectionKey: 'NAV_SECTION.CONTRACTS', bypassPermission: true },
     { icon: 'file_copy', labelKey: 'NAV.TEMPLATES', route: '/admin/contracts/templates', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT'], permissionKey: 'contracts', sectionKey: 'NAV_SECTION.CONTRACTS', bypassPermission: true },
     { icon: 'door_open', labelKey: 'NAV.VACANCIES', route: '/admin/vacancies/list', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT'], permissionKey: 'vacancies', sectionKey: 'NAV_SECTION.CONTRACTS', bypassPermission: true },
-    { icon: 'bar_chart', labelKey: 'NAV.FINANCE_DASHBOARD', route: '/admin/finance/dashboard', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'OWNER'], permissionKey: 'finance', sectionKey: 'NAV_SECTION.OPERATIONS', bypassPermission: true },
-    { icon: 'summarize', labelKey: 'NAV.FINANCIAL_REPORTS', route: '/admin/finance/reports/pnl', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'OWNER'], permissionKey: 'finance', sectionKey: 'NAV_SECTION.OPERATIONS', bypassPermission: true },
-    { icon: 'warning_amber', labelKey: 'NAV.OVERDUE_PAYMENTS', route: '/admin/finance/overdue-payments', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'OWNER'], permissionKey: 'finance', sectionKey: 'NAV_SECTION.OPERATIONS', bypassPermission: true },
+    { icon: 'bar_chart', labelKey: 'NAV.FINANCE_DASHBOARD', route: '/admin/finance/dashboard', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'OWNER'], permissionKey: 'finance', sectionKey: 'NAV_SECTION.FINANCE', bypassPermission: true },
+    { icon: 'receipt_long', labelKey: 'NAV.EXPENSES', route: '/admin/finance/expenses', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'OWNER'], permissionKey: 'finance', sectionKey: 'NAV_SECTION.FINANCE', bypassPermission: true },
+    { icon: 'trending_up', labelKey: 'NAV.REVENUES', route: '/admin/finance/revenues', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'OWNER'], permissionKey: 'finance', sectionKey: 'NAV_SECTION.FINANCE', bypassPermission: true },
+    { icon: 'savings', labelKey: 'NAV.BUDGET', route: '/admin/finance/budget', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'OWNER'], permissionKey: 'finance', sectionKey: 'NAV_SECTION.FINANCE', bypassPermission: true },
+    { icon: 'summarize', labelKey: 'NAV.FINANCIAL_REPORTS', route: '/admin/finance/reports/pnl', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'OWNER'], permissionKey: 'finance', sectionKey: 'NAV_SECTION.FINANCE', bypassPermission: true },
+    { icon: 'warning_amber', labelKey: 'NAV.OVERDUE_PAYMENTS', route: '/admin/finance/overdue-payments', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'OWNER'], permissionKey: 'finance', sectionKey: 'NAV_SECTION.FINANCE', bypassPermission: true },
     { icon: 'badge', labelKey: 'NAV.EMPLOYEES', route: '/admin/hr/employees', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'OWNER'], permissionKey: 'hr', sectionKey: 'NAV_SECTION.DIRECTORY', bypassPermission: true },
-    { icon: 'payments', labelKey: 'NAV.PAYROLL', route: '/admin/hr/payroll', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT'], permissionKey: 'hr', sectionKey: 'NAV_SECTION.OPERATIONS', bypassPermission: true },
+    { icon: 'payments', labelKey: 'NAV.PAYROLL', route: '/admin/hr/payroll', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT'], permissionKey: 'hr', sectionKey: 'NAV_SECTION.FINANCE', bypassPermission: true },
     { icon: 'event_available', labelKey: 'NAV.LEAVES', route: '/admin/hr/leaves', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'OWNER'], permissionKey: 'hr', sectionKey: 'NAV_SECTION.OPERATIONS', bypassPermission: true },
+    { icon: 'schedule', labelKey: 'NAV.ATTENDANCE', route: '/admin/hr/attendance', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER'], permissionKey: 'hr', sectionKey: 'NAV_SECTION.OPERATIONS', bypassPermission: true },
     { icon: 'notifications', labelKey: 'NAV.NOTIFICATIONS', route: '/admin/notifications', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'OWNER'], permissionKey: 'notifications', sectionKey: 'NAV_SECTION.YOU', bypassPermission: true },
     { icon: 'history', labelKey: 'NAV.AUDIT_LOG', route: '/admin/audit-log', roles: ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'OWNER'], permissionKey: 'audit', sectionKey: 'NAV_SECTION.YOU', bypassPermission: true },
     { icon: 'apartment', labelKey: 'NAV.OWNER_PORTAL', route: '/admin/owner-portal/dashboard', roles: ['OWNER'], permissionKey: 'owner_portal', sectionKey: 'NAV_SECTION.OVERVIEW', bypassPermission: true },
     { icon: 'approval', labelKey: 'NAV.CONTRACT_APPROVALS', route: '/admin/owner-portal/contract-approvals', roles: ['OWNER', 'SUPER_ADMIN', 'GENERAL_MANAGER'], permissionKey: 'owner_portal', sectionKey: 'NAV_SECTION.CONTRACTS', bypassPermission: true },
-    { icon: 'fact_check', labelKey: 'NAV.RENT_CONFIRMATION', route: '/admin/accountant-portal/rent-confirmation', roles: ['ACCOUNTANT', 'SUPER_ADMIN', 'GENERAL_MANAGER', 'OWNER'], permissionKey: 'contracts', sectionKey: 'NAV_SECTION.CONTRACTS', bypassPermission: true },
+    { icon: 'fact_check', labelKey: 'NAV.RENT_CONFIRMATION', route: '/admin/accountant-portal/rent-confirmation', roles: ['ACCOUNTANT', 'SUPER_ADMIN', 'GENERAL_MANAGER', 'OWNER'], permissionKey: 'contracts', sectionKey: 'NAV_SECTION.FINANCE', bypassPermission: true },
     { icon: 'autorenew', labelKey: 'NAV.RENEWAL_REQUESTS', route: '/admin/accountant-portal/renewal-requests', roles: ['ACCOUNTANT', 'SUPER_ADMIN', 'GENERAL_MANAGER', 'OWNER'], permissionKey: 'contracts', sectionKey: 'NAV_SECTION.CONTRACTS', bypassPermission: true },
-    { icon: 'receipt_long', labelKey: 'NAV.MAINTENANCE_INVOICES', route: '/admin/accountant-portal/maintenance-invoices', roles: ['ACCOUNTANT', 'SUPER_ADMIN', 'GENERAL_MANAGER', 'OWNER'], permissionKey: 'contracts', sectionKey: 'NAV_SECTION.CONTRACTS', bypassPermission: true },
+    { icon: 'receipt_long', labelKey: 'NAV.MAINTENANCE_INVOICES', route: '/admin/accountant-portal/maintenance-invoices', roles: ['ACCOUNTANT', 'SUPER_ADMIN', 'GENERAL_MANAGER', 'OWNER'], permissionKey: 'contracts', sectionKey: 'NAV_SECTION.FINANCE', bypassPermission: true },
     // Officer: invoice portal (contractor company only)
-    { icon: 'receipt', labelKey: 'NAV.MY_INVOICES', route: '/officer/invoices', roles: ['MAINTENANCE_OFFICER_INTERNAL', 'MAINTENANCE_OFFICER_COMPANY', 'MAINTENANCE_COMPANY'], permissionKey: 'my_requests', sectionKey: 'NAV_SECTION.OPERATIONS', bypassPermission: true, officerType: 'CONTRACTOR_COMPANY' }
+    { icon: 'receipt', labelKey: 'NAV.MY_INVOICES', route: '/officer/invoices', roles: ['MAINTENANCE_OFFICER_INTERNAL', 'MAINTENANCE_OFFICER_COMPANY', 'MAINTENANCE_COMPANY'], permissionKey: 'my_requests', sectionKey: 'NAV_SECTION.OPERATIONS', bypassPermission: true, officerType: 'CONTRACTOR_COMPANY' },
+    { icon: 'notifications', labelKey: 'NAV.NOTIFICATIONS', route: '/employee/notifications', roles: ['PROCEDURES_CLERK', 'PROPERTY_GUARD'], permissionKey: 'notifications', sectionKey: 'NAV_SECTION.YOU', bypassPermission: true },
+    { icon: 'person', labelKey: 'NAV.PROFILE', route: '/employee/profile', roles: ['PROCEDURES_CLERK', 'PROPERTY_GUARD'], permissionKey: 'profile', sectionKey: 'NAV_SECTION.YOU', bypassPermission: true }
   ];
 
   // Section-prefix map: routes whose detail pages should highlight a specific nav item

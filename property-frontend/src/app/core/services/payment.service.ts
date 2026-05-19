@@ -18,8 +18,8 @@ export class PaymentService {
     return this.api.get<any>(AppConstants.API.PAYMENTS_BY_CONTRACT(contractId));
   }
 
-  getOverdue(): Observable<any> {
-    return this.api.get<any>(AppConstants.API.PAYMENTS_OVERDUE);
+  getOverdue(params?: Record<string, string | number>): Observable<any> {
+    return this.api.get<any>(AppConstants.API.PAYMENTS_OVERDUE, params);
   }
 
   recordPayment(body: RecordPaymentRequest): Observable<any> {

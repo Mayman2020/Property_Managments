@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit } from '@angular/core';
+﻿import { Component, Inject, OnInit } from '@angular/core';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { NgFor, NgIf } from '@angular/common';
@@ -115,7 +115,7 @@ export interface ContractDialogData {
             </div>
             <div class="detail-item" *ngIf="selectedUnit.rentAmount">
               <span class="detail-label">{{ 'UNIT_DETAILS.ORIGINAL_RENT' | translate }}</span>
-              <span class="detail-value rent-value">{{ selectedUnit.rentAmount }} {{ selectedUnit.currency || 'OMR' }}</span>
+              <span class="detail-value rent-value">{{ selectedUnit.rentAmount }} {{ selectedUnit.currency || 'SAR' }}</span>
             </div>
             <div class="detail-item" *ngIf="selectedUnit.areaSqm">
               <span class="detail-label">{{ 'UNIT_DETAILS.AREA' | translate }}</span>
@@ -131,18 +131,20 @@ export interface ContractDialogData {
 
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label>{{ 'CONTRACTS.START_DATE' | translate }}</mat-label>
-          <input matInput [matDatepicker]="pickerStart" formControlName="startDate" />
+          <input matInput [matDatepicker]="pickerStart" formControlName="startDate" placeholder="DD/MM/YYYY" />
           <mat-datepicker-toggle matIconSuffix [for]="pickerStart"></mat-datepicker-toggle>
           <mat-datepicker #pickerStart></mat-datepicker>
-          <mat-error>{{ 'COMMON.REQUIRED' | translate }}</mat-error>
+          <mat-error *ngIf="form.get('startDate')?.hasError('matDatepickerParse')">{{ 'CONTRACTS.INVALID_DATE_FORMAT' | translate }}</mat-error>
+          <mat-error *ngIf="form.get('startDate')?.hasError('required')">{{ 'COMMON.REQUIRED' | translate }}</mat-error>
         </mat-form-field>
 
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label>{{ 'CONTRACTS.END_DATE' | translate }}</mat-label>
-          <input matInput [matDatepicker]="pickerEnd" formControlName="endDate" />
+          <input matInput [matDatepicker]="pickerEnd" formControlName="endDate" placeholder="DD/MM/YYYY" />
           <mat-datepicker-toggle matIconSuffix [for]="pickerEnd"></mat-datepicker-toggle>
           <mat-datepicker #pickerEnd></mat-datepicker>
-          <mat-error>{{ 'COMMON.REQUIRED' | translate }}</mat-error>
+          <mat-error *ngIf="form.get('endDate')?.hasError('matDatepickerParse')">{{ 'CONTRACTS.INVALID_DATE_FORMAT' | translate }}</mat-error>
+          <mat-error *ngIf="form.get('endDate')?.hasError('required')">{{ 'COMMON.REQUIRED' | translate }}</mat-error>
         </mat-form-field>
 
         <!-- ── Financial ── -->
@@ -154,7 +156,7 @@ export interface ContractDialogData {
           <mat-label>{{ 'CONTRACTS.MONTHLY_RENT' | translate }}</mat-label>
           <input matInput type="number" min="0" formControlName="monthlyRent" />
           <mat-hint *ngIf="selectedUnit?.rentAmount" class="rent-hint">
-            {{ 'UNIT_DETAILS.RENT_MAX_HINT' | translate }} {{ selectedUnit?.rentAmount }} {{ selectedUnit?.currency || 'OMR' }}
+            {{ 'UNIT_DETAILS.RENT_MAX_HINT' | translate }} {{ selectedUnit?.rentAmount }} {{ selectedUnit?.currency || 'SAR' }}
           </mat-hint>
           <mat-error *ngIf="form.get('monthlyRent')?.hasError('required')">{{ 'COMMON.REQUIRED' | translate }}</mat-error>
           <mat-error *ngIf="form.get('monthlyRent')?.hasError('exceedsMax')">{{ 'CONTRACTS.RENT_EXCEEDS_MAX' | translate }}</mat-error>
@@ -380,7 +382,7 @@ export class ContractDialogComponent implements OnInit {
       paymentFrequency:   ['MONTHLY', Validators.required],
       securityDeposit:    [null],
       paymentDay:         [1],
-      currency:           ['OMR', Validators.required],
+      currency:           ['SAR', Validators.required],
       hasFreeMonth:       [false],
       rentDiscountReason: [null],
       otherReasonText:    [''],
@@ -421,8 +423,8 @@ export class ContractDialogComponent implements OnInit {
       .subscribe({
         next: () => {
           const pf = this.paymentFrequencyLookupItems[0]?.code ?? 'MONTHLY';
-          const cur = this.currencyLookupItems.find((c) => c.code === 'OMR') ?? this.currencyLookupItems[0];
-          const values: any = { paymentFrequency: pf, currency: cur?.code ?? 'OMR' };
+          const cur = this.currencyLookupItems.find((c) => c.code === 'SAR') ?? this.currencyLookupItems[0];
+          const values: any = { paymentFrequency: pf, currency: cur?.code ?? 'SAR' };
           if (this.data?.propertyId) {
             values.propertyId = this.data.propertyId;
           }
@@ -451,6 +453,10 @@ export class ContractDialogComponent implements OnInit {
     this.form.markAllAsTouched();
     if (this.form.invalid) {
       this.snack.error(this.i18n.instant('COMMON.FILL_REQUIRED_FIELDS'));
+      setTimeout(() => {
+        const content = document.querySelector('mat-dialog-content');
+        if (content) content.scrollTop = 0;
+      }, 50);
       return;
     }
     const raw = this.form.getRawValue();
@@ -559,3 +565,4 @@ export class ContractDialogComponent implements OnInit {
     return `${y}-${m}-${day}`;
   }
 }
+

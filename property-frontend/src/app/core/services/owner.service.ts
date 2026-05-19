@@ -5,6 +5,12 @@ import { AppConstants } from '../constants/app-constants';
 import { ApiResponse, PagedResponse } from '../models/api-response.model';
 import { User } from '../models/user.model';
 
+export interface OwnerPropertySummary {
+  propertyId: number;
+  propertyNameAr?: string;
+  propertyNameEn?: string;
+}
+
 export interface Owner {
   id: number;
   /** Combined display line (e.g. AR / EN); prefer fullNameAr / fullNameEn when present. */
@@ -23,6 +29,7 @@ export interface Owner {
   /** Mirrors users.is_active for the linked account; portal login works only if true. */
   linkedUserActive?: boolean;
   portalAccess: boolean;
+  properties?: OwnerPropertySummary[];
   createdAt?: string;
   updatedAt?: string;
   createdBy?: number;

@@ -10,10 +10,10 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog } from '@angular/material/dialog';
 import { ContractDialogComponent } from '../contract-dialog/contract-dialog.component';
 import { MaintenanceContractDialogComponent } from '../maintenance-contract-dialog/maintenance-contract-dialog.component';
+import { ContractTypeChoiceDialogComponent } from '../contract-type-choice-dialog/contract-type-choice-dialog.component';
 import { TranslateModule } from '@ngx-translate/core';
 import { PermissionService } from '../../../core/services/permission.service';
 import { catchError, forkJoin, of } from 'rxjs';
-
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { ContractSummary } from '../../../core/models/contract.model';
 import { ContractService } from '../../../core/services/contract.service';
@@ -66,7 +66,7 @@ export class ContractsDashboardComponent implements OnInit {
     private readonly contractSvc: ContractService,
     private readonly maintenanceContractSvc: MaintenanceContractService,
     private readonly dialog: MatDialog,
-    private readonly permissions: PermissionService,
+    readonly permissions: PermissionService,
     readonly i18n: I18nService
   ) {}
 
@@ -119,6 +119,21 @@ export class ContractsDashboardComponent implements OnInit {
   }
 
   openContractDialog(): void {
+    this.dialog.open(ContractTypeChoiceDialogComponent, {
+      width: '420px',
+      maxWidth: '95vw',
+      panelClass: 'app-dialog-panel',
+      disableClose: true
+    }).afterClosed().subscribe((contractType: 'rental' | 'maintenance' | null) => {
+      if (contractType === 'rental') {
+        this.openRentalContractDialog();
+      } else if (contractType === 'maintenance') {
+        this.openMaintenanceContractDialog();
+      }
+    });
+  }
+
+  private openRentalContractDialog(): void {
     this.dialog.open(ContractDialogComponent, {
       width: '980px',
       maxWidth: '95vw',

@@ -8,10 +8,11 @@ export const ADMIN_ROUTES: Routes = [
     component: MainLayoutComponent,
     canActivate: [adminGuard],
     children: [
-      { path: '', redirectTo: 'home', pathMatch: 'full' },
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       {
         path: 'home',
-        loadComponent: () => import('../home-portal/home-portal/home-portal.component').then((m) => m.HomePortalComponent)
+        redirectTo: 'dashboard',
+        pathMatch: 'full'
       },
       {
         canActivate: [permissionGuard],
@@ -45,6 +46,10 @@ export const ADMIN_ROUTES: Routes = [
         loadComponent: () => import('../maintenance/request-list/request-list.component').then((m) => m.RequestListComponent)
       },
       {
+        path: 'my-requests',
+        loadComponent: () => import('../my-requests/my-requests-page/my-requests-page.component').then((m) => m.MyRequestsPageComponent)
+      },
+      {
         canActivate: [permissionGuard],
         data: { permission: 'maintenance', permissionAction: 'create' },
         path: 'maintenance/new',
@@ -70,9 +75,39 @@ export const ADMIN_ROUTES: Routes = [
       },
       {
         canActivate: [permissionGuard],
+        data: { permission: 'contracts', permissionAction: 'view' },
+        path: 'reports/contract-expiry',
+        loadComponent: () => import('./reports/contract-expiry-report/contract-expiry-report.component').then((m) => m.ContractExpiryReportComponent)
+      },
+      {
+        canActivate: [permissionGuard],
+        data: { permission: 'properties', permissionAction: 'view' },
+        path: 'reports/occupancy',
+        loadComponent: () => import('./reports/occupancy-analytics/occupancy-analytics.component').then((m) => m.OccupancyAnalyticsComponent)
+      },
+      {
+        canActivate: [permissionGuard],
+        data: { permission: 'maintenance', permissionAction: 'view' },
+        path: 'reports/maintenance',
+        loadComponent: () => import('./reports/maintenance-report/maintenance-report.component').then((m) => m.MaintenanceReportComponent)
+      },
+      {
+        canActivate: [permissionGuard],
+        data: { permission: 'finance', permissionAction: 'view' },
+        path: 'reports/budget-vs-actual',
+        loadComponent: () => import('./reports/budget-vs-actual/budget-vs-actual.component').then((m) => m.BudgetVsActualComponent)
+      },
+      {
+        canActivate: [permissionGuard],
         data: { permission: 'users', permissionAction: 'view' },
         path: 'users',
         loadComponent: () => import('../users/user-management/user-management.component').then((m) => m.UserManagementComponent)
+      },
+      {
+        canActivate: [permissionGuard],
+        data: { permission: 'settings', permissionAction: 'view' },
+        path: 'legal-entities',
+        loadComponent: () => import('../legal-entities/legal-entities.component').then((m) => m.LegalEntitiesComponent)
       },
       {
         canActivate: [superAdminGuard, permissionGuard],
@@ -115,6 +150,12 @@ export const ADMIN_ROUTES: Routes = [
         data: { permission: 'contractors', permissionAction: 'view' },
         path: 'contractors',
         loadComponent: () => import('../contractors/contractor-list/contractor-companies.component').then((m) => m.ContractorCompaniesComponent)
+      },
+      {
+        canActivate: [permissionGuard],
+        data: { permission: 'contractors', permissionAction: 'view' },
+        path: 'contractors/:id',
+        loadComponent: () => import('../contractors/contractor-detail/contractor-detail.component').then((m) => m.ContractorDetailComponent)
       },
       {
         canActivate: [permissionGuard],
@@ -317,6 +358,10 @@ export const ADMIN_ROUTES: Routes = [
           {
             path: 'complaints',
             loadComponent: () => import('../contracts/complaints-list/complaints-list.component').then((m) => m.ComplaintsListComponent)
+          },
+          {
+            path: 'maintenance/:id',
+            loadComponent: () => import('../contracts/maintenance-contract-detail/maintenance-contract-detail.component').then((m) => m.MaintenanceContractDetailComponent)
           },
           {
             path: ':id',

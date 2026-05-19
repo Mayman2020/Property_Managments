@@ -18,6 +18,7 @@ import { TablePagerComponent } from '../../../shared/components/table-pager/tabl
 import { ContractService } from '../../../core/services/contract.service';
 import { ContractTemplate, TemplateType } from '../../../core/models/contract.model';
 import { I18nService } from '../../../core/i18n/i18n.service';
+import { PermissionService } from '../../../core/services/permission.service';
 
 @Component({
   selector: 'app-contract-templates',
@@ -49,7 +50,8 @@ export class ContractTemplatesComponent implements OnInit {
   constructor(
     private contractSvc: ContractService,
     private fb: FormBuilder,
-    private i18n: I18nService
+    private i18n: I18nService,
+    readonly permissions: PermissionService
   ) {}
 
   ngOnInit(): void {

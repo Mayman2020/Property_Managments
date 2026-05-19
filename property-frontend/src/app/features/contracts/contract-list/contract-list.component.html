@@ -1,6 +1,6 @@
 <div class="app-page contracts-list-page">
   <app-page-header
-    [eyebrow]="i18n.currentLang === 'ar' ? 'التشغيل' : 'Operations'"
+    [eyebrow]="('INLINE_TEXT.OPERATIONS' | translate)"
     [title]="'CONTRACTS.LIST_TITLE' | translate"
     [subtitle]="'CONTRACTS.LIST_SUBTITLE' | translate"
     [breadcrumbs]="[
@@ -21,13 +21,13 @@
   </div>
 
   <app-empty-state
-    *ngIf="!loading && contracts.length === 0 && !searchQuery && !filterStatus"
+    *ngIf="!loading && contracts.length === 0 && !hasActiveFilters()"
     icon="description"
     [title]="'CONTRACTS.CONTRACTS_EMPTY_TITLE' | translate"
     [message]="'CONTRACTS.CONTRACTS_EMPTY_MSG' | translate">
   </app-empty-state>
 
-  <ng-container *ngIf="!loading && (contracts.length > 0 || searchQuery || filterStatus)">
+  <ng-container *ngIf="!loading && (contracts.length > 0 || hasActiveFilters())">
     <section class="contracts-stats">
       <article class="stat-pill">
         <span class="stat-label">{{ 'COMMON.ALL' | translate }}</span>
@@ -48,40 +48,57 @@
     </section>
 
     <section class="app-card table-card">
-      <div class="estate-table-toolbar">
-        <div class="estate-search-inline">
-          <span class="material-icons">search</span>
-          <input [(ngModel)]="searchQuery" (ngModelChange)="onSearch()" [placeholder]="'CONTRACTS.SEARCH_PLACEHOLDER' | translate">
-          <select [(ngModel)]="filterStatus" (change)="onFilterChange()" class="estate-property-select">
-            <option value="">{{ 'COMMON.ALL' | translate }}</option>
-            <option *ngFor="let s of statusOptions" [value]="s">{{ statusLabel(s) }}</option>
-          </select>
-          <select [(ngModel)]="filterType" (change)="onFilterChange()" class="estate-property-select">
-            <option value="">{{ i18n.currentLang === 'ar' ? 'كل أنواع العقود' : 'All contract types' }}</option>
-            <option value="LEASE">{{ i18n.currentLang === 'ar' ? 'عقود الإيجار' : 'Lease contracts' }}</option>
-            <option value="MAINTENANCE">{{ i18n.currentLang === 'ar' ? 'عقود الصيانة والمقاولين' : 'Maintenance contracts' }}</option>
-          </select>
+      <div class="estate-table-toolbar contracts-toolbar">
+        <div class="contracts-toolbar-main">
+          <label class="estate-search-inline contracts-search">
+            <span class="material-icons">search</span>
+            <input [(ngModel)]="searchQuery" (ngModelChange)="onSearch()" [placeholder]="'CONTRACTS.SEARCH_PLACEHOLDER' | translate">
+          </label>
+
+          <div class="contracts-select-group">
+            <label class="contracts-select-shell">
+              <span>{{ ('INLINE_TEXT.REQUEST_STATUS' | translate) }}</span>
+              <select [(ngModel)]="filterStatus" (change)="onFilterChange()" class="estate-property-select">
+                <option value="">{{ 'COMMON.ALL' | translate }}</option>
+                <option *ngFor="let s of statusOptions" [value]="s">{{ statusLabel(s) }}</option>
+              </select>
+            </label>
+
+            <label class="contracts-select-shell contracts-select-shell--type">
+              <span>{{ ('INLINE_TEXT.CONTRACT_TYPE' | translate) }}</span>
+              <select [(ngModel)]="filterType" (change)="onFilterChange()" class="estate-property-select">
+                <option value="">{{ ('INLINE_TEXT.ALL_CONTRACT_TYPES' | translate) }}</option>
+                <option value="LEASE">{{ ('INLINE_TEXT.LEASE_CONTRACTS' | translate) }}</option>
+                <option value="MAINTENANCE">{{ ('INLINE_TEXT.MAINTENANCE_CONTRACTS' | translate) }}</option>
+              </select>
+            </label>
+
+            <button mat-icon-button class="clear-contract-filters" type="button" (click)="clearFilters()" *ngIf="hasActiveFilters()" [matTooltip]="'ACTIONS.CLEAR_FILTERS' | translate">
+              <mat-icon>filter_alt_off</mat-icon>
+            </button>
+          </div>
         </div>
+
         <div class="contracts-filter-tray">
-        <div class="estate-filter-row">
-          <button type="button" class="estate-filter-btn fs-all" [class.active]="filterStatus === ''" (click)="filterStatus = ''; onFilterChange()">
-            {{ 'COMMON.ALL' | translate }}
-          </button>
-          <button
-            type="button"
-            class="estate-filter-btn"
-            *ngFor="let s of statusOptions"
-            [class.active]="filterStatus === s"
-            [class.fs-active]="s === 'ACTIVE'"
-            [class.fs-draft]="s === 'DRAFT'"
-            [class.fs-expired]="s === 'EXPIRED'"
-            [class.fs-terminated]="s === 'TERMINATED'"
-            [class.fs-renewed]="s === 'RENEWED'"
-            [class.fs-suspended]="s === 'SUSPENDED'"
-            (click)="filterStatus = s; onFilterChange()">
-            {{ statusLabel(s) }}
-          </button>
-        </div>
+          <div class="estate-filter-row">
+            <button type="button" class="estate-filter-btn fs-all" [class.active]="filterStatus === ''" (click)="filterStatus = ''; onFilterChange()">
+              {{ 'COMMON.ALL' | translate }}
+            </button>
+            <button
+              type="button"
+              class="estate-filter-btn"
+              *ngFor="let s of statusOptions"
+              [class.active]="filterStatus === s"
+              [class.fs-active]="s === 'ACTIVE'"
+              [class.fs-draft]="s === 'DRAFT'"
+              [class.fs-expired]="s === 'EXPIRED' || s === 'ENDED'"
+              [class.fs-terminated]="s === 'TERMINATED' || s === 'CANCELLED' || s === 'OWNER_REJECTED'"
+              [class.fs-renewed]="s === 'RENEWED' || s === 'PENDING_RENEWAL_APPROVAL'"
+              [class.fs-suspended]="s === 'SUSPENDED' || s === 'PENDING_OWNER_APPROVAL' || s === 'PENDING_TERMINATION_APPROVAL'"
+              (click)="filterStatus = s; onFilterChange()">
+              {{ statusLabel(s) }}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -90,7 +107,7 @@
           <thead>
             <tr>
               <th>{{ 'CONTRACTS.CONTRACT_NUMBER' | translate }}</th>
-              <th>{{ i18n.currentLang === 'ar' ? 'نوع العقد' : 'Type' }}</th>
+              <th>{{ ('INLINE_TEXT.TYPE' | translate) }}</th>
               <th>{{ partyHeader() }}</th>
               <th>{{ 'CONTRACTS.UNIT' | translate }}</th>
               <th>{{ 'CONTRACTS.PERIOD' | translate }}</th>
@@ -103,7 +120,7 @@
             <tr *ngFor="let c of contracts">
               <td>
                 <a *ngIf="c.source === 'LEASE'" [routerLink]="['/admin/contracts', c.id]" class="contract-link">{{ c.contractNumber }}</a>
-                <span *ngIf="c.source === 'MAINTENANCE'" class="contract-link">{{ c.contractNumber }}</span>
+                <a *ngIf="c.source === 'MAINTENANCE'" [routerLink]="['/admin/contracts/maintenance', c.id]" class="contract-link">{{ c.contractNumber }}</a>
               </td>
               <td>
                 <span class="status-chip" [ngClass]="c.source === 'MAINTENANCE' ? 'chip-info' : 'chip-default'">
@@ -121,31 +138,17 @@
               </td>
               <td class="rent-cell">{{ c.monthlyRent | number }} {{ c.currency }}</td>
               <td>
-                <span class="status-chip" [ngClass]="getStatusClass(c.status)">
-                  {{ statusLabel(c.status) }}
+                <span class="status-chip" [ngClass]="getStatusClass(displayStatusKey(c))">
+                  {{ statusLabel(displayStatusKey(c), c.source) }}
                 </span>
               </td>
               <td>
-                <a *ngIf="c.source === 'LEASE'" class="table-arrow" [routerLink]="['/admin/contracts', c.id]">
+                <a *ngIf="c.source === 'LEASE'" class="table-arrow" [routerLink]="['/admin/contracts', c.id]" [matTooltip]="'CONTRACTS.VIEW_DETAILS' | translate">
                   <span class="material-icons">{{ i18n.currentLang === 'ar' ? 'arrow_back' : 'arrow_forward' }}</span>
                 </a>
-                <div *ngIf="c.source === 'MAINTENANCE'" class="maintenance-actions">
-                  <button mat-icon-button type="button" *ngIf="c.status === 'DRAFT'" (click)="approveMaintenance(c)" [matTooltip]="i18n.currentLang === 'ar' ? 'موافقة' : 'Approve'">
-                    <mat-icon>check_circle</mat-icon>
-                  </button>
-                  <button mat-icon-button type="button" *ngIf="c.status === 'DRAFT'" (click)="rejectMaintenance(c)" [matTooltip]="i18n.currentLang === 'ar' ? 'رفض' : 'Reject'">
-                    <mat-icon>block</mat-icon>
-                  </button>
-                  <button mat-icon-button type="button" *ngIf="c.status === 'ACTIVE'" (click)="requestMaintenanceTermination(c)" [matTooltip]="i18n.currentLang === 'ar' ? 'طلب إلغاء' : 'Request termination'">
-                    <mat-icon>cancel_schedule_send</mat-icon>
-                  </button>
-                  <button mat-icon-button type="button" *ngIf="c.status === 'ACTIVE'" (click)="requestMaintenanceRenewal(c)" [matTooltip]="i18n.currentLang === 'ar' ? 'طلب تجديد' : 'Request renewal'">
-                    <mat-icon>autorenew</mat-icon>
-                  </button>
-                  <span class="table-arrow muted" *ngIf="c.status !== 'DRAFT' && c.status !== 'ACTIVE'">
-                    <span class="material-icons">engineering</span>
-                  </span>
-                </div>
+                <a *ngIf="c.source === 'MAINTENANCE'" class="table-arrow" [routerLink]="['/admin/contracts/maintenance', c.id]" [matTooltip]="'CONTRACTS.VIEW_DETAILS' | translate">
+                  <span class="material-icons">{{ i18n.currentLang === 'ar' ? 'arrow_back' : 'arrow_forward' }}</span>
+                </a>
               </td>
             </tr>
             <tr *ngIf="contracts.length === 0">

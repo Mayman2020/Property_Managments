@@ -1,4 +1,16 @@
 import { environment } from '../../../environments/environment';
+import { getRuntimeFileBaseUrl } from '../utils/file-url-utils';
+
+type RuntimeWindow = Window & {
+  __PM_API_URL__?: string;
+};
+
+function getRuntimeApiBaseUrl(): string {
+  const runtimeApiUrl = typeof window !== 'undefined'
+    ? (window as RuntimeWindow).__PM_API_URL__
+    : undefined;
+  return runtimeApiUrl?.trim() || environment.apiUrl;
+}
 
 /**
  * Single map of backend routes and persisted keys (same idea as INTRANET-FE `app-constants`).
@@ -18,8 +30,8 @@ export const AppConstants = {
   },
 
   API: {
-    baseURL: environment.apiUrl,
-    fileBaseURL: environment.fileUrl,
+    baseURL: getRuntimeApiBaseUrl(),
+    fileBaseURL: getRuntimeFileBaseUrl(),
 
     FILES_UPLOAD: '/files/upload',
 
@@ -42,6 +54,7 @@ export const AppConstants = {
     PROPERTY_MAINTENANCE_ASSIGNMENT_END: (propertyId: number, assignmentId: number) =>
       `/properties/${propertyId}/maintenance-assignments/${assignmentId}/end`,
     PROPERTY_MAINTENANCE_CONTRACTS: (propertyId: number) => `/properties/${propertyId}/maintenance-contracts`,
+    MY_REQUESTS: '/my-requests',
 
     OWNERS: '/owners',
     OWNER_BY_ID: (id: number) => `/owners/${id}`,
@@ -62,6 +75,7 @@ export const AppConstants = {
 
     CONTRACTOR_COMPANIES: '/contractor-companies',
     CONTRACTOR_COMPANY_BY_ID: (id: number) => `/contractor-companies/${id}`,
+    CONTRACTOR_COMPANY_OFFICERS: (id: number) => `/contractor-companies/${id}/officers`,
 
     HR_EMPLOYEES: '/hr/employees',
     HR_EMPLOYEE_BY_ID: (id: number) => `/hr/employees/${id}`,
@@ -72,7 +86,10 @@ export const AppConstants = {
     HR_PAYROLL_BONUSES: (payrollId: number) => `/hr/payroll/${payrollId}/bonuses`,
     HR_PAYROLL_PAYSLIP: (payrollId: number, payslipId: number) => `/hr/payroll/${payrollId}/payslips/${payslipId}`,
     HR_PAYROLL_APPROVE: (payrollId: number) => `/hr/payroll/${payrollId}/approve`,
+    HR_PAYROLL_REJECT: (payrollId: number) => `/hr/payroll/${payrollId}/reject`,
     HR_PAYROLL_MARK_PAID: (payrollId: number) => `/hr/payroll/${payrollId}/mark-paid`,
+    HR_MY_PAYSLIPS: '/hr/payroll/my-payslips',
+    HR_MY_PAYSLIP_BY_ID: (id: number) => `/hr/payroll/my-payslips/${id}`,
     HR_LEAVES: '/hr/leaves',
     HR_LEAVES_BALANCES: '/hr/leaves/balances',
     HR_LEAVE_APPROVE: (id: number) => `/hr/leaves/${id}/approve`,
@@ -112,6 +129,11 @@ export const AppConstants = {
     USERS_TOGGLE_ACTIVE: (id: number) => `/users/${id}/toggle-active`,
     USERS_ROLE: (id: number) => `/users/${id}/role`,
     USERS_MAINTENANCE_ASSIGNABLE_CONTRACTOR: '/users/maintenance-assignable-contractor',
+
+    COMPANY_MY_STAFF: '/company/my-staff',
+    COMPANY_MY_STAFF_PROPERTIES: '/company/my-staff/properties',
+    COMPANY_MY_STAFF_TOGGLE: (id: number) => `/company/my-staff/${id}/toggle-active`,
+    COMPANY_MY_STAFF_DELETE: (id: number) => `/company/my-staff/${id}`,
 
     TENANT_PORTAL_MY_CONTRACT: '/tenant-portal/my-contract',
     TENANT_PORTAL_MY_CONTRACTS: '/tenant-portal/my-contracts',
@@ -158,6 +180,9 @@ export const AppConstants = {
     OWNER_PORTAL_MAINTENANCE_CONTRACT_RENEWAL_DECISION: (id: number) =>
       `/owner-portal/maintenance-contracts/${id}/renewal-decision`,
 
+    LEGAL_ENTITIES: '/legal-entities',
+    LEGAL_ENTITY_BY_ID: (id: number) => `/legal-entities/${id}`,
+
     LOOKUPS_COUNTRIES: '/lookups/countries',
     LOOKUPS_COUNTRIES_OMAN: '/lookups/countries/oman',
     LOOKUPS_CITIES: '/lookups/cities',
@@ -187,7 +212,15 @@ export const AppConstants = {
     CONTRACT_RENEW: (id: number) => `/contracts/${id}/renew`,
     CONTRACT_REQUEST_RENEWAL: (id: number) => `/contracts/${id}/request-renewal`,
     CONTRACT_CANCEL_RENEWAL_REQUEST: (id: number) => `/contracts/${id}/cancel-renewal-request`,
+    CONTRACT_NO_RENEWAL_INTENT: (id: number) => `/contracts/${id}/no-renewal-intent`,
+    CONTRACT_RETURN_DEPOSIT: (id: number) => `/contracts/${id}/return-deposit`,
+    CONTRACT_REPORT_DAMAGES: (id: number) => `/contracts/${id}/report-damages`,
+    CONTRACT_SUBMIT_DAMAGE_RECEIPT: (id: number) => `/contracts/${id}/submit-damage-receipt`,
+    CONTRACT_CONFIRM_DAMAGE_PAYMENT: (id: number) => `/contracts/${id}/confirm-damage-payment`,
+    CONTRACT_CLEAR_UNIT: (id: number) => `/contracts/${id}/clear-unit`,
     CONTRACT_PAYMENT_SCHEDULE: (contractId: number) => `/contracts/${contractId}/payment-schedule`,
+    CONTRACT_ANNEXES: (contractId: number) => `/contracts/${contractId}/annexes`,
+    CONTRACT_ANNEX_BY_ID: (contractId: number, id: number) => `/contracts/${contractId}/annexes/${id}`,
     CONTRACT_TEMPLATES_ACTIVE: '/contract-templates/active',
     CONTRACT_TEMPLATES: '/contract-templates',
     CONTRACT_TEMPLATE_BY_ID: (id: number) => `/contract-templates/${id}`,
@@ -223,6 +256,8 @@ export const AppConstants = {
     MAINTENANCE_CONTRACT_CANCEL_TERMINATION_REQUEST: (id: number) => `/maintenance-contracts/${id}/cancel-termination-request`,
     MAINTENANCE_CONTRACT_REQUEST_RENEWAL: (id: number) => `/maintenance-contracts/${id}/request-renewal`,
     MAINTENANCE_CONTRACT_CANCEL_RENEWAL_REQUEST: (id: number) => `/maintenance-contracts/${id}/cancel-renewal-request`,
+    MAINTENANCE_CONTRACT_TERMINATION_DECISION: (id: number) => `/maintenance-contracts/${id}/termination-decision`,
+    MAINTENANCE_CONTRACT_RENEWAL_DECISION: (id: number) => `/maintenance-contracts/${id}/renewal-decision`,
     MAINTENANCE_CONTRACT_GENERATE_MONTHLY_INVOICES: (contractId: number) =>
       `/maintenance-contracts/${contractId}/generate-monthly-invoices`,
     MAINTENANCE_CONTRACT_INVOICES: (contractId: number) => `/maintenance-contracts/${contractId}/invoices`,
@@ -232,8 +267,11 @@ export const AppConstants = {
     MAINTENANCE_INVOICES_MY: '/maintenance-invoices/my',
     MAINTENANCE_INVOICES_MY_PROPERTIES: '/maintenance-invoices/my-properties',
     MAINTENANCE_INVOICE_MARK_PAID: (id: number) => `/maintenance-invoices/${id}/mark-paid`,
+    MAINTENANCE_INVOICE_PAYMENT_PLAN: (id: number) => `/maintenance-invoices/${id}/payment-plan`,
+    MAINTENANCE_INVOICE_INSTALLMENT_MARK_PAID: (invoiceId: number, paymentId: number) => `/maintenance-invoices/${invoiceId}/payments/${paymentId}/mark-paid`,
     MAINTENANCE_INVOICE_CANCEL: (id: number) => `/maintenance-invoices/${id}/cancel`,
     ACCOUNTANT_PORTAL_MAINTENANCE_INVOICES: '/accountant-portal/maintenance-invoices',
+    ACCOUNTANT_PORTAL_MAINTENANCE_INVOICE_FILTER_OPTIONS: '/accountant-portal/maintenance-invoices/filter-options',
     ACCOUNTANT_PORTAL_MAINTENANCE_INVOICE_REVIEW: (id: number) => `/accountant-portal/maintenance-invoices/${id}/review`,
 
     ACCOUNTANT_PORTAL_RECEIPTS: '/accountant-portal/receipts',
@@ -250,6 +288,13 @@ export const AppConstants = {
 
     VACANCIES: '/vacancies',
     VACANCY_INQUIRIES: (listingId: number) => `/vacancies/${listingId}/inquiries`,
+
+    REPORTS_CONTRACT_EXPIRY: '/reports/contract-expiry',
+    REPORTS_OCCUPANCY: '/reports/occupancy',
+    REPORTS_MAINTENANCE: '/reports/maintenance',
+    REPORTS_BUDGET_VS_ACTUAL: '/reports/budget-vs-actual',
+
+    AUTH_LOGOUT: '/auth/logout',
 
     AUDIT_LOGS: '/audit-logs',
 

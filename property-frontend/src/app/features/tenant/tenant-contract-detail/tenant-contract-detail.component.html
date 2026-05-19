@@ -74,6 +74,60 @@
       </div>
     </div>
 
+    <!-- No-renewal intent banner -->
+    <div class="app-card expiry-action-card" *ngIf="showNoRenewalBanner()">
+      <div class="eac-body">
+        <mat-icon class="eac-icon">event_busy</mat-icon>
+        <div>
+          <strong>{{ 'INLINE_TEXT.YOUR_CONTRACT_EXPIRES_IN_DAYS' | translate:{ days: contract!.daysUntilExpiry } }}</strong>
+          <p *ngIf="!contract!.noRenewalIntentAt">
+            {{ ('INLINE_TEXT.DO_YOU_WISH_TO_RENEW_PLEASE_LET_US_KNOW' | translate) }}
+          </p>
+          <p *ngIf="contract!.noRenewalIntentAt" class="text-muted">
+            {{ ('INLINE_TEXT.NO_RENEWAL_INTENT_RECORDED_ON' | translate) }}
+            {{ contract!.noRenewalIntentAt | date:'dd/MM/yyyy' }}
+          </p>
+        </div>
+      </div>
+      <div class="eac-actions" *ngIf="!contract!.noRenewalIntentAt">
+        <button mat-stroked-button color="warn" [disabled]="submittingAction" (click)="recordNoRenewalIntent()">
+          <mat-icon>cancel</mat-icon>
+          {{ ('INLINE_TEXT.I_DO_NOT_WISH_TO_RENEW' | translate) }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Damage payment banner -->
+    <div class="app-card damage-payment-card" *ngIf="showDamagePaymentBanner()">
+      <div class="eac-body">
+        <mat-icon class="eac-icon damage-icon">warning</mat-icon>
+        <div>
+          <strong>{{ ('INLINE_TEXT.UNIT_DAMAGES_REPORTED' | translate) }}</strong>
+          <p>{{ ('INLINE_TEXT.AMOUNT_DUE' | translate) }}
+            <strong>{{ contract!.terminationDamagesAmount | number:'1.2-2' }} {{ contract!.currency }}</strong>
+          </p>
+          <p *ngIf="contract!.terminationDamageNotes" class="text-muted">{{ contract!.terminationDamageNotes }}</p>
+          <p *ngIf="contract!.terminationDamagesReceiptUrl" class="text-success">
+            {{ ('INLINE_TEXT.RECEIPT_UPLOADED_AWAITING_ACCOUNTANT_CONFIRMATION' | translate) }}
+          </p>
+        </div>
+      </div>
+      <div class="eac-actions" *ngIf="!contract!.terminationDamagesReceiptUrl">
+        <app-upload-zone
+          [multiple]="false"
+          [urlList]="damageReceiptUrls"
+          (urlListChange)="damageReceiptUrls = $event"
+          [label]="('INLINE_TEXT.UPLOAD_PAYMENT_RECEIPT' | translate)"
+          accept="image/*,.pdf">
+        </app-upload-zone>
+        <button mat-flat-button color="primary" [disabled]="damageReceiptUrls.length === 0 || submittingAction"
+                (click)="submitDamageReceipt()">
+          <mat-icon>upload</mat-icon>
+          {{ ('INLINE_TEXT.SUBMIT_RECEIPT' | translate) }}
+        </button>
+      </div>
+    </div>
+
     <nav class="contract-section-nav app-card" aria-label="Contract sections">
       <button type="button" class="csn-tile csn-tile--active">
         <span class="csn-ico"><mat-icon>calendar_month</mat-icon></span>

@@ -212,7 +212,7 @@ export class RequestTimelineDialogComponent implements OnInit {
       {
         icon: 'report_problem',
         color: '#6366f1',
-        title: ar ? 'تم تقديم الطلب' : 'Request submitted',
+        title: this.i18n.instant('INLINE_TEXT.REQUEST_SUBMITTED'),
         detail: r.tenantName ? (ar ? `بواسطة: ${r.tenantName}` : `By: ${r.tenantName}`) : undefined,
         date: r.createdAt,
         done: true
@@ -220,14 +220,14 @@ export class RequestTimelineDialogComponent implements OnInit {
       {
         icon: 'assignment_ind',
         color: '#0ea5e9',
-        title: ar ? 'تم التعيين للمسؤول' : 'Assigned to officer',
+        title: this.i18n.instant('INLINE_TEXT.ASSIGNED_TO_OFFICER'),
         detail: r.assignedOfficerName ? (ar ? `المسؤول: ${r.assignedOfficerName}` : `Officer: ${r.assignedOfficerName}`) : undefined,
         done: !!r.assignedTo
       },
       {
         icon: 'event',
         color: '#f59e0b',
-        title: ar ? 'تمت جدولة الزيارة' : 'Visit scheduled',
+        title: this.i18n.instant('INLINE_TEXT.VISIT_SCHEDULED'),
         detail: r.scheduledDate ? `${r.scheduledDate}${r.scheduledTimeFrom ? ' · ' + r.scheduledTimeFrom : ''}` : undefined,
         done: !!r.scheduledDate
       },
@@ -235,21 +235,21 @@ export class RequestTimelineDialogComponent implements OnInit {
         icon: r.scheduleAccepted === false ? 'event_busy' : 'event_available',
         color: r.scheduleAccepted === false ? '#ef4444' : '#10b981',
         title: r.scheduleAccepted === false
-          ? (ar ? 'رفض المستأجر الموعد' : 'Tenant rejected schedule')
-          : (ar ? 'المستأجر وافق على الموعد' : 'Tenant accepted schedule'),
+          ? (this.i18n.instant('INLINE_TEXT.TENANT_REJECTED_SCHEDULE'))
+          : (this.i18n.instant('INLINE_TEXT.TENANT_ACCEPTED_SCHEDULE')),
         detail: r.scheduleRejectionNote || undefined,
         done: r.scheduleAccepted !== undefined && r.scheduleAccepted !== null
       },
       {
         icon: 'construction',
         color: '#f97316',
-        title: ar ? 'بدأ العمل' : 'Work in progress',
+        title: this.i18n.instant('INLINE_TEXT.WORK_IN_PROGRESS'),
         done: reached('IN_PROGRESS')
       },
       {
         icon: 'task_alt',
         color: '#22c55e',
-        title: ar ? 'تم الإنجاز' : 'Work completed',
+        title: this.i18n.instant('INLINE_TEXT.WORK_COMPLETED'),
         detail: this.visitReport?.workDone || undefined,
         date: this.visitReport?.visitDate,
         done: reached('COMPLETED')
@@ -257,7 +257,7 @@ export class RequestTimelineDialogComponent implements OnInit {
       {
         icon: 'lock',
         color: '#8b5cf6',
-        title: ar ? 'تم إغلاق الطلب' : 'Request closed',
+        title: this.i18n.instant('INLINE_TEXT.REQUEST_CLOSED'),
         date: r.closedAt || undefined,
         done: !!r.closedAt
       }

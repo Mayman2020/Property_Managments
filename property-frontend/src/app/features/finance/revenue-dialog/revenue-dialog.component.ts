@@ -29,19 +29,19 @@ export interface RevenueDialogData {
     MatInputModule, MatProgressSpinnerModule, MatSelectModule
   ],
   template: `
-    <h2 mat-dialog-title>{{ isAr ? 'إضافة إيراد' : 'Add Revenue' }}</h2>
+    <h2 mat-dialog-title>{{ ('INLINE_TEXT.ADD_REVENUE' | translate) }}</h2>
     <mat-dialog-content class="dialog-body">
       <form [formGroup]="form" class="finance-dialog-form">
         <div class="dialog-intro full">
           <span class="material-icons">trending_up</span>
           <div>
-            <strong>{{ isAr ? 'إضافة إيراد' : 'Add Revenue' }}</strong>
-            <p>{{ isAr ? 'سجل إيرادًا جديدًا مع القيمة والتاريخ وربطه بالعقار.' : 'Record a new revenue entry with its amount, date, and property.' }}</p>
+            <strong>{{ ('INLINE_TEXT.ADD_REVENUE' | translate) }}</strong>
+            <p>{{ ('INLINE_TEXT.RECORD_A_NEW_REVENUE_ENTRY_WITH_ITS_AMOUNT_DATE_AND_PRO' | translate) }}</p>
           </div>
         </div>
 
         <mat-form-field appearance="outline" class="full">
-          <mat-label>{{ isAr ? 'العقار' : 'Property' }}</mat-label>
+          <mat-label>{{ ('INLINE_TEXT.PROPERTY' | translate) }}</mat-label>
           <mat-select formControlName="propertyId">
             <mat-option *ngFor="let p of data.properties" [value]="p.id">
               {{ isAr ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName) }}
@@ -50,19 +50,19 @@ export interface RevenueDialogData {
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="full">
-          <mat-label>{{ isAr ? 'الوصف' : 'Description' }}</mat-label>
+          <mat-label>{{ ('INLINE_TEXT.DESCRIPTION' | translate) }}</mat-label>
           <input matInput formControlName="description" />
         </mat-form-field>
 
         <mat-form-field appearance="outline">
-          <mat-label>{{ isAr ? 'المبلغ' : 'Amount' }}</mat-label>
+          <mat-label>{{ ('INLINE_TEXT.AMOUNT' | translate) }}</mat-label>
           <input matInput type="number" min="0.01" step="0.01" formControlName="amount" />
         </mat-form-field>
 
         <mat-form-field appearance="outline">
-          <mat-label>{{ isAr ? 'العملة' : 'Currency' }}</mat-label>
+          <mat-label>{{ ('INLINE_TEXT.CURRENCY' | translate) }}</mat-label>
           <mat-select formControlName="currency">
-            <mat-option value="OMR">OMR</mat-option>
+            <mat-option value="SAR">SAR</mat-option>
             <mat-option value="SAR">SAR</mat-option>
             <mat-option value="USD">USD</mat-option>
             <mat-option value="AED">AED</mat-option>
@@ -70,7 +70,7 @@ export interface RevenueDialogData {
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="full">
-          <mat-label>{{ isAr ? 'تاريخ الإيراد' : 'Revenue Date' }}</mat-label>
+          <mat-label>{{ ('INLINE_TEXT.REVENUE_DATE' | translate) }}</mat-label>
           <input matInput [matDatepicker]="revenuePicker" formControlName="revenueDate" />
           <mat-datepicker-toggle matIconSuffix [for]="revenuePicker"></mat-datepicker-toggle>
           <mat-datepicker #revenuePicker></mat-datepicker>
@@ -78,10 +78,10 @@ export interface RevenueDialogData {
       </form>
     </mat-dialog-content>
     <mat-dialog-actions align="end" class="dialog-actions">
-      <button mat-stroked-button class="btn-dialog-cancel" (click)="ref.close(false)">{{ isAr ? 'إلغاء' : 'Cancel' }}</button>
+      <button mat-stroked-button class="btn-dialog-cancel" (click)="ref.close(false)">{{ ('INLINE_TEXT.CANCEL' | translate) }}</button>
       <button mat-flat-button class="btn-dialog-confirm" (click)="save()" [disabled]="saving">
         <mat-spinner *ngIf="saving" diameter="18"></mat-spinner>
-        <span *ngIf="!saving">{{ isAr ? 'حفظ' : 'Save' }}</span>
+        <span *ngIf="!saving">{{ ('INLINE_TEXT.SAVE' | translate) }}</span>
       </button>
     </mat-dialog-actions>
   `,
@@ -100,7 +100,7 @@ export class RevenueDialogComponent {
     propertyId: [null as number | null, Validators.required],
     description: ['', [Validators.required, Validators.maxLength(500)]],
     amount: [null as number | null, [Validators.required, Validators.min(0.01)]],
-    currency: ['OMR'],
+    currency: ['SAR'],
     revenueDate: [new Date(), Validators.required]
   });
 
@@ -132,7 +132,7 @@ export class RevenueDialogComponent {
       currency: v.currency,
       revenueDate: this.toYmd(v.revenueDate)
     }).subscribe({
-      next: () => { this.saving = false; this.snack.success(this.isAr ? 'تم الحفظ' : 'Saved'); this.ref.close(true); },
+      next: () => { this.saving = false; this.snack.success(this.i18n.instant('INLINE_TEXT.SAVED_2')); this.ref.close(true); },
       error: () => { this.saving = false; }
     });
   }
@@ -144,3 +144,4 @@ export class RevenueDialogComponent {
     return `${value.getFullYear()}-${month}-${day}`;
   }
 }
+

@@ -9,7 +9,9 @@ import { TranslateModule } from '@ngx-translate/core';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
+import { UploadZoneComponent } from '../../../shared/components/upload-zone/upload-zone.component';
 import { TenantPortalService } from '../../../core/services/tenant-portal.service';
+import { ContractService } from '../../../core/services/contract.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { SnackService } from '../../../core/services/snack.service';
 import { LeaseContract, RentPaymentSchedule } from '../../../core/models/contract.model';
@@ -21,7 +23,7 @@ import { PaymentProofDialogComponent } from '../payment-proof-dialog/payment-pro
   imports: [
     NgIf, NgFor, NgClass, DatePipe, DecimalPipe, RouterLink,
     TranslateModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatDialogModule,
-    PageHeaderComponent, TablePagerComponent
+    PageHeaderComponent, TablePagerComponent, UploadZoneComponent
   ],
   templateUrl: './tenant-contract-detail.component.html',
   styleUrl: './tenant-contract-detail.component.scss'
@@ -36,10 +38,13 @@ export class TenantContractDetailComponent implements OnInit {
   pageIndex = 0;
   readonly pageSize = 5;
   submittingScheduleId: number | null = null;
+  submittingAction = false;
+  damageReceiptUrls: string[] = [];
 
   constructor(
     private readonly route: ActivatedRoute,
     private readonly portalSvc: TenantPortalService,
+    private readonly contractSvc: ContractService,
     private readonly snack: SnackService,
     private readonly dialog: MatDialog,
     readonly i18n: I18nService
@@ -165,5 +170,47 @@ export class TenantContractDetailComponent implements OnInit {
       WAIVED: 'chip-info'
     };
     return map[status] ?? 'chip-default';
+  }
+
+  showNoRenewalBanner(): boolean {
+    if (!this.contract) return false;
+    const days = this.contract.daysUntilExpiry;
+    return (this.contract.status === 'ACTIVE' || this.contract.status === 'EXPIRED') && days <= 30;
+  }
+
+  showDamagePaymentBanner(): boolean {
+    return !!(this.contract?.terminationHasDamages && !this.contract.terminationDamagesTenantPaid);
+  }
+
+  recordNoRenewalIntent(): void {
+    if (!this.contract || this.submittingAction) return;
+    this.submittingAction = true;
+    this.contractSvc.noRenewalIntent(this.contract.id).subscribe({
+      next: (res) => {
+        this.contract = res.data ?? this.contract;
+        this.submittingAction = false;
+        this.snack.success(this.i18n.instant('INLINE_TEXT.NO_RENEWAL_INTENT_RECORDED'));
+      },
+      error: (e) => {
+        this.submittingAction = false;
+        this.snack.error(e?.error?.message || this.i18n.instant('COMMON.ERROR'));
+      }
+    });
+  }
+
+  submitDamageReceipt(): void {
+    if (!this.contract || this.submittingAction || this.damageReceiptUrls.length === 0) return;
+    this.submittingAction = true;
+    this.contractSvc.submitDamageReceipt(this.contract.id, this.damageReceiptUrls[0]).subscribe({
+      next: (res) => {
+        this.contract = res.data ?? this.contract;
+        this.submittingAction = false;
+        this.snack.success(this.i18n.instant('INLINE_TEXT.RECEIPT_SUBMITTED_SUCCESSFULLY'));
+      },
+      error: (e) => {
+        this.submittingAction = false;
+        this.snack.error(e?.error?.message || this.i18n.instant('COMMON.ERROR'));
+      }
+    });
   }
 }

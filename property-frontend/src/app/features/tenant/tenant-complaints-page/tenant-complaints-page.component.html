@@ -1,7 +1,7 @@
 <div class="app-page complaints-page">
 
   <app-page-header
-    [eyebrow]="i18n.currentLang === 'ar' ? 'نظرة عامة' : 'Overview'"
+    [eyebrow]="('INLINE_TEXT.OVERVIEW' | translate)"
     [title]="'COMPLAINT.PAGE_TITLE' | translate"
     [subtitle]="'COMPLAINT.PAGE_SUBTITLE' | translate"
     [showBack]="true"
@@ -107,7 +107,7 @@
                   <td class="title-cell">
                     <span class="req-title">{{ c.title }}</span>
                     <span class="date-sub" *ngIf="c.resolvedAt">
-                      {{ i18n.currentLang === 'ar' ? 'أُغلق' : 'Closed' }}: {{ c.resolvedAt | date:'dd/MM/yyyy' }}
+                      {{ ('INLINE_TEXT.CLOSED' | translate) }}: {{ c.resolvedAt | date:'dd/MM/yyyy' }}
                     </span>
                   </td>
                   <td><span class="type-chip">{{ typeLabel(c.complaintType) }}</span></td>

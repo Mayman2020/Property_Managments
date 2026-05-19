@@ -69,6 +69,30 @@ export class ContractService {
     return this.api.patch<any>(AppConstants.API.CONTRACT_CANCEL_RENEWAL_REQUEST(id));
   }
 
+  noRenewalIntent(id: number, notes?: string): Observable<any> {
+    return this.api.post<any>(AppConstants.API.CONTRACT_NO_RENEWAL_INTENT(id), { notes: notes ?? '' });
+  }
+
+  returnDeposit(id: number): Observable<any> {
+    return this.api.post<any>(AppConstants.API.CONTRACT_RETURN_DEPOSIT(id), {});
+  }
+
+  reportDamages(id: number, amount: number, notes: string): Observable<any> {
+    return this.api.post<any>(AppConstants.API.CONTRACT_REPORT_DAMAGES(id), { amount, notes });
+  }
+
+  submitDamageReceipt(id: number, receiptUrl: string): Observable<any> {
+    return this.api.post<any>(AppConstants.API.CONTRACT_SUBMIT_DAMAGE_RECEIPT(id), { receiptUrl });
+  }
+
+  confirmDamagePayment(id: number, receiptUrl?: string): Observable<any> {
+    return this.api.post<any>(AppConstants.API.CONTRACT_CONFIRM_DAMAGE_PAYMENT(id), { receiptUrl: receiptUrl ?? null });
+  }
+
+  clearUnit(id: number): Observable<any> {
+    return this.api.post<any>(AppConstants.API.CONTRACT_CLEAR_UNIT(id), {});
+  }
+
   /** Loads schedule rows (server caps page size; request enough for multi-year leases). */
   getPaymentSchedule(contractId: number): Observable<any> {
     return this.api.get<any>(AppConstants.API.CONTRACT_PAYMENT_SCHEDULE(contractId), {

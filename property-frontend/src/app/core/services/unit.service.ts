@@ -22,6 +22,7 @@ export interface Unit {
   rentAmount?: number;
   currency?: string;
   notes?: string;
+  floorPlanUrl?: string;
   active: boolean;
   createdAt?: string;
   updatedAt?: string;
@@ -43,6 +44,7 @@ export interface UnitRequest {
   rentAmount?: number;
   currency?: string;
   notes?: string;
+  floorPlanUrl?: string;
 }
 
 @Injectable({ providedIn: 'root' })

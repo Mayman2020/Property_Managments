@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { NgIf, NgFor, NgTemplateOutlet, DecimalPipe } from '@angular/common';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -146,11 +146,13 @@ export class ContractFormComponent implements OnInit {
       securityDeposit: [null],
       paymentFrequency: ['MONTHLY', Validators.required],
       paymentDay: [1, Validators.required],
-      currency: ['OMR', Validators.required],
+      currency: ['SAR', Validators.required],
       notes: [''],
       hasFreeMonth: [false],
       rentDiscountReason: [null],
-      otherReasonText: ['']
+      otherReasonText: [''],
+      escalationType: ['NONE'],
+      escalationRate: [null]
     });
 
     this.amendmentForm = this.fb.group({
@@ -213,7 +215,7 @@ export class ContractFormComponent implements OnInit {
         this.hrEmployees = employees?.data?.content ?? [];
         const c = contract?.data as LeaseContract | undefined;
         if (!c?.id) {
-          const cur = this.currencyLookupItems.find((x) => x.code === 'OMR') ?? this.currencyLookupItems[0];
+          const cur = this.currencyLookupItems.find((x) => x.code === 'SAR') ?? this.currencyLookupItems[0];
           if (cur) {
             this.financialForm.patchValue({ currency: cur.code }, { emitEvent: false });
           }
@@ -283,7 +285,9 @@ export class ContractFormComponent implements OnInit {
         notes: c.notes ?? '',
         hasFreeMonth: !!c.hasFreeMonth,
         rentDiscountReason: c.rentDiscountReason ?? null,
-        otherReasonText: c.otherReasonText ?? ''
+        otherReasonText: c.otherReasonText ?? '',
+        escalationType: c.escalationType ?? 'NONE',
+        escalationRate: c.escalationRate ?? null
       },
       { emitEvent: false }
     );
@@ -456,6 +460,8 @@ export class ContractFormComponent implements OnInit {
       hasFreeMonth: financialData.hasFreeMonth,
       rentDiscountReason: financialData.rentDiscountReason,
       otherReasonText: financialData.otherReasonText,
+      escalationType: financialData.escalationType || 'NONE',
+      escalationRate: financialData.escalationRate || null,
       startDate: this.toIsoDate(this.periodForm.value.startDate),
       endDate: this.toIsoDate(this.periodForm.value.endDate),
       signingDate: this.toIsoDate(this.periodForm.value.signingDate)
@@ -502,3 +508,4 @@ export class ContractFormComponent implements OnInit {
     return new Date(d).toISOString().split('T')[0];
   }
 }
+
