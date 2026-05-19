@@ -8,8 +8,10 @@ import com.propertymanagement.modules.contract.lease.service.OwnerApprovalServic
 import com.propertymanagement.modules.contract.lease.dto.ContractResponse;
 import com.propertymanagement.modules.contract.lease.dto.OwnerApprovalDto;
 import com.propertymanagement.modules.contract.lease.dto.OwnerTerminationDecisionDto;
+import com.propertymanagement.modules.tenant.repository.TenantRepository;
 import com.propertymanagement.modules.tenant.service.TenantPortalWelcomeService;
 import com.propertymanagement.modules.owner.service.OwnerPropertyAccessService;
+import com.propertymanagement.modules.user.repository.UserRepository;
 import com.propertymanagement.shared.exception.AppException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,6 +35,8 @@ class OwnerApprovalServiceTest {
     @Mock LeaseContractService contractService;
     @Mock TenantPortalWelcomeService tenantPortalWelcomeService;
     @Mock OwnerPropertyAccessService ownerPropertyAccessService;
+    @Mock TenantRepository tenantRepository;
+    @Mock UserRepository userRepository;
 
     @InjectMocks OwnerApprovalService service;
 

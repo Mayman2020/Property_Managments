@@ -22,6 +22,8 @@ public class CreateRequestDto {
     private String description;
     private RequestPriority priority = RequestPriority.NORMAL;
     private String tenantNotes;
+    /** Optional routing override: "OFFICER" or "COMPANY". When null, auto-routing applies. */
+    private String routingTarget;
 
     public Long getResolvedCategoryId() {
         if (categoryIds != null && !categoryIds.isEmpty()) {

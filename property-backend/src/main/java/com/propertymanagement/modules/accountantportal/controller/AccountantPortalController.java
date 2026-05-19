@@ -4,6 +4,7 @@ import com.propertymanagement.modules.accountantportal.service.AccountantPortalS
 import com.propertymanagement.modules.contract.lease.dto.ContractResponse;
 import com.propertymanagement.modules.contract.renewal.dto.RenewContractDto;
 import com.propertymanagement.modules.maintenance.invoice.service.MaintenanceInvoiceService;
+import com.propertymanagement.modules.maintenance.invoice.dto.MaintenanceInvoiceFilterOptionsDto;
 import com.propertymanagement.modules.maintenance.invoice.dto.MaintenanceInvoiceResponse;
 import com.propertymanagement.modules.maintenance.invoice.dto.ReviewInvoiceDto;
 import com.propertymanagement.modules.tenantportal.dto.ReceiptResponse;
@@ -64,11 +65,20 @@ public class AccountantPortalController {
                 .body(ApiResponse.ok(accountantPortalService.processRenewal(requestId, dto, currentUserId())));
     }
 
+    @GetMapping("/maintenance-invoices/filter-options")
+    public ResponseEntity<ApiResponse<MaintenanceInvoiceFilterOptionsDto>> getMaintenanceInvoiceFilterOptions(
+            @RequestParam(required = false) Long propertyId) {
+        return ResponseEntity.ok(ApiResponse.ok(maintenanceInvoiceService.getFilterOptionsForAccountant(propertyId)));
+    }
+
     @GetMapping("/maintenance-invoices")
     public ResponseEntity<ApiResponse<List<MaintenanceInvoiceResponse>>> getMaintenanceInvoices(
             @RequestParam(required = false) Integer year,
-            @RequestParam(required = false) Integer month) {
-        return ResponseEntity.ok(ApiResponse.ok(maintenanceInvoiceService.getAllForAccountant(year, month)));
+            @RequestParam(required = false) Integer month,
+            @RequestParam(required = false) Long propertyId,
+            @RequestParam(required = false) Long companyId) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                maintenanceInvoiceService.getAllForAccountant(year, month, propertyId, companyId)));
     }
 
     @PatchMapping("/maintenance-invoices/{id}/review")

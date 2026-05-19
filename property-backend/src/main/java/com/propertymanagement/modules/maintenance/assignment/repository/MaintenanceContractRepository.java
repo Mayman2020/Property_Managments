@@ -26,6 +26,15 @@ public interface MaintenanceContractRepository extends JpaRepository<Maintenance
 
     List<MaintenanceContract> findByStatusAndPropertyIdInOrderByCreatedAtDesc(String status, Collection<Long> propertyIds);
 
+    List<MaintenanceContract> findByPropertyIdInOrderByCreatedAtDesc(Collection<Long> propertyIds);
+
+    @Query("""
+            SELECT c FROM MaintenanceContract c
+            WHERE c.terminationRequestedBy = :userId OR c.renewalRequestedBy = :userId
+            ORDER BY COALESCE(c.terminationRequestedAt, c.renewalRequestedAt, c.createdAt) DESC
+            """)
+    List<MaintenanceContract> findRequestsByRequester(@Param("userId") Long userId);
+
     Optional<MaintenanceContract> findByAssignmentId(Long assignmentId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
@@ -63,6 +72,51 @@ public interface MaintenanceContractRepository extends JpaRepository<Maintenance
             """)
     boolean existsActiveOngoingForContractorOnProperty(
             @Param("companyId") Long companyId,
+            @Param("propertyId") Long propertyId,
+            @Param("today") LocalDate today);
+
+    @Query("""
+            SELECT mc FROM MaintenanceContract mc
+            WHERE mc.contractorCompanyId = :companyId
+              AND mc.status = 'ACTIVE'
+              AND mc.startDate <= :today
+              AND (mc.endDate IS NULL OR mc.endDate >= :today)
+            ORDER BY mc.createdAt DESC
+            """)
+    List<MaintenanceContract> findActiveOngoingByContractor(
+            @Param("companyId") Long companyId,
+            @Param("today") LocalDate today);
+
+    @Query("""
+            SELECT COUNT(mc) FROM MaintenanceContract mc
+            WHERE mc.propertyId = :propertyId
+              AND mc.id <> :contractId
+              AND mc.status = 'ACTIVE'
+              AND mc.startDate <= :today
+              AND (mc.endDate IS NULL OR mc.endDate >= :today)
+            """)
+    long countOtherActiveOngoingForProperty(
+            @Param("propertyId") Long propertyId,
+            @Param("contractId") Long contractId,
+            @Param("today") LocalDate today);
+
+    @Query("""
+            SELECT DISTINCT mc.propertyId FROM MaintenanceContract mc
+            WHERE mc.status = 'ACTIVE'
+              AND mc.startDate <= :today
+              AND (mc.endDate IS NULL OR mc.endDate >= :today)
+              AND mc.propertyId IS NOT NULL
+            """)
+    List<Long> findActiveOngoingPropertyIds(@Param("today") LocalDate today);
+
+    @Query("""
+            SELECT DISTINCT mc.contractorCompanyId FROM MaintenanceContract mc
+            WHERE mc.propertyId = :propertyId
+              AND mc.status = 'ACTIVE'
+              AND mc.startDate <= :today
+              AND (mc.endDate IS NULL OR mc.endDate >= :today)
+            """)
+    List<Long> findActiveOngoingCompanyIdsByProperty(
             @Param("propertyId") Long propertyId,
             @Param("today") LocalDate today);
 }

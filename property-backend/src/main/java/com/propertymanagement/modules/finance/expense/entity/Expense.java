@@ -28,6 +28,10 @@ public class Expense {
     private Long vendorId;
     @Column(columnDefinition = "TEXT")
     private String description;
+    @Column(name = "description_ar", columnDefinition = "TEXT")
+    private String descriptionAr;
+    @Column(name = "description_en", columnDefinition = "TEXT")
+    private String descriptionEn;
     @Column(precision = 14, scale = 2)
     private BigDecimal amount;
     private String currency;

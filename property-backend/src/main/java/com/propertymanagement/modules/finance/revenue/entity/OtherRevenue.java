@@ -31,6 +31,20 @@ public class OtherRevenue {
     private String currency;
     @Column(name = "revenue_date")
     private LocalDate revenueDate;
+    @Column(name = "tenant_id")
+    private Long tenantId;
+    @Column(name = "contract_id")
+    private Long contractId;
+    @Column(name = "payment_method", length = 30)
+    private String paymentMethod;
+    @Column(name = "reference_number", length = 100)
+    private String referenceNumber;
+    @Column(name = "receipt_url", length = 500)
+    private String receiptUrl;
+    @Column(columnDefinition = "TEXT")
+    private String notes;
+    @Column(name = "recorded_by")
+    private Long recordedBy;
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 }

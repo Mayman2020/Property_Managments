@@ -115,6 +115,7 @@ public class OwnerPortalDraftContractService {
         c.setOwnerApprovalNotes(reason.trim());
         c.setOwnerApprovedAt(LocalDateTime.now());
         c.setOwnerApprovedBy(currentUserId());
+        leaseContractService.appendStaffChange(c, currentUserId(), "OWNER_DRAFT_REJECTED", reason.trim());
         contractRepository.save(c);
         leaseContractService.syncUnitRentedFromContracts(oldUnitId);
         try {

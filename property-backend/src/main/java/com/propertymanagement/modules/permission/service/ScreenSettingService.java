@@ -19,7 +19,8 @@ public class ScreenSettingService {
     private static final String[] SCREEN_KEYS = {
             "dashboard", "properties", "units", "tenants", "maintenance", "inventory",
             "reports", "users", "lookups", "contractors", "ratings", "schedule",
-            "profile", "my_unit", "new_request", "my_requests", "permissions"
+            "profile", "my_unit", "new_request", "my_requests", "permissions",
+            "contracts", "finance", "hr", "owner_portal", "vacancies", "notifications", "audit"
     };
 
     private final ScreenSettingRepository repository;

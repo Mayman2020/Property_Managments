@@ -38,6 +38,27 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findByRoleAndActiveTrue(UserRole role);
     List<User> findByPropertyIdAndRoleAndActiveTrue(Long propertyId, UserRole role);
 
+    @Query(value = """
+            SELECT DISTINCT u.id
+            FROM property_mgmt.users u
+                     LEFT JOIN property_mgmt.user_property_access upa ON upa.user_id = u.id
+            WHERE u.is_active = true
+              AND u.role = 'ACCOUNTANT'
+              AND (
+                    u.property_id = :propertyId
+                    OR upa.property_id = :propertyId
+                  )
+            """, nativeQuery = true)
+    List<Long> findActiveAccountantUserIdsForProperty(@Param("propertyId") Long propertyId);
+
+    @Query("""
+            SELECT u FROM User u
+            WHERE u.contractorCompanyId = :companyId
+              AND u.role = com.propertymanagement.modules.user.entity.UserRole.MAINTENANCE_OFFICER_COMPANY
+            ORDER BY u.fullName ASC
+            """)
+    List<User> findOfficersByContractorCompanyId(@Param("companyId") Long companyId);
+
     @Query("""
             SELECT u FROM User u
             WHERE u.role = :role

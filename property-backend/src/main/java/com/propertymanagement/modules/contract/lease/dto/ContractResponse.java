@@ -36,6 +36,8 @@ public class ContractResponse {
     private String status;
     private boolean autoRenewable;
     private Integer renewalNoticeDays;
+    private String escalationType;
+    private BigDecimal escalationRate;
     private String contractPdfUrl;
     private String signedPdfUrl;
     private LocalDate terminationDate;
@@ -79,6 +81,13 @@ public class ContractResponse {
     /** Staff audit lines (timestamp | user | action | detail). */
     private String staffChangeLog;
     private String notes;
+    private LocalDateTime noRenewalIntentAt;
+    private Long noRenewalIntentBy;
+    private String noRenewalIntentByName;
+    private Boolean depositIncomeRecorded;
+    private Boolean depositExpenseRecorded;
+    private String terminationDamagesReceiptUrl;
+    private String terminationDamageNotes;
     private long daysUntilExpiry;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

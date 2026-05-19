@@ -63,6 +63,8 @@ public interface LeaseContractRepository extends JpaRepository<LeaseContract, Lo
 
     List<LeaseContract> findByStatusAndEndDateBefore(ContractStatus status, LocalDate date);
 
+    List<LeaseContract> findByStatusAndEndDate(ContractStatus status, LocalDate endDate);
+
     Optional<LeaseContract> findFirstByTenantIdAndStatusOrderByStartDateDesc(Long tenantId, ContractStatus status);
 
     List<LeaseContract> findByOwnerIdAndStatusOrderByCreatedAtDesc(Long ownerId, ContractStatus status);
@@ -72,6 +74,13 @@ public interface LeaseContractRepository extends JpaRepository<LeaseContract, Lo
     /** Used by the owner portal so all property co-owners (not only contract.owner_id) see drafts. */
     List<LeaseContract> findByStatusAndPropertyIdInOrderByCreatedAtDesc(
             ContractStatus status, Collection<Long> propertyIds);
+
+    @Query("""
+            SELECT c FROM LeaseContract c
+            WHERE c.terminationRequestedBy = :userId OR c.renewalRequestedBy = :userId
+            ORDER BY COALESCE(c.terminationRequestedAt, c.renewalRequestedAt, c.createdAt) DESC
+            """)
+    List<LeaseContract> findLeaseRequestsByRequester(@Param("userId") Long userId);
 
     @Query("SELECT COUNT(c) FROM LeaseContract c WHERE c.unitId = :unitId AND c.status IN :statuses")
     long countByUnitIdAndStatusIn(@Param("unitId") Long unitId, @Param("statuses") Collection<ContractStatus> statuses);

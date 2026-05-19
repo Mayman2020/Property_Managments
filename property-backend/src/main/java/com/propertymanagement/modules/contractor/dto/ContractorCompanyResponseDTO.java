@@ -3,6 +3,7 @@ package com.propertymanagement.modules.contractor.dto;
 import lombok.Builder;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -25,6 +26,12 @@ public class ContractorCompanyResponseDTO {
     private String latestMaintenanceContractNumber;
     private LocalDate contractStart;
     private LocalDate contractEnd;
+    /** Start date from the latest maintenance contract (cross-property). */
+    private LocalDate latestContractStart;
+    /** End date from the latest maintenance contract (cross-property). */
+    private LocalDate latestContractEnd;
+    private BigDecimal latestContractValue;
+    private int propertiesCount;
     private List<String> attachmentFiles;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

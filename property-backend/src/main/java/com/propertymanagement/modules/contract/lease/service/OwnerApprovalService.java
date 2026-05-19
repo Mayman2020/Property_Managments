@@ -18,8 +18,11 @@ import com.propertymanagement.modules.contract.lease.entity.LeaseContract;
 import com.propertymanagement.modules.contract.lease.entity.ContractStatus;
 import com.propertymanagement.modules.contract.lease.repository.LeaseContractRepository;
 import com.propertymanagement.modules.owner.entity.Owner;
+import com.propertymanagement.modules.tenant.entity.Tenant;
+import com.propertymanagement.modules.tenant.repository.TenantRepository;
 import com.propertymanagement.modules.unit.entity.Unit;
 import com.propertymanagement.modules.user.entity.User;
+import com.propertymanagement.modules.user.repository.UserRepository;
 
 @Service
 @RequiredArgsConstructor
@@ -29,6 +32,8 @@ public class OwnerApprovalService {
     private final LeaseContractService contractService;
     private final TenantPortalWelcomeService tenantPortalWelcomeService;
     private final OwnerPropertyAccessService ownerPropertyAccessService;
+    private final TenantRepository tenantRepository;
+    private final UserRepository userRepository;
 
     public List<ContractResponse> getPendingApprovals(Long ownerId) {
         List<LeaseContract> contracts = (ownerId != null)
@@ -104,7 +109,12 @@ public class OwnerApprovalService {
             contractService.runPostActivationSideEffects(contractId);
         } else {
             contract.setStatus(ContractStatus.DRAFT);
+            String rejectDetail = dto.getNotes() != null && !dto.getNotes().isBlank()
+                    ? dto.getNotes().trim()
+                    : "(no notes)";
+            contractService.appendStaffChange(contract, ownerUserId, "OWNER_PENDING_APPROVAL_REJECTED", rejectDetail);
             LeaseContract savedRejected = contractRepository.save(contract);
+            unlinkTenantPortalUser(savedRejected);
             try {
                 tenantPortalWelcomeService.notifyTenantOwnerDeniedPendingApproval(savedRejected, dto.getNotes());
             } catch (Exception ignored) {
@@ -164,5 +174,16 @@ public class OwnerApprovalService {
             return contractService.finalizeRenewalApproval(contractId, ownerUserId, dto.getNotes());
         }
         return contractService.finalizeRenewalRejection(contractId, ownerUserId, dto.getNotes());
+    }
+
+    private void unlinkTenantPortalUser(LeaseContract contract) {
+        if (contract.getTenantId() == null) return;
+        tenantRepository.findById(contract.getTenantId()).ifPresent(tenant -> {
+            if (tenant.getUserId() == null) return;
+            userRepository.findById(tenant.getUserId()).ifPresent(user -> {
+                user.setPropertyId(null);
+                userRepository.save(user);
+            });
+        });
     }
 }

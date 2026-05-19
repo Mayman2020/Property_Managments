@@ -15,6 +15,8 @@ import com.propertymanagement.shared.exception.AppException;
 import com.propertymanagement.shared.i18n.AppMessages;
 import com.propertymanagement.shared.i18n.LocalizedNameResolver;
 import com.propertymanagement.shared.security.JwtUtil;
+import com.propertymanagement.shared.security.LoginAttemptService;
+import com.propertymanagement.shared.security.TokenBlacklistService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -26,6 +28,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,6 +47,8 @@ public class AuthService {
     private final RolePermissionService rolePermissionService;
     private final PropertyModuleSettingService propertyModuleSettingService;
     private final PortalProfileBridge portalProfileBridge;
+    private final LoginAttemptService loginAttemptService;
+    private final TokenBlacklistService tokenBlacklist;
 
     @Value("${jwt.expiration}")
     private long jwtExpiration;
@@ -54,9 +59,15 @@ public class AuthService {
             throw AppException.badRequest(appMessages.get("auth.error.credentials_required"));
         }
         String rawEmail = request.getEmail().trim();
+        if (loginAttemptService.isLocked(rawEmail)) {
+            throw AppException.badRequest("Account temporarily locked due to too many failed attempts. Try again later.");
+        }
         User resolved = userRepository.findByEmail(rawEmail)
                 .or(() -> userRepository.findByEmailIgnoreCase(rawEmail))
-                .orElseThrow(() -> AppException.badRequest(appMessages.get("auth.error.invalid_password")));
+                .orElseThrow(() -> {
+                    loginAttemptService.recordFailure(rawEmail);
+                    return AppException.badRequest(appMessages.get("auth.error.invalid_password"));
+                });
         if (!resolved.isActive()) {
             throw AppException.badRequest(appMessages.get("auth.error.account_inactive"));
         }
@@ -66,15 +77,28 @@ public class AuthService {
                     new UsernamePasswordAuthenticationToken(resolved.getEmail(), request.getPassword())
             );
             User user = (User) auth.getPrincipal();
+            loginAttemptService.recordSuccess(rawEmail);
             user.setLastLogin(LocalDateTime.now());
             userRepository.save(user);
             return buildResponse(user);
         } catch (DisabledException e) {
             throw AppException.badRequest(appMessages.get("auth.error.account_inactive"));
         } catch (BadCredentialsException e) {
+            loginAttemptService.recordFailure(rawEmail);
             throw AppException.badRequest(appMessages.get("auth.error.invalid_password"));
         } catch (AuthenticationException e) {
+            loginAttemptService.recordFailure(rawEmail);
             throw AppException.badRequest(appMessages.get("auth.error.invalid_password"));
+        }
+    }
+
+    public void logout(String bearerToken) {
+        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+            String token = bearerToken.substring(7);
+            if (jwtUtil.isValid(token)) {
+                Instant expiry = jwtUtil.extractExpiration(token).toInstant();
+                tokenBlacklist.revoke(token, expiry);
+            }
         }
     }
 

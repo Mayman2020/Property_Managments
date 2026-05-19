@@ -13,7 +13,10 @@ import com.propertymanagement.modules.user.service.UserService;
 import com.propertymanagement.modules.user.dto.TenantProfileLinkDto;
 import com.propertymanagement.modules.user.dto.UserRequest;
 import com.propertymanagement.modules.user.dto.UserResponse;
+import com.propertymanagement.shared.exception.AppException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -100,7 +103,7 @@ public class TenantOnboardingService {
         contractDto.setOtherReasonText(trimToNull(req.getOtherReasonText()));
         contractDto.setNotes(trimToNull(req.getNotes()));
 
-        ContractResponse contract = leaseContractService.create(contractDto);
+        ContractResponse contract = leaseContractService.create(contractDto, currentUserId());
 
         return TenantOnboardingResponse.builder()
                 .userId(user.getId())
@@ -126,5 +129,13 @@ public class TenantOnboardingService {
         }
         String t = value.trim();
         return t.isEmpty() ? null : t;
+    }
+
+    private Long currentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof User user && user.getId() != null) {
+            return user.getId();
+        }
+        throw AppException.forbidden("Authenticated user is required");
     }
 }

@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface ComplaintRatingRepository extends JpaRepository<ComplaintRating, Long> {
     Optional<ComplaintRating> findByComplaintId(Long complaintId);
@@ -41,6 +42,35 @@ public interface ComplaintRatingRepository extends JpaRepository<ComplaintRating
             ORDER BY r.ratedAt DESC
             """)
     List<ComplaintRatingDashboardItemResponse> findDashboardDetails();
+
+    @Query("""
+            SELECT new com.propertymanagement.modules.complaint.dto.ComplaintRatingDashboardItemResponse(
+                r.id,
+                r.complaintId,
+                r.rating,
+                r.raterRole,
+                r.ratedAt,
+                c.title,
+                c.complaintType,
+                c.status,
+                c.priority,
+                c.propertyId,
+                p.propertyName,
+                p.propertyNameAr,
+                p.propertyNameEn,
+                c.unitId,
+                u.unitNumber,
+                t.fullName
+            )
+            FROM ComplaintRating r
+            JOIN TenantComplaint c ON c.id = r.complaintId
+            LEFT JOIN Property p ON p.id = c.propertyId
+            LEFT JOIN Unit u ON u.id = c.unitId
+            LEFT JOIN Tenant t ON t.id = c.tenantId
+            WHERE c.propertyId IN :propertyIds
+            ORDER BY r.ratedAt DESC
+            """)
+    List<ComplaintRatingDashboardItemResponse> findDashboardDetailsByPropertyIds(@Param("propertyIds") Set<Long> propertyIds);
 
     @Query("""
             SELECT AVG(CASE r.rating

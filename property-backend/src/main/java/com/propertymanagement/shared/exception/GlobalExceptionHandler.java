@@ -73,6 +73,16 @@ public class GlobalExceptionHandler {
                 return ResponseEntity.status(HttpStatus.CONFLICT)
                         .body(ApiResponse.error(tr("error.email_user_conflict", request), "EMAIL_ALREADY_USED"));
             }
+            if (detail.contains("employees_national_id_key")) {
+                log.warn("DataIntegrityViolation (employee national_id): {}", detail);
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body(ApiResponse.error(tr("error.national_id_conflict", request), "NATIONAL_ID_ALREADY_USED"));
+            }
+            if (detail.contains("employees") && detail.contains("email")) {
+                log.warn("DataIntegrityViolation (employee email): {}", detail);
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body(ApiResponse.error(tr("error.email_employee_conflict", request), "EMAIL_ALREADY_USED"));
+            }
         }
         log.error("Data integrity violation", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

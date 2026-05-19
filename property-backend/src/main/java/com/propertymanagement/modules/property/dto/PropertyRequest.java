@@ -51,4 +51,6 @@ public class PropertyRequest {
 
     /** Optional: IDs of maintenance officers (USER) or contractor companies (COMPANY) for default routing. */
     private List<Long> maintenanceProviderIds;
+
+    private Long legalEntityId;
 }

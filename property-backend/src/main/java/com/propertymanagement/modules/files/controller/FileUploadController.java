@@ -88,8 +88,19 @@ public class FileUploadController {
         }
         Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
 
-        String url = baseUrl + "/api/v1/files/" + filename;
+        String url = buildPublicFileUrl(filename);
         return ResponseEntity.ok(ApiResponse.ok(Map.of("url", url, "filename", filename)));
+    }
+
+    private String buildPublicFileUrl(String filename) {
+        String cleanBaseUrl = (baseUrl == null ? "" : baseUrl.trim()).replaceAll("/+$", "");
+        if (cleanBaseUrl.endsWith("/api/v1/files")) {
+            return cleanBaseUrl + "/" + filename;
+        }
+        if (cleanBaseUrl.endsWith("/api/v1")) {
+            return cleanBaseUrl + "/files/" + filename;
+        }
+        return cleanBaseUrl + "/api/v1/files/" + filename;
     }
 
     @GetMapping("/{filename:.+}")

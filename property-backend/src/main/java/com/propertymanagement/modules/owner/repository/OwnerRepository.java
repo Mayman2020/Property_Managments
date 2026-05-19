@@ -139,4 +139,24 @@ public interface OwnerRepository extends JpaRepository<Owner, Long> {
             ) u
             """, nativeQuery = true)
     List<Long> findActivePropertyIdsForOwner(@Param("ownerId") Long ownerId);
+
+    /**
+     * Returns IDs of active properties that would be left with NO owner after removing this owner.
+     * Blocks deletion when any such property exists.
+     */
+    @Query(value = """
+            SELECT p.id
+            FROM property_mgmt.properties p
+            WHERE p.is_active = TRUE
+              AND (
+                p.id IN (SELECT po.property_id FROM property_mgmt.property_owners po WHERE po.owner_id = :ownerId)
+                OR p.owner_id = :ownerId
+              )
+              AND (
+                (SELECT COUNT(*) FROM property_mgmt.property_owners po2
+                  WHERE po2.property_id = p.id AND po2.owner_id <> :ownerId) = 0
+                AND (p.owner_id IS NULL OR p.owner_id = :ownerId)
+              )
+            """, nativeQuery = true)
+    List<Long> findPropertyIdsWhereSoleOwner(@Param("ownerId") Long ownerId);
 }

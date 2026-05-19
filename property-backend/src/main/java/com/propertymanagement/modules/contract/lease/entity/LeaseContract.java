@@ -85,6 +85,14 @@ public class LeaseContract {
     private boolean autoRenewable = false;
 
     @Builder.Default
+    @Column(name = "escalation_type", length = 20)
+    private String escalationType = "NONE";
+
+    @Builder.Default
+    @Column(name = "escalation_rate", precision = 5, scale = 2)
+    private java.math.BigDecimal escalationRate = java.math.BigDecimal.ZERO;
+
+    @Builder.Default
     @Column(name = "renewal_notice_days")
     private Integer renewalNoticeDays = 30;
 
@@ -216,6 +224,31 @@ public class LeaseContract {
 
     @Column(columnDefinition = "TEXT")
     private String notes;
+
+    /** When the tenant expressed they do not want to renew. */
+    @Column(name = "no_renewal_intent_at")
+    private LocalDateTime noRenewalIntentAt;
+
+    @Column(name = "no_renewal_intent_by")
+    private Long noRenewalIntentBy;
+
+    /** True once the security deposit has been recorded as income on activation. */
+    @Builder.Default
+    @Column(name = "deposit_income_recorded")
+    private Boolean depositIncomeRecorded = false;
+
+    /** True once the deposit-return expense entry has been created. */
+    @Builder.Default
+    @Column(name = "deposit_expense_recorded")
+    private Boolean depositExpenseRecorded = false;
+
+    /** Receipt URL uploaded by the tenant for the damage payment. */
+    @Column(name = "termination_damages_receipt_url", columnDefinition = "TEXT")
+    private String terminationDamagesReceiptUrl;
+
+    /** Damage description written by the accountant. */
+    @Column(name = "termination_damage_notes", columnDefinition = "TEXT")
+    private String terminationDamageNotes;
 
     @CreatedDate
     @Column(name = "created_at", updatable = false)

@@ -527,25 +527,93 @@ public class PayrollService {
         );
     }
 
-    private void notifyPayrollMarkedPaid(PayrollRun run, List<Payslip> slips) {
-        List<Long> recipients = new ArrayList<>();
-        recipients.addAll(propertyOwnerPortalRecipientService.portalRecipientUserIds(run.getPropertyId()));
-        recipients.addAll(userRepository.findByPropertyIdAndRoleAndActiveTrue(run.getPropertyId(), UserRole.ACCOUNTANT)
-                .stream().map(User::getId).toList());
-        for (Payslip slip : slips) {
-            employeeRepository.findById(slip.getEmployeeId())
-                    .map(Employee::getLinkedUserId)
-                    .filter(Objects::nonNull)
-                    .ifPresent(recipients::add);
+    @Transactional
+    public PayrollRunDetailResponse reject(Long id, String reason) {
+        PayrollRun run = findScoped(id);
+        if (!"SUBMITTED".equalsIgnoreCase(run.getStatus()) && !"DRAFT".equalsIgnoreCase(run.getStatus())) {
+            throw AppException.badRequest("Only DRAFT or SUBMITTED payroll can be rejected");
         }
+        User actor = currentUser();
+        if (actor.getRole() != UserRole.OWNER
+                && actor.getRole() != UserRole.SUPER_ADMIN
+                && actor.getRole() != UserRole.GENERAL_MANAGER) {
+            throw AppException.forbidden("Only manager or owner can reject payroll");
+        }
+        run.setStatus("REJECTED");
+        if (reason != null && !reason.isBlank()) {
+            run.setNotes(reason.trim());
+        }
+        repository.save(run);
+        notifyPayrollRejected(run);
+        return toDetailResponse(run);
+    }
+
+    /** Returns all payslips for the currently authenticated employee (linked via linkedUserId). */
+    public List<PayslipResponse> getMyPayslips() {
+        User actor = currentUser();
+        Employee emp = employeeRepository.findByLinkedUserId(actor.getId())
+                .orElseThrow(() -> AppException.notFound("No employee record linked to your account"));
+        return payslipRepository.findByEmployeeIdOrderByCreatedAtDesc(emp.getId())
+                .stream()
+                .map(slip -> toPayslipResponse(slip, emp))
+                .toList();
+    }
+
+    public PayslipResponse getMyPayslipById(Long payslipId) {
+        User actor = currentUser();
+        Employee emp = employeeRepository.findByLinkedUserId(actor.getId())
+                .orElseThrow(() -> AppException.notFound("No employee record linked to your account"));
+        Payslip slip = payslipRepository.findByIdAndEmployeeId(payslipId, emp.getId())
+                .orElseThrow(() -> AppException.notFound("Payslip not found"));
+        return toPayslipResponse(slip, emp);
+    }
+
+    private void notifyPayrollMarkedPaid(PayrollRun run, List<Payslip> slips) {
+        List<Long> managerRecipients = new ArrayList<>();
+        managerRecipients.addAll(propertyOwnerPortalRecipientService.portalRecipientUserIds(run.getPropertyId()));
+        managerRecipients.addAll(userRepository.findByPropertyIdAndRoleAndActiveTrue(run.getPropertyId(), UserRole.ACCOUNTANT)
+                .stream().map(User::getId).toList());
         notificationService.createForRecipients(
-                recipients.stream().distinct().toList(),
+                managerRecipients.stream().distinct().toList(),
                 currentUser().getId(),
                 run.getPropertyId(),
                 run.getId(),
                 NotificationType.PAYROLL_MARKED_PAID,
                 "Payroll paid",
                 "Payroll for " + run.getPayPeriodMonth() + "/" + run.getPayPeriodYear() + " marked as paid"
+        );
+        // Per-employee PAYSLIP_AVAILABLE notification
+        for (Payslip slip : slips) {
+            employeeRepository.findById(slip.getEmployeeId()).ifPresent(emp -> {
+                Long linkedUserId = emp.getLinkedUserId();
+                if (linkedUserId != null) {
+                    notificationService.createForRecipients(
+                            List.of(linkedUserId),
+                            currentUser().getId(),
+                            run.getPropertyId(),
+                            slip.getId(),
+                            NotificationType.PAYSLIP_AVAILABLE,
+                            "قسيمة راتبك جاهزة",
+                            "قسيمة راتبك لشهر " + run.getPayPeriodMonth() + "/" + run.getPayPeriodYear() + " متاحة الآن"
+                    );
+                }
+            });
+        }
+    }
+
+    private void notifyPayrollRejected(PayrollRun run) {
+        List<Long> recipients = new ArrayList<>();
+        recipients.addAll(userRepository.findByPropertyIdAndRoleAndActiveTrue(run.getPropertyId(), UserRole.ACCOUNTANT)
+                .stream().map(User::getId).toList());
+        notificationService.createForRecipients(
+                recipients.stream().distinct().toList(),
+                currentUser().getId(),
+                run.getPropertyId(),
+                run.getId(),
+                NotificationType.PAYROLL_REJECTED,
+                "Payroll rejected",
+                "Payroll for " + run.getPayPeriodMonth() + "/" + run.getPayPeriodYear() + " was rejected"
+                        + (run.getNotes() != null ? ": " + run.getNotes() : "")
         );
     }
 }

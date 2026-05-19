@@ -43,12 +43,21 @@ public class MaintenanceContractInvoice {
     @Column(name = "paid_date")
     private LocalDate paidDate;
 
+    @Column(name = "receipt_url", length = 500)
+    private String receiptUrl;
+
     @Column(name = "status", nullable = false, length = 20)
     @Builder.Default
     private String status = "DRAFT"; // DRAFT | ISSUED | PAID | OVERDUE | CANCELLED
 
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
+
+    @Column(name = "description_ar", columnDefinition = "TEXT")
+    private String descriptionAr;
+
+    @Column(name = "description_en", columnDefinition = "TEXT")
+    private String descriptionEn;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

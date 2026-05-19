@@ -2,6 +2,9 @@ package com.propertymanagement.modules.maintenance.contract.service;
 
 import com.propertymanagement.modules.contractor.entity.ContractorCompanyEntity;
 import com.propertymanagement.modules.contractor.repository.ContractorCompanyRepository;
+import com.propertymanagement.modules.finance.expense.entity.Expense;
+import com.propertymanagement.modules.finance.expense.repository.ExpenseCategoryLookupRepository;
+import com.propertymanagement.modules.finance.expense.repository.ExpenseWriterRepository;
 import com.propertymanagement.modules.maintenance.assignment.entity.MaintenanceContract;
 import com.propertymanagement.modules.maintenance.assignment.repository.MaintenanceContractRepository;
 import com.propertymanagement.modules.maintenance.assignment.repository.PropertyMaintenanceAssignmentRepository;
@@ -9,6 +12,7 @@ import com.propertymanagement.modules.maintenance.contract.dto.MaintenanceContra
 import com.propertymanagement.modules.maintenance.contract.dto.MaintenanceContractRenewalRequest;
 import com.propertymanagement.modules.maintenance.contract.dto.MaintenanceContractResponse;
 import com.propertymanagement.modules.maintenance.contract.dto.MaintenanceContractTerminateRequest;
+import com.propertymanagement.modules.maintenance.contractinvoice.entity.MaintenanceContractInvoice;
 import com.propertymanagement.modules.maintenance.contractinvoice.repository.MaintenanceContractInvoiceRepository;
 import com.propertymanagement.modules.notification.service.NotificationService;
 import com.propertymanagement.modules.notification.entity.NotificationType;
@@ -16,6 +20,7 @@ import com.propertymanagement.modules.owner.service.OwnerPropertyAccessService;
 import com.propertymanagement.modules.property.entity.Property;
 import com.propertymanagement.modules.property.service.PropertyOwnerPortalRecipientService;
 import com.propertymanagement.modules.property.repository.PropertyRepository;
+import com.propertymanagement.modules.unit.repository.UnitRepository;
 import com.propertymanagement.modules.user.entity.User;
 import com.propertymanagement.modules.user.repository.UserRepository;
 import com.propertymanagement.modules.user.entity.UserRole;
@@ -26,6 +31,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -44,16 +51,20 @@ import com.propertymanagement.modules.owner.entity.Owner;
 public class MaintenanceContractService {
 
     private static final DateTimeFormatter STAFF_LOG_TS = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+    private static final String MAINTENANCE_EXPENSE_CODE = "MAINT-LABOR";
 
     private final MaintenanceContractRepository contractRepo;
     private final PropertyMaintenanceAssignmentRepository assignmentRepo;
     private final ContractorCompanyRepository companyRepo;
     private final MaintenanceContractInvoiceRepository invoiceRepo;
     private final PropertyRepository propertyRepo;
+    private final UnitRepository unitRepo;
     private final UserRepository userRepo;
     private final NotificationService notificationService;
     private final PropertyOwnerPortalRecipientService ownerRecipientService;
     private final OwnerPropertyAccessService ownerPropertyAccessService;
+    private final ExpenseWriterRepository expenseWriterRepository;
+    private final ExpenseCategoryLookupRepository expenseCategoryLookupRepository;
 
     // ── List all contracts (global, admin view) ──────────────────────────
     public List<MaintenanceContractResponse> listAll() {
@@ -63,8 +74,32 @@ public class MaintenanceContractService {
                 .collect(Collectors.toList());
     }
 
+    public List<MaintenanceContractResponse> listVisibleForCurrentUser() {
+        var scope = ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner();
+        if (scope == null) {
+            return listAll();
+        }
+        if (scope.isEmpty()) {
+            return List.of();
+        }
+        return contractRepo.findByPropertyIdInOrderByCreatedAtDesc(scope)
+                .stream().map(this::toResponse).collect(Collectors.toList());
+    }
+
     public List<MaintenanceContractResponse> listByStatus(String status) {
         return contractRepo.findByStatusOrderByCreatedAtDesc(status)
+                .stream().map(this::toResponse).collect(Collectors.toList());
+    }
+
+    public List<MaintenanceContractResponse> listVisibleByStatusForCurrentUser(String status) {
+        var scope = ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner();
+        if (scope == null) {
+            return listByStatus(status);
+        }
+        if (scope.isEmpty()) {
+            return List.of();
+        }
+        return contractRepo.findByStatusAndPropertyIdInOrderByCreatedAtDesc(status, scope)
                 .stream().map(this::toResponse).collect(Collectors.toList());
     }
 
@@ -93,8 +128,12 @@ public class MaintenanceContractService {
     }
 
     // ── Get single contract ───────────────────────────────────────────────
+    @Transactional
     public MaintenanceContractResponse getById(Long id) {
-        return toResponse(requireContract(id));
+        MaintenanceContract contract = requireContract(id);
+        ownerPropertyAccessService.assertOwnerCanAccessProperty(contract.getPropertyId());
+        ensureApprovalInvoiceIssued(contract);
+        return toResponse(contract);
     }
 
     // ── Create contract (standalone – no assignment workflow) ─────────────
@@ -137,6 +176,7 @@ public class MaintenanceContractService {
                 .endDate(request.getEndDate())
                 .contractValue(request.getContractValue())
                 .notes(request.getNotes())
+                .attachmentUrls(request.getAttachmentUrls())
                 .status("DRAFT")
                 .ownerApprovalStatus("PENDING")
                 .build());
@@ -171,6 +211,7 @@ public class MaintenanceContractService {
         appendStaffLog(contract, actorUserId, "APPROVED", safeNotes(notes));
         contractRepo.save(contract);
         activateLinkedAssignment(contract);
+        createIssuedApprovalInvoice(contract, actorUserId);
         notifyLifecycle(contract, actorUserId, NotificationType.MAINTENANCE_CONTRACT_APPROVED,
                 "Maintenance contract approved",
                 "Maintenance contract " + contract.getContractNumber() + " was approved.");
@@ -195,6 +236,7 @@ public class MaintenanceContractService {
         appendStaffLog(contract, actorUserId, "REJECTED", notes.trim());
         contractRepo.save(contract);
         closeLinkedAssignment(contract, "CANCELLED");
+        unlinkContractorPortalUser(contract);
         notifyLifecycle(contract, actorUserId, NotificationType.MAINTENANCE_CONTRACT_REJECTED,
                 "Maintenance contract rejected",
                 "Maintenance contract " + contract.getContractNumber() + " was rejected. " + notes.trim());
@@ -233,8 +275,8 @@ public class MaintenanceContractService {
         if (!"ACTIVE".equals(contract.getStatus())) {
             throw AppException.badRequest("Only active contracts can be terminated");
         }
-        ownerPropertyAccessService.assertOwnerCanAccessProperty(contract.getPropertyId());
         Long actorUserId = currentActorUserId();
+        assertCanRequestContractAction(actorUserId, contract);
         contract.setStatus("PENDING_TERMINATION_APPROVAL");
         contract.setTerminationRequestedBy(actorUserId);
         contract.setTerminationRequestedAt(LocalDateTime.now());
@@ -243,7 +285,7 @@ public class MaintenanceContractService {
         appendStaffLog(contract, actorUserId, "TERMINATION_REQUESTED",
                 request.getTerminationDate() + " | " + safeNotes(request.getReason()));
         contractRepo.save(contract);
-        notifyOwners(contract, actorUserId, NotificationType.MAINTENANCE_CONTRACT_TERMINATION_REQUESTED,
+        notifyMaintenanceRequestSubmitted(contract, actorUserId, NotificationType.MAINTENANCE_CONTRACT_TERMINATION_REQUESTED,
                 "Maintenance contract termination requested",
                 "Please review termination request for maintenance contract " + contract.getContractNumber() + ".");
         return toResponse(contract);
@@ -267,7 +309,7 @@ public class MaintenanceContractService {
     public MaintenanceContractResponse decideTermination(Long id, MaintenanceContractDecisionRequest request, Long actorUserId) {
         MaintenanceContract contract = contractRepo.findByIdForUpdate(id)
                 .orElseThrow(() -> AppException.notFound("Maintenance contract not found with id " + id));
-        ownerPropertyAccessService.assertOwnerCanAccessProperty(contract.getPropertyId());
+        requireOwnerDecisionActor(actorUserId, contract.getPropertyId());
         if (!"PENDING_TERMINATION_APPROVAL".equals(contract.getStatus())) {
             throw AppException.badRequest("Contract is not awaiting termination approval");
         }
@@ -277,6 +319,9 @@ public class MaintenanceContractService {
         contract.setTerminationDecisionNotes(request.getNotes());
         if (approved) {
             contract.setStatus("ENDED");
+            if (request.getSettlementAmount() != null) {
+                contract.setSettlementAmount(request.getSettlementAmount());
+            }
             LocalDate effective = contract.getTerminationProposedDate() != null
                     ? contract.getTerminationProposedDate() : LocalDate.now();
             if (contract.getEndDate() == null || contract.getEndDate().isAfter(effective)) {
@@ -289,7 +334,7 @@ public class MaintenanceContractService {
             appendStaffLog(contract, actorUserId, "TERMINATION_REJECTED", safeNotes(request.getNotes()));
         }
         contractRepo.save(contract);
-        notifyLifecycle(contract, actorUserId,
+        notifyMaintenanceDecisionRecipients(contract, actorUserId,
                 approved ? NotificationType.MAINTENANCE_CONTRACT_TERMINATION_APPROVED : NotificationType.MAINTENANCE_CONTRACT_TERMINATION_REJECTED,
                 approved ? "Maintenance contract termination approved" : "Maintenance contract termination rejected",
                 "Maintenance contract " + contract.getContractNumber() + " termination decision was recorded.");
@@ -306,6 +351,7 @@ public class MaintenanceContractService {
             throw AppException.badRequest("Renewal end date must be after start date");
         }
         Long actorUserId = currentActorUserId();
+        assertCanRequestContractAction(actorUserId, contract);
         contract.setStatus("PENDING_RENEWAL_APPROVAL");
         contract.setRenewalRequestedBy(actorUserId);
         contract.setRenewalRequestedAt(LocalDateTime.now());
@@ -320,7 +366,7 @@ public class MaintenanceContractService {
         appendStaffLog(contract, actorUserId, "RENEWAL_REQUESTED",
                 request.getProposedStartDate() + "->" + request.getProposedEndDate());
         contractRepo.save(contract);
-        notifyOwners(contract, actorUserId, NotificationType.MAINTENANCE_CONTRACT_RENEWAL_REQUESTED,
+        notifyMaintenanceRequestSubmitted(contract, actorUserId, NotificationType.MAINTENANCE_CONTRACT_RENEWAL_REQUESTED,
                 "Maintenance contract renewal requested",
                 "Please review renewal request for maintenance contract " + contract.getContractNumber() + ".");
         return toResponse(contract);
@@ -344,7 +390,7 @@ public class MaintenanceContractService {
     public MaintenanceContractResponse decideRenewal(Long id, MaintenanceContractDecisionRequest request, Long actorUserId) {
         MaintenanceContract contract = contractRepo.findByIdForUpdate(id)
                 .orElseThrow(() -> AppException.notFound("Maintenance contract not found with id " + id));
-        ownerPropertyAccessService.assertOwnerCanAccessProperty(contract.getPropertyId());
+        requireOwnerDecisionActor(actorUserId, contract.getPropertyId());
         if (!"PENDING_RENEWAL_APPROVAL".equals(contract.getStatus())) {
             throw AppException.badRequest("Contract is not awaiting renewal approval");
         }
@@ -375,7 +421,7 @@ public class MaintenanceContractService {
             contract.setStatus("RENEWED");
             appendStaffLog(contract, actorUserId, "RENEWAL_APPROVED", safeNotes(request.getNotes()));
             contractRepo.save(contract);
-            notifyLifecycle(savedRenewed, actorUserId, NotificationType.MAINTENANCE_CONTRACT_RENEWAL_APPROVED,
+            notifyMaintenanceDecisionRecipients(savedRenewed, actorUserId, NotificationType.MAINTENANCE_CONTRACT_RENEWAL_APPROVED,
                     "Maintenance contract renewal approved",
                     "Maintenance contract " + contract.getContractNumber() + " renewal was approved.");
             return toResponse(savedRenewed);
@@ -384,7 +430,7 @@ public class MaintenanceContractService {
         contract.setStatus("ACTIVE");
         appendStaffLog(contract, actorUserId, "RENEWAL_REJECTED", safeNotes(request.getNotes()));
         contractRepo.save(contract);
-        notifyLifecycle(contract, actorUserId, NotificationType.MAINTENANCE_CONTRACT_RENEWAL_REJECTED,
+        notifyMaintenanceDecisionRecipients(contract, actorUserId, NotificationType.MAINTENANCE_CONTRACT_RENEWAL_REJECTED,
                 "Maintenance contract renewal rejected",
                 "Maintenance contract " + contract.getContractNumber() + " renewal was rejected.");
         return toResponse(contract);
@@ -427,22 +473,75 @@ public class MaintenanceContractService {
             companyNameAr = company.getNameAr();
             companyNameEn = company.getNameEn();
         }
+        String propertyCode = null, propertyName = null, propertyNameAr = null, propertyNameEn = null;
+        Property property = c.getPropertyId() != null ? propertyRepo.findById(c.getPropertyId()).orElse(null) : null;
+        if (property != null) {
+            propertyCode = property.getPropertyCode();
+            propertyName = property.getPropertyName();
+            propertyNameAr = property.getPropertyNameAr();
+            propertyNameEn = property.getPropertyNameEn();
+        }
         int invoiceCount = (int) invoiceRepo.countByContractId(c.getId());
+        long propertyTotalUnits = c.getPropertyId() != null
+                ? unitRepo.countByPropertyIdAndActiveTrue(c.getPropertyId())
+                : 0;
+        long propertyVacantUnits = c.getPropertyId() != null
+                ? unitRepo.countVacantByPropertyId(c.getPropertyId())
+                : 0;
+        long propertyNonVacantUnits = Math.max(0, propertyTotalUnits - propertyVacantUnits);
+        long otherActiveContracts = c.getPropertyId() != null
+                ? contractRepo.countOtherActiveOngoingForProperty(c.getPropertyId(), c.getId(), LocalDate.now())
+                : 0;
         return new MaintenanceContractResponse(
                 c.getId(), c.getPropertyId(), c.getContractorCompanyId(),
                 companyName, companyNameAr, companyNameEn,
+                propertyCode,
+                propertyName, propertyNameAr, propertyNameEn,
                 c.getAssignmentId(), c.getContractNumber(),
                 c.getStartDate(), c.getEndDate(),
                 c.getSlaHours(), c.getContractValue(),
-                c.getStatus(), c.getNotes(), c.getCreatedAt(),
+                c.getStatus(), c.getNotes(), c.getStaffChangeLog(), c.getCreatedAt(),
                 invoiceCount,
                 c.getPreviousContractId(),
                 c.getOwnerApprovalStatus(), c.getOwnerApprovalNotes(),
+                c.getTerminationRequestedBy(), resolveUserName(c.getTerminationRequestedBy()), c.getTerminationRequestedAt(),
                 c.getTerminationProposedDate(), c.getTerminationRequestNotes(),
+                c.getRenewalRequestedBy(), resolveUserName(c.getRenewalRequestedBy()), c.getRenewalRequestedAt(),
                 c.getRenewalProposedStartDate(), c.getRenewalProposedEndDate(),
                 c.getRenewalProposedValue(), c.getRenewalRequestedNote(),
-                c.getRenewalDecisionStatus()
+                c.getRenewalDecisionStatus(),
+                propertyTotalUnits,
+                propertyVacantUnits,
+                propertyNonVacantUnits,
+                otherActiveContracts,
+                otherActiveContracts == 0,
+                c.getAttachmentUrls(),
+                c.getUpdatedAt(),
+                c.getCreatedByUserId(),
+                resolveUserName(c.getCreatedByUserId()),
+                c.getModifiedBy(),
+                resolveUserName(c.getModifiedBy()),
+                c.getOwnerApprovedBy(),
+                resolveUserName(c.getOwnerApprovedBy()),
+                c.getSettlementAmount()
         );
+    }
+
+    private String resolveUserName(Long userId) {
+        if (userId == null) return null;
+        return userRepo.findById(userId)
+                .map(u -> firstNonBlank(u.getFullNameAr(), u.getFullNameEn(), u.getFullName(), u.getEmail()))
+                .orElse(null);
+    }
+
+    private String firstNonBlank(String... values) {
+        if (values == null) return null;
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value.trim();
+            }
+        }
+        return null;
     }
 
     public String generateContractNumber() {
@@ -461,6 +560,79 @@ public class MaintenanceContractService {
         List<Long> owners = ownerRecipientService.portalRecipientUserIds(contract.getPropertyId());
         if (owners.isEmpty()) return;
         notificationService.createForRecipients(owners, actorUserId, contract.getPropertyId(), null, type, title, message, notificationParams(contract, type));
+    }
+
+    private void notifyMaintenanceRequestSubmitted(MaintenanceContract contract, Long actorUserId, NotificationType type, String title, String message) {
+        LinkedHashSet<Long> recipients = new LinkedHashSet<>();
+        recipients.addAll(adminRecipients());
+        recipients.addAll(ownerRecipientService.portalRecipientUserIds(contract.getPropertyId()));
+        recipients.addAll(accountantRecipients(contract));
+        recipients.addAll(companyRecipients(contract));
+        recipients.remove(null);
+        if (recipients.isEmpty()) return;
+        notificationService.createForRecipients(new ArrayList<>(recipients), actorUserId, contract.getPropertyId(), null, type, title, message, notificationParams(contract, type));
+    }
+
+    private void notifyMaintenanceDecisionRecipients(MaintenanceContract contract, Long actorUserId, NotificationType type, String title, String message) {
+        LinkedHashSet<Long> recipients = new LinkedHashSet<>();
+        recipients.addAll(adminRecipients());
+        recipients.addAll(accountantRecipients(contract));
+        recipients.addAll(companyRecipients(contract));
+        recipients.remove(null);
+        if (recipients.isEmpty()) return;
+        notificationService.createForRecipients(new ArrayList<>(recipients), actorUserId, contract.getPropertyId(), null, type, title, message, notificationParams(contract, type));
+    }
+
+    private List<Long> accountantRecipients(MaintenanceContract contract) {
+        LinkedHashSet<Long> recipients = new LinkedHashSet<>();
+        recipients.addAll(userRepo.findByRoleAndActiveTrue(UserRole.ACCOUNTANT).stream().map(User::getId).toList());
+        recipients.addAll(userRepo.findByPropertyIdAndRoleAndActiveTrue(contract.getPropertyId(), UserRole.ACCOUNTANT).stream().map(User::getId).toList());
+        return new ArrayList<>(recipients);
+    }
+
+    private List<Long> adminRecipients() {
+        LinkedHashSet<Long> recipients = new LinkedHashSet<>();
+        recipients.addAll(userRepo.findByRoleAndActiveTrue(UserRole.SUPER_ADMIN).stream().map(User::getId).toList());
+        recipients.addAll(userRepo.findByRoleAndActiveTrue(UserRole.GENERAL_MANAGER).stream().map(User::getId).toList());
+        return new ArrayList<>(recipients);
+    }
+
+    private List<Long> companyRecipients(MaintenanceContract contract) {
+        return userRepo.findActiveContractorStaffForProperty(contract.getPropertyId(), contract.getContractorCompanyId())
+                .stream().map(User::getId).toList();
+    }
+
+    /**
+     * Allows admins, accountant, and the maintenance company assigned to this contract
+     * to request termination or renewal. MAINTENANCE_COMPANY users must belong to the
+     * contractor company on the contract.
+     */
+    private void assertCanRequestContractAction(Long actorUserId, MaintenanceContract contract) {
+        if (actorUserId == null) return; // unauthenticated is handled by security layer
+        User actor = userRepo.findById(actorUserId).orElse(null);
+        if (actor == null) return;
+        if (actor.getRole() == UserRole.MAINTENANCE_COMPANY) {
+            Long userCompanyId = actor.getContractorCompanyId();
+            if (userCompanyId == null || !userCompanyId.equals(contract.getContractorCompanyId())) {
+                throw AppException.forbidden("You can only request actions for your own maintenance contracts");
+            }
+        }
+    }
+
+    private void requireOwnerDecisionActor(Long actorUserId, Long propertyId) {
+        if (actorUserId == null) {
+            throw AppException.forbidden("Authenticated user is required");
+        }
+        User actor = userRepo.findById(actorUserId)
+                .orElseThrow(() -> AppException.forbidden("Authenticated user is required"));
+        if (actor.getRole() == UserRole.SUPER_ADMIN || actor.getRole() == UserRole.GENERAL_MANAGER
+                || actor.getRole() == UserRole.ACCOUNTANT) {
+            return;
+        }
+        if (actor.getRole() != UserRole.OWNER) {
+            throw AppException.forbidden("Only the property owner, accountant, or admin can approve or reject this request");
+        }
+        ownerPropertyAccessService.assertOwnerCanAccessProperty(propertyId);
     }
 
     private void notifyLifecycle(MaintenanceContract contract, Long actorUserId, NotificationType type, String title, String message) {
@@ -508,6 +680,124 @@ public class MaintenanceContractService {
         return params;
     }
 
+    private void createIssuedApprovalInvoice(MaintenanceContract contract, Long actorUserId) {
+        if (contract.getContractValue() == null || contract.getContractValue().compareTo(BigDecimal.ZERO) <= 0) {
+            return;
+        }
+        LocalDate invoiceDate = contract.getStartDate() != null ? contract.getStartDate() : LocalDate.now();
+        int month = invoiceDate.getMonthValue();
+        int year = invoiceDate.getYear();
+        if (invoiceRepo.existsByContractIdAndInvoiceMonthAndInvoiceYear(contract.getId(), month, year)) {
+            return;
+        }
+        String invoiceNumber = generateApprovalInvoiceNumber(year, month);
+        MaintenanceContractInvoice invoice = invoiceRepo.save(MaintenanceContractInvoice.builder()
+                .invoiceNumber(invoiceNumber)
+                .contractId(contract.getId())
+                .contractorCompanyId(contract.getContractorCompanyId())
+                .propertyId(contract.getPropertyId())
+                .invoiceMonth(month)
+                .invoiceYear(year)
+                .amount(contract.getContractValue().setScale(3, RoundingMode.HALF_UP))
+                .dueDate(invoiceDate)
+                .status("ISSUED")
+                .notes("MAINTENANCE_INVOICES.AWAITING_ACCOUNTANT_PAYMENT_CONFIRMATION")
+                .descriptionAr(maintenanceInvoiceDescriptionAr(invoiceNumber))
+                .descriptionEn(maintenanceInvoiceDescriptionEn(invoiceNumber))
+                .build());
+        createPendingInvoiceExpense(invoice);
+        appendStaffLog(contract, actorUserId, "INVOICE_ISSUED",
+                "Invoice " + invoice.getInvoiceNumber() + " issued for accountant payment confirmation");
+        contractRepo.save(contract);
+        notifyInvoiceIssued(contract, invoice, actorUserId);
+    }
+
+    private void ensureApprovalInvoiceIssued(MaintenanceContract contract) {
+        if (!"ACTIVE".equals(contract.getStatus()) || !"APPROVED".equals(contract.getOwnerApprovalStatus())) {
+            return;
+        }
+        if (invoiceRepo.countByContractId(contract.getId()) > 0) {
+            return;
+        }
+        createIssuedApprovalInvoice(contract, currentActorUserId());
+    }
+
+    private String generateApprovalInvoiceNumber(int year, int month) {
+        long seq = invoiceRepo.count() + 1;
+        String candidate = String.format("MCI-%d-%02d-%05d", year, month, seq);
+        while (invoiceRepo.existsByInvoiceNumber(candidate)) {
+            seq++;
+            candidate = String.format("MCI-%d-%02d-%05d", year, month, seq);
+        }
+        return candidate;
+    }
+
+    private void createPendingInvoiceExpense(MaintenanceContractInvoice invoice) {
+        String expenseNumber = generateExpenseNumber(invoice);
+        Expense expense = expenseWriterRepository.findByExpenseNumber(expenseNumber)
+                .orElseGet(() -> Expense.builder()
+                        .expenseNumber(expenseNumber)
+                        .createdAt(LocalDateTime.now())
+                        .build());
+        expense.setPropertyId(invoice.getPropertyId());
+        expense.setCategoryId(maintenanceExpenseCategoryId());
+        expense.setDescription(maintenanceInvoiceDescriptionAr(invoice.getInvoiceNumber()));
+        expense.setDescriptionAr(maintenanceInvoiceDescriptionAr(invoice.getInvoiceNumber()));
+        expense.setDescriptionEn(maintenanceInvoiceDescriptionEn(invoice.getInvoiceNumber()));
+        expense.setAmount(invoice.getAmount().setScale(2, RoundingMode.HALF_UP));
+        expense.setCurrency("OMR");
+        expense.setExpenseDate(invoice.getDueDate() != null ? invoice.getDueDate() : LocalDate.now());
+        expense.setStatus("PENDING");
+        expenseWriterRepository.save(expense);
+    }
+
+    private String generateExpenseNumber(MaintenanceContractInvoice invoice) {
+        return "EXP-MC-" + invoice.getInvoiceNumber();
+    }
+
+    private Long maintenanceExpenseCategoryId() {
+        return expenseCategoryLookupRepository.findByCategoryCode(MAINTENANCE_EXPENSE_CODE)
+                .map(com.propertymanagement.modules.finance.expense.entity.ExpenseCategory::getId)
+                .orElse(null);
+    }
+
+    private String maintenanceInvoiceDescriptionAr(String invoiceNumber) {
+        return "فاتورة عقد صيانة" + (invoiceNumber == null || invoiceNumber.isBlank() ? "" : " " + invoiceNumber);
+    }
+
+    private String maintenanceInvoiceDescriptionEn(String invoiceNumber) {
+        return "Maintenance contract invoice" + (invoiceNumber == null || invoiceNumber.isBlank() ? "" : " " + invoiceNumber);
+    }
+
+    private void notifyInvoiceIssued(MaintenanceContract contract, MaintenanceContractInvoice invoice, Long actorUserId) {
+        LinkedHashSet<Long> recipients = new LinkedHashSet<>();
+        recipients.addAll(userRepo.findByRoleAndActiveTrue(UserRole.ACCOUNTANT).stream().map(User::getId).toList());
+        recipients.addAll(userRepo.findByPropertyIdAndRoleAndActiveTrue(contract.getPropertyId(), UserRole.ACCOUNTANT)
+                .stream().map(User::getId).toList());
+        recipients.addAll(userRepo.findByRoleAndActiveTrue(UserRole.SUPER_ADMIN).stream().map(User::getId).toList());
+        recipients.addAll(userRepo.findByRoleAndActiveTrue(UserRole.GENERAL_MANAGER).stream().map(User::getId).toList());
+        recipients.remove(null);
+        if (recipients.isEmpty()) return;
+
+        Map<String, Object> params = notificationParams(contract, NotificationType.MAINTENANCE_CONTRACT_INVOICE_ISSUED);
+        params.put("invoiceId", invoice.getId());
+        @SuppressWarnings("unchecked")
+        Map<String, Object> vars = (Map<String, Object>) params.get("vars");
+        vars.put("invoiceNumber", invoice.getInvoiceNumber());
+        vars.put("amount", invoice.getAmount());
+
+        notificationService.createForRecipients(
+                new ArrayList<>(recipients),
+                actorUserId,
+                contract.getPropertyId(),
+                null,
+                NotificationType.MAINTENANCE_CONTRACT_INVOICE_ISSUED,
+                "Maintenance contract invoice issued",
+                "Invoice " + invoice.getInvoiceNumber() + " for maintenance contract " + contract.getContractNumber()
+                        + " is awaiting payment confirmation.",
+                params);
+    }
+
     private String notificationTitleKey(NotificationType type) {
         return "NOTIFICATIONS.TYPES." + type.name() + ".TITLE";
     }
@@ -547,10 +837,26 @@ public class MaintenanceContractService {
     }
 
     private void appendStaffLog(MaintenanceContract contract, Long actorUserId, String action, String detail) {
-        String actor = actorUserId != null ? ("#" + actorUserId) : "system";
+        String actor = resolveUserName(actorUserId);
+        if (actor == null || actor.isBlank()) {
+            actor = actorUserId != null ? ("#" + actorUserId) : "system";
+        }
         String safeDetail = safeNotes(detail).replace('\n', ' ').replace('\r', ' ');
         String line = LocalDateTime.now().format(STAFF_LOG_TS) + " | " + actor + " | " + action + " | " + safeDetail + "\n";
         contract.setStaffChangeLog((contract.getStaffChangeLog() != null ? contract.getStaffChangeLog() : "") + line);
+    }
+
+    private void unlinkContractorPortalUser(MaintenanceContract contract) {
+        companyRepo.findById(contract.getContractorCompanyId()).ifPresent(company -> {
+            String email = company.getEmail();
+            if (email == null || email.isBlank()) return;
+            userRepo.findByEmailIgnoreCase(email.trim())
+                    .filter(u -> u.getRole() == UserRole.MAINTENANCE_COMPANY)
+                    .ifPresent(u -> {
+                        u.setPropertyId(null);
+                        userRepo.save(u);
+                    });
+        });
     }
 
     private void clearTerminationRequest(MaintenanceContract contract) {

@@ -17,6 +17,7 @@ $SecretsFile = Join-Path $ProjectRoot "run-backend.secrets.ps1"
 $WorkspaceRoot = Split-Path -Parent $ProjectRoot
 $RuntimeDir = Join-Path $WorkspaceRoot ".runtime"
 $RuntimeStateFile = Join-Path $RuntimeDir "launcher-state.json"
+$FrontendRuntimeConfigJs = Join-Path $WorkspaceRoot "property-frontend\src\assets\runtime-config.js"
 
 function Write-Step {
     param([string]$Message, [string]$Color = "Cyan")
@@ -205,6 +206,15 @@ $runtimeState = @{
 }
 $runtimeState | ConvertTo-Json | Set-Content -Path $RuntimeStateFile -Encoding UTF8
 Write-Info "  Runtime state file: $RuntimeStateFile"
+
+if (Test-Path (Split-Path -Parent $FrontendRuntimeConfigJs)) {
+    $runtimeJsContent = @"
+window.__PM_API_URL__ = '$BaseUrl';
+window.__PM_FILE_URL__ = '$BaseUrl/files';
+"@
+    $runtimeJsContent | Set-Content -Path $FrontendRuntimeConfigJs -Encoding UTF8
+    Write-Info "  Frontend runtime config: $FrontendRuntimeConfigJs"
+}
 
 $runArgs = @("spring-boot:run")
 if ($Profile) { $runArgs += "-Dspring-boot.run.profiles=$Profile" }

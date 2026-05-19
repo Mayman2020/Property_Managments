@@ -23,6 +23,49 @@ public interface RentPaymentScheduleRepository extends JpaRepository<RentPayment
 
     List<RentPaymentSchedule> findByStatusAndDueDateBefore(PaymentScheduleStatus status, LocalDate date);
 
+    @Query("""
+            SELECT s FROM RentPaymentSchedule s
+            WHERE s.status = :status
+              AND s.dueDate < :date
+              AND s.contractId IN (
+                SELECT lc.id FROM LeaseContract lc
+                WHERE lc.status = 'ACTIVE'
+              )
+            """)
+    List<RentPaymentSchedule> findActiveContractOverdue(
+            @Param("status") PaymentScheduleStatus status,
+            @Param("date") LocalDate date);
+
+    @Query("""
+            SELECT s FROM RentPaymentSchedule s
+            WHERE s.status = :status
+              AND s.dueDate < :date
+              AND s.contractId IN (
+                SELECT lc.id FROM LeaseContract lc
+                WHERE lc.status = 'ACTIVE'
+                  AND lc.propertyId = :propertyId
+              )
+            """)
+    List<RentPaymentSchedule> findActiveContractOverdueByProperty(
+            @Param("status") PaymentScheduleStatus status,
+            @Param("date") LocalDate date,
+            @Param("propertyId") Long propertyId);
+
+    @Query("""
+            SELECT s FROM RentPaymentSchedule s
+            WHERE s.status = :status
+              AND s.dueDate < :date
+              AND s.contractId IN (
+                SELECT lc.id FROM LeaseContract lc
+                WHERE lc.status = 'ACTIVE'
+                  AND lc.propertyId IN :propertyIds
+              )
+            """)
+    List<RentPaymentSchedule> findActiveContractOverdueInProperties(
+            @Param("status") PaymentScheduleStatus status,
+            @Param("date") LocalDate date,
+            @Param("propertyIds") java.util.Collection<Long> propertyIds);
+
     List<RentPaymentSchedule> findByStatusAndDueDate(PaymentScheduleStatus status, LocalDate dueDate);
 
     RentPaymentSchedule findFirstByContractIdAndStatusAndDueDateAfterOrderByDueDateAsc(
@@ -34,14 +77,21 @@ public interface RentPaymentScheduleRepository extends JpaRepository<RentPayment
     @Query("UPDATE RentPaymentSchedule s SET s.status = 'WAIVED' WHERE s.contractId = :contractId AND s.status = 'PENDING' AND s.dueDate > :afterDate")
     void waiveRemainingSchedule(@Param("contractId") Long contractId, @Param("afterDate") LocalDate afterDate);
 
-    @Query("SELECT COUNT(s) FROM RentPaymentSchedule s WHERE s.status = 'OVERDUE'")
+    @Query("""
+            SELECT COUNT(DISTINCT s.contractId) FROM RentPaymentSchedule s
+            WHERE s.status = 'OVERDUE'
+              AND s.contractId IN (
+                SELECT lc.id FROM LeaseContract lc WHERE lc.status = 'ACTIVE'
+              )
+            """)
     long countOverdue();
 
     @Query("""
-            SELECT COUNT(s) FROM RentPaymentSchedule s
+            SELECT COUNT(DISTINCT s.contractId) FROM RentPaymentSchedule s
             WHERE s.status = 'OVERDUE'
               AND s.contractId IN (
-                SELECT lc.id FROM LeaseContract lc WHERE lc.propertyId = :propertyId
+                SELECT lc.id FROM LeaseContract lc
+                WHERE lc.propertyId = :propertyId AND lc.status = 'ACTIVE'
               )
             """)
     long countOverdueByProperty(@Param("propertyId") Long propertyId);

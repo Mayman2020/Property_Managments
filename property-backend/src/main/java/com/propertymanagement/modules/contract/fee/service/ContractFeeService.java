@@ -44,4 +44,10 @@ public class ContractFeeService {
         fee.setReceiptUrl(receiptUrl);
         return feeRepository.save(fee);
     }
+
+    @Transactional
+    public void delete(Long id) {
+        if (!feeRepository.existsById(id)) throw AppException.notFound("Contract fee not found: " + id);
+        feeRepository.deleteById(id);
+    }
 }

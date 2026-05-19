@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import com.propertymanagement.modules.maintenance.rating.entity.VisitRating;
 import com.propertymanagement.modules.maintenance.rating.dto.RatingDashboardItemResponse;
 import com.propertymanagement.modules.maintenance.request.entity.MaintenanceRequest;
@@ -53,4 +54,31 @@ public interface VisitRatingRepository extends JpaRepository<VisitRating, Long> 
             ORDER BY r.createdAt DESC
             """)
     List<RatingDashboardItemResponse> findDashboardDetails();
+
+    @Query("""
+            SELECT new com.propertymanagement.modules.maintenance.rating.dto.RatingDashboardItemResponse(
+                r.id,
+                r.requestId,
+                r.rating,
+                r.comment,
+                r.createdAt,
+                mr.requestNumber,
+                mr.title,
+                mr.propertyId,
+                p.propertyName,
+                p.propertyNameAr,
+                p.propertyNameEn,
+                mr.unitId,
+                u.unitNumber,
+                t.fullName
+            )
+            FROM VisitRating r
+            JOIN MaintenanceRequest mr ON mr.id = r.requestId
+            LEFT JOIN Property p ON p.id = mr.propertyId
+            LEFT JOIN Unit u ON u.id = mr.unitId
+            LEFT JOIN Tenant t ON t.id = mr.tenantId
+            WHERE mr.propertyId IN :propertyIds
+            ORDER BY r.createdAt DESC
+            """)
+    List<RatingDashboardItemResponse> findDashboardDetailsByPropertyIds(@Param("propertyIds") Set<Long> propertyIds);
 }

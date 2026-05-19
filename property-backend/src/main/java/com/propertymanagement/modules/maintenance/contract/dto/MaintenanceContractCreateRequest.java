@@ -25,4 +25,6 @@ public class MaintenanceContractCreateRequest {
     private String currency;
 
     private String notes;
+
+    private String attachmentUrls;
 }

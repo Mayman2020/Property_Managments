@@ -139,6 +139,7 @@ public class UserService {
                 .fullNameEn(firstNonBlank(request.getFullNameEn(), request.getFullName()))
                 .phone(request.getPhone())
                 .profileImageUrl(request.getProfileImageUrl())
+                .civilIdImageUrl(request.getCivilIdImageUrl())
                 .bio(request.getBio())
                 .role(request.getRole())
                 .propertyId(request.getPropertyId())

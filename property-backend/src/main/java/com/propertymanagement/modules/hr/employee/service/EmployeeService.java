@@ -305,7 +305,17 @@ public class EmployeeService {
     }
 
     private EmployeeResponse toResponse(Employee employee) {
-        String title = LocalizedNameResolver.resolve(employee.getJobTitleAr(), employee.getJobTitleEn(), null);
+        String titleAr = employee.getJobTitleAr();
+        String titleEn = employee.getJobTitleEn();
+        if (employee.getLinkedUserId() != null) {
+            User linkedUser = userRepository.findById(employee.getLinkedUserId()).orElse(null);
+            if (linkedUser != null && linkedUser.getRole() == UserRole.MAINTENANCE_OFFICER_COMPANY) {
+                String companyName = resolveContractorName(linkedUser.getContractorCompanyId());
+                titleAr = contractorOfficerTitle(companyName, true);
+                titleEn = contractorOfficerTitle(companyName, false);
+            }
+        }
+        String title = LocalizedNameResolver.resolve(titleAr, titleEn, null);
         String resolvedName = resolvedDisplayName(employee);
         return EmployeeResponse.builder()
                 .id(employee.getId())
@@ -320,6 +330,8 @@ public class EmployeeService {
                 .profileImageUrl(employee.getProfileImageUrl())
                 .civilIdImageUrl(employee.getCivilIdImageUrl())
                 .jobTitle(title)
+                .jobTitleAr(titleAr)
+                .jobTitleEn(titleEn)
                 .basicSalary(employee.getBasicSalary())
                 .totalSalary(employee.getTotalSalary())
                 .status(employee.getStatus())
@@ -327,6 +339,11 @@ public class EmployeeService {
                 .createdAt(employee.getCreatedAt())
                 .updatedAt(employee.getUpdatedAt())
                 .build();
+    }
+
+    private String contractorOfficerTitle(String companyName, boolean arabic) {
+        String base = arabic ? "موظف تابع لشركة الصيانة" : "Maintenance company officer";
+        return companyName == null || companyName.isBlank() ? base : base + " - " + companyName.trim();
     }
 
     private String resolvedDisplayName(Employee employee) {

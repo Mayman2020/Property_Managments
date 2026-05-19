@@ -20,6 +20,11 @@ public enum NotificationType {
     MAINTENANCE_CONTRACT_RENEWAL_REQUESTED,
     MAINTENANCE_CONTRACT_RENEWAL_APPROVED,
     MAINTENANCE_CONTRACT_RENEWAL_REJECTED,
+    MAINTENANCE_CONTRACT_INVOICE_ISSUED,
+    MAINTENANCE_CONTRACT_PAYMENT_SCHEDULED,
+    MAINTENANCE_CONTRACT_PAYMENT_DUE_SOON,
+    MAINTENANCE_CONTRACT_PAYMENT_DUE_TODAY,
+    MAINTENANCE_CONTRACT_PAYMENT_RECEIVED,
     REQUEST_COMPLETED,
     REQUEST_RATED,
     REQUEST_CANCELLED,
@@ -63,13 +68,40 @@ public enum NotificationType {
     PAYROLL_GENERATED,
     PAYROLL_SUBMITTED,
     PAYROLL_APPROVED,
+    PAYROLL_REJECTED,
     PAYROLL_MARKED_PAID,
+    /** Sent to the linked employee user when their pay slip is ready to view. */
+    PAYSLIP_AVAILABLE,
+    /** Salary advance request submitted — notifies HR/accountant. */
+    SALARY_ADVANCE_REQUESTED,
+    /** Salary advance approved — notifies employee. */
+    SALARY_ADVANCE_APPROVED,
+    /** Salary advance rejected — notifies employee. */
+    SALARY_ADVANCE_REJECTED,
+    /** Advance amount deducted from payslip — notifies employee. */
+    SALARY_ADVANCE_DEDUCTED,
     LEAVE_REQUEST_SUBMITTED,
     LEAVE_REQUEST_APPROVED,
     LEAVE_REQUEST_REJECTED,
+    /** Employee's annual leave balance is running low (below threshold). */
+    LEAVE_BALANCE_LOW,
     FINANCE_ALERT,
     MAINTENANCE_UPDATE,
+    /** Maintenance request has exceeded its expected completion date. */
+    MAINTENANCE_REQUEST_OVERDUE,
+    /** Inventory item quantity fell at or below its minimum threshold. */
+    INVENTORY_LOW_STOCK,
+    /** Total expenses for a budget category exceeded the allocated budget. */
+    BUDGET_THRESHOLD_EXCEEDED,
     OWNER_STATEMENT,
+    /** New login detected from an unfamiliar IP or device. */
+    NEW_LOGIN_ALERT,
+    /** Account locked after too many failed login attempts. */
+    ACCOUNT_LOCKED,
+    /** A property document, license, or attachment is expiring soon. */
+    DOCUMENT_EXPIRY_WARNING,
+    /** Tenant rent is in grace period — final reminder before overdue. */
+    RENT_GRACE_PERIOD_ENDING,
     /** Owner portal user linked to a property via registration / property owners list. */
     PROPERTY_LINKED_TO_OWNER,
     /** A new unit was registered under a property linked to the owner portal account. */
@@ -80,5 +112,19 @@ public enum NotificationType {
     COMPLAINT_SUBMITTED,
     COMPLAINT_REPLY_RECEIVED,
     COMPLAINT_CLOSED,
-    COMPLAINT_RATED
+    COMPLAINT_RATED,
+    /** Contract expiring in 3 days — sent to tenant, owner, accountants before end date. */
+    CONTRACT_EXPIRING_SOON,
+    /** Tenant submitted no-renewal intent — notifies owner + accountants. */
+    NO_RENEWAL_INTENT_SUBMITTED,
+    /** Accountant returned the security deposit to the tenant. */
+    DEPOSIT_RETURNED,
+    /** Accountant reported unit damages after contract end — notifies tenant + owner. */
+    UNIT_DAMAGE_REPORTED,
+    /** Tenant submitted damage payment receipt — notifies accountant + owner. */
+    DAMAGE_RECEIPT_SUBMITTED,
+    /** Accountant confirmed damage payment — notifies owner. */
+    DAMAGE_PAYMENT_CONFIRMED,
+    /** Owner or accountant cleared the unit inspection — unit is now available. */
+    UNIT_CLEARED
 }

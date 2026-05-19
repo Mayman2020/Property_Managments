@@ -27,6 +27,7 @@ public class UnitResponse {
     private BigDecimal rentAmount;
     private String currency;
     private String notes;
+    private String floorPlanUrl;
     private boolean active;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

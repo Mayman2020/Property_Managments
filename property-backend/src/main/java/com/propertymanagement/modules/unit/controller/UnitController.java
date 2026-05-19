@@ -1,5 +1,6 @@
 package com.propertymanagement.modules.unit.controller;
 
+import com.propertymanagement.modules.permission.annotation.RequiresPermission;
 import com.propertymanagement.modules.unit.dto.UnitRequest;
 import com.propertymanagement.modules.unit.dto.UnitResponse;
 import com.propertymanagement.shared.response.ApiResponse;
@@ -10,10 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import com.propertymanagement.modules.property.entity.Property;
-import com.propertymanagement.modules.unit.entity.Unit;
 import com.propertymanagement.modules.unit.service.UnitService;
 
 @RestController
@@ -37,24 +35,21 @@ public class UnitController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
+    @RequiresPermission(module = "units", action = "create")
     public ResponseEntity<ApiResponse<UnitResponse>> create(@Valid @RequestBody UnitRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.ok(unitService.create(request)));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
+    @RequiresPermission(module = "units", action = "edit")
     public ResponseEntity<ApiResponse<UnitResponse>> update(
             @PathVariable Long id, @Valid @RequestBody UnitRequest request) {
         return ResponseEntity.ok(ApiResponse.ok(unitService.update(id, request)));
     }
 
-    /**
-     * Re-syncs unit {@code is_rented} / {@code is_reserved} from lease contracts. Query {@code rented} is ignored.
-     */
     @PatchMapping("/{id}/rental-status")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
+    @RequiresPermission(module = "units", action = "edit")
     public ResponseEntity<ApiResponse<UnitResponse>> setRentalStatus(
             @PathVariable Long id,
             @RequestParam boolean rented) {
@@ -62,13 +57,13 @@ public class UnitController {
     }
 
     @PatchMapping("/{id}/toggle-active")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
+    @RequiresPermission(module = "units", action = "toggle")
     public ResponseEntity<ApiResponse<UnitResponse>> toggleActive(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok(unitService.toggleActive(id)));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ACCOUNTANT')")
+    @RequiresPermission(module = "units", action = "delete")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         unitService.delete(id);
         return ResponseEntity.ok(ApiResponse.ok(null));

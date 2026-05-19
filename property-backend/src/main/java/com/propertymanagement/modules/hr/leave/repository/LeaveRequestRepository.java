@@ -5,7 +5,11 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import com.propertymanagement.modules.hr.leave.entity.LeaveRequestEntity;
 
+import java.util.List;
+
 public interface LeaveRequestRepository extends JpaRepository<LeaveRequestEntity, Long> {
+
+    List<LeaveRequestEntity> findByEmployeeIdOrderByCreatedAtDesc(Long employeeId);
 
     @Query(value = """
             SELECT COALESCE(SUM(days_count), 0)

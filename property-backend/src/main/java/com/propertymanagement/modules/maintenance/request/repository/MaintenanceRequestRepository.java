@@ -29,11 +29,20 @@ public interface MaintenanceRequestRepository extends JpaRepository<MaintenanceR
     Page<MaintenanceRequest> findByStatusAndPropertyIdIn(RequestStatus status, Collection<Long> propertyIds, Pageable pageable);
     Page<MaintenanceRequest> findByTenantId(Long tenantId, Pageable pageable);
     Page<MaintenanceRequest> findByAssignedTo(Long officerId, Pageable pageable);
+    Page<MaintenanceRequest> findByAssignedToAndPropertyId(Long officerId, Long propertyId, Pageable pageable);
+    long countByAssignedTo(Long officerId);
+    List<MaintenanceRequest> findByCreatedByOrderByCreatedAtDesc(Long createdBy);
 
     Page<MaintenanceRequest> findByContractorCompanyIdAndPropertyIdAndAssignedToIsNullAndStatusOrderByCreatedAtDesc(
             Long contractorCompanyId,
             Long propertyId,
             RequestStatus status,
+            Pageable pageable);
+
+    Page<MaintenanceRequest> findByContractorCompanyIdAndAssignedToIsNullAndStatusAndPropertyIdInOrderByCreatedAtDesc(
+            Long contractorCompanyId,
+            RequestStatus status,
+            Collection<Long> propertyIds,
             Pageable pageable);
     Page<MaintenanceRequest> findByStatus(RequestStatus status, Pageable pageable);
     Page<MaintenanceRequest> findByPropertyIdAndStatus(Long propertyId, RequestStatus status, Pageable pageable);
@@ -113,6 +122,12 @@ public interface MaintenanceRequestRepository extends JpaRepository<MaintenanceR
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE MaintenanceRequest r SET r.tenantId = null WHERE r.tenantId = :tenantId")
     void clearTenantIdForTenant(@Param("tenantId") Long tenantId);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE MaintenanceRequest r SET r.assignedTo = :replacementOfficerId WHERE r.assignedTo = :officerId")
+    int reassignOfficer(
+            @Param("officerId") Long officerId,
+            @Param("replacementOfficerId") Long replacementOfficerId);
 
     @Query("SELECT COUNT(r) FROM MaintenanceRequest r WHERE r.unitId = :unitId AND r.status IN :statuses")
     long countByUnitIdAndStatuses(@Param("unitId") Long unitId, @Param("statuses") Collection<RequestStatus> statuses);

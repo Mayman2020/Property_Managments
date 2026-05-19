@@ -90,6 +90,7 @@ public class UnitService {
                 .rentAmount(request.getRentAmount())
                 .currency(request.getCurrency() != null ? request.getCurrency() : "OMR")
                 .notes(request.getNotes())
+                .floorPlanUrl(request.getFloorPlanUrl())
                 .active(true)
                 .build();
         Unit saved = unitRepository.save(unit);
@@ -163,6 +164,7 @@ public class UnitService {
         unit.setRentAmount(request.getRentAmount());
         unit.setCurrency(request.getCurrency() != null ? request.getCurrency() : "OMR");
         unit.setNotes(request.getNotes());
+        unit.setFloorPlanUrl(request.getFloorPlanUrl());
         Unit saved = unitRepository.save(unit);
         return toResponse(saved, loadFloorNumbersForUnits(List.of(saved)));
     }
@@ -248,6 +250,7 @@ public class UnitService {
                 .rentAmount(u.getRentAmount())
                 .currency(u.getCurrency())
                 .notes(u.getNotes())
+                .floorPlanUrl(u.getFloorPlanUrl())
                 .active(u.isActive())
                 .createdAt(u.getCreatedAt())
                 .updatedAt(u.getUpdatedAt())

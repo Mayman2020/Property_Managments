@@ -55,6 +55,16 @@ import com.propertymanagement.modules.contract.payment.repository.RentPaymentRep
 import com.propertymanagement.modules.contract.renewal.repository.ContractRenewalRepository;
 import com.propertymanagement.modules.contract.fee.entity.ContractFee;
 import com.propertymanagement.modules.contract.fee.repository.ContractFeeRepository;
+import com.propertymanagement.modules.contract.lease.dto.NoRenewalIntentDto;
+import com.propertymanagement.modules.contract.lease.dto.ReportDamagesDto;
+import com.propertymanagement.modules.contract.lease.dto.ConfirmDamagePaymentDto;
+import com.propertymanagement.modules.finance.expense.entity.Expense;
+import com.propertymanagement.modules.finance.expense.repository.ExpenseCategoryLookupRepository;
+import com.propertymanagement.modules.finance.expense.repository.ExpenseWriterRepository;
+import com.propertymanagement.modules.finance.revenue.entity.OtherRevenue;
+import com.propertymanagement.modules.finance.revenue.entity.RevenueCategory;
+import com.propertymanagement.modules.finance.revenue.repository.OtherRevenueWriterRepository;
+import com.propertymanagement.modules.finance.revenue.repository.RevenueCategoryRepository;
 import com.propertymanagement.modules.owner.entity.Owner;
 
 @Service
@@ -88,6 +98,10 @@ public class LeaseContractService {
     private final NotificationService notificationService;
     private final PropertyOwnerPortalRecipientService propertyOwnerPortalRecipientService;
     private final ContractActionRequestRepository actionRequestRepository;
+    private final OtherRevenueWriterRepository revenueWriterRepository;
+    private final RevenueCategoryRepository revenueCategoryRepository;
+    private final ExpenseWriterRepository expenseWriterRepository;
+    private final ExpenseCategoryLookupRepository expenseCategoryLookupRepository;
 
     public Page<ContractResponse> getAll(Pageable pageable) {
         Set<Long> scope = propertyScopeService.propertyIdsOrNullIfUnrestricted();
@@ -144,8 +158,16 @@ public class LeaseContractService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Appends one staff-change line (timestamp | actor | action | detail). Exposed for owner-portal
+     * and approval flows that mutate the contract outside this service's main methods.
+     */
+    public void appendStaffChange(LeaseContract contract, Long actorUserId, String action, String detail) {
+        appendStaffLog(contract, actorUserId, action, detail);
+    }
+
     @Transactional
-    public ContractResponse create(CreateContractDto dto) {
+    public ContractResponse create(CreateContractDto dto, Long actingUserId) {
         ownerPropertyAccessService.denyOwnerMutation("Owners cannot create lease contracts from this screen");
         String contractNumber = codeGenerationService.generate("CNT");
 
@@ -175,6 +197,8 @@ public class LeaseContractService {
                 .currency(dto.getCurrency() != null ? dto.getCurrency() : "OMR")
                 .autoRenewable(Boolean.TRUE.equals(dto.getAutoRenewable()))
                 .renewalNoticeDays(dto.getRenewalNoticeDays() != null ? dto.getRenewalNoticeDays() : 30)
+                .escalationType(dto.getEscalationType() != null ? dto.getEscalationType() : "NONE")
+                .escalationRate(dto.getEscalationRate() != null ? dto.getEscalationRate() : BigDecimal.ZERO)
                 .notes(dto.getNotes())
                 .hasFreeMonth(Boolean.TRUE.equals(dto.getHasFreeMonth()))
                 .rentDiscountReason(dto.getRentDiscountReason())
@@ -182,6 +206,7 @@ public class LeaseContractService {
                 .status(ContractStatus.DRAFT)
                 .build();
 
+        appendStaffLog(contract, actingUserId, "DRAFT_CREATED", "draft " + contractNumber);
         LeaseContract saved = contractRepository.save(contract);
         syncUnitRentedFromContracts(dto.getUnitId());
         notifyOwnersOfDraftContract(saved);
@@ -320,7 +345,41 @@ public class LeaseContractService {
         }
         contractRenewalService.ifAvailable(s -> s.finalizeRenewal(contractId));
         syncUnitRentedFromContracts(contract.getUnitId());
+        recordDepositAsIncome(contract);
         tenantPortalWelcomeService.notifyLeaseActivated(findById(contractId));
+    }
+
+    /** Creates an OtherRevenue entry for the security deposit when a contract is activated. */
+    private void recordDepositAsIncome(LeaseContract contract) {
+        if (contract == null) return;
+        if (Boolean.TRUE.equals(contract.getDepositIncomeRecorded())) return;
+        BigDecimal deposit = contract.getSecurityDeposit();
+        if (deposit == null || deposit.compareTo(BigDecimal.ZERO) <= 0) return;
+        try {
+            Long categoryId = revenueCategoryRepository.findByCategoryCode("REV-DEPOSIT")
+                    .map(RevenueCategory::getId).orElse(null);
+            String unitNum = contract.getUnitId() != null
+                    ? unitRepository.findById(contract.getUnitId()).map(Unit::getUnitNumber).orElse("") : "";
+            String revNum = "REV-DEP-" + contract.getId();
+            OtherRevenue revenue = OtherRevenue.builder()
+                    .revenueNumber(revNum)
+                    .propertyId(contract.getPropertyId())
+                    .categoryId(categoryId)
+                    .tenantId(contract.getTenantId())
+                    .contractId(contract.getId())
+                    .description("تأمين عقد " + contract.getContractNumber() + " وحدة " + unitNum)
+                    .amount(deposit)
+                    .currency(contract.getCurrency() != null ? contract.getCurrency() : "OMR")
+                    .revenueDate(contract.getStartDate() != null ? contract.getStartDate() : LocalDate.now())
+                    .notes("Security deposit — contract " + contract.getContractNumber())
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            revenueWriterRepository.save(revenue);
+            contract.setDepositIncomeRecorded(true);
+            contractRepository.save(contract);
+        } catch (Exception e) {
+            // Never block activation for a finance side-effect failure.
+        }
     }
 
     /** Staff/owner activation audit line on {@code contract} (not saved here). */
@@ -425,12 +484,26 @@ public class LeaseContractService {
             throw AppException.badRequest("error.contract.renewal.request.invalid_date_range");
         }
 
+        // Auto-compute escalated rent if not explicitly provided and escalation is configured
+        BigDecimal proposedRent = dto.getProposedRentAmount();
+        if (proposedRent == null && contract.getEscalationRate() != null
+                && contract.getEscalationRate().compareTo(BigDecimal.ZERO) > 0) {
+            String escalationType = contract.getEscalationType();
+            if ("PERCENTAGE".equalsIgnoreCase(escalationType)) {
+                proposedRent = contract.getMonthlyRent()
+                        .multiply(BigDecimal.ONE.add(contract.getEscalationRate().divide(new BigDecimal("100"))))
+                        .setScale(2, java.math.RoundingMode.HALF_UP);
+            } else if ("FIXED_AMOUNT".equalsIgnoreCase(escalationType)) {
+                proposedRent = contract.getMonthlyRent().add(contract.getEscalationRate()).setScale(2, java.math.RoundingMode.HALF_UP);
+            }
+        }
+
         contract.setRenewalRequestedBy(requesterUserId);
         contract.setRenewalRequestedAt(LocalDateTime.now());
         contract.setRenewalRequestedNote(dto.getNote());
         contract.setRenewalProposedStartDate(dto.getProposedStartDate());
         contract.setRenewalProposedEndDate(dto.getProposedEndDate());
-        contract.setRenewalProposedRentAmount(dto.getProposedRentAmount());
+        contract.setRenewalProposedRentAmount(proposedRent);
         contract.setRenewalDecisionBy(null);
         contract.setRenewalDecisionAt(null);
         contract.setRenewalDecisionNote(null);
@@ -966,6 +1039,264 @@ public class LeaseContractService {
         };
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // Expiry lifecycle: no-renewal intent, deposit return, damage, clearance
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /** Tenant or staff records that the tenant does not wish to renew. */
+    @Transactional
+    public ContractResponse recordNoRenewalIntent(Long contractId, Long actorUserId, NoRenewalIntentDto dto) {
+        LeaseContract contract = findById(contractId);
+        contract.setNoRenewalIntentAt(LocalDateTime.now());
+        contract.setNoRenewalIntentBy(actorUserId);
+        String notes = dto != null && dto.getNotes() != null ? dto.getNotes() : "";
+        appendStaffLog(contract, actorUserId, "NO_RENEWAL_INTENT", notes.isBlank() ? "عدم الرغبة في التجديد" : notes);
+        LeaseContract saved = contractRepository.save(contract);
+        notifyNoRenewalIntent(saved, actorUserId, notes);
+        return toResponse(saved);
+    }
+
+    private void notifyNoRenewalIntent(LeaseContract contract, Long actorUserId, String notes) {
+        try {
+            Set<Long> recipients = new LinkedHashSet<>();
+            recipients.addAll(tenantPortalWelcomeService.collectAccountantUserIds(contract.getPropertyId()));
+            recipients.addAll(propertyOwnerPortalRecipientService.portalRecipientUserIds(contract.getPropertyId()));
+            recipients.remove(null);
+            if (recipients.isEmpty()) return;
+            Map<String, Object> vars = buildLifecycleVars(contract, notes);
+            notificationService.createLocalized(recipients.stream().toList(), actorUserId,
+                    contract.getPropertyId(), null,
+                    NotificationType.NO_RENEWAL_INTENT_SUBMITTED,
+                    "NOTIFICATIONS.NO_RENEWAL_INTENT_TITLE",
+                    "NOTIFICATIONS.NO_RENEWAL_INTENT_BODY",
+                    vars,
+                    Map.of("contractId", contract.getId()));
+        } catch (Exception ignored) {}
+    }
+
+    /** Accountant returns the security deposit to the tenant — creates an Expense entry. */
+    @Transactional
+    public ContractResponse returnDeposit(Long contractId, Long actorUserId) {
+        LeaseContract contract = findById(contractId);
+        if (Boolean.TRUE.equals(contract.getDepositExpenseRecorded())) {
+            throw AppException.badRequest("Deposit return already recorded for this contract");
+        }
+        BigDecimal deposit = contract.getSecurityDeposit();
+        if (deposit == null || deposit.compareTo(BigDecimal.ZERO) <= 0) {
+            throw AppException.badRequest("No security deposit amount on this contract");
+        }
+        Long categoryId = expenseCategoryLookupRepository.findByCategoryCode("EXP-DEPOSIT-RETURN")
+                .map(c -> c.getId()).orElse(null);
+        String unitNum = contract.getUnitId() != null
+                ? unitRepository.findById(contract.getUnitId()).map(Unit::getUnitNumber).orElse("") : "";
+        Expense expense = Expense.builder()
+                .expenseNumber("EXP-DEP-" + contractId)
+                .propertyId(contract.getPropertyId())
+                .categoryId(categoryId)
+                .description("إعادة تأمين عقد " + contract.getContractNumber() + " وحدة " + unitNum)
+                .amount(deposit)
+                .currency(contract.getCurrency() != null ? contract.getCurrency() : "OMR")
+                .expenseDate(LocalDate.now())
+                .status("PAID")
+                .createdAt(LocalDateTime.now())
+                .build();
+        expenseWriterRepository.save(expense);
+        contract.setTerminationDepositReturn(true);
+        contract.setDepositExpenseRecorded(true);
+        appendStaffLog(contract, actorUserId, "DEPOSIT_RETURNED", "deposit " + deposit + " " + contract.getCurrency());
+        LeaseContract saved = contractRepository.save(contract);
+        notifyDepositReturned(saved, actorUserId, deposit);
+        return toResponse(saved);
+    }
+
+    private void notifyDepositReturned(LeaseContract contract, Long actorUserId, BigDecimal amount) {
+        try {
+            Long tenantUserId = resolveTenantUserId(contract);
+            if (tenantUserId == null) return;
+            Map<String, Object> vars = buildLifecycleVars(contract, null);
+            vars.put("amount", amount.toPlainString());
+            notificationService.createLocalized(List.of(tenantUserId), actorUserId,
+                    contract.getPropertyId(), null,
+                    NotificationType.DEPOSIT_RETURNED,
+                    "NOTIFICATIONS.DEPOSIT_RETURNED_TITLE",
+                    "NOTIFICATIONS.DEPOSIT_RETURNED_BODY",
+                    vars,
+                    Map.of("contractId", contract.getId()));
+        } catch (Exception ignored) {}
+    }
+
+    /** Accountant records unit damages — tenant will be notified to pay or contest. */
+    @Transactional
+    public ContractResponse reportDamages(Long contractId, Long actorUserId, ReportDamagesDto dto) {
+        LeaseContract contract = findById(contractId);
+        contract.setTerminationHasDamages(true);
+        contract.setTerminationDamagesAmount(dto.getAmount());
+        contract.setTerminationDamageNotes(dto.getNotes());
+        contract.setTerminationDamagesTenantPaid(false);
+        appendStaffLog(contract, actorUserId, "DAMAGES_REPORTED",
+                dto.getAmount() + " " + contract.getCurrency() + " — " + (dto.getNotes() != null ? dto.getNotes() : ""));
+        LeaseContract saved = contractRepository.save(contract);
+        notifyDamagesReported(saved, actorUserId, dto);
+        return toResponse(saved);
+    }
+
+    private void notifyDamagesReported(LeaseContract contract, Long actorUserId, ReportDamagesDto dto) {
+        try {
+            Set<Long> recipients = new LinkedHashSet<>();
+            Long tenantUserId = resolveTenantUserId(contract);
+            if (tenantUserId != null) recipients.add(tenantUserId);
+            recipients.addAll(propertyOwnerPortalRecipientService.portalRecipientUserIds(contract.getPropertyId()));
+            recipients.remove(null);
+            if (recipients.isEmpty()) return;
+            Map<String, Object> vars = buildLifecycleVars(contract, dto.getNotes());
+            vars.put("amount", dto.getAmount().toPlainString());
+            notificationService.createLocalized(recipients.stream().toList(), actorUserId,
+                    contract.getPropertyId(), null,
+                    NotificationType.UNIT_DAMAGE_REPORTED,
+                    "NOTIFICATIONS.DAMAGE_REPORTED_TITLE",
+                    "NOTIFICATIONS.DAMAGE_REPORTED_BODY",
+                    vars,
+                    Map.of("contractId", contract.getId()));
+        } catch (Exception ignored) {}
+    }
+
+    /** Tenant submits payment receipt for the damage amount. */
+    @Transactional
+    public ContractResponse submitDamagePaymentReceipt(Long contractId, Long actorUserId, String receiptUrl) {
+        LeaseContract contract = findById(contractId);
+        if (!Boolean.TRUE.equals(contract.getTerminationHasDamages())) {
+            throw AppException.badRequest("No damages recorded on this contract");
+        }
+        contract.setTerminationDamagesReceiptUrl(receiptUrl);
+        appendStaffLog(contract, actorUserId, "DAMAGE_RECEIPT_SUBMITTED", receiptUrl);
+        LeaseContract saved = contractRepository.save(contract);
+        notifyDamageReceiptSubmitted(saved, actorUserId);
+        return toResponse(saved);
+    }
+
+    private void notifyDamageReceiptSubmitted(LeaseContract contract, Long actorUserId) {
+        try {
+            Set<Long> recipients = new LinkedHashSet<>();
+            recipients.addAll(tenantPortalWelcomeService.collectAccountantUserIds(contract.getPropertyId()));
+            recipients.addAll(propertyOwnerPortalRecipientService.portalRecipientUserIds(contract.getPropertyId()));
+            recipients.remove(null);
+            if (recipients.isEmpty()) return;
+            Map<String, Object> vars = buildLifecycleVars(contract, null);
+            notificationService.createLocalized(recipients.stream().toList(), actorUserId,
+                    contract.getPropertyId(), null,
+                    NotificationType.DAMAGE_RECEIPT_SUBMITTED,
+                    "NOTIFICATIONS.DAMAGE_RECEIPT_TITLE",
+                    "NOTIFICATIONS.DAMAGE_RECEIPT_BODY",
+                    vars,
+                    Map.of("contractId", contract.getId()));
+        } catch (Exception ignored) {}
+    }
+
+    /** Accountant confirms tenant paid the damage amount — creates OtherRevenue entry. */
+    @Transactional
+    public ContractResponse confirmDamagePayment(Long contractId, Long actorUserId, ConfirmDamagePaymentDto dto) {
+        LeaseContract contract = findById(contractId);
+        if (!Boolean.TRUE.equals(contract.getTerminationHasDamages())) {
+            throw AppException.badRequest("No damages recorded on this contract");
+        }
+        BigDecimal amount = contract.getTerminationDamagesAmount();
+        Long categoryId = revenueCategoryRepository.findByCategoryCode("REV-FINE")
+                .map(RevenueCategory::getId).orElse(null);
+        String unitNum = contract.getUnitId() != null
+                ? unitRepository.findById(contract.getUnitId()).map(Unit::getUnitNumber).orElse("") : "";
+        OtherRevenue revenue = OtherRevenue.builder()
+                .revenueNumber("REV-DMG-" + contractId)
+                .propertyId(contract.getPropertyId())
+                .categoryId(categoryId)
+                .tenantId(contract.getTenantId())
+                .contractId(contractId)
+                .description("تلفيات وحدة " + unitNum + " عقد " + contract.getContractNumber())
+                .amount(amount)
+                .currency(contract.getCurrency() != null ? contract.getCurrency() : "OMR")
+                .revenueDate(LocalDate.now())
+                .receiptUrl(dto.getReceiptUrl())
+                .recordedBy(actorUserId)
+                .notes("Damage payment — contract " + contract.getContractNumber())
+                .createdAt(LocalDateTime.now())
+                .build();
+        revenueWriterRepository.save(revenue);
+        contract.setTerminationDamagesTenantPaid(true);
+        if (dto.getReceiptUrl() != null) contract.setTerminationDamagesReceiptUrl(dto.getReceiptUrl());
+        appendStaffLog(contract, actorUserId, "DAMAGE_PAYMENT_CONFIRMED",
+                amount + " " + contract.getCurrency());
+        LeaseContract saved = contractRepository.save(contract);
+        notifyDamagePaymentConfirmed(saved, actorUserId);
+        return toResponse(saved);
+    }
+
+    private void notifyDamagePaymentConfirmed(LeaseContract contract, Long actorUserId) {
+        try {
+            Set<Long> recipients = new LinkedHashSet<>();
+            recipients.addAll(propertyOwnerPortalRecipientService.portalRecipientUserIds(contract.getPropertyId()));
+            recipients.addAll(tenantPortalWelcomeService.collectAccountantUserIds(contract.getPropertyId()));
+            recipients.remove(null);
+            if (recipients.isEmpty()) return;
+            Map<String, Object> vars = buildLifecycleVars(contract, null);
+            notificationService.createLocalized(recipients.stream().toList(), actorUserId,
+                    contract.getPropertyId(), null,
+                    NotificationType.DAMAGE_PAYMENT_CONFIRMED,
+                    "NOTIFICATIONS.DAMAGE_PAYMENT_CONFIRMED_TITLE",
+                    "NOTIFICATIONS.DAMAGE_PAYMENT_CONFIRMED_BODY",
+                    vars,
+                    Map.of("contractId", contract.getId()));
+        } catch (Exception ignored) {}
+    }
+
+    /** Owner or accountant marks the unit as inspected and cleared — makes it available for new leases. */
+    @Transactional
+    public ContractResponse clearUnit(Long contractId, Long actorUserId) {
+        LeaseContract contract = findById(contractId);
+        if (contract.getUnitId() == null) throw AppException.badRequest("Contract has no unit");
+        unitRepository.findById(contract.getUnitId()).ifPresent(unit -> {
+            unit.setRented(false);
+            unit.setReserved(false);
+            unit.setClearedAt(LocalDateTime.now());
+            unit.setClearedBy(actorUserId);
+            unit.setHasDamage(Boolean.TRUE.equals(contract.getTerminationHasDamages())
+                    && !Boolean.TRUE.equals(contract.getTerminationDamagesTenantPaid()));
+            if (contract.getTerminationDamageNotes() != null) {
+                unit.setDamageNotes(contract.getTerminationDamageNotes());
+            }
+            unitRepository.save(unit);
+        });
+        appendStaffLog(contract, actorUserId, "UNIT_CLEARED", "unit cleared for re-listing");
+        LeaseContract saved = contractRepository.save(contract);
+        notifyUnitCleared(saved, actorUserId);
+        return toResponse(saved);
+    }
+
+    private void notifyUnitCleared(LeaseContract contract, Long actorUserId) {
+        try {
+            Set<Long> recipients = new LinkedHashSet<>();
+            recipients.addAll(collectAdminApprovalUserIds());
+            recipients.addAll(tenantPortalWelcomeService.collectAccountantUserIds(contract.getPropertyId()));
+            recipients.remove(null);
+            if (recipients.isEmpty()) return;
+            Map<String, Object> vars = buildLifecycleVars(contract, null);
+            notificationService.createLocalized(recipients.stream().toList(), actorUserId,
+                    contract.getPropertyId(), null,
+                    NotificationType.UNIT_CLEARED,
+                    "NOTIFICATIONS.UNIT_CLEARED_TITLE",
+                    "NOTIFICATIONS.UNIT_CLEARED_BODY",
+                    vars,
+                    Map.of("contractId", contract.getId()));
+        } catch (Exception ignored) {}
+    }
+
+    /** Called from ContractScheduler: notify tenant + owner + accountants 3 days before expiry. */
+    public void notifyContractExpiringSoon(LeaseContract contract) {
+        notifyLifecycleEvent(contract, null,
+                "NOTIFICATIONS.CONTRACT_EXPIRING_SOON_TITLE",
+                "NOTIFICATIONS.CONTRACT_EXPIRING_SOON_BODY",
+                null,
+                NotificationType.CONTRACT_EXPIRING_SOON);
+    }
+
     public LeaseContract findById(Long id) {
         return contractRepository.findById(id)
                 .orElseThrow(() -> AppException.notFound("Lease contract not found: " + id));
@@ -1016,6 +1347,8 @@ public class LeaseContractService {
                 .status(c.getStatus() != null ? c.getStatus().name() : null)
                 .autoRenewable(c.isAutoRenewable())
                 .renewalNoticeDays(c.getRenewalNoticeDays())
+                .escalationType(c.getEscalationType())
+                .escalationRate(c.getEscalationRate())
                 .contractPdfUrl(c.getContractPdfUrl())
                 .signedPdfUrl(c.getSignedPdfUrl())
                 .terminationDate(c.getTerminationDate())
@@ -1064,6 +1397,13 @@ public class LeaseContractService {
                 .approvedByName(resolveUserName(c.getApprovedBy()))
                 .modifiedBy(c.getModifiedBy())
                 .modifiedByName(resolveUserName(c.getModifiedBy()))
+                .noRenewalIntentAt(c.getNoRenewalIntentAt())
+                .noRenewalIntentBy(c.getNoRenewalIntentBy())
+                .noRenewalIntentByName(resolveUserName(c.getNoRenewalIntentBy()))
+                .depositIncomeRecorded(c.getDepositIncomeRecorded())
+                .depositExpenseRecorded(c.getDepositExpenseRecorded())
+                .terminationDamagesReceiptUrl(c.getTerminationDamagesReceiptUrl())
+                .terminationDamageNotes(c.getTerminationDamageNotes())
                 .build();
     }
 
@@ -1101,6 +1441,7 @@ public class LeaseContractService {
                 .monthlyRent(c.getMonthlyRent())
                 .currency(c.getCurrency())
                 .status(c.getStatus() != null ? c.getStatus().name() : null)
+                .ownerApprovalStatus(c.getOwnerApprovalStatus())
                 .daysUntilExpiry(daysUntilExpiry)
                 .build();
     }

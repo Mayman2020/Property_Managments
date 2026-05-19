@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/audit-logs")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT','PROCEDURES_CLERK')")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER')")
 public class AuditLogController {
 
     private final AuditLogService service;

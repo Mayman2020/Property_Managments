@@ -11,11 +11,20 @@ public interface MaintenanceInvoiceRepository extends JpaRepository<MaintenanceI
 
     List<MaintenanceInvoice> findByContractorCompanyIdOrderByPeriodYearDescPeriodMonthDesc(Long companyId);
 
+    List<MaintenanceInvoice> findByContractorCompanyIdAndPropertyIdOrderByPeriodYearDescPeriodMonthDesc(Long companyId, Long propertyId);
+
     @Query("SELECT i FROM MaintenanceInvoice i WHERE i.contractorCompanyId = :companyId " +
            "AND i.periodYear = :year AND i.periodMonth = :month ORDER BY i.createdAt DESC")
     List<MaintenanceInvoice> findByCompanyAndPeriod(@Param("companyId") Long companyId,
                                                     @Param("year") Integer year,
                                                     @Param("month") Integer month);
+
+    @Query("SELECT i FROM MaintenanceInvoice i WHERE i.contractorCompanyId = :companyId " +
+           "AND i.propertyId = :propertyId AND i.periodYear = :year AND i.periodMonth = :month ORDER BY i.createdAt DESC")
+    List<MaintenanceInvoice> findByCompanyAndPropertyAndPeriod(@Param("companyId") Long companyId,
+                                                               @Param("propertyId") Long propertyId,
+                                                               @Param("year") Integer year,
+                                                               @Param("month") Integer month);
 
     @Query("SELECT i FROM MaintenanceInvoice i WHERE i.periodYear = :year AND i.periodMonth = :month ORDER BY i.createdAt DESC")
     List<MaintenanceInvoice> findByPeriod(@Param("year") Integer year, @Param("month") Integer month);

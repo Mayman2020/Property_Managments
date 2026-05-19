@@ -42,13 +42,14 @@ public class MaintenanceInvoiceController {
     @GetMapping("/my")
     public ResponseEntity<ApiResponse<List<MaintenanceInvoiceResponse>>> getMyInvoices(
             @RequestParam(required = false) Integer year,
-            @RequestParam(required = false) Integer month) {
+            @RequestParam(required = false) Integer month,
+            @RequestParam(required = false) Long propertyId) {
         User user = currentUser();
         if (user.getContractorCompanyId() == null) {
             throw AppException.forbidden("Only contractor company officers can view invoices");
         }
         return ResponseEntity.ok(ApiResponse.ok(
-                invoiceService.getMyInvoices(user.getContractorCompanyId(), year, month)));
+                invoiceService.getMyInvoices(user.getContractorCompanyId(), year, month, propertyId)));
     }
 
     /** Properties this contractor company serves */

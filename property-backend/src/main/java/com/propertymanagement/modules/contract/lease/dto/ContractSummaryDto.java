@@ -23,5 +23,7 @@ public class ContractSummaryDto {
     private BigDecimal monthlyRent;
     private String currency;
     private String status;
+    /** When {@code REJECTED}, the owner declined a draft or a pending-approval request (see lease workflows). */
+    private String ownerApprovalStatus;
     private long daysUntilExpiry;
 }

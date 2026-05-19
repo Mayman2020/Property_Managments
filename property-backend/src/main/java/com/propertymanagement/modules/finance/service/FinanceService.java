@@ -70,9 +70,9 @@ public class FinanceService {
         Object[] row;
         if (ownerScope != null && propertyId == null) {
             row = (Object[]) entityManager.createNativeQuery("""
-                    SELECT COALESCE(SUM(this_month_collected), 0),
+                    SELECT COALESCE(SUM(this_month_collected + this_month_other_revenue), 0),
                            COALESCE(SUM(this_month_expenses), 0),
-                           COALESCE(SUM(this_month_collected - this_month_expenses), 0),
+                           COALESCE(SUM(this_month_collected + this_month_other_revenue - this_month_expenses), 0),
                            COALESCE(SUM(overdue_amount), 0)
                     FROM dashboard_financial
                     WHERE property_id IN (:propertyIds)
@@ -81,9 +81,9 @@ public class FinanceService {
                     .getSingleResult();
         } else if (propertyId != null) {
             row = (Object[]) entityManager.createNativeQuery("""
-                    SELECT COALESCE(SUM(this_month_collected), 0),
+                    SELECT COALESCE(SUM(this_month_collected + this_month_other_revenue), 0),
                            COALESCE(SUM(this_month_expenses), 0),
-                           COALESCE(SUM(this_month_collected - this_month_expenses), 0),
+                           COALESCE(SUM(this_month_collected + this_month_other_revenue - this_month_expenses), 0),
                            COALESCE(SUM(overdue_amount), 0)
                     FROM dashboard_financial
                     WHERE property_id = :propertyId
@@ -92,9 +92,9 @@ public class FinanceService {
                     .getSingleResult();
         } else {
             row = (Object[]) entityManager.createNativeQuery("""
-                    SELECT COALESCE(SUM(this_month_collected), 0),
+                    SELECT COALESCE(SUM(this_month_collected + this_month_other_revenue), 0),
                            COALESCE(SUM(this_month_expenses), 0),
-                           COALESCE(SUM(this_month_collected - this_month_expenses), 0),
+                           COALESCE(SUM(this_month_collected + this_month_other_revenue - this_month_expenses), 0),
                            COALESCE(SUM(overdue_amount), 0)
                     FROM dashboard_financial
                     """)

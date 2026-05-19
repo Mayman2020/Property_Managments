@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import com.propertymanagement.modules.maintenance.rating.entity.VisitRating;
 import com.propertymanagement.modules.maintenance.rating.repository.VisitRatingRepository;
@@ -91,8 +92,16 @@ public class VisitRatingService {
                 .build();
     }
 
-    public List<RatingDashboardItemResponse> getDashboardDetails() {
-        return ratingRepository.findDashboardDetails().stream()
+    public List<RatingDashboardItemResponse> getDashboardDetails(Set<Long> allowedPropertyIds) {
+        List<RatingDashboardItemResponse> items;
+        if (allowedPropertyIds == null) {
+            items = ratingRepository.findDashboardDetails();
+        } else if (allowedPropertyIds.isEmpty()) {
+            return List.of();
+        } else {
+            items = ratingRepository.findDashboardDetailsByPropertyIds(allowedPropertyIds);
+        }
+        return items.stream()
                 .peek(item -> item.setPropertyName(
                         LocalizedNameResolver.resolve(item.getPropertyNameAr(), item.getPropertyNameEn(), item.getPropertyName())
                 ))

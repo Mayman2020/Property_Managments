@@ -15,6 +15,7 @@ import com.propertymanagement.modules.property.repository.PropertyRepository;
 import com.propertymanagement.modules.tenant.entity.Tenant;
 import com.propertymanagement.modules.tenant.repository.TenantRepository;
 import com.propertymanagement.modules.unit.repository.UnitRepository;
+import com.propertymanagement.shared.security.PropertyScopeService;
 import com.propertymanagement.modules.finance.revenue.entity.OtherRevenue;
 import com.propertymanagement.modules.finance.revenue.repository.OtherRevenueWriterRepository;
 import com.propertymanagement.modules.user.entity.User;
@@ -63,6 +64,7 @@ public class RentPaymentService {
     private final PropertyOwnerPortalRecipientService propertyOwnerPortalRecipientService;
     private final CodeGenerationService codeGenerationService;
     private final NotificationService notificationService;
+    private final PropertyScopeService propertyScopeService;
 
     public Page<PaymentResponse> getAll(Pageable pageable) {
         return paymentRepository.findAll(pageable).map(this::toResponse);
@@ -87,9 +89,27 @@ public class RentPaymentService {
                 .toList();
     }
 
-    public List<ScheduleItemResponse> getOverdueSchedule() {
-        return scheduleRepository.findByStatusAndDueDateBefore(PaymentScheduleStatus.OVERDUE, LocalDate.now().plusDays(1))
-                .stream().map(this::toScheduleResponse).toList();
+    public List<ScheduleItemResponse> getOverdueSchedule(Long propertyId) {
+        Set<Long> scope = propertyScopeService.propertyIdsOrNullIfUnrestricted();
+        LocalDate cutoff = LocalDate.now().plusDays(1);
+        List<RentPaymentSchedule> rows;
+        if (scope != null) {
+            if (scope.isEmpty()) {
+                return List.of();
+            }
+            if (propertyId != null) {
+                rows = scope.contains(propertyId)
+                        ? scheduleRepository.findActiveContractOverdueByProperty(PaymentScheduleStatus.OVERDUE, cutoff, propertyId)
+                        : List.of();
+            } else {
+                rows = scheduleRepository.findActiveContractOverdueInProperties(PaymentScheduleStatus.OVERDUE, cutoff, scope);
+            }
+        } else if (propertyId != null) {
+            rows = scheduleRepository.findActiveContractOverdueByProperty(PaymentScheduleStatus.OVERDUE, cutoff, propertyId);
+        } else {
+            rows = scheduleRepository.findActiveContractOverdue(PaymentScheduleStatus.OVERDUE, cutoff);
+        }
+        return rows.stream().map(this::toScheduleResponse).toList();
     }
 
     @Transactional
@@ -332,6 +352,9 @@ public class RentPaymentService {
         Tenant tenant = contract != null && contract.getTenantId() != null
                 ? tenantRepository.findById(contract.getTenantId()).orElse(null)
                 : null;
+        com.propertymanagement.modules.property.entity.Property property = contract != null && contract.getPropertyId() != null
+                ? propertyRepository.findById(contract.getPropertyId()).orElse(null)
+                : null;
 
         return ScheduleItemResponse.builder()
                 .id(s.getId())
@@ -339,6 +362,9 @@ public class RentPaymentService {
                 .contractNumber(contract != null ? contract.getContractNumber() : null)
                 .tenantId(contract != null ? contract.getTenantId() : null)
                 .tenantName(tenant != null ? tenant.getFullName() : null)
+                .propertyId(property != null ? property.getId() : null)
+                .propertyNameAr(property != null ? (property.getPropertyNameAr() != null ? property.getPropertyNameAr() : property.getPropertyName()) : null)
+                .propertyNameEn(property != null ? (property.getPropertyNameEn() != null ? property.getPropertyNameEn() : property.getPropertyName()) : null)
                 .dueDate(s.getDueDate())
                 .amount(s.getAmount())
                 .periodFrom(s.getPeriodFrom())

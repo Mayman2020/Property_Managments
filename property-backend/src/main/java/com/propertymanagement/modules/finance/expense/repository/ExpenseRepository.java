@@ -16,7 +16,10 @@ public interface ExpenseRepository extends Repository<Expense, Long> {
     @Query(value = """
             SELECT e.id AS id,
                    e.expense_number AS expenseNumber,
-                   e.description AS description,
+                   CASE WHEN :lang = 'ar'
+                        THEN COALESCE(e.description_ar, e.description, e.description_en)
+                        ELSE COALESCE(e.description_en, e.description, e.description_ar)
+                   END AS description,
                    e.amount AS amount,
                    e.currency AS currency,
                    e.expense_date AS expenseDate,
@@ -30,6 +33,8 @@ public interface ExpenseRepository extends Repository<Expense, Long> {
             WHERE (:propertyId IS NULL OR e.property_id = :propertyId)
               AND (:q IS NULL OR
                    LOWER(COALESCE(e.description, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
+                   LOWER(COALESCE(e.description_ar, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
+                   LOWER(COALESCE(e.description_en, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
                    LOWER(COALESCE(e.expense_number, '')) LIKE LOWER(CONCAT('%', :q, '%')))
             ORDER BY e.expense_date DESC, e.id DESC
             """,
@@ -39,6 +44,8 @@ public interface ExpenseRepository extends Repository<Expense, Long> {
             WHERE (:propertyId IS NULL OR e.property_id = :propertyId)
               AND (:q IS NULL OR
                    LOWER(COALESCE(e.description, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
+                   LOWER(COALESCE(e.description_ar, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
+                   LOWER(COALESCE(e.description_en, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
                    LOWER(COALESCE(e.expense_number, '')) LIKE LOWER(CONCAT('%', :q, '%')))
             """,
             nativeQuery = true)
@@ -47,7 +54,10 @@ public interface ExpenseRepository extends Repository<Expense, Long> {
     @Query(value = """
             SELECT e.id AS id,
                    e.expense_number AS expenseNumber,
-                   e.description AS description,
+                   CASE WHEN :lang = 'ar'
+                        THEN COALESCE(e.description_ar, e.description, e.description_en)
+                        ELSE COALESCE(e.description_en, e.description, e.description_ar)
+                   END AS description,
                    e.amount AS amount,
                    e.currency AS currency,
                    e.expense_date AS expenseDate,
@@ -61,6 +71,8 @@ public interface ExpenseRepository extends Repository<Expense, Long> {
             WHERE e.property_id IN (:propertyIds)
               AND (:q IS NULL OR
                    LOWER(COALESCE(e.description, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
+                   LOWER(COALESCE(e.description_ar, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
+                   LOWER(COALESCE(e.description_en, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
                    LOWER(COALESCE(e.expense_number, '')) LIKE LOWER(CONCAT('%', :q, '%')))
             ORDER BY e.expense_date DESC, e.id DESC
             """,
@@ -70,6 +82,8 @@ public interface ExpenseRepository extends Repository<Expense, Long> {
             WHERE e.property_id IN (:propertyIds)
               AND (:q IS NULL OR
                    LOWER(COALESCE(e.description, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
+                   LOWER(COALESCE(e.description_ar, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
+                   LOWER(COALESCE(e.description_en, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
                    LOWER(COALESCE(e.expense_number, '')) LIKE LOWER(CONCAT('%', :q, '%')))
             """,
             nativeQuery = true)

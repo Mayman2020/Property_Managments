@@ -4,7 +4,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
-import com.propertymanagement.modules.user.entity.User;
+import java.util.List;
 
 @Data
 @Builder
@@ -26,10 +26,20 @@ public class OwnerResponse {
     /** True when a linked system user exists and that user account is active (can sign in). */
     private boolean linkedUserActive;
     private boolean portalAccess;
+    /** Properties owned (primary or co-owner). */
+    private List<PropertySummary> properties;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Long createdBy;
     private String createdByName;
     private Long modifiedBy;
     private String modifiedByName;
+
+    @Data
+    @Builder
+    public static class PropertySummary {
+        private Long propertyId;
+        private String propertyNameAr;
+        private String propertyNameEn;
+    }
 }

@@ -307,8 +307,10 @@ public class DashboardService {
         Set<Long> scope = propertyScopeService.propertyIdsOrNullIfUnrestricted();
         return scheduleRepository.findByStatusAndDueDateBefore(PaymentScheduleStatus.OVERDUE, LocalDate.now().plusDays(1))
                 .stream()
-                .filter(s -> scope == null || contractRepository.findById(s.getContractId())
-                        .map(c -> c.getPropertyId() != null && scope.contains(c.getPropertyId()))
+                .filter(s -> contractRepository.findById(s.getContractId())
+                        .map(c -> c.getStatus() == ContractStatus.ACTIVE
+                                && (scope == null
+                                || (c.getPropertyId() != null && scope.contains(c.getPropertyId()))))
                         .orElse(false))
                 .map(s -> ScheduleItemResponse.builder()
                         .id(s.getId())

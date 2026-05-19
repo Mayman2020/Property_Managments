@@ -14,6 +14,8 @@ public class MaintenanceInvoiceResponse {
     private String companyName;
     private Long propertyId;
     private String propertyName;
+    private String propertyNameAr;
+    private String propertyNameEn;
     private Long unitId;
     private String unitNumber;
     private Integer periodMonth;

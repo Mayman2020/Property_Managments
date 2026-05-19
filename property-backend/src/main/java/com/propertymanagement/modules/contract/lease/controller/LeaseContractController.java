@@ -1,9 +1,13 @@
 package com.propertymanagement.modules.contract.lease.controller;
 
 import com.propertymanagement.modules.contract.lease.dto.*;
+import com.propertymanagement.modules.contract.lease.dto.NoRenewalIntentDto;
+import com.propertymanagement.modules.contract.lease.dto.ReportDamagesDto;
+import com.propertymanagement.modules.contract.lease.dto.ConfirmDamagePaymentDto;
 import com.propertymanagement.modules.contract.renewal.service.ContractRenewalService;
 import com.propertymanagement.modules.contract.renewal.dto.ContractRenewalContextResponse;
 import com.propertymanagement.modules.contract.renewal.dto.RenewContractDto;
+import com.propertymanagement.modules.permission.annotation.RequiresPermission;
 import com.propertymanagement.modules.user.entity.User;
 import com.propertymanagement.shared.exception.AppException;
 import com.propertymanagement.shared.response.ApiResponse;
@@ -22,19 +26,17 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import com.propertymanagement.modules.contract.lease.entity.ContractStatus;
 import com.propertymanagement.modules.contract.lease.service.LeaseContractService;
-import com.propertymanagement.modules.owner.entity.Owner;
-import com.propertymanagement.modules.tenant.entity.Tenant;
 
 @RestController
 @RequestMapping("/contracts")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT','OWNER')")
 public class LeaseContractController {
 
     private final LeaseContractService contractService;
     private final ContractRenewalService renewalService;
 
     @GetMapping
+    @RequiresPermission(module = "contracts", action = "view")
     public ResponseEntity<ApiResponse<Page<ContractResponse>>> getAll(
             @RequestParam(required = false) ContractStatus status,
             @PageableDefault(size = 20) Pageable pageable) {
@@ -45,47 +47,53 @@ public class LeaseContractController {
     }
 
     @GetMapping("/{id}")
+    @RequiresPermission(module = "contracts", action = "view")
     public ResponseEntity<ApiResponse<ContractResponse>> getById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok(contractService.getById(id)));
     }
 
     @GetMapping("/{id}/renewal-context")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
+    @RequiresPermission(module = "contracts", action = "view")
     public ResponseEntity<ApiResponse<ContractRenewalContextResponse>> getRenewalContext(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok(renewalService.getRenewalContext(id)));
     }
 
     @GetMapping("/tenant/{tenantId}")
+    @RequiresPermission(module = "contracts", action = "view")
     public ResponseEntity<ApiResponse<List<ContractSummaryDto>>> getByTenant(@PathVariable Long tenantId) {
         return ResponseEntity.ok(ApiResponse.ok(contractService.getByTenant(tenantId)));
     }
 
     @GetMapping("/expiring")
+    @RequiresPermission(module = "contracts", action = "view")
     public ResponseEntity<ApiResponse<List<ContractSummaryDto>>> getExpiring(
             @RequestParam(defaultValue = "30") int days) {
         return ResponseEntity.ok(ApiResponse.ok(contractService.getExpiring(days)));
     }
 
     @PostMapping
+    @RequiresPermission(module = "contracts", action = "create")
     public ResponseEntity<ApiResponse<ContractResponse>> create(
             @Valid @RequestBody CreateContractDto dto) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.ok(contractService.create(dto)));
+                .body(ApiResponse.ok(contractService.create(dto, currentUserId())));
     }
 
     @PutMapping("/{id}")
+    @RequiresPermission(module = "contracts", action = "edit")
     public ResponseEntity<ApiResponse<ContractResponse>> update(
             @PathVariable Long id, @Valid @RequestBody CreateContractDto dto) {
         return ResponseEntity.ok(ApiResponse.ok(contractService.update(id, dto, currentUserId())));
     }
 
     @PatchMapping("/{id}/activate")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT','OWNER')")
+    @RequiresPermission(module = "contracts", action = "approve")
     public ResponseEntity<ApiResponse<ContractResponse>> activate(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok(contractService.activate(id, currentUserId())));
     }
 
     @PatchMapping("/{id}/cancel")
+    @RequiresPermission(module = "contracts", action = "edit")
     public ResponseEntity<ApiResponse<ContractResponse>> cancelDraft(
             @PathVariable Long id, @Valid @RequestBody(required = false) CancelContractDto dto) {
         String reason = dto != null ? dto.getReason() : null;
@@ -93,25 +101,21 @@ public class LeaseContractController {
     }
 
     @PatchMapping("/{id}/terminate")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
+    @RequiresPermission(module = "contracts", action = "delete")
     public ResponseEntity<ApiResponse<ContractResponse>> terminate(
             @PathVariable Long id, @Valid @RequestBody TerminateContractDto dto) {
         return ResponseEntity.ok(ApiResponse.ok(contractService.terminate(id, dto, currentUserId())));
     }
 
-    /**
-     * Staff withdraw a pending termination request before the owner decides.
-     * Reverts the contract to {@link ContractStatus#ACTIVE}.
-     */
     @PatchMapping("/{id}/cancel-termination-request")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
+    @RequiresPermission(module = "contracts", action = "edit")
     public ResponseEntity<ApiResponse<ContractResponse>> cancelTerminationRequest(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok(
                 contractService.cancelTerminationRequest(id, currentUserId())));
     }
 
     @PostMapping("/{id}/renew")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
+    @RequiresPermission(module = "contracts", action = "create")
     public ResponseEntity<ApiResponse<ContractResponse>> renew(
             @PathVariable Long id, @Valid @RequestBody RenewContractDto dto) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -119,16 +123,59 @@ public class LeaseContractController {
     }
 
     @PostMapping("/{id}/request-renewal")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
+    @RequiresPermission(module = "contracts", action = "edit")
     public ResponseEntity<ApiResponse<ContractResponse>> requestRenewal(
             @PathVariable Long id, @Valid @RequestBody ContractRenewalRequestDto dto) {
         return ResponseEntity.ok(ApiResponse.ok(contractService.requestRenewal(id, dto, currentUserId())));
     }
 
     @PatchMapping("/{id}/cancel-renewal-request")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
+    @RequiresPermission(module = "contracts", action = "edit")
     public ResponseEntity<ApiResponse<ContractResponse>> cancelRenewalRequest(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok(contractService.cancelRenewalRequest(id, currentUserId())));
+    }
+
+    @PostMapping("/{id}/no-renewal-intent")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<ContractResponse>> noRenewalIntent(
+            @PathVariable Long id,
+            @RequestBody(required = false) NoRenewalIntentDto dto) {
+        return ResponseEntity.ok(ApiResponse.ok(contractService.recordNoRenewalIntent(id, currentUserId(), dto)));
+    }
+
+    @PostMapping("/{id}/return-deposit")
+    @RequiresPermission(module = "contracts", action = "approve")
+    public ResponseEntity<ApiResponse<ContractResponse>> returnDeposit(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.ok(contractService.returnDeposit(id, currentUserId())));
+    }
+
+    @PostMapping("/{id}/report-damages")
+    @RequiresPermission(module = "contracts", action = "approve")
+    public ResponseEntity<ApiResponse<ContractResponse>> reportDamages(
+            @PathVariable Long id, @Valid @RequestBody ReportDamagesDto dto) {
+        return ResponseEntity.ok(ApiResponse.ok(contractService.reportDamages(id, currentUserId(), dto)));
+    }
+
+    @PostMapping("/{id}/submit-damage-receipt")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<ContractResponse>> submitDamageReceipt(
+            @PathVariable Long id, @RequestBody ConfirmDamagePaymentDto dto) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                contractService.submitDamagePaymentReceipt(id, currentUserId(), dto.getReceiptUrl())));
+    }
+
+    @PostMapping("/{id}/confirm-damage-payment")
+    @RequiresPermission(module = "contracts", action = "approve")
+    public ResponseEntity<ApiResponse<ContractResponse>> confirmDamagePayment(
+            @PathVariable Long id, @RequestBody(required = false) ConfirmDamagePaymentDto dto) {
+        return ResponseEntity.ok(ApiResponse.ok(contractService.confirmDamagePayment(id, currentUserId(),
+                dto != null ? dto : new ConfirmDamagePaymentDto())));
+    }
+
+    @PostMapping("/{id}/clear-unit")
+    @RequiresPermission(module = "contracts", action = "approve")
+    public ResponseEntity<ApiResponse<ContractResponse>> clearUnit(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.ok(contractService.clearUnit(id, currentUserId())));
     }
 
     private Long currentUserId() {

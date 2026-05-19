@@ -35,8 +35,9 @@ public class RentPaymentController {
     }
 
     @GetMapping("/payments/overdue")
-    public ResponseEntity<ApiResponse<List<ScheduleItemResponse>>> getOverdue() {
-        return ResponseEntity.ok(ApiResponse.ok(paymentService.getOverdueSchedule()));
+    public ResponseEntity<ApiResponse<List<ScheduleItemResponse>>> getOverdue(
+            @RequestParam(required = false) Long propertyId) {
+        return ResponseEntity.ok(ApiResponse.ok(paymentService.getOverdueSchedule(propertyId)));
     }
 
     @GetMapping("/payments/contract/{contractId}")

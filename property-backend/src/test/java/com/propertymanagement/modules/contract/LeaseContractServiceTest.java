@@ -99,7 +99,7 @@ class LeaseContractServiceTest {
         when(unitRepository.findById(5L)).thenReturn(Optional.of(unit));
 
         CreateContractDto dto = buildCreateContractDto(3L, 5L, 10L);
-        ContractResponse result = service.create(dto);
+        ContractResponse result = service.create(dto, 1L);
 
         assertThat(result).isNotNull();
         verify(contractRepository).save(any(LeaseContract.class));
@@ -119,7 +119,7 @@ class LeaseContractServiceTest {
         when(contractRepository.countByUnitIdAndStatusIn(eq(5L), anyList())).thenReturn(0L);
 
         CreateContractDto dto = buildCreateContractDto(3L, 5L, 10L);
-        service.create(dto);
+        service.create(dto, 1L);
 
         verify(contractRepository).save(argThat(c -> c.getStatus() == ContractStatus.DRAFT));
     }
@@ -136,7 +136,7 @@ class LeaseContractServiceTest {
         when(contractRepository.save(any())).thenReturn(savedContract);
         when(contractRepository.countByUnitIdAndStatusIn(eq(5L), anyList())).thenReturn(0L);
 
-        service.create(buildCreateContractDto(3L, 5L, 10L));
+        service.create(buildCreateContractDto(3L, 5L, 10L), 1L);
 
         verify(notificationService).createLocalized(
                 eq(List.of(99L)), any(), any(), any(), any(), anyString(), anyString(), any(), any());

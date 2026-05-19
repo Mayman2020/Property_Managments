@@ -23,19 +23,22 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
     private final UserDetailsService userDetailsService;
+    private final TokenBlacklistService tokenBlacklist;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        String token = resolveToken(request);
+        if (token == null) {
             filterChain.doFilter(request, response);
             return;
         }
-
-        String token = authHeader.substring(7);
+        if (tokenBlacklist.isRevoked(token)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
         if (!jwtUtil.isValid(token)) {
             filterChain.doFilter(request, response);
             return;
@@ -58,5 +61,18 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             }
         }
         filterChain.doFilter(request, response);
+    }
+
+    /** Extract JWT from Authorization header first, then fall back to ?tk= query param (for file img src). */
+    private String resolveToken(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7);
+        }
+        String tk = request.getParameter("tk");
+        if (tk != null && !tk.isBlank()) {
+            return tk;
+        }
+        return null;
     }
 }

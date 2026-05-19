@@ -2,6 +2,9 @@ package com.propertymanagement.modules.maintenance.assignment.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -9,6 +12,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "maintenance_contracts")
+@EntityListeners(AuditingEntityListener.class)
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class MaintenanceContract {
 
@@ -80,6 +84,9 @@ public class MaintenanceContract {
     @Column(name = "termination_decision_notes", columnDefinition = "TEXT")
     private String terminationDecisionNotes;
 
+    @Column(name = "settlement_amount", precision = 15, scale = 3)
+    private BigDecimal settlementAmount;
+
     @Column(name = "renewal_requested_by")
     private Long renewalRequestedBy;
 
@@ -115,6 +122,17 @@ public class MaintenanceContract {
 
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
+
+    @Column(name = "attachment_urls", columnDefinition = "TEXT")
+    private String attachmentUrls;
+
+    @CreatedBy
+    @Column(name = "created_by", updatable = false)
+    private Long createdByUserId;
+
+    @LastModifiedBy
+    @Column(name = "modified_by")
+    private Long modifiedBy;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

@@ -4,8 +4,13 @@ import com.propertymanagement.modules.contractor.entity.ContractorCompanyEntity;
 import com.propertymanagement.modules.contractor.repository.ContractorCompanyRepository;
 import com.propertymanagement.modules.contractor.dto.ContractorCompanyRequestDTO;
 import com.propertymanagement.modules.contractor.dto.ContractorCompanyResponseDTO;
+import com.propertymanagement.modules.contractor.dto.ContractorPropertyContractDto;
 import com.propertymanagement.modules.maintenance.assignment.repository.MaintenanceContractRepository;
+import com.propertymanagement.modules.property.repository.PropertyRepository;
+import com.propertymanagement.modules.user.dto.UserRequest;
+import com.propertymanagement.modules.user.entity.UserRole;
 import com.propertymanagement.modules.user.repository.UserRepository;
+import com.propertymanagement.modules.user.service.UserService;
 import com.propertymanagement.shared.exception.AppException;
 import com.propertymanagement.shared.i18n.LocalizedNameResolver;
 import com.propertymanagement.shared.security.PropertyScopeService;
@@ -16,7 +21,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import com.propertymanagement.modules.maintenance.assignment.entity.MaintenanceContract;
 import com.propertymanagement.modules.property.entity.Property;
 
@@ -26,7 +33,9 @@ public class ContractorCompanyService {
 
     private final ContractorCompanyRepository repository;
     private final MaintenanceContractRepository maintenanceContractRepository;
+    private final PropertyRepository propertyRepository;
     private final UserRepository userRepository;
+    private final UserService userService;
     private final PropertyScopeService propertyScopeService;
 
     public List<ContractorCompanyResponseDTO> listActive(String q) {
@@ -81,6 +90,13 @@ public class ContractorCompanyService {
 
     @Transactional
     public ContractorCompanyResponseDTO create(ContractorCompanyRequestDTO dto) {
+        String email = blankToNull(dto.getEmail());
+        if (email == null) {
+            throw AppException.badRequest("Email is required to create a maintenance company portal user");
+        }
+        if (dto.getPortalPropertyId() == null) {
+            throw AppException.badRequest("Property is required to create a maintenance company portal user");
+        }
         String nameAr = firstNonBlank(dto.getNameAr(), dto.getName(), dto.getNameEn());
         String nameEn = firstNonBlank(dto.getNameEn(), dto.getName(), dto.getNameAr());
         String legacyName = firstNonBlank(dto.getName(), nameAr, nameEn);
@@ -93,7 +109,7 @@ public class ContractorCompanyService {
                 .nameAr(nameAr)
                 .nameEn(nameEn)
                 .phone(blankToNull(dto.getPhone()))
-                .email(blankToNull(dto.getEmail()))
+                .email(email)
                 .profileImageUrl(blankToNull(dto.getProfileImageUrl()))
                 .civilIdImageUrl(blankToNull(dto.getCivilIdImageUrl()))
                 .notes(blankToNull(dto.getNotes()))
@@ -102,7 +118,9 @@ public class ContractorCompanyService {
                 .attachmentFiles(new ArrayList<>(normalizeFiles(dto.getAttachmentFiles())))
                 .active(dto.getActive() == null || dto.getActive())
                 .build();
-        return toResponse(repository.save(e));
+        ContractorCompanyEntity saved = repository.save(e);
+        createMaintenanceCompanyUser(saved, dto, email);
+        return toResponse(saved);
     }
 
     @Transactional
@@ -146,7 +164,13 @@ public class ContractorCompanyService {
         LocalDate today = LocalDate.now();
         if (maintenanceContractRepository.existsActiveOngoingForContractor(id, today)) {
             throw AppException.badRequest(
-                    "Cannot delete this maintenance contractor company: it has an active maintenance contract with a property that is still in effect.");
+                    "Cannot delete this maintenance company: it has an active maintenance contract. Please close or cancel it first.");
+        }
+        // Delete the portal user account linked by email + MAINTENANCE_COMPANY role.
+        if (company.getEmail() != null && !company.getEmail().isBlank()) {
+            userRepository.findByEmailIgnoreCase(company.getEmail().trim())
+                    .filter(u -> u.getRole() == UserRole.MAINTENANCE_COMPANY)
+                    .ifPresent(u -> userService.delete(u.getId()));
         }
         repository.delete(company);
     }
@@ -172,12 +196,42 @@ public class ContractorCompanyService {
         return t.isEmpty() ? null : t;
     }
 
+    public List<ContractorPropertyContractDto> getMaintenanceContracts(Long id) {
+        find(id);
+        assertCanAccessCompany(id);
+        List<MaintenanceContract> contracts = maintenanceContractRepository
+                .findByContractorCompanyIdOrderByCreatedAtDesc(id);
+        Set<Long> propertyIds = contracts.stream()
+                .map(MaintenanceContract::getPropertyId)
+                .collect(Collectors.toSet());
+        Map<Long, Property> propMap = propertyRepository.findAllById(propertyIds).stream()
+                .collect(Collectors.toMap(Property::getId, p -> p));
+        return contracts.stream().map(mc -> {
+            Property p = propMap.get(mc.getPropertyId());
+            return ContractorPropertyContractDto.builder()
+                    .contractId(mc.getId())
+                    .contractNumber(mc.getContractNumber())
+                    .propertyId(mc.getPropertyId())
+                    .propertyNameAr(p != null ? firstNonBlank(p.getPropertyNameAr(), p.getPropertyName()) : null)
+                    .propertyNameEn(p != null ? firstNonBlank(p.getPropertyNameEn(), p.getPropertyName()) : null)
+                    .startDate(mc.getStartDate())
+                    .endDate(mc.getEndDate())
+                    .status(mc.getStatus())
+                    .slaHours(mc.getSlaHours())
+                    .contractValue(mc.getContractValue())
+                    .createdAt(mc.getCreatedAt())
+                    .build();
+        }).toList();
+    }
+
     private ContractorCompanyResponseDTO toResponse(ContractorCompanyEntity e) {
         String nameAr = firstNonBlank(e.getNameAr(), e.getName(), e.getNameEn());
         String nameEn = firstNonBlank(e.getNameEn(), e.getName(), e.getNameAr());
-        MaintenanceContract latestContract = maintenanceContractRepository
-                .findFirstByContractorCompanyIdOrderByCreatedAtDesc(e.getId())
-                .orElse(null);
+        List<MaintenanceContract> allContracts = maintenanceContractRepository
+                .findByContractorCompanyIdOrderByCreatedAtDesc(e.getId());
+        MaintenanceContract latestContract = allContracts.isEmpty() ? null : allContracts.get(0);
+        long distinctProperties = allContracts.stream()
+                .map(MaintenanceContract::getPropertyId).distinct().count();
         return ContractorCompanyResponseDTO.builder()
                 .id(e.getId())
                 .name(LocalizedNameResolver.resolve(nameAr, nameEn, e.getName()))
@@ -194,6 +248,10 @@ public class ContractorCompanyService {
                 .latestMaintenanceContractNumber(latestContract != null ? latestContract.getContractNumber() : null)
                 .contractStart(e.getContractStart())
                 .contractEnd(e.getContractEnd())
+                .latestContractStart(latestContract != null ? latestContract.getStartDate() : null)
+                .latestContractEnd(latestContract != null ? latestContract.getEndDate() : null)
+                .latestContractValue(latestContract != null ? latestContract.getContractValue() : null)
+                .propertiesCount((int) distinctProperties)
                 .attachmentFiles(e.getAttachmentFiles() == null ? List.of() : List.copyOf(e.getAttachmentFiles()))
                 .createdAt(e.getCreatedAt())
                 .updatedAt(e.getUpdatedAt())
@@ -209,6 +267,32 @@ public class ContractorCompanyService {
             return null;
         }
         return userRepository.findById(userId).map(u -> u.getFullName()).orElse(null);
+    }
+
+    private Set<Long> maintenanceCompanyPortalIds(Long propertyId) {
+        Set<Long> scope = propertyScopeService.propertyIdsOrNullIfUnrestricted();
+        return userRepository.findByRoleAndActiveTrue(UserRole.MAINTENANCE_COMPANY).stream()
+                .filter(u -> u.getContractorCompanyId() != null)
+                .filter(u -> propertyId == null || propertyId.equals(u.getPropertyId()))
+                .filter(u -> scope == null || (u.getPropertyId() != null && scope.contains(u.getPropertyId())))
+                .map(u -> u.getContractorCompanyId())
+                .collect(Collectors.toSet());
+    }
+
+    private void createMaintenanceCompanyUser(ContractorCompanyEntity company, ContractorCompanyRequestDTO dto, String email) {
+        UserRequest userRequest = new UserRequest();
+        userRequest.setEmail(email);
+        userRequest.setUsername(email);
+        userRequest.setFullName(firstNonBlank(company.getNameAr(), company.getNameEn(), company.getName()));
+        userRequest.setFullNameAr(firstNonBlank(company.getNameAr(), company.getName()));
+        userRequest.setFullNameEn(firstNonBlank(company.getNameEn(), company.getName()));
+        userRequest.setPhone(company.getPhone());
+        userRequest.setProfileImageUrl(company.getProfileImageUrl());
+        userRequest.setCivilIdImageUrl(company.getCivilIdImageUrl());
+        userRequest.setRole(UserRole.MAINTENANCE_COMPANY);
+        userRequest.setPropertyId(dto.getPortalPropertyId());
+        userRequest.setContractorCompanyId(company.getId());
+        userService.create(userRequest);
     }
 
     private void validateContractFields(LocalDate start, LocalDate end, List<String> files) {

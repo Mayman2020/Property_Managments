@@ -8,6 +8,7 @@ import com.propertymanagement.modules.contract.payment.entity.PaymentScheduleSta
 import com.propertymanagement.modules.contract.payment.entity.RentPaymentSchedule;
 import com.propertymanagement.modules.contract.payment.repository.RentPaymentScheduleRepository;
 import com.propertymanagement.modules.contract.payment.service.RentPaymentService;
+import com.propertymanagement.modules.maintenance.contractinvoice.service.MaintenanceContractInvoiceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -28,6 +29,7 @@ public class ContractScheduler {
     private final RentPaymentService rentPaymentService;
     private final LeaseContractRepository contractRepository;
     private final LeaseContractService leaseContractService;
+    private final MaintenanceContractInvoiceService maintenanceContractInvoiceService;
 
     @Scheduled(cron = "0 0 9 * * *")
     @Transactional
@@ -35,11 +37,16 @@ public class ContractScheduler {
         log.info("Running overdue payment check...");
         List<RentPaymentSchedule> pending = scheduleRepository
                 .findByStatusAndDueDateBefore(PaymentScheduleStatus.PENDING, LocalDate.now());
-        pending.forEach(s -> {
-            s.setStatus(PaymentScheduleStatus.OVERDUE);
-            scheduleRepository.save(s);
-        });
-        log.info("Marked {} payments as OVERDUE", pending.size());
+        long marked = pending.stream()
+                .filter(s -> contractRepository.findById(s.getContractId())
+                        .map(c -> c.getStatus() == ContractStatus.ACTIVE)
+                        .orElse(false))
+                .peek(s -> {
+                    s.setStatus(PaymentScheduleStatus.OVERDUE);
+                    scheduleRepository.save(s);
+                })
+                .count();
+        log.info("Marked {} payments as OVERDUE (ACTIVE contracts only)", marked);
     }
 
     @Scheduled(cron = "0 0 9 * * *")
@@ -75,5 +82,31 @@ public class ContractScheduler {
         List<RentPaymentSchedule> dueSoon = scheduleRepository.findByStatusAndDueDate(PaymentScheduleStatus.PENDING, reminderDate);
         dueSoon.forEach(rentPaymentService::notifyUpcomingRentDue);
         log.info("Sent {} rent due reminders for payments due on {}", dueSoon.size(), reminderDate);
+    }
+
+    @Scheduled(cron = "0 0 9 * * *")
+    @Transactional
+    public void checkContractsExpiringIn3Days() {
+        log.info("Running 3-day contract expiry reminder check...");
+        LocalDate target = LocalDate.now().plusDays(3);
+        List<LeaseContract> expiring = contractRepository.findByStatusAndEndDate(ContractStatus.ACTIVE, target);
+        expiring.forEach(leaseContractService::notifyContractExpiringSoon);
+        log.info("Sent {} contract-expiring-soon notifications for contracts ending on {}", expiring.size(), target);
+    }
+
+    @Scheduled(cron = "0 0 9 * * *")
+    @Transactional
+    public void checkUpcomingMaintenanceInvoiceInstallments() {
+        LocalDate target = LocalDate.now().plusDays(3);
+        int count = maintenanceContractInvoiceService.notifyInstallmentsDueSoon(target);
+        log.info("Sent {} maintenance invoice installment reminders for {}", count, target);
+    }
+
+    @Scheduled(cron = "0 0 9 * * *")
+    @Transactional
+    public void checkMaintenanceInvoiceInstallmentsDueToday() {
+        LocalDate today = LocalDate.now();
+        int count = maintenanceContractInvoiceService.notifyInstallmentsDueToday(today);
+        log.info("Sent {} maintenance invoice installment due-today reminders", count);
     }
 }

@@ -34,6 +34,9 @@ public class PropertyResponse {
 
     private Long id;
     private Long ownerId;
+    private Long legalEntityId;
+    private String legalEntityNameAr;
+    private String legalEntityNameEn;
     /** Populated only on getById / create / update — null in list responses. */
     private List<OwnerSummary> owners;
     /** Populated only on getById / create / update — null in list responses. */

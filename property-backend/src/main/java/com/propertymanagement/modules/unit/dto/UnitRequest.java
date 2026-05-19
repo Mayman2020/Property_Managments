@@ -22,4 +22,5 @@ public class UnitRequest {
     private BigDecimal rentAmount;
     private String currency = "OMR";
     private String notes;
+    private String floorPlanUrl;
 }

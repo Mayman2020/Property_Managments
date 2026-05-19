@@ -45,6 +45,8 @@ public class CreateContractDto {
     private String currency;
     private Boolean autoRenewable;
     private Integer renewalNoticeDays;
+    private String escalationType;
+    private BigDecimal escalationRate;
     private String notes;
     private Boolean hasFreeMonth;
     private String rentDiscountReason;

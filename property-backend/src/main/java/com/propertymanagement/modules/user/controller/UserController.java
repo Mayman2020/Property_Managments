@@ -1,5 +1,6 @@
 package com.propertymanagement.modules.user.controller;
 
+import com.propertymanagement.modules.permission.annotation.RequiresPermission;
 import com.propertymanagement.modules.user.dto.UserRequest;
 import com.propertymanagement.modules.user.dto.UserProfileUpdateRequest;
 import com.propertymanagement.modules.user.dto.ChangePasswordRequest;
@@ -19,8 +20,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import com.propertymanagement.modules.user.service.UserService;
 import com.propertymanagement.modules.user.entity.UserRole;
-import com.propertymanagement.modules.owner.entity.Owner;
-import com.propertymanagement.modules.property.entity.Property;
 
 @RestController
 @RequestMapping("/users")
@@ -31,7 +30,7 @@ public class UserController {
     private final PropertyScopeService propertyScopeService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'OWNER')")
+    @RequiresPermission(module = "users", action = "view")
     public ResponseEntity<ApiResponse<Page<UserResponse>>> getAll(
             @RequestParam(required = false) String q,
             @RequestParam(required = false) UserRole role,
@@ -40,7 +39,7 @@ public class UserController {
     }
 
     @GetMapping("/maintenance-assignable-contractor")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER', 'MAINTENANCE_OFFICER_INTERNAL','MAINTENANCE_OFFICER_COMPANY','MAINTENANCE_COMPANY')")
+    @RequiresPermission(module = "maintenance", action = "assign")
     public ResponseEntity<ApiResponse<java.util.List<UserResponse>>> maintenanceAssignableContractorOfficers(
             @RequestParam Long propertyId,
             @RequestParam Long contractorCompanyId) {
@@ -48,40 +47,40 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'OWNER')")
+    @RequiresPermission(module = "users", action = "view")
     public ResponseEntity<ApiResponse<UserResponse>> getById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok(userService.getById(id)));
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @RequiresPermission(module = "users", action = "create")
     public ResponseEntity<ApiResponse<UserResponse>> create(@Valid @RequestBody UserRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.ok(userService.create(request)));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @RequiresPermission(module = "users", action = "edit")
     public ResponseEntity<ApiResponse<UserResponse>> update(
             @PathVariable Long id, @Valid @RequestBody UserRequest request) {
         return ResponseEntity.ok(ApiResponse.ok(userService.update(id, request)));
     }
 
     @PatchMapping("/{id}/toggle-active")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @RequiresPermission(module = "users", action = "toggle")
     public ResponseEntity<ApiResponse<UserResponse>> toggleActive(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok(userService.toggleActive(id)));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @RequiresPermission(module = "users", action = "delete")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         userService.delete(id);
         return ResponseEntity.ok(ApiResponse.ok(null));
     }
 
     @PatchMapping("/{id}/role")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @RequiresPermission(module = "users", action = "manage")
     public ResponseEntity<ApiResponse<UserResponse>> updateRole(
             @PathVariable Long id,
             @Valid @RequestBody UserRoleUpdateRequest request) {
@@ -94,7 +93,6 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.ok(userService.getMyProfile()));
     }
 
-    /** Property ids for the current {@code X-Active-Role} (or primary role); used for scoped UI filters. */
     @GetMapping("/me/property-access")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<PropertyAccessSummary>> getMyPropertyAccess() {

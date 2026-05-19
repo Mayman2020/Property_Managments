@@ -1,6 +1,7 @@
 package com.propertymanagement.modules.contractor.dto;
 
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Email;
 import lombok.Data;
 
 import java.time.LocalDate;
@@ -20,6 +21,7 @@ public class ContractorCompanyRequestDTO {
     @Size(max = 40)
     private String phone;
 
+    @Email
     @Size(max = 150)
     private String email;
 
@@ -38,4 +40,9 @@ public class ContractorCompanyRequestDTO {
     private LocalDate contractEnd;
 
     private List<String> attachmentFiles;
+
+    /**
+     * Property context for the portal user created for a new maintenance company.
+     */
+    private Long portalPropertyId;
 }

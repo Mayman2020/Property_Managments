@@ -3,6 +3,7 @@ package com.propertymanagement.modules.maintenance.contractinvoice.dto;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record MaintenanceContractInvoiceResponse(
         Long invoiceId,
@@ -19,7 +20,15 @@ public record MaintenanceContractInvoiceResponse(
         BigDecimal amount,
         LocalDate dueDate,
         LocalDate paidDate,
+        String receiptUrl,
         String status,
         String notes,
-        LocalDateTime createdAt
+        String descriptionAr,
+        String descriptionEn,
+        LocalDateTime createdAt,
+        List<MaintenanceContractInvoicePaymentResponse> payments,
+        BigDecimal paidAmount,
+        BigDecimal remainingAmount,
+        Integer installmentCount,
+        Integer paidInstallmentCount
 ) {}

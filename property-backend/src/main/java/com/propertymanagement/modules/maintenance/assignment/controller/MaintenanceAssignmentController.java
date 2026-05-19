@@ -20,7 +20,7 @@ public class MaintenanceAssignmentController {
 
     /** GET /properties/{id}/maintenance-assignments */
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','MAINTENANCE_OFFICER_INTERNAL','MAINTENANCE_OFFICER_COMPANY','MAINTENANCE_COMPANY')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT','MAINTENANCE_OFFICER_INTERNAL','MAINTENANCE_OFFICER_COMPANY','MAINTENANCE_COMPANY')")
     public ResponseEntity<ApiResponse<List<MaintenanceAssignmentResponse>>> list(
             @PathVariable Long propertyId) {
         return ResponseEntity.ok(ApiResponse.ok(service.listByProperty(propertyId)));
@@ -28,7 +28,7 @@ public class MaintenanceAssignmentController {
 
     /** POST /properties/{id}/maintenance-assignments */
     @PostMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
     public ResponseEntity<ApiResponse<MaintenanceAssignmentResponse>> assign(
             @PathVariable Long propertyId,
             @RequestBody AssignMaintenanceRequest request) {
@@ -37,7 +37,7 @@ public class MaintenanceAssignmentController {
 
     /** PATCH /properties/{id}/maintenance-assignments/{assignmentId}/end */
     @PatchMapping("/{assignmentId}/end")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
     public ResponseEntity<ApiResponse<MaintenanceAssignmentResponse>> end(
             @PathVariable Long propertyId,
             @PathVariable Long assignmentId) {

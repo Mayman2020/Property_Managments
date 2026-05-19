@@ -42,4 +42,8 @@ public class ScheduleItemResponse {
     private String reviewedByName;
     private LocalDateTime reviewedAt;
     private String rejectionReason;
+
+    private Long propertyId;
+    private String propertyNameAr;
+    private String propertyNameEn;
 }

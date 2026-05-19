@@ -10,6 +10,8 @@ import com.propertymanagement.modules.user.entity.User;
 import com.propertymanagement.modules.user.repository.UserRepository;
 import com.propertymanagement.modules.user.entity.UserRole;
 import com.propertymanagement.modules.contractor.repository.ContractorCompanyRepository;
+import com.propertymanagement.modules.legalentity.entity.LegalEntity;
+import com.propertymanagement.modules.legalentity.repository.LegalEntityRepository;
 import com.propertymanagement.shared.exception.AppException;
 import com.propertymanagement.shared.security.PropertyScopeService;
 import com.propertymanagement.shared.i18n.BilingualNotificationText;
@@ -53,6 +55,7 @@ public class PropertyService {
     private final NotificationService notificationService;
     private final UnitRepository unitRepository;
     private final AppMessages appMessages;
+    private final LegalEntityRepository legalEntityRepository;
 
     @PersistenceContext
     private EntityManager em;
@@ -114,6 +117,7 @@ public class PropertyService {
                 .coverImageUrls(normalizeCoverImages(request))
                 .ownerId(primaryOwnerId)
                 .ownerDocumentFiles(normalizeFiles(request.getOwnerDocumentFiles()))
+                .legalEntityId(request.getLegalEntityId())
                 .active(true)
                 .build();
         Property saved = propertyRepository.save(property);
@@ -154,6 +158,7 @@ public class PropertyService {
         property.setCoverImageUrls(normalizeCoverImages(request));
         property.setOwnerId(primaryOwnerId);
         property.setOwnerDocumentFiles(normalizeFiles(request.getOwnerDocumentFiles()));
+        property.setLegalEntityId(request.getLegalEntityId());
         syncPropertyOwners(id, request.getOwnerIds());
         syncMaintenanceProviders(id, request.getMaintenanceProviderType(), request.getMaintenanceProviderIds());
         Property saved = propertyRepository.save(property);
@@ -216,9 +221,14 @@ public class PropertyService {
                         .email(o.getEmail())
                         .build())
                 .collect(Collectors.toList());
+        LegalEntity legalEntity = p.getLegalEntityId() == null ? null
+                : legalEntityRepository.findById(p.getLegalEntityId()).orElse(null);
         return PropertyResponse.builder()
                 .id(p.getId())
                 .ownerId(p.getOwnerId())
+                .legalEntityId(p.getLegalEntityId())
+                .legalEntityNameAr(legalEntity != null ? legalEntity.getNameAr() : null)
+                .legalEntityNameEn(legalEntity != null ? legalEntity.getNameEn() : null)
                 .owners(ownerSummaries)
                 .maintenanceProviders(maintenanceProviders)
                 .propertyName(localizedName)

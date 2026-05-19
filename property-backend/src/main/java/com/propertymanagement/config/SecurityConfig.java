@@ -37,10 +37,10 @@ public class SecurityConfig {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
-                        // Anonymous upload was a gap; POST under /files requires a valid JWT.
-                        // GET stays open so <img src=".../files/{uuid}.jpg"> works without a Bearer header.
+                        // Both GET and POST require a valid JWT.
+                        // Image tags can pass ?tk=<jwt> query param; the JwtAuthFilter will pick it up.
                         .requestMatchers(HttpMethod.POST, "/files/**").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/files/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/files/**").authenticated()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .anyRequest().authenticated()
                 )

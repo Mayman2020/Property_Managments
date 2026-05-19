@@ -68,4 +68,8 @@ public class JwtUtil {
             return false;
         }
     }
+
+    public Date extractExpiration(String token) {
+        return extractAllClaims(token).getExpiration();
+    }
 }

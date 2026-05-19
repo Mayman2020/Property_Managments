@@ -66,6 +66,24 @@ public class Unit {
     @Column(name = "is_active")
     private boolean active = true;
 
+    @Column(name = "floor_plan_url", length = 500)
+    private String floorPlanUrl;
+
+    /** Damage notes written by the accountant after tenant vacates. */
+    @Column(name = "damage_notes", columnDefinition = "TEXT")
+    private String damageNotes;
+
+    @Builder.Default
+    @Column(name = "has_damage")
+    private Boolean hasDamage = false;
+
+    /** When the unit was inspected and cleared for re-listing. */
+    @Column(name = "cleared_at")
+    private LocalDateTime clearedAt;
+
+    @Column(name = "cleared_by")
+    private Long clearedBy;
+
     @CreatedBy
     @Column(name = "created_by", updatable = false)
     private Long createdBy;

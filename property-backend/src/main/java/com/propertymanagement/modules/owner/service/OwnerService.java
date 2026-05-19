@@ -25,6 +25,8 @@ import java.util.Optional;
 import java.util.Set;
 import com.propertymanagement.modules.owner.entity.Owner;
 import com.propertymanagement.modules.owner.repository.OwnerRepository;
+import com.propertymanagement.modules.property.repository.PropertyRepository;
+import com.propertymanagement.modules.property.entity.Property;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +36,7 @@ public class OwnerService {
     private String defaultUserPassword;
 
     private final OwnerRepository ownerRepository;
+    private final PropertyRepository propertyRepository;
     private final UserRepository userRepository;
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
@@ -147,6 +150,13 @@ public class OwnerService {
     @Transactional
     public void delete(Long id) {
         Owner owner = findActive(id);
+        List<Long> soloProperties = ownerRepository.findPropertyIdsWhereSoleOwner(id);
+        if (!soloProperties.isEmpty()) {
+            throw AppException.badRequest(
+                    "Cannot delete owner: they are the sole owner of " + soloProperties.size() +
+                    " propert" + (soloProperties.size() == 1 ? "y" : "ies") +
+                    ". Please assign another owner to those properties first.");
+        }
         Long portalUserId = owner.getUserId();
         owner.setActive(false);
         owner.setUserId(null);
@@ -308,6 +318,24 @@ public class OwnerService {
     }
 
     private OwnerResponse toResponse(Owner o) {
+        List<Property> primaryProps = propertyRepository.findByOwnerIdAndActiveTrue(o.getId());
+        List<Long> coOwnerPropIds = propertyRepository.findPropertyIdsByCoOwner(o.getId());
+        List<Property> coOwnerProps = coOwnerPropIds.isEmpty() ? List.of() : propertyRepository.findAllById(coOwnerPropIds);
+        List<Long> primaryIds = primaryProps.stream().map(Property::getId).toList();
+        List<OwnerResponse.PropertySummary> propSummaries = new java.util.ArrayList<>();
+        primaryProps.stream().map(p -> OwnerResponse.PropertySummary.builder()
+                .propertyId(p.getId())
+                .propertyNameAr(p.getPropertyNameAr() != null ? p.getPropertyNameAr() : p.getPropertyName())
+                .propertyNameEn(p.getPropertyNameEn() != null ? p.getPropertyNameEn() : p.getPropertyName())
+                .build()).forEach(propSummaries::add);
+        coOwnerProps.stream()
+                .filter(p -> !primaryIds.contains(p.getId()))
+                .map(p -> OwnerResponse.PropertySummary.builder()
+                        .propertyId(p.getId())
+                        .propertyNameAr(p.getPropertyNameAr() != null ? p.getPropertyNameAr() : p.getPropertyName())
+                        .propertyNameEn(p.getPropertyNameEn() != null ? p.getPropertyNameEn() : p.getPropertyName())
+                        .build())
+                .forEach(propSummaries::add);
         return OwnerResponse.builder()
                 .id(o.getId())
                 .fullName(o.getFullName())
@@ -324,6 +352,7 @@ public class OwnerService {
                 .userId(o.getUserId())
                 .linkedUserActive(resolveLinkedUserActive(o.getUserId()))
                 .portalAccess(o.isPortalAccess())
+                .properties(propSummaries)
                 .createdAt(o.getCreatedAt())
                 .updatedAt(o.getUpdatedAt())
                 .createdBy(o.getCreatedBy())

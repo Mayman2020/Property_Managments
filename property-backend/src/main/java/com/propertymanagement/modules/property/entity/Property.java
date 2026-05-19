@@ -29,6 +29,9 @@ public class Property {
     @Column(name = "owner_id")
     private Long ownerId;
 
+    @Column(name = "legal_entity_id")
+    private Long legalEntityId;
+
     @Column(name = "property_name", nullable = false, length = 200)
     private String propertyName;
 

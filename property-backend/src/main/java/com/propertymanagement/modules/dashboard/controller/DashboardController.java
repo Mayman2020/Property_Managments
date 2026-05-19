@@ -12,12 +12,14 @@ import com.propertymanagement.modules.maintenance.rating.dto.RatingsSummaryRespo
 import com.propertymanagement.modules.maintenance.rating.dto.RatingDashboardItemResponse;
 import com.propertymanagement.modules.maintenance.rating.service.VisitRatingService;
 import com.propertymanagement.shared.response.ApiResponse;
+import com.propertymanagement.shared.security.PropertyScopeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 import com.propertymanagement.modules.owner.entity.Owner;
 import com.propertymanagement.modules.property.entity.Property;
 
@@ -29,6 +31,7 @@ public class DashboardController {
     private final DashboardService dashboardService;
     private final VisitRatingService visitRatingService;
     private final ComplaintRatingRepository complaintRatingRepository;
+    private final PropertyScopeService propertyScopeService;
 
     @GetMapping("/stats")
     public ResponseEntity<ApiResponse<DashboardStatsResponseDTO>> getStats() {
@@ -58,19 +61,20 @@ public class DashboardController {
     }
 
     @GetMapping("/ratings-summary")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT','OWNER','PROCEDURES_CLERK','MAINTENANCE_OFFICER_INTERNAL','MAINTENANCE_OFFICER_COMPANY','MAINTENANCE_COMPANY','PROPERTY_GUARD')")
     public ResponseEntity<ApiResponse<RatingsSummaryResponse>> getRatingsSummary() {
         return ResponseEntity.ok(ApiResponse.ok(visitRatingService.getSummary()));
     }
 
     @GetMapping("/ratings-details")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT','OWNER','PROCEDURES_CLERK','MAINTENANCE_OFFICER_INTERNAL','MAINTENANCE_OFFICER_COMPANY','MAINTENANCE_COMPANY','PROPERTY_GUARD')")
     public ResponseEntity<ApiResponse<List<RatingDashboardItemResponse>>> getRatingsDetails() {
-        return ResponseEntity.ok(ApiResponse.ok(visitRatingService.getDashboardDetails()));
+        Set<Long> scope = propertyScopeService.propertyIdsOrNullIfUnrestricted();
+        return ResponseEntity.ok(ApiResponse.ok(visitRatingService.getDashboardDetails(scope)));
     }
 
     @GetMapping("/complaint-ratings-summary")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT','OWNER','PROCEDURES_CLERK','MAINTENANCE_OFFICER_INTERNAL','MAINTENANCE_OFFICER_COMPANY','MAINTENANCE_COMPANY','PROPERTY_GUARD')")
     public ResponseEntity<ApiResponse<ComplaintRatingsSummaryResponse>> getComplaintRatingsSummary() {
         return ResponseEntity.ok(ApiResponse.ok(ComplaintRatingsSummaryResponse.builder()
                 .averageRating(complaintRatingRepository.getAverageRatingScore() == null ? 0.0 : complaintRatingRepository.getAverageRatingScore())
@@ -83,9 +87,16 @@ public class DashboardController {
     }
 
     @GetMapping("/complaint-ratings-details")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'GENERAL_MANAGER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT','OWNER','PROCEDURES_CLERK','MAINTENANCE_OFFICER_INTERNAL','MAINTENANCE_OFFICER_COMPANY','MAINTENANCE_COMPANY','PROPERTY_GUARD')")
     public ResponseEntity<ApiResponse<List<ComplaintRatingDashboardItemResponse>>> getComplaintRatingsDetails() {
-        return ResponseEntity.ok(ApiResponse.ok(complaintRatingRepository.findDashboardDetails()));
+        Set<Long> scope = propertyScopeService.propertyIdsOrNullIfUnrestricted();
+        if (scope != null && scope.isEmpty()) {
+            return ResponseEntity.ok(ApiResponse.ok(List.of()));
+        }
+        List<ComplaintRatingDashboardItemResponse> result = (scope == null)
+                ? complaintRatingRepository.findDashboardDetails()
+                : complaintRatingRepository.findDashboardDetailsByPropertyIds(scope);
+        return ResponseEntity.ok(ApiResponse.ok(result));
     }
 
     @GetMapping("/expiring-contracts")
