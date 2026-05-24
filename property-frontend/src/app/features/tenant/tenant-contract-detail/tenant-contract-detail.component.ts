@@ -5,12 +5,14 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
 import { UploadZoneComponent } from '../../../shared/components/upload-zone/upload-zone.component';
 import { TenantPortalService } from '../../../core/services/tenant-portal.service';
+import { Inspection, InspectionService } from '../../../core/services/inspection.service';
 import { ContractService } from '../../../core/services/contract.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { SnackService } from '../../../core/services/snack.service';
@@ -22,7 +24,7 @@ import { PaymentProofDialogComponent } from '../payment-proof-dialog/payment-pro
   standalone: true,
   imports: [
     NgIf, NgFor, NgClass, DatePipe, DecimalPipe, RouterLink,
-    TranslateModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatDialogModule,
+    TranslateModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule, MatDialogModule,
     PageHeaderComponent, TablePagerComponent, UploadZoneComponent
   ],
   templateUrl: './tenant-contract-detail.component.html',
@@ -40,6 +42,7 @@ export class TenantContractDetailComponent implements OnInit {
   submittingScheduleId: number | null = null;
   submittingAction = false;
   damageReceiptUrls: string[] = [];
+  inspections: Inspection[] = [];
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -47,8 +50,26 @@ export class TenantContractDetailComponent implements OnInit {
     private readonly contractSvc: ContractService,
     private readonly snack: SnackService,
     private readonly dialog: MatDialog,
+    private readonly inspectionSvc: InspectionService,
     readonly i18n: I18nService
   ) {}
+
+  signInspection(id: number): void {
+    this.inspectionSvc.signTenant(id).subscribe({
+      next: () => {
+        this.snack.success('INSPECTION.SIGN_SUCCESS');
+        this.loadInspections();
+      },
+      error: () => this.snack.error('COMMON.ERROR')
+    });
+  }
+
+  private loadInspections(): void {
+    this.inspectionSvc.listTenant(this.contractId).subscribe({
+      next: (res) => { this.inspections = res.data ?? []; },
+      error: () => { this.inspections = []; }
+    });
+  }
 
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
@@ -69,6 +90,7 @@ export class TenantContractDetailComponent implements OnInit {
         this.loading = false;
         if (!this.contract) this.error = true;
         this.loadSchedule();
+        this.loadInspections();
       },
       error: () => {
         this.error = true;
@@ -144,9 +166,21 @@ export class TenantContractDetailComponent implements OnInit {
     if (row.status === 'PARTIAL') return 'st-partial';
     if (row.status === 'PENDING_CONFIRMATION') return 'st-confirming';
     if (row.status === 'PAYMENT_REJECTED') return 'st-rejected';
-    if (row.status === 'OVERDUE') return 'st-overdue';
+    if (row.status === 'OVERDUE' || this.isPastDueUnpaid(row)) return 'st-overdue';
     if (row.status === 'WAIVED') return 'st-waived';
     return 'st-pending';
+  }
+
+  isPastDueUnpaid(row: RentPaymentSchedule): boolean {
+    if (!row.dueDate || row.status === 'PAID' || row.status === 'WAIVED') return false;
+    const due = this.dateOnly(row.dueDate);
+    const today = this.dateOnly(new Date());
+    return due.getTime() < today.getTime();
+  }
+
+  private dateOnly(value: string | Date): Date {
+    const date = value instanceof Date ? value : new Date(value);
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
   }
 
   getStatusClass(status: string): string {
@@ -156,7 +190,6 @@ export class TenantContractDetailComponent implements OnInit {
       EXPIRED: 'chip-danger',
       TERMINATED: 'chip-danger',
       RENEWED: 'chip-info',
-      SUSPENDED: 'chip-warn',
       CANCELLED: 'chip-danger',
       PENDING_OWNER_APPROVAL: 'chip-warn',
       PENDING_TERMINATION_APPROVAL: 'chip-warn',

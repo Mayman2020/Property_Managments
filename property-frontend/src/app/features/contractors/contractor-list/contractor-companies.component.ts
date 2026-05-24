@@ -54,7 +54,7 @@ export class ContractorCompaniesComponent implements OnInit {
   companies: ContractorCompany[] = [];
   filteredCompanies: ContractorCompany[] = [];
   properties: Property[] = [];
-  readonly pageSize = 10;
+  readonly pageSize = 5;
   pageIndex = 0;
   loading = true;
   searchTerm = '';

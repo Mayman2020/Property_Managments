@@ -1,91 +1,102 @@
-<app-page-header
-  [title]="'ACCOUNTANT_PORTAL.RECEIPTS_TITLE' | translate"
-  [subtitle]="'ACCOUNTANT_PORTAL.RECEIPTS_SUBTITLE' | translate"
-  icon="receipt_long">
-</app-page-header>
-
-<div class="page-content">
-  <div class="finance-filter-strip" [formGroup]="filterForm">
-    <label *ngIf="properties.length">{{ 'REQUEST_FORM.PROPERTY' | translate }}</label>
-    <select *ngIf="properties.length" formControlName="propertyId" class="estate-property-select">
-      <option [ngValue]="null">{{ 'COMMON.ALL_PROPERTIES' | translate }}</option>
-      <option *ngFor="let p of properties" [ngValue]="p.id">{{ propertyLabel(p) }}</option>
-    </select>
-
-    <label>{{ 'COMMON.MONTH' | translate }}</label>
-    <select formControlName="month" class="estate-property-select">
-      <option [ngValue]="null">{{ 'COMMON.ALL' | translate }}</option>
-      <option *ngFor="let m of months" [ngValue]="m">{{ monthLabel(m) }}</option>
-    </select>
-
-    <label>{{ 'COMMON.YEAR' | translate }}</label>
-    <select formControlName="year" class="estate-property-select">
-      <option [ngValue]="null">{{ 'COMMON.ALL' | translate }}</option>
-      <option *ngFor="let y of years" [ngValue]="y">{{ y }}</option>
-    </select>
-
-    <button mat-icon-button (click)="load()" style="margin-inline-start:auto">
-      <mat-icon>refresh</mat-icon>
-    </button>
-
-    <button mat-stroked-button type="button" *ngIf="permissions.can('contracts', 'create')" (click)="openStaffUpload()">
-      <mat-icon>upload_file</mat-icon>
-      {{ 'ACCOUNTANT_PORTAL.STAFF_UPLOAD_BUTTON' | translate }}
-    </button>
-  </div>
+<div class="app-page rent-confirmation-page">
+  <app-page-header
+    [title]="'ACCOUNTANT_PORTAL.RECEIPTS_TITLE' | translate"
+    [subtitle]="'ACCOUNTANT_PORTAL.RECEIPTS_SUBTITLE' | translate"
+    icon="receipt_long">
+  </app-page-header>
 
   <div *ngIf="loading" class="loading-center">
     <mat-spinner diameter="48"></mat-spinner>
   </div>
 
-  <div *ngIf="!loading && receipts.length === 0" class="empty-state">
-    <mat-icon>inbox</mat-icon>
-    <p>{{ 'ACCOUNTANT_PORTAL.NO_RECEIPTS' | translate }}</p>
-  </div>
+  <section class="app-card directory-table-card" *ngIf="!loading">
+    <div class="estate-table-toolbar directory-toolbar">
+      <div class="directory-toolbar-top" [formGroup]="filterForm">
+        <div class="finance-filter-strip">
+          <label *ngIf="properties.length">{{ 'REQUEST_FORM.PROPERTY' | translate }}</label>
+          <select *ngIf="properties.length" formControlName="propertyId" class="estate-property-select">
+            <option [ngValue]="null">{{ 'COMMON.ALL_PROPERTIES' | translate }}</option>
+            <option *ngFor="let p of properties" [ngValue]="p.id">{{ propertyLabel(p) }}</option>
+          </select>
 
-  <div *ngIf="!loading && receipts.length > 0 && filteredReceipts.length === 0" class="empty-state">
-    <mat-icon>search_off</mat-icon>
-    <p>{{ 'ACCOUNTANT_PORTAL.NO_RECEIPTS' | translate }}</p>
-  </div>
+          <label>{{ 'COMMON.MONTH' | translate }}</label>
+          <select formControlName="month" class="estate-property-select">
+            <option [ngValue]="null">{{ 'COMMON.ALL' | translate }}</option>
+            <option *ngFor="let m of months" [ngValue]="m">{{ monthLabel(m) }}</option>
+          </select>
 
-  <div *ngIf="!loading && filteredReceipts.length > 0" class="receipts-table-wrap">
-    <table class="receipts-table">
-      <thead>
-        <tr>
-          <th>{{ 'ACCOUNTANT_PORTAL.TABLE_CONTRACT' | translate }}</th>
-          <th>{{ 'ACCOUNTANT_PORTAL.TABLE_TENANT' | translate }}</th>
-          <th>{{ 'ACCOUNTANT_PORTAL.TABLE_DUE_DATE' | translate }}</th>
-          <th>{{ 'ACCOUNTANT_PORTAL.TABLE_AMOUNT' | translate }}</th>
-          <th>{{ 'ACCOUNTANT_PORTAL.TABLE_STATUS' | translate }}</th>
-          <th>{{ 'ACCOUNTANT_PORTAL.TABLE_SUBMITTED' | translate }}</th>
-          <th>{{ 'COMMON.ACTIONS' | translate }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let r of filteredReceipts">
-          <td>
-            <div class="contract-number">{{ r.contractNumber || ('COMMON.UNKNOWN' | translate) }}</div>
-            <div class="contract-period">{{ r.periodFrom | date:'dd/MM/yyyy' }} - {{ r.periodTo | date:'dd/MM/yyyy' }}</div>
-          </td>
-          <td>{{ r.tenantName || ('COMMON.UNKNOWN' | translate) }}</td>
-          <td>{{ r.dueDate | date:'dd/MM/yyyy' }}</td>
-          <td>{{ r.amount | number:'1.2-2' }} {{ 'COMMON.OMR' | translate }}</td>
-          <td>
-            <span class="status-badge" [ngClass]="statusClass(r.status)">
-              {{ ('CONTRACTS.SCHED_' + r.status) | translate }}
-            </span>
-          </td>
-          <td>{{ r.proofSubmittedAt ? (r.proofSubmittedAt | date:'dd/MM/yyyy') : '-' }}</td>
-          <td class="actions-cell">
-            <button mat-icon-button *ngIf="r.proofUrl" (click)="viewFile(r.proofUrl)" matTooltip="{{ 'COMMON.VIEW_FILE' | translate }}">
-              <mat-icon>visibility</mat-icon>
-            </button>
-            <button mat-icon-button color="primary" *ngIf="r.status === 'PENDING_CONFIRMATION' && permissions.can('contracts', 'approve')" (click)="openReview(r)" matTooltip="{{ 'ACCOUNTANT_PORTAL.REVIEW' | translate }}">
-              <mat-icon>rate_review</mat-icon>
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+          <label>{{ 'COMMON.YEAR' | translate }}</label>
+          <select formControlName="year" class="estate-property-select">
+            <option [ngValue]="null">{{ 'COMMON.ALL' | translate }}</option>
+            <option *ngFor="let y of years" [ngValue]="y">{{ y }}</option>
+          </select>
+        </div>
+
+        <button class="app-icon-btn" type="button" (click)="load()" [matTooltip]="'ACTIONS.REFRESH' | translate">
+          <mat-icon>refresh</mat-icon>
+        </button>
+
+        <button mat-stroked-button type="button" *ngIf="permissions.can('contracts', 'create')" (click)="openStaffUpload()">
+          <mat-icon>upload_file</mat-icon>
+          {{ 'ACCOUNTANT_PORTAL.STAFF_UPLOAD_BUTTON' | translate }}
+        </button>
+      </div>
+    </div>
+
+    <div class="app-table-wrap" *ngIf="filteredReceipts.length > 0; else emptyReceiptsTpl">
+      <table class="app-data-table source-table">
+        <thead>
+          <tr>
+            <th>{{ 'ACCOUNTANT_PORTAL.TABLE_CONTRACT' | translate }}</th>
+            <th>{{ 'ACCOUNTANT_PORTAL.TABLE_TENANT' | translate }}</th>
+            <th>{{ 'ACCOUNTANT_PORTAL.TABLE_DUE_DATE' | translate }}</th>
+            <th>{{ 'ACCOUNTANT_PORTAL.TABLE_AMOUNT' | translate }}</th>
+            <th>{{ 'ACCOUNTANT_PORTAL.TABLE_STATUS' | translate }}</th>
+            <th>{{ 'ACCOUNTANT_PORTAL.TABLE_SUBMITTED' | translate }}</th>
+            <th class="actions-col">{{ 'COMMON.ACTIONS' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let r of pagedReceipts">
+            <td>
+              <div class="contract-number">{{ r.contractNumber || ('COMMON.UNKNOWN' | translate) }}</div>
+              <div class="contract-period">{{ r.periodFrom | date:'dd/MM/yyyy' }} - {{ r.periodTo | date:'dd/MM/yyyy' }}</div>
+            </td>
+            <td>{{ r.tenantName || ('COMMON.UNKNOWN' | translate) }}</td>
+            <td>{{ r.dueDate | date:'dd/MM/yyyy' }}</td>
+            <td>{{ r.amount | number:'1.2-2' }} {{ 'COMMON.OMR' | translate }}</td>
+            <td>
+              <span class="status-badge" [ngClass]="statusClass(r.status)">
+                {{ ('CONTRACTS.SCHED_' + r.status) | translate }}
+              </span>
+            </td>
+            <td>{{ r.proofSubmittedAt ? (r.proofSubmittedAt | date:'dd/MM/yyyy') : '-' }}</td>
+            <td class="actions-cell">
+              <button class="app-icon-btn accent" type="button" *ngIf="r.proofUrl" (click)="viewFile(r.proofUrl)" [matTooltip]="'COMMON.VIEW_FILE' | translate">
+                <mat-icon>visibility</mat-icon>
+              </button>
+              <button class="app-icon-btn primary-tint" type="button" *ngIf="r.status === 'PENDING_CONFIRMATION' && permissions.can('contracts', 'approve')" (click)="openReview(r)" [matTooltip]="'ACCOUNTANT_PORTAL.REVIEW' | translate">
+                <mat-icon>rate_review</mat-icon>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <app-table-pager
+      *ngIf="filteredReceipts.length > 0"
+      [length]="filteredReceipts.length"
+      [pageSize]="pageSize"
+      [pageIndex]="pageIndex"
+      (pageIndexChange)="pageIndex = $event">
+    </app-table-pager>
+
+    <ng-template #emptyReceiptsTpl>
+      <div class="empty-state">
+        <mat-icon>{{ receipts.length === 0 ? 'inbox' : 'search_off' }}</mat-icon>
+        <p>{{ 'ACCOUNTANT_PORTAL.NO_RECEIPTS' | translate }}</p>
+      </div>
+    </ng-template>
+  </section>
 </div>

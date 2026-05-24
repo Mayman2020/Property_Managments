@@ -18,6 +18,7 @@ import {
   HrService,
   LeaveBalanceItem,
   LeaveRequestItem,
+  PayrollDeductionItem,
   PayrollRunDetail,
   PayrollRunItem,
   PayslipItem
@@ -31,6 +32,7 @@ import { SnackService } from '../../../core/services/snack.service';
 import { EmployeeDialogComponent } from '../employee-dialog/employee-dialog.component';
 import { LeaveRequestDialogComponent } from '../leave-request-dialog/leave-request-dialog.component';
 import { ContractorCompanyService, AllCompanyOfficer } from '../../../core/services/contractor-company.service';
+import { LookupCacheService } from '../../../core/services/lookup-cache.service';
 import { forkJoin, catchError, of } from 'rxjs';
 
 @Component({
@@ -72,6 +74,10 @@ import { forkJoin, catchError, of } from 'rxjs';
         <button mat-flat-button class="navy-btn" type="button" *ngIf="section === 'leaves' && canAddLeaveRequest()" (click)="openAddLeaveRequest()">
           <mat-icon>add</mat-icon>
           {{ 'HR.ADD_LEAVE_REQUEST' | translate }}
+        </button>
+        <button mat-flat-button class="navy-btn" type="button" *ngIf="section === 'deductions' && canCreateDeduction()" (click)="createDeduction()">
+          <mat-icon>add</mat-icon>
+          {{ 'HR.ADD_DEDUCTION' | translate }}
         </button>
       </app-page-header>
 
@@ -235,7 +241,23 @@ import { forkJoin, catchError, of } from 'rxjs';
         </div>
       </div>
 
-      <div class="app-card" *ngIf="section === 'leaves'">
+      <div class="app-card table-card directory-table-card" *ngIf="section === 'leaves'">
+        <div class="estate-table-toolbar directory-toolbar">
+          <div class="directory-toolbar-top">
+            <div class="section-label">
+              <mat-icon>event_available</mat-icon>
+              <span>{{ 'HR.LEAVES_TITLE' | translate }}</span>
+              <span class="count-chip">{{ leaveRequests.length }}</span>
+            </div>
+            <app-table-export-toolbar
+              permissionKey="hr"
+              [title]="'HR.LEAVES_TITLE' | translate"
+              fileName="leaves"
+              [columns]="leaveExportColumns"
+              [rows]="leaveRequests">
+            </app-table-export-toolbar>
+          </div>
+        </div>
         <div class="app-table-wrap" *ngIf="leaveRequests.length; else emptyTpl">
           <table class="app-data-table">
             <thead>
@@ -250,21 +272,32 @@ import { forkJoin, catchError, of } from 'rxjs';
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let item of leaveRequests">
+              <tr *ngFor="let item of pagedLeaveRequests">
                 <td>{{ item.employeeName || '-' }}</td>
-                <td>{{ item.leaveTypeName || '-' }}</td>
+                <td>{{ leaveTypeLabel(item) }}</td>
                 <td>{{ item.startDate | date:'dd/MM/yyyy' }}</td>
                 <td>{{ item.endDate | date:'dd/MM/yyyy' }}</td>
                 <td>{{ item.daysCount }}</td>
-                <td><span class="status-badge" [attr.data-status]="item.status || 'PENDING'">{{ item.status || 'PENDING' }}</span></td>
+                <td><span class="status-badge" [attr.data-status]="item.status || 'PENDING'">{{ leaveStatusLabel(item.status) }}</span></td>
                 <td class="actions-cell">
-                  <button mat-stroked-button *ngIf="item.status === 'PENDING' && canApproveLeave()" (click)="approveLeave(item.id)">{{ 'ACTIONS.APPROVE' | translate }}</button>
-                  <button mat-stroked-button *ngIf="item.status === 'PENDING' && canApproveLeave()" (click)="rejectLeave(item.id)">{{ 'ACTIONS.REJECT' | translate }}</button>
+                  <button class="app-icon-btn primary-tint" type="button" *ngIf="item.status === 'PENDING' && canApproveLeave()" (click)="approveLeave(item.id)" [matTooltip]="'ACTIONS.APPROVE' | translate">
+                    <mat-icon>check</mat-icon>
+                  </button>
+                  <button class="app-icon-btn danger" type="button" *ngIf="item.status === 'PENDING' && canApproveLeave()" (click)="rejectLeave(item.id)" [matTooltip]="'ACTIONS.REJECT' | translate">
+                    <mat-icon>close</mat-icon>
+                  </button>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
+        <app-table-pager
+          *ngIf="leaveRequests.length > 0"
+          [length]="leaveRequests.length"
+          [pageSize]="pageSize"
+          [pageIndex]="leavePageIndex"
+          (pageIndexChange)="leavePageIndex = $event">
+        </app-table-pager>
       </div>
 
       <div class="app-card" *ngIf="section === 'payroll-list'">
@@ -286,19 +319,67 @@ import { forkJoin, catchError, of } from 'rxjs';
                 <td>{{ run.totalBasic || 0 }}</td>
                 <td>{{ run.totalDeductions || 0 }}</td>
                 <td>{{ run.totalNet || 0 }}</td>
-                <td><span class="status-badge" [attr.data-status]="run.status || 'SUBMITTED'">{{ run.status || 'SUBMITTED' }}</span></td>
-                <td><button mat-stroked-button (click)="openPayroll(run.id)">{{ 'HR.OPEN_BTN' | translate }}</button></td>
+                <td><span class="status-badge" [attr.data-status]="run.status || 'SUBMITTED'">{{ payrollStatusLabel(run.status) }}</span></td>
+                <td class="actions-cell">
+                  <button class="app-icon-btn view" type="button" (click)="openPayroll(run.id)" [matTooltip]="'COMMON.VIEW' | translate">
+                    <mat-icon>visibility</mat-icon>
+                  </button>
+                </td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
 
+      <div class="app-card table-card" *ngIf="section === 'deductions'">
+        <div class="app-table-wrap" *ngIf="!loading && deductions.length > 0; else emptyDeductionsTpl">
+          <table class="app-data-table">
+            <thead>
+              <tr>
+                <th>{{ 'HR.EMPLOYEE_COL' | translate }}</th>
+                <th>{{ 'HR.DEDUCTION_AMOUNT' | translate }}</th>
+                <th>{{ 'HR.DEDUCTION_REASON' | translate }}</th>
+                <th>{{ 'HR.PAYROLL_MONTH' | translate }}</th>
+                <th>{{ 'HR.STATUS_COL' | translate }}</th>
+                <th>{{ 'HR.ACTIONS_COL' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of deductions">
+                <td>{{ item.employeeName || ('#' + item.employeeId) }}</td>
+                <td>{{ item.amount || 0 }}</td>
+                <td>{{ item.reason }}</td>
+                <td>{{ item.payrollMonth }}</td>
+                <td><span class="status-badge" [attr.data-status]="item.status">{{ deductionStatusLabel(item.status) }}</span></td>
+                <td class="actions-cell">
+                  <button class="app-icon-btn primary-tint" type="button" *ngIf="item.status === 'DRAFT' && canSendDeduction()" (click)="sendDeduction(item.id)" [matTooltip]="'HR.SEND_TO_ACCOUNTANT' | translate">
+                    <mat-icon>send</mat-icon>
+                  </button>
+                  <button class="app-icon-btn primary-tint" type="button" *ngIf="item.status === 'SENT_TO_ACCOUNTANT' && canReviewDeduction()" (click)="approveDeduction(item.id)" [matTooltip]="'ACTIONS.APPROVE' | translate">
+                    <mat-icon>check</mat-icon>
+                  </button>
+                  <button class="app-icon-btn danger" type="button" *ngIf="item.status === 'SENT_TO_ACCOUNTANT' && canReviewDeduction()" (click)="rejectDeduction(item.id)" [matTooltip]="'ACTIONS.REJECT' | translate">
+                    <mat-icon>close</mat-icon>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <ng-template #emptyDeductionsTpl>
+          <div *ngIf="!loading" class="app-empty-state">
+            <span class="material-icons empty-icon">payments</span>
+            <h4>{{ 'HR.NO_DEDUCTIONS' | translate }}</h4>
+            <p>{{ 'HR.NO_DEDUCTIONS_DESC' | translate }}</p>
+          </div>
+        </ng-template>
+      </div>
+
       <div class="app-card" *ngIf="section === 'payroll-detail' && payrollDetail">
         <div class="payroll-summary">
           <div><strong>{{ 'HR.PERIOD_COL' | translate }}</strong><span>{{ payrollDetail.payPeriodMonth }}/{{ payrollDetail.payPeriodYear }}</span></div>
           <div><strong>{{ 'HR.NET_COL' | translate }}</strong><span>{{ payrollDetail.totalNet || 0 }}</span></div>
-          <div><strong>{{ 'HR.STATUS_COL' | translate }}</strong><span>{{ payrollDetail.status || 'SUBMITTED' }}</span></div>
+          <div><strong>{{ 'HR.STATUS_COL' | translate }}</strong><span class="status-badge" [attr.data-status]="payrollDetail.status || 'SUBMITTED'">{{ payrollStatusLabel(payrollDetail.status) }}</span></div>
           <button mat-flat-button *ngIf="canMarkPayrollPaid(payrollDetail)" (click)="markPayrollPaid(payrollDetail.id)">{{ 'HR.MARK_PAID' | translate }}</button>
         </div>
 
@@ -403,6 +484,7 @@ import { forkJoin, catchError, of } from 'rxjs';
     .employee-name-cell { display: flex; align-items: center; gap: 10px; }
     .employee-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 1px solid var(--line); flex-shrink: 0; }
     .avatar-placeholder { width: 36px; height: 36px; border-radius: 50%; background: var(--navy-800); color: white; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 700; flex-shrink: 0; }
+    .table-card { padding: 0; overflow: hidden; }
     .payroll-summary {
       display: flex;
       align-items: center;
@@ -433,8 +515,9 @@ export class HrWorkspaceComponent implements OnInit {
   employees: EmployeeItem[] = [];
   companyOfficers: AllCompanyOfficer[] = [];
   loading = true;
-  readonly pageSize = 10;
+  readonly pageSize = 5;
   pageIndex = 0;
+  leavePageIndex = 0;
   properties: Property[] = [];
   filterPropertyId: number | null = null;
   filterStatus: string | null = null;
@@ -445,6 +528,7 @@ export class HrWorkspaceComponent implements OnInit {
   leaveBalanceByEmployeeId = new Map<number, LeaveBalanceItem>();
   payrollRuns: PayrollRunItem[] = [];
   payrollDetail: PayrollRunDetail | null = null;
+  deductions: PayrollDeductionItem[] = [];
   attendanceRecords: import('../../../core/services/hr.service').AttendanceItem[] = [];
   attendancePage = 0;
   attendanceTotal = 0;
@@ -462,7 +546,8 @@ export class HrWorkspaceComponent implements OnInit {
     private readonly router: Router,
     private readonly snack: SnackService,
     private readonly deleteConfirm: DeleteConfirmService,
-    private readonly contractorSvc: ContractorCompanyService
+    private readonly contractorSvc: ContractorCompanyService,
+    private readonly lookupCache: LookupCacheService
   ) {}
 
   get isSuperAdmin(): boolean { return this.auth.isSuperAdmin(); }
@@ -474,6 +559,11 @@ export class HrWorkspaceComponent implements OnInit {
   get pagedEmployees(): EmployeeItem[] {
     const start = this.pageIndex * this.pageSize;
     return this.filteredEmployees.slice(start, start + this.pageSize);
+  }
+
+  get pagedLeaveRequests(): LeaveRequestItem[] {
+    const start = this.leavePageIndex * this.pageSize;
+    return this.leaveRequests.slice(start, start + this.pageSize);
   }
 
   get filteredEmployees(): EmployeeItem[] {
@@ -493,6 +583,17 @@ export class HrWorkspaceComponent implements OnInit {
     ];
   }
 
+  get leaveExportColumns(): ExportColumn<LeaveRequestItem>[] {
+    return [
+      { header: this.i18n.instant('HR.EMPLOYEE_COL'), value: (row) => row.employeeName || '-' },
+      { header: this.i18n.instant('HR.TYPE_COL'), value: (row) => this.leaveTypeLabel(row) },
+      { header: this.i18n.instant('HR.FROM_COL'), value: (row) => row.startDate },
+      { header: this.i18n.instant('HR.TO_COL'), value: (row) => row.endDate },
+      { header: this.i18n.instant('HR.DAYS_COL'), value: (row) => row.daysCount },
+      { header: this.i18n.instant('HR.STATUS_COL'), value: (row) => this.leaveStatusLabel(row.status) }
+    ];
+  }
+
   get title(): string {
     const map: Record<string, string> = {
       'employees-list': 'HR.EMPLOYEES_TITLE',
@@ -500,6 +601,7 @@ export class HrWorkspaceComponent implements OnInit {
       'employee-detail': 'HR.EMPLOYEE_DETAIL_TITLE',
       'payroll-list': 'HR.PAYROLL_LIST_TITLE',
       'payroll-detail': 'HR.PAYROLL_DETAIL_TITLE',
+      deductions: 'HR.DEDUCTIONS_TITLE',
       leaves: 'HR.LEAVES_TITLE',
       attendance: 'HR.ATTENDANCE_TITLE'
     };
@@ -537,6 +639,18 @@ export class HrWorkspaceComponent implements OnInit {
     return this.permissions.can('hr', 'create') || this.permissions.can('hr', 'edit');
   }
 
+  canCreateDeduction(): boolean {
+    return this.permissions.can('hr', 'create');
+  }
+
+  canSendDeduction(): boolean {
+    return this.permissions.can('hr', 'submit') || this.permissions.can('hr', 'edit');
+  }
+
+  canReviewDeduction(): boolean {
+    return this.auth.hasRole('ACCOUNTANT') || this.auth.hasRole('SUPER_ADMIN') || this.auth.hasRole('GENERAL_MANAGER');
+  }
+
   canMarkPayrollPaid(run: PayrollRunDetail): boolean {
     return this.canManagePayroll() && run.status === 'APPROVED';
   }
@@ -560,6 +674,7 @@ export class HrWorkspaceComponent implements OnInit {
 
   ngOnInit(): void {
     this.section = this.route.snapshot.data['section'] ?? 'employees-list';
+    this.lookupCache.preload('LEAVE_TYPE', 'LEAVE_STATUS', 'PAYROLL_STATUS').subscribe();
 
     if (this.section.startsWith('employee') || this.section.startsWith('payroll')) {
       this.propertySvc.getAll(0, 500).subscribe({
@@ -577,6 +692,9 @@ export class HrWorkspaceComponent implements OnInit {
     if (this.section === 'payroll-list') {
       this.loadPayrollRuns();
     }
+    if (this.section === 'deductions') {
+      this.loadDeductions();
+    }
     if (this.section === 'payroll-detail') {
       this.loadPayrollDetail(Number(this.route.snapshot.paramMap.get('id')));
     }
@@ -585,8 +703,8 @@ export class HrWorkspaceComponent implements OnInit {
     }
     if (this.section === 'leaves') {
       this.service.getLeaveRequests({ page: 0, size: 50 }).subscribe({
-        next: (res) => { this.leaveRequests = res.data?.content ?? []; },
-        error: () => { this.leaveRequests = []; }
+        next: (res) => { this.leaveRequests = res.data?.content ?? []; this.leavePageIndex = 0; },
+        error: () => { this.leaveRequests = []; this.leavePageIndex = 0; }
       });
       this.service.getEmployees({ page: 0, size: 200 }).subscribe({
         next: (res) => { this.employees = res.data?.content ?? []; },
@@ -737,6 +855,20 @@ export class HrWorkspaceComponent implements OnInit {
     });
   }
 
+  private loadDeductions(): void {
+    this.loading = true;
+    this.service.getDeductions({ page: 0, size: 100 }).subscribe({
+      next: (res) => {
+        this.deductions = res.data?.content ?? [];
+        this.loading = false;
+      },
+      error: () => {
+        this.deductions = [];
+        this.loading = false;
+      }
+    });
+  }
+
   private loadPayrollDetail(id: number): void {
     if (!id) {
       this.payrollDetail = null;
@@ -780,6 +912,53 @@ export class HrWorkspaceComponent implements OnInit {
     });
   }
 
+  createDeduction(): void {
+    const employeeId = Number(window.prompt(this.i18n.instant('HR.EMPLOYEE_ID')));
+    if (!employeeId) return;
+    const amount = Number(window.prompt(this.i18n.instant('HR.DEDUCTION_AMOUNT')));
+    if (!amount || amount <= 0) {
+      this.snack.error('HR.VALIDATION_DEDUCTION_AMOUNT');
+      return;
+    }
+    const reason = (window.prompt(this.i18n.instant('HR.DEDUCTION_REASON')) || '').trim();
+    if (!reason) return;
+    const today = this.toYmd(new Date());
+    const payrollMonth = window.prompt(this.i18n.instant('HR.PAYROLL_MONTH'), today.slice(0, 7)) || today.slice(0, 7);
+    this.service.createDeduction({ employeeId, amount, reason, deductionDate: today, payrollMonth }).subscribe({
+      next: () => {
+        this.snack.success('HR.DEDUCTION_CREATED');
+        this.loadDeductions();
+      }
+    });
+  }
+
+  sendDeduction(id: number): void {
+    this.service.sendDeduction(id).subscribe({
+      next: () => {
+        this.snack.success('HR.DEDUCTION_SENT');
+        this.loadDeductions();
+      }
+    });
+  }
+
+  approveDeduction(id: number): void {
+    this.service.approveDeduction(id).subscribe({
+      next: () => {
+        this.snack.success('HR.DEDUCTION_APPROVED');
+        this.loadDeductions();
+      }
+    });
+  }
+
+  rejectDeduction(id: number): void {
+    this.service.rejectDeduction(id).subscribe({
+      next: () => {
+        this.snack.success('HR.DEDUCTION_REJECTED');
+        this.loadDeductions();
+      }
+    });
+  }
+
   allowancesTotal(slip: PayslipItem): number {
     return (slip.housingAllowance ?? 0) + (slip.transportAllowance ?? 0) + (slip.otherAllowances ?? 0);
   }
@@ -804,9 +983,16 @@ export class HrWorkspaceComponent implements OnInit {
   }
 
   private reloadLeaves(): void {
+    this.lookupCache.preload('LEAVE_TYPE', 'LEAVE_STATUS').subscribe({
+      next: () => this.fetchLeaves(),
+      error: () => this.fetchLeaves()
+    });
+  }
+
+  private fetchLeaves(): void {
     this.service.getLeaveRequests({ page: 0, size: 50 }).subscribe({
-      next: (res) => { this.leaveRequests = res.data?.content ?? []; },
-      error: () => { this.leaveRequests = []; }
+      next: (res) => { this.leaveRequests = res.data?.content ?? []; this.leavePageIndex = 0; },
+      error: () => { this.leaveRequests = []; this.leavePageIndex = 0; }
     });
   }
 
@@ -837,7 +1023,29 @@ export class HrWorkspaceComponent implements OnInit {
   }
 
   employeeJobTitle(item: EmployeeItem): string {
-    return item.jobTitle ?? item.jobTitleAr ?? item.jobTitleEn ?? '-';
+    if (this.i18n.currentLang === 'ar') {
+      return item.jobTitleAr ?? item.jobTitle ?? item.jobTitleEn ?? '-';
+    }
+    return item.jobTitleEn ?? item.jobTitle ?? item.jobTitleAr ?? '-';
+  }
+
+  leaveTypeLabel(item: LeaveRequestItem): string {
+    const idCode = item.leaveTypeId != null ? String(item.leaveTypeId) : null;
+    return this.lookupCache.label('LEAVE_TYPE', idCode)
+      || this.lookupCache.cleanDisplayText(item.leaveTypeName)
+      || '-';
+  }
+
+  leaveStatusLabel(status?: string | null): string {
+    return this.lookupCache.label('LEAVE_STATUS', status || 'PENDING') || status || 'PENDING';
+  }
+
+  payrollStatusLabel(status?: string | null): string {
+    return this.lookupCache.label('PAYROLL_STATUS', status || 'SUBMITTED') || status || 'SUBMITTED';
+  }
+
+  deductionStatusLabel(status?: string | null): string {
+    return status ? this.i18n.instant(`HR.STATUS.${status}`) : '-';
   }
 
   employeeActive(item: EmployeeItem): boolean {
@@ -845,9 +1053,9 @@ export class HrWorkspaceComponent implements OnInit {
   }
 
   employeeName(item: EmployeeItem): string {
-    const ar = item.fullNameAr?.trim();
-    const en = item.fullNameEn?.trim();
-    const fallback = item.fullName?.trim();
+    const ar = this.cleanDisplayName(item.fullNameAr);
+    const en = this.cleanDisplayName(item.fullNameEn);
+    const fallback = this.cleanDisplayName(item.fullName);
     return this.i18n.currentLang === 'ar'
       ? (ar || en || fallback || '-')
       : (en || ar || fallback || '-');
@@ -864,12 +1072,12 @@ export class HrWorkspaceComponent implements OnInit {
   }
 
   officerName(o: AllCompanyOfficer): string {
-    const ar = o.fullNameAr?.trim();
-    const en = o.fullNameEn?.trim();
-    const fallback = o.fullName?.trim();
+    const ar = this.cleanDisplayName(o.fullNameAr);
+    const en = this.cleanDisplayName(o.fullNameEn);
+    const fallback = this.cleanDisplayName(o.fullName);
     return this.i18n.currentLang === 'ar'
-      ? (ar || en || fallback || '-')
-      : (en || ar || fallback || '-');
+      ? (ar || en || fallback || o.email || '-')
+      : (en || ar || fallback || o.email || '-');
   }
 
   officerCompanyName(o: AllCompanyOfficer): string {
@@ -893,6 +1101,12 @@ export class HrWorkspaceComponent implements OnInit {
         (o.email ?? '').toLowerCase().includes(q) ||
         (o.phone ?? '').toLowerCase().includes(q);
     });
+  }
+
+  private cleanDisplayName(value?: string | null): string {
+    const normalized = (value ?? '').trim();
+    if (!normalized || /^[?\s]+$/.test(normalized)) return '';
+    return normalized;
   }
 
   private toYmd(date: Date): string {

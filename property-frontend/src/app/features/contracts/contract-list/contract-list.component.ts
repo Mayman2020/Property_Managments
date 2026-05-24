@@ -95,7 +95,7 @@ export class ContractListComponent implements OnInit {
   private readonly search$ = new Subject<void>();
 
   displayedColumns = ['contractNumber', 'tenant', 'unit', 'dates', 'rent', 'status', 'actions'];
-  statusOptions = ['DRAFT', 'PENDING_OWNER_APPROVAL', 'PENDING_TERMINATION_APPROVAL', 'PENDING_RENEWAL_APPROVAL', 'ACTIVE', 'EXPIRED', 'TERMINATED', 'ENDED', 'CANCELLED', 'RENEWED', 'SUSPENDED', 'OWNER_REJECTED'];
+  statusOptions = ['DRAFT', 'PENDING_OWNER_APPROVAL', 'PENDING_TERMINATION_APPROVAL', 'PENDING_RENEWAL_APPROVAL', 'ACTIVE', 'EXPIRED', 'TERMINATED', 'ENDED', 'CANCELLED', 'RENEWED', 'OWNER_REJECTED'];
 
   constructor(
     private readonly contractSvc: ContractService,
@@ -223,7 +223,6 @@ export class ContractListComponent implements OnInit {
       CANCELLED: 'chip-danger',
       TERMINATED: 'chip-danger',
       RENEWED: 'chip-info',
-      SUSPENDED: 'chip-warn',
       OWNER_REJECTED: 'chip-danger'
     };
     return map[status] ?? 'chip-default';
@@ -266,7 +265,6 @@ export class ContractListComponent implements OnInit {
       CANCELLED: 'إلغاء مسودة العقد',
       OWNER_REJECTED: 'مرفوض من المالك',
       RENEWED: 'تم تجديد العقد',
-      SUSPENDED: 'عقد معلّق'
     };
     const labelsEn: Record<string, string> = {
       DRAFT: 'Draft contract',
@@ -280,7 +278,6 @@ export class ContractListComponent implements OnInit {
       CANCELLED: 'Draft contract cancelled',
       OWNER_REJECTED: 'Rejected by owner',
       RENEWED: 'Contract renewed',
-      SUSPENDED: 'Contract suspended'
     };
     return (ar ? labelsAr : labelsEn)[status] ?? this.i18n.instant(`CONTRACTS.STATUS_${status}`);
   }

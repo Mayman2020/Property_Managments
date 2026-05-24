@@ -6,7 +6,6 @@ import { catchError, firstValueFrom, forkJoin, map, of } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
-import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -29,6 +28,8 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state/empt
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { ExportColumn, TableExportToolbarComponent } from '../../../shared/components/table-export-toolbar/table-export-toolbar.component';
 import { FilterBarComponent, FilterSpec } from '../../../shared/components/filter-bar/filter-bar.component';
+import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
+import { Location } from '@angular/common';
 import { PropertyFormComponent } from '../property-form/property-form.component';
 import { PermissionService } from '../../../core/services/permission.service';
 
@@ -48,8 +49,8 @@ interface PropertyAccessSummaryDto {
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
-    MatPaginatorModule,
     MatTooltipModule,
+    TablePagerComponent,
     MatFormFieldModule,
     MatSelectModule,
     PageHeaderComponent,
@@ -96,7 +97,8 @@ export class PropertyListComponent implements OnInit {
     private readonly permissions: PermissionService,
     private readonly auth: AuthService,
     private readonly api: ApiService,
-    private readonly destroyRef: DestroyRef
+    private readonly destroyRef: DestroyRef,
+    private readonly location: Location
   ) {
     this.auth.activeRoleChanged.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       this.page = 0;
@@ -353,9 +355,13 @@ export class PropertyListComponent implements OnInit {
     });
   }
 
-  onPage(event: PageEvent): void {
-    this.page = event.pageIndex;
+  onPageIndexChange(index: number): void {
+    this.page = index;
     this.load();
+  }
+
+  goBack(): void {
+    this.location.back();
   }
 
   onSearch(value: string): void {
@@ -379,40 +385,6 @@ export class PropertyListComponent implements OnInit {
   clearFilters(): void {
     this.filterType = null;
     this.filterStatus = null;
-  }
-
-  goToPage(pageNumber: number): void {
-    const nextPage = pageNumber - 1;
-    if (nextPage < 0 || nextPage >= this.totalPages || nextPage === this.page) return;
-    this.page = nextPage;
-    this.load();
-  }
-
-  previousPage(): void {
-    this.goToPage(this.page);
-  }
-
-  nextPage(): void {
-    this.goToPage(this.page + 2);
-  }
-
-  pageItems(): Array<number | 'ellipsis'> {
-    const total = this.totalPages;
-    const current = this.page + 1;
-
-    if (total <= 7) {
-      return Array.from({ length: total }, (_, index) => index + 1);
-    }
-
-    if (current <= 4) {
-      return [1, 2, 3, 4, 5, 'ellipsis', total];
-    }
-
-    if (current >= total - 3) {
-      return [1, 'ellipsis', total - 4, total - 3, total - 2, total - 1, total];
-    }
-
-    return [1, 'ellipsis', current - 1, current, current + 1, 'ellipsis', total];
   }
 
   openAddDialog(): void {

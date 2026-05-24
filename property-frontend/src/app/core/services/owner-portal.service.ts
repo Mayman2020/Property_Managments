@@ -35,6 +35,7 @@ export interface OwnerStatementItem {
   totalRevenue: number;
   totalExpenses: number;
   ownerNetAmount: number;
+  ownershipPercentage?: number;
   status?: string;
   pdfUrl?: string;
 }

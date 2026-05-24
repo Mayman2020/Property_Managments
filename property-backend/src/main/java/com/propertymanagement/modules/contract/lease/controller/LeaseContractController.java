@@ -26,6 +26,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import com.propertymanagement.modules.contract.lease.entity.ContractStatus;
 import com.propertymanagement.modules.contract.lease.service.LeaseContractService;
+import com.propertymanagement.modules.inspection.dto.CreateInspectionRequest;
+import com.propertymanagement.modules.inspection.dto.InspectionResponse;
+import com.propertymanagement.modules.inspection.service.UnitInspectionService;
 
 @RestController
 @RequestMapping("/contracts")
@@ -34,6 +37,7 @@ public class LeaseContractController {
 
     private final LeaseContractService contractService;
     private final ContractRenewalService renewalService;
+    private final UnitInspectionService unitInspectionService;
 
     @GetMapping
     @RequiresPermission(module = "contracts", action = "view")
@@ -84,6 +88,12 @@ public class LeaseContractController {
     public ResponseEntity<ApiResponse<ContractResponse>> update(
             @PathVariable Long id, @Valid @RequestBody CreateContractDto dto) {
         return ResponseEntity.ok(ApiResponse.ok(contractService.update(id, dto, currentUserId())));
+    }
+
+    @PatchMapping("/{id}/submit-for-owner-approval")
+    @RequiresPermission(module = "contracts", action = "edit")
+    public ResponseEntity<ApiResponse<ContractResponse>> submitForOwnerApproval(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.ok(contractService.submitForOwnerApproval(id, currentUserId())));
     }
 
     @PatchMapping("/{id}/activate")
@@ -170,6 +180,22 @@ public class LeaseContractController {
             @PathVariable Long id, @RequestBody(required = false) ConfirmDamagePaymentDto dto) {
         return ResponseEntity.ok(ApiResponse.ok(contractService.confirmDamagePayment(id, currentUserId(),
                 dto != null ? dto : new ConfirmDamagePaymentDto())));
+    }
+
+    @GetMapping("/{contractId}/inspections")
+    @RequiresPermission(module = "contracts", action = "view")
+    public ResponseEntity<ApiResponse<List<InspectionResponse>>> listInspections(@PathVariable Long contractId) {
+        return ResponseEntity.ok(ApiResponse.ok(unitInspectionService.listByContract(contractId)));
+    }
+
+    @PostMapping("/{contractId}/inspections")
+    @RequiresPermission(module = "contracts", action = "create")
+    public ResponseEntity<ApiResponse<InspectionResponse>> createInspection(
+            @PathVariable Long contractId,
+            @Valid @RequestBody CreateInspectionRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok(unitInspectionService.createInspection(
+                        contractId, request.getType(), currentUserId())));
     }
 
     @PostMapping("/{id}/clear-unit")

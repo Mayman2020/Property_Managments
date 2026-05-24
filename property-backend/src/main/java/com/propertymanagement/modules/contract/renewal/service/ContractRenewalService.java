@@ -56,6 +56,7 @@ public class ContractRenewalService {
     private final ContractRenewalRepository renewalRepository;
     private final UnitService unitService;
     private final MaintenanceRequestRepository maintenanceRequestRepository;
+    private final com.propertymanagement.codegen.CodeGenerationService codeGenerationService;
 
     @Transactional(readOnly = true)
     public ContractRenewalContextResponse getRenewalContext(Long contractId) {
@@ -158,9 +159,10 @@ public class ContractRenewalService {
             throw AppException.badRequest("Contract duration cannot exceed 12 months");
         }
 
-        String year = String.valueOf(LocalDate.now().getYear());
-        long count = contractRepository.countByContractNumberStartingWith("CNT-" + year);
-        String newNumber = String.format("CNT-%s-%05d", year, count + 1);
+        // Use the shared sequence-backed generator so the CNT counter stays in sync
+        // with LeaseContractService.create — counting existing rows races against
+        // concurrent inserts and ends up issuing duplicate contract numbers.
+        String newNumber = codeGenerationService.generate("CNT");
 
         int freeMonths = dto.getFreeMonths() != null ? dto.getFreeMonths() : 0;
         boolean hasFreeMonth = freeMonths > 0;
@@ -257,9 +259,7 @@ public class ContractRenewalService {
             throw AppException.badRequest("error.contract.renewal.duplicate_prevented");
         }
 
-        String year = String.valueOf(LocalDate.now().getYear());
-        long count = contractRepository.countByContractNumberStartingWith("CNT-" + year);
-        String newNumber = String.format("CNT-%s-%05d", year, count + 1);
+        String newNumber = codeGenerationService.generate("CNT");
 
         LeaseContract newContract = LeaseContract.builder()
                 .contractNumber(newNumber)

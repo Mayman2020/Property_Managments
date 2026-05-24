@@ -92,21 +92,23 @@
               </span>
             </td>
             <td class="actions-cell">
-              <button type="button" class="app-icon-btn primary-tint" *appCan="'maintenance'; action: 'create'" (click)="openContractDialog(c)" [matTooltip]="'CONTRACTORS.ASSIGN_PROPERTY' | translate">
-                <mat-icon>handshake</mat-icon>
-              </button>
-              <button type="button" class="app-icon-btn primary-tint" (click)="openStaffDialog(c)" [matTooltip]="isArabic ? 'الموظفين' : 'Staff'">
-                <mat-icon>groups</mat-icon>
-              </button>
-              <button type="button" class="app-icon-btn accent" (click)="openView(c)" [matTooltip]="'ACTIONS.VIEW' | translate">
-                <mat-icon>visibility</mat-icon>
-              </button>
-              <button type="button" class="app-icon-btn" *appCan="'contractors'; action: 'edit'" (click)="openDialog(c)" [matTooltip]="'ACTIONS.EDIT' | translate">
-                <mat-icon>edit</mat-icon>
-              </button>
-              <button type="button" class="app-icon-btn danger" *appCan="'contractors'; action: 'delete'" (click)="remove(c)" [matTooltip]="'ACTIONS.DELETE' | translate">
-                <mat-icon>delete</mat-icon>
-              </button>
+              <div class="table-actions">
+                <button type="button" class="app-icon-btn primary-tint" *appCan="'maintenance'; action: 'create'" (click)="openContractDialog(c)" [matTooltip]="'CONTRACTORS.ASSIGN_PROPERTY' | translate">
+                  <mat-icon>handshake</mat-icon>
+                </button>
+                <button type="button" class="app-icon-btn primary-tint" (click)="openStaffDialog(c)" [matTooltip]="'CONTRACTORS.STAFF' | translate">
+                  <mat-icon>groups</mat-icon>
+                </button>
+                <button type="button" class="app-icon-btn accent" (click)="openView(c)" [matTooltip]="'ACTIONS.VIEW' | translate">
+                  <mat-icon>visibility</mat-icon>
+                </button>
+                <button type="button" class="app-icon-btn" *appCan="'contractors'; action: 'edit'" (click)="openDialog(c)" [matTooltip]="'ACTIONS.EDIT' | translate">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button type="button" class="app-icon-btn danger" *appCan="'contractors'; action: 'delete'" (click)="remove(c)" [matTooltip]="'ACTIONS.DELETE' | translate">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
             </td>
           </tr>
           <tr *ngIf="filteredCompanies.length === 0">

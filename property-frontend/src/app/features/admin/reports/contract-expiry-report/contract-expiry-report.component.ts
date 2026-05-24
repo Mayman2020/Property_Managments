@@ -12,6 +12,8 @@ import { SnackService } from '../../../../core/services/snack.service';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { PageHeaderComponent } from '../../../../shared/components/page-header/page-header.component';
 import { EmptyStateComponent } from '../../../../shared/components/empty-state/empty-state.component';
+import { TablePagerComponent } from '../../../../shared/components/table-pager/table-pager.component';
+import { ExportColumn, TableExportToolbarComponent } from '../../../../shared/components/table-export-toolbar/table-export-toolbar.component';
 
 @Component({
   selector: 'app-contract-expiry-report',
@@ -20,38 +22,18 @@ import { EmptyStateComponent } from '../../../../shared/components/empty-state/e
     NgIf, NgFor, NgClass, DatePipe, DecimalPipe, FormsModule,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule,
     TranslateModule,
-    PageHeaderComponent, EmptyStateComponent
+    PageHeaderComponent, EmptyStateComponent, TablePagerComponent, TableExportToolbarComponent
   ],
   template: `
-    <app-page-header
-      [title]="('INLINE_TEXT.CONTRACT_EXPIRY_REPORT' | translate)"
-      [subtitle]="('INLINE_TEXT.CONTRACTS_EXPIRING_IN_THE_UPCOMING_PERIOD' | translate)">
-    </app-page-header>
-
-    <div class="page-body">
-      <!-- Filters -->
-      <div class="finance-filter-strip">
-        <label>{{ ('INLINE_TEXT.EXPIRING_WITHIN' | translate) }}</label>
-        <select [(ngModel)]="daysAhead" (change)="load()" class="estate-property-select">
-          <option [ngValue]="30">30 {{ ('INLINE_TEXT.DAYS' | translate) }}</option>
-          <option [ngValue]="60">60 {{ ('INLINE_TEXT.DAYS' | translate) }}</option>
-          <option [ngValue]="90">90 {{ ('INLINE_TEXT.DAYS' | translate) }}</option>
-          <option [ngValue]="180">180 {{ ('INLINE_TEXT.DAYS' | translate) }}</option>
-        </select>
-
-        <label *ngIf="properties.length">{{ ('INLINE_TEXT.PROPERTY' | translate) }}</label>
-        <select *ngIf="properties.length" [(ngModel)]="filterPropertyId" (change)="load()" class="estate-property-select">
-          <option [ngValue]="null">{{ ('INLINE_TEXT.ALL' | translate) }}</option>
-          <option *ngFor="let p of properties" [ngValue]="p.id">
-            {{ i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName) }}
-          </option>
-        </select>
-
-        <button mat-stroked-button (click)="exportCsv()" [disabled]="rows.length === 0" style="margin-inline-start:auto">
-          <mat-icon>download</mat-icon>
-          {{ ('INLINE_TEXT.EXPORT_CSV' | translate) }}
-        </button>
-      </div>
+    <div class="app-page">
+      <app-page-header
+        [title]="('INLINE_TEXT.CONTRACT_EXPIRY_REPORT' | translate)"
+        [subtitle]="('INLINE_TEXT.CONTRACTS_EXPIRING_IN_THE_UPCOMING_PERIOD' | translate)"
+        [breadcrumbs]="[
+          { label: ('NAV.DASHBOARD' | translate), route: '/admin/dashboard' },
+          { label: ('NAV.CONTRACT_EXPIRY_REPORT' | translate) }
+        ]">
+      </app-page-header>
 
       <!-- Summary Cards -->
       <div class="summary-cards" *ngIf="!loading && rows.length > 0">
@@ -73,54 +55,88 @@ import { EmptyStateComponent } from '../../../../shared/components/empty-state/e
 
       <div *ngIf="loading" class="loading-center"><mat-spinner diameter="40"></mat-spinner></div>
 
-      <app-empty-state
-        *ngIf="!loading && rows.length === 0"
-        icon="check_circle"
-        [message]="('INLINE_TEXT.NO_CONTRACTS_EXPIRING_IN_THIS_PERIOD' | translate)">
-      </app-empty-state>
-
       <!-- Table -->
-      <div *ngIf="!loading && rows.length > 0" class="table-wrap">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>{{ ('INLINE_TEXT.CONTRACT' | translate) }}</th>
-              <th>{{ ('INLINE_TEXT.PROPERTY' | translate) }}</th>
-              <th>{{ ('INLINE_TEXT.UNIT' | translate) }}</th>
-              <th>{{ ('INLINE_TEXT.TENANT' | translate) }}</th>
-              <th>{{ ('INLINE_TEXT.END_DATE' | translate) }}</th>
-              <th>{{ ('INLINE_TEXT.DAYS_LEFT' | translate) }}</th>
-              <th>{{ ('INLINE_TEXT.MONTHLY_RENT' | translate) }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let row of rows" [class.urgent-row]="row.daysRemaining <= 30">
-              <td>{{ row.contractNumber }}</td>
-              <td>{{ row.propertyName }}</td>
-              <td>{{ row.unitNumber }}</td>
-              <td>{{ row.tenantName }}</td>
-              <td>{{ row.endDate | date:'dd/MM/yyyy' }}</td>
-              <td>
-                <span class="days-badge" [class.urgent]="row.daysRemaining <= 30" [class.warning]="row.daysRemaining <= 60">
-                  {{ row.daysRemaining }} {{ ('INLINE_TEXT.DAYS_2' | translate) }}
-                </span>
-              </td>
-              <td>{{ row.monthlyRent | number:'1.2-2' }}</td>
-            </tr>
-          </tbody>
-        </table>
+      <div *ngIf="!loading" class="app-card table-card directory-table-card">
+        <div class="estate-table-toolbar directory-toolbar">
+          <div class="directory-toolbar-top">
+            <div class="finance-filter-strip">
+              <label>{{ ('INLINE_TEXT.EXPIRING_WITHIN' | translate) }}</label>
+              <select [(ngModel)]="daysAhead" (change)="onFiltersChange()" class="estate-property-select">
+                <option [ngValue]="30">30 {{ ('INLINE_TEXT.DAYS' | translate) }}</option>
+                <option [ngValue]="60">60 {{ ('INLINE_TEXT.DAYS' | translate) }}</option>
+                <option [ngValue]="90">90 {{ ('INLINE_TEXT.DAYS' | translate) }}</option>
+                <option [ngValue]="180">180 {{ ('INLINE_TEXT.DAYS' | translate) }}</option>
+              </select>
+
+              <label *ngIf="properties.length">{{ ('INLINE_TEXT.PROPERTY' | translate) }}</label>
+              <select *ngIf="properties.length" [(ngModel)]="filterPropertyId" (change)="onFiltersChange()" class="estate-property-select">
+                <option [ngValue]="null">{{ ('INLINE_TEXT.ALL' | translate) }}</option>
+                <option *ngFor="let p of properties" [ngValue]="p.id">
+                  {{ i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName) }}
+                </option>
+              </select>
+            </div>
+
+            <app-table-export-toolbar
+              permissionKey="contracts"
+              [title]="('INLINE_TEXT.CONTRACT_EXPIRY_REPORT' | translate)"
+              fileName="contract-expiry-report"
+              [columns]="exportColumns"
+              [rows]="rows">
+            </app-table-export-toolbar>
+          </div>
+        </div>
+
+        <div class="app-table-wrap" *ngIf="rows.length > 0; else emptyContractExpiryTpl">
+          <table class="app-data-table">
+            <thead>
+              <tr>
+                <th>{{ ('INLINE_TEXT.CONTRACT' | translate) }}</th>
+                <th>{{ ('INLINE_TEXT.PROPERTY' | translate) }}</th>
+                <th>{{ ('INLINE_TEXT.UNIT' | translate) }}</th>
+                <th>{{ ('INLINE_TEXT.TENANT' | translate) }}</th>
+                <th>{{ ('INLINE_TEXT.END_DATE' | translate) }}</th>
+                <th>{{ ('INLINE_TEXT.DAYS_LEFT' | translate) }}</th>
+                <th>{{ ('INLINE_TEXT.MONTHLY_RENT' | translate) }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of pagedRows" [class.urgent-row]="row.daysRemaining <= 30">
+                <td>{{ row.contractNumber }}</td>
+                <td>{{ row.propertyName }}</td>
+                <td>{{ row.unitNumber }}</td>
+                <td>{{ row.tenantName }}</td>
+                <td>{{ row.endDate | date:'dd/MM/yyyy' }}</td>
+                <td>
+                  <span class="days-badge" [class.urgent]="row.daysRemaining <= 30" [class.warning]="row.daysRemaining <= 60">
+                    {{ row.daysRemaining }} {{ ('INLINE_TEXT.DAYS_2' | translate) }}
+                  </span>
+                </td>
+                <td>{{ row.monthlyRent | number:'1.2-2' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <app-table-pager *ngIf="rows.length > 0" [length]="rows.length" [pageSize]="pageSize" [pageIndex]="pageIndex" (pageIndexChange)="pageIndex = $event"></app-table-pager>
+
+        <ng-template #emptyContractExpiryTpl>
+          <app-empty-state
+            icon="check_circle"
+            [message]="('INLINE_TEXT.NO_CONTRACTS_EXPIRING_IN_THIS_PERIOD' | translate)">
+          </app-empty-state>
+        </ng-template>
       </div>
     </div>
   `,
   styles: [`
-    .page-body { padding: 16px 24px; }
     .loading-center { display: flex; justify-content: center; padding: 60px 0; }
     .finance-filter-strip {
       display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-      margin: 0 0 16px; padding: 12px 16px;
-      border: 1px solid var(--line, #e4d8c8); background: var(--surface, #fffdf8); border-radius: 8px;
+      padding: 8px 12px;
+      border: 1px solid var(--line-2, #e4d8c8); background: rgba(255, 255, 255, 0.72); border-radius: 12px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
     }
-    .finance-filter-strip label { color: var(--text-muted); font-weight: 700; }
+    .finance-filter-strip label { color: var(--text-muted); font-size: 12px; font-weight: 600; white-space: nowrap; }
 
     .summary-cards { display: flex; gap: 16px; margin-bottom: 20px; }
     .summary-card {
@@ -133,11 +149,8 @@ import { EmptyStateComponent } from '../../../../shared/components/empty-state/e
     .card-number { font-size: 28px; font-weight: 700; line-height: 1; }
     .card-label { font-size: 12px; opacity: 0.8; margin-top: 2px; }
 
-    .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid #e5e7eb; }
-    .data-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    .data-table th { background: #f9fafb; padding: 12px 16px; text-align: start; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb; }
-    .data-table td { padding: 12px 16px; border-bottom: 1px solid #f3f4f6; color: #111827; }
-    .data-table .urgent-row { background: #fef2f2; }
+    .table-card { padding: 0; overflow: hidden; }
+    .app-data-table .urgent-row { background: #fef2f2; }
 
     .days-badge { padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; background: #f3f4f6; }
     .days-badge.urgent { background: #fee2e2; color: #dc2626; }
@@ -150,9 +163,28 @@ export class ContractExpiryReportComponent implements OnInit {
   loading = true;
   daysAhead = 90;
   filterPropertyId: number | null = null;
+  readonly pageSize = 5;
+  pageIndex = 0;
 
   get urgentCount(): number {
     return this.rows.filter(r => r.daysRemaining <= 30).length;
+  }
+
+  get pagedRows(): ContractExpiryRow[] {
+    const start = this.pageIndex * this.pageSize;
+    return this.rows.slice(start, start + this.pageSize);
+  }
+
+  get exportColumns(): ExportColumn<ContractExpiryRow>[] {
+    return [
+      { header: this.i18n.instant('INLINE_TEXT.CONTRACT'), value: (row) => row.contractNumber },
+      { header: this.i18n.instant('INLINE_TEXT.PROPERTY'), value: (row) => row.propertyName },
+      { header: this.i18n.instant('INLINE_TEXT.UNIT'), value: (row) => row.unitNumber },
+      { header: this.i18n.instant('INLINE_TEXT.TENANT'), value: (row) => row.tenantName },
+      { header: this.i18n.instant('INLINE_TEXT.END_DATE'), value: (row) => row.endDate },
+      { header: this.i18n.instant('INLINE_TEXT.DAYS_LEFT'), value: (row) => row.daysRemaining },
+      { header: this.i18n.instant('INLINE_TEXT.MONTHLY_RENT'), value: (row) => row.monthlyRent }
+    ];
   }
 
   constructor(
@@ -172,9 +204,14 @@ export class ContractExpiryReportComponent implements OnInit {
   load(): void {
     this.loading = true;
     this.reportsService.getContractExpiry(this.daysAhead, this.filterPropertyId ?? undefined).subscribe({
-      next: (res) => { this.rows = res.data ?? []; this.loading = false; },
-      error: () => { this.loading = false; this.snack.error('Failed to load report'); }
+      next: (res) => { this.rows = res.data ?? []; this.pageIndex = 0; this.loading = false; },
+      error: () => { this.loading = false; this.snack.error('INLINE_TEXT.FAILED_TO_LOAD_REPORT'); }
     });
+  }
+
+  onFiltersChange(): void {
+    this.pageIndex = 0;
+    this.load();
   }
 
   exportCsv(): void {

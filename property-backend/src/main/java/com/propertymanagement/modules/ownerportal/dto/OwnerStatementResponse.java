@@ -15,6 +15,7 @@ public class OwnerStatementResponse {
     private BigDecimal totalRevenue;
     private BigDecimal totalExpenses;
     private BigDecimal ownerNetAmount;
+    private java.math.BigDecimal ownershipPercentage;
     private String status;
     private String pdfUrl;
 }

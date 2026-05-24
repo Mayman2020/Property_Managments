@@ -97,7 +97,7 @@ ON CONFLICT (category_code) DO NOTHING;
 INSERT INTO module_definitions (module_key, title_ar, title_en, description_ar, description_en, icon, required_modules, recommended_modules, monthly_price, display_order, is_active)
 VALUES
 ('contracts',    'العقود والإيجارات', 'Contracts & Rentals',  'العقود والمدفوعات والمخالفات والشكاوى.',       'Contracts, rent payments, violations, and complaints.',            'description',   '[]', '["finance","vacancies"]', 500, 10,  TRUE),
-('vacancies',    'الوحدات الشاغرة',  'Vacancies',             'إعلانات الوحدات الشاغرة والاستفسارات.',        'Vacancy listings and rental inquiries.',                           'door_open',     '["contracts"]', '[]', 150, 20, TRUE),
+('vacancies',    'الوحدات الشاغرة',  'Vacancies',             'إعلانات الوحدات الشاغرة والاستفسارات.',        'Vacancy listings and rental inquiries.',                           'meeting_room',  '["contracts"]', '[]', 150, 20, TRUE),
 ('maintenance',  'الصيانة',          'Maintenance',           'طلبات الصيانة وجدولتها ومتابعتها.',            'Maintenance requests, scheduling, and tracking.',                  'construction',  '[]', '["inventory","vendors"]', 400, 30, TRUE),
 ('inventory',    'المخزون',          'Inventory',             'مخزون الصيانة والمستلزمات.',                   'Spare parts and inventory management.',                            'inventory_2',   '[]', '["maintenance"]', 120, 40, TRUE),
 ('finance',      'المالية',          'Finance',               'الإيرادات والمصروفات والتقارير المالية.',       'Revenue, expenses, payroll expense sync, and financial reports.',  'bar_chart',     '[]', '["contracts","hr"]', 450, 50, TRUE),

@@ -6,6 +6,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
@@ -14,6 +15,8 @@ import { SnackService } from '../../../core/services/snack.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { ApiService } from '../../../core/services/api.service';
 import { AppConstants } from '../../../core/constants/app-constants';
+import { LookupCacheService } from '../../../core/services/lookup-cache.service';
+import { LookupItem } from '../../../core/services/lookup.service';
 
 export type RatingValue = 'VERY_SATISFIED' | 'SATISFIED' | 'DISSATISFIED' | 'VERY_DISSATISFIED';
 
@@ -46,7 +49,7 @@ export interface ComplaintAttachment {
   imports: [
     CommonModule, FormsModule,
     MatTabsModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule,
-    TranslateModule, PageHeaderComponent,
+    MatTooltipModule, TranslateModule, PageHeaderComponent,
   ],
   templateUrl: './tenant-complaints-page.component.html',
   styleUrls: ['./tenant-complaints-page.component.scss'],
@@ -92,9 +95,12 @@ export class TenantComplaintsPageComponent implements OnInit {
     private readonly router: Router,
     private readonly api: ApiService,
     readonly i18n: I18nService,
+    private readonly lookupCache: LookupCacheService,
   ) {}
 
-  ngOnInit(): void { this.load(); }
+  ngOnInit(): void {
+    this.lookupCache.preload('COMPLAINT_TYPE', 'COMPLAINT_STATUS').subscribe(() => this.load());
+  }
 
   load(): void {
     this.loading = true;
@@ -110,7 +116,8 @@ export class TenantComplaintsPageComponent implements OnInit {
   // ── Status helpers ────────────────────────────────────────────────────
 
   statusLabel(s: string): string {
-    const ar = this.i18n.currentLang === 'ar';
+    const lookupLabel = this.lookupCache.label('COMPLAINT_STATUS', s);
+    if (lookupLabel && lookupLabel !== s) return lookupLabel;
     const map: Record<string, string> = {
       OPEN:       this.i18n.instant('INLINE_TEXT.OPEN'),
       IN_REVIEW:  this.i18n.instant('INLINE_TEXT.IN_REVIEW'),
@@ -121,17 +128,16 @@ export class TenantComplaintsPageComponent implements OnInit {
   }
 
   typeLabel(t: string): string {
-    if (!t) return '—';
-    const ar = this.i18n.currentLang === 'ar';
-    const map: Record<string, string> = {
-      MAINTENANCE: this.i18n.instant('INLINE_TEXT.MAINTENANCE_3'),
-      NOISE:       this.i18n.instant('INLINE_TEXT.NOISE'),
-      CLEANLINESS: this.i18n.instant('INLINE_TEXT.CLEANLINESS'),
-      BILLING:     this.i18n.instant('INLINE_TEXT.BILLING'),
-      MANAGEMENT:  this.i18n.instant('INLINE_TEXT.MANAGEMENT'),
-      OTHER:       this.i18n.instant('INLINE_TEXT.OTHER'),
-    };
-    return map[t] ?? t;
+    if (!t) return '-';
+    return this.lookupCache.label('COMPLAINT_TYPE', t) || t;
+  }
+
+  get complaintTypes(): LookupItem[] {
+    return this.lookupCache.items('COMPLAINT_TYPE');
+  }
+
+  lookupItemLabel(item: LookupItem): string {
+    return this.i18n.currentLang === 'ar' ? item.nameAr : item.nameEn;
   }
 
   ratingLabel(r: string): string {

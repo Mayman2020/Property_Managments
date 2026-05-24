@@ -162,6 +162,7 @@ export class TopbarComponent implements OnInit, OnDestroy {
       role === 'SUPER_ADMIN' ||
       role === 'GENERAL_MANAGER' ||
       role === 'ACCOUNTANT' ||
+      role === 'HR_OFFICER' ||
       role === 'OWNER' ||
       role === 'PROPERTY_GUARD' ||
       role === 'PROCEDURES_CLERK'
@@ -260,9 +261,6 @@ export class TopbarComponent implements OnInit, OnDestroy {
       role === 'MAINTENANCE_COMPANY'
     ) {
       return '/officer/notifications';
-    }
-    if (role === 'EMPLOYEE') {
-      return '/employee/notifications';
     }
     return this.auth.getDashboardRoute();
   }

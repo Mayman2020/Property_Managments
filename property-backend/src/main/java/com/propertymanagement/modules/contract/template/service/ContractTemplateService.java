@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import com.propertymanagement.modules.contract.template.entity.ContractTemplate;
 import com.propertymanagement.modules.contract.template.repository.ContractTemplateRepository;
 
@@ -18,6 +20,13 @@ import com.propertymanagement.modules.contract.template.repository.ContractTempl
 public class ContractTemplateService {
 
     private final ContractTemplateRepository templateRepository;
+
+    /**
+     * Mirrors the DB CHECK constraint {@code contract_templates_template_type_check}.
+     * Kept here so unknown values surface as a 400 from the service layer instead of
+     * bubbling up as a 500 DataIntegrityViolationException from the JDBC driver.
+     */
+    private static final Set<String> ALLOWED_TEMPLATE_TYPES = Set.of("RESIDENTIAL", "COMMERCIAL", "SHOP");
 
     public Page<ContractTemplateResponse> getAll(Pageable pageable) {
         return templateRepository.findAll(pageable).map(this::toResponse);
@@ -39,11 +48,12 @@ public class ContractTemplateService {
         if (legacyName == null) {
             throw AppException.badRequest("Template name is required");
         }
+        String normalizedType = normalizeTemplateType(request.getTemplateType());
         ContractTemplate template = ContractTemplate.builder()
                 .templateName(legacyName)
                 .templateNameAr(nameAr != null ? nameAr : legacyName)
                 .templateNameEn(nameEn != null ? nameEn : legacyName)
-                .templateType(request.getTemplateType())
+                .templateType(normalizedType)
                 .content(request.getContent())
                 .variables(request.getVariables())
                 .isActive(Boolean.TRUE.equals(request.getIsActive()))
@@ -63,7 +73,7 @@ public class ContractTemplateService {
         template.setTemplateName(legacyName);
         template.setTemplateNameAr(nameAr != null ? nameAr : legacyName);
         template.setTemplateNameEn(nameEn != null ? nameEn : legacyName);
-        template.setTemplateType(request.getTemplateType());
+        template.setTemplateType(normalizeTemplateType(request.getTemplateType()));
         template.setContent(request.getContent());
         template.setVariables(request.getVariables());
         if (request.getIsActive() != null) {
@@ -109,5 +119,19 @@ public class ContractTemplateService {
         if (value == null) return null;
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String normalizeTemplateType(String raw) {
+        String trimmed = trimToNull(raw);
+        if (trimmed == null) {
+            return null;
+        }
+        String upper = trimmed.toUpperCase(Locale.ROOT);
+        if (!ALLOWED_TEMPLATE_TYPES.contains(upper)) {
+            throw AppException.badRequest(
+                    "templateType must be one of " + ALLOWED_TEMPLATE_TYPES + " (got: " + raw + ")",
+                    "INVALID_TEMPLATE_TYPE");
+        }
+        return upper;
     }
 }

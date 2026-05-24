@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
@@ -20,7 +21,7 @@ import { Property, PropertyService } from '../../../core/services/property.servi
   imports: [
     NgIf, NgFor, DatePipe, CurrencyPipe, DecimalPipe, RouterLink, FormsModule,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule,
-    TranslateModule, PageHeaderComponent, EmptyStateComponent, TablePagerComponent
+    MatTooltipModule, TranslateModule, PageHeaderComponent, EmptyStateComponent, TablePagerComponent
   ],
   template: `
     <div class="app-page">
@@ -80,9 +81,9 @@ import { Property, PropertyService } from '../../../core/services/property.servi
                 <td>
                   <span class="status-badge" data-status="OVERDUE">{{ 'OVERDUE.STATUS_OVERDUE' | translate }}</span>
                 </td>
-                <td>
-                  <a mat-stroked-button [routerLink]="['/admin/contracts', item.contractId]" style="font-size:0.8rem;">
-                    {{ 'ACTIONS.VIEW' | translate }}
+                <td class="actions-cell">
+                  <a class="app-icon-btn view" [routerLink]="['/admin/contracts', item.contractId]" [matTooltip]="'ACTIONS.VIEW' | translate">
+                    <mat-icon>visibility</mat-icon>
                   </a>
                 </td>
               </tr>
@@ -137,7 +138,7 @@ export class OverduePaymentsComponent implements OnInit {
   properties: Property[] = [];
   selectedPropertyId: number | null = null;
   loading = true;
-  readonly pageSize = 15;
+  readonly pageSize = 5;
   pageIndex = 0;
 
   get paged(): any[] {

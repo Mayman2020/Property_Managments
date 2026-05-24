@@ -1,0 +1,13 @@
+{
+  "name": "docs-word-builder",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate-four-documents": "node generate-four-documents.mjs"
+  },
+  "dependencies": {
+    "docx": "^9.5.0",
+    "html-to-docx": "^1.8.0",
+    "marked": "^18.0.4"
+  }
+}

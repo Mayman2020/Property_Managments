@@ -4,6 +4,8 @@ import com.propertymanagement.modules.notification.service.NotificationService;
 import com.propertymanagement.modules.notification.entity.NotificationType;
 import com.propertymanagement.modules.owner.entity.Owner;
 import com.propertymanagement.modules.owner.repository.OwnerRepository;
+import com.propertymanagement.modules.ownerportal.service.OwnerRevenueShareService;
+import com.propertymanagement.modules.property.dto.OwnerShareDto;
 import com.propertymanagement.modules.property.dto.PropertyRequest;
 import com.propertymanagement.modules.property.dto.PropertyResponse;
 import com.propertymanagement.modules.user.entity.User;
@@ -28,6 +30,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -56,6 +61,7 @@ public class PropertyService {
     private final UnitRepository unitRepository;
     private final AppMessages appMessages;
     private final LegalEntityRepository legalEntityRepository;
+    private final OwnerRevenueShareService ownerRevenueShareService;
 
     @PersistenceContext
     private EntityManager em;
@@ -121,7 +127,7 @@ public class PropertyService {
                 .active(true)
                 .build();
         Property saved = propertyRepository.save(property);
-        syncPropertyOwners(saved.getId(), request.getOwnerIds());
+        syncPropertyOwners(saved.getId(), resolveOwnerShares(request));
         syncMaintenanceProviders(saved.getId(), request.getMaintenanceProviderType(), request.getMaintenanceProviderIds());
         syncFloors(saved.getId(), saved.getTotalFloors());
         Property persisted = propertyRepository.save(saved);
@@ -159,7 +165,7 @@ public class PropertyService {
         property.setOwnerId(primaryOwnerId);
         property.setOwnerDocumentFiles(normalizeFiles(request.getOwnerDocumentFiles()));
         property.setLegalEntityId(request.getLegalEntityId());
-        syncPropertyOwners(id, request.getOwnerIds());
+        syncPropertyOwners(id, resolveOwnerShares(request));
         syncMaintenanceProviders(id, request.getMaintenanceProviderType(), request.getMaintenanceProviderIds());
         Property saved = propertyRepository.save(property);
         syncFloors(saved.getId(), saved.getTotalFloors());
@@ -203,12 +209,21 @@ public class PropertyService {
     private PropertyResponse toResponseFull(Property p) {
         List<Long> ownerIds = fetchPropertyOwnerIds(p.getId());
         List<Owner> owners = ownerIds.isEmpty() ? List.of() : ownerRepository.findAllById(ownerIds);
+        Map<Long, BigDecimal> pctByOwner = ownerRevenueShareService.loadOwnerShares(p.getId()).stream()
+                .collect(Collectors.toMap(OwnerRevenueShareService.OwnerShare::ownerId,
+                        OwnerRevenueShareService.OwnerShare::percentage, (a, b) -> a));
         List<PropertyResponse.MaintenanceProviderSummary> providers = fetchMaintenanceProviders(p.getId());
-        return buildResponse(p, owners, providers);
+        return buildResponse(p, owners, providers, pctByOwner);
     }
 
     private PropertyResponse buildResponse(Property p, List<Owner> owners,
                                            List<PropertyResponse.MaintenanceProviderSummary> maintenanceProviders) {
+        return buildResponse(p, owners, maintenanceProviders, Map.of());
+    }
+
+    private PropertyResponse buildResponse(Property p, List<Owner> owners,
+                                           List<PropertyResponse.MaintenanceProviderSummary> maintenanceProviders,
+                                           Map<Long, BigDecimal> pctByOwner) {
         String localizedName = LocalizedNameResolver.resolve(p.getPropertyNameAr(), p.getPropertyNameEn(), p.getPropertyName());
         List<PropertyResponse.OwnerSummary> ownerSummaries = owners == null ? null : owners.stream()
                 .map(o -> PropertyResponse.OwnerSummary.builder()
@@ -219,6 +234,7 @@ public class PropertyService {
                         .nationalId(o.getNationalId())
                         .phone(o.getPhone())
                         .email(o.getEmail())
+                        .ownershipPercentage(pctByOwner.get(o.getId()))
                         .build())
                 .collect(Collectors.toList());
         LegalEntity legalEntity = p.getLegalEntityId() == null ? null
@@ -306,17 +322,61 @@ public class PropertyService {
                 .forEach(f -> floorRepository.delete(f));
     }
 
-    private void syncPropertyOwners(Long propertyId, List<Long> ownerIds) {
+    // PHASE2-DONE: TASK1 — property_owners ownership_percentage sync
+    private void syncPropertyOwners(Long propertyId, List<OwnerShareDto> shares) {
         em.createNativeQuery(
                 "DELETE FROM property_mgmt.property_owners WHERE property_id = :pid")
                 .setParameter("pid", propertyId)
                 .executeUpdate();
-        for (Long ownerId : ownerIds.stream().distinct().collect(Collectors.toList())) {
-            em.createNativeQuery(
-                    "INSERT INTO property_mgmt.property_owners (property_id, owner_id) VALUES (:pid, :oid)")
+        for (OwnerShareDto share : shares) {
+            em.createNativeQuery("""
+                    INSERT INTO property_mgmt.property_owners (property_id, owner_id, ownership_percentage)
+                    VALUES (:pid, :oid, :pct)
+                    """)
                     .setParameter("pid", propertyId)
-                    .setParameter("oid", ownerId)
+                    .setParameter("oid", share.getOwnerId())
+                    .setParameter("pct", share.getOwnershipPercentage())
                     .executeUpdate();
+        }
+    }
+
+    private List<OwnerShareDto> resolveOwnerShares(PropertyRequest request) {
+        if (request.getOwnerShares() != null && !request.getOwnerShares().isEmpty()) {
+            validateOwnerShares(request.getOwnerShares(), request.getOwnerIds());
+            return request.getOwnerShares();
+        }
+        List<Long> ids = request.getOwnerIds().stream().distinct().toList();
+        if (ids.isEmpty()) {
+            return List.of();
+        }
+        BigDecimal each = BigDecimal.valueOf(100).divide(
+                BigDecimal.valueOf(ids.size()), 2, RoundingMode.HALF_UP);
+        List<OwnerShareDto> shares = new ArrayList<>();
+        for (int i = 0; i < ids.size(); i++) {
+            OwnerShareDto dto = new OwnerShareDto();
+            dto.setOwnerId(ids.get(i));
+            if (i == ids.size() - 1) {
+                BigDecimal assigned = each.multiply(BigDecimal.valueOf(ids.size() - 1));
+                dto.setOwnershipPercentage(BigDecimal.valueOf(100).subtract(assigned));
+            } else {
+                dto.setOwnershipPercentage(each);
+            }
+            shares.add(dto);
+        }
+        return shares;
+    }
+
+    private void validateOwnerShares(List<OwnerShareDto> shares, List<Long> ownerIds) {
+        BigDecimal sum = shares.stream()
+                .map(OwnerShareDto::getOwnershipPercentage)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        if (sum.compareTo(BigDecimal.valueOf(100)) != 0) {
+            throw AppException.badRequest("Owner percentages must sum to 100", "OWNER_PERCENTAGE_INVALID");
+        }
+        Set<Long> shareOwnerIds = shares.stream().map(OwnerShareDto::getOwnerId).collect(Collectors.toSet());
+        Set<Long> expectedIds = ownerIds == null ? Set.of() : new LinkedHashSet<>(ownerIds);
+        if (!shareOwnerIds.equals(expectedIds)) {
+            throw AppException.badRequest("ownerShares must match ownerIds", "OWNER_SHARE_MISMATCH");
         }
     }
 

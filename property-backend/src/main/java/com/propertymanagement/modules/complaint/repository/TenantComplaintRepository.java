@@ -17,6 +17,26 @@ public interface TenantComplaintRepository extends JpaRepository<TenantComplaint
     Page<TenantComplaint> findByPropertyId(Long propertyId, Pageable pageable);
     Page<TenantComplaint> findByPropertyIdIn(Collection<Long> propertyIds, Pageable pageable);
 
+    @Query("""
+            SELECT c FROM TenantComplaint c
+            WHERE (:status IS NULL OR :status = '' OR c.status = :status)
+              AND (:propertyId IS NULL OR c.propertyId = :propertyId)
+            """)
+    Page<TenantComplaint> findFiltered(@Param("status") String status,
+                                     @Param("propertyId") Long propertyId,
+                                     Pageable pageable);
+
+    @Query("""
+            SELECT c FROM TenantComplaint c
+            WHERE c.propertyId IN :propertyIds
+              AND (:status IS NULL OR :status = '' OR c.status = :status)
+              AND (:filterPropertyId IS NULL OR c.propertyId = :filterPropertyId)
+            """)
+    Page<TenantComplaint> findFilteredByPropertyIds(@Param("propertyIds") Collection<Long> propertyIds,
+                                                    @Param("status") String status,
+                                                    @Param("filterPropertyId") Long filterPropertyId,
+                                                    Pageable pageable);
+
     List<TenantComplaint> findByTenantIdOrderByCreatedAtDesc(Long tenantId);
     List<TenantComplaint> findByTenantIdAndStatusInOrderByCreatedAtDesc(Long tenantId, Collection<String> statuses);
 

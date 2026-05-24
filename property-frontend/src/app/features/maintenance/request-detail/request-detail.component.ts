@@ -50,6 +50,7 @@ export class RequestDetailComponent implements OnInit {
   showSchedulePanel = false;
   showRejectPanel = false;
   showRatingPanel = false;
+  showContactDialog = false;
 
   officers: { id: number; fullName: string }[] = [];
   assignForm!: FormGroup;
@@ -227,13 +228,15 @@ export class RequestDetailComponent implements OnInit {
   openWhatsApp(phone: string | null | undefined): void {
     const normalized = this.whatsAppPhone(phone);
     if (!normalized) return;
-    window.open(`https://wa.me/${normalized}`, '_blank', 'noopener');
+    window.open(`https://web.whatsapp.com/send?phone=${normalized}`, '_blank', 'noopener');
+    this.showContactDialog = false;
   }
 
   callOfficer(phone: string | null | undefined): void {
     const tel = this.cleanPhone(phone);
     if (!tel) return;
     window.location.href = `tel:${tel}`;
+    this.showContactDialog = false;
   }
 
   get canAssign(): boolean {

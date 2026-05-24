@@ -1,39 +1,17 @@
 import { Component } from '@angular/core';
 import { AsyncPipe, NgIf } from '@angular/common';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { LoadingService } from '../../../core/services/loading.service';
 
 @Component({
   selector: 'app-loading-spinner',
   standalone: true,
-  imports: [AsyncPipe, NgIf],
+  imports: [AsyncPipe, NgIf, MatProgressSpinnerModule],
   template: `
-    <div class="loading-overlay" *ngIf="loading.isLoading$ | async">
-      <div class="spinner-wrap">
-        <div class="spinner"></div>
-      </div>
+    <div class="app-loading-overlay" *ngIf="loading.isLoading$ | async" aria-live="polite" aria-busy="true">
+      <mat-spinner diameter="52"></mat-spinner>
     </div>
-  `,
-  styles: [`
-    .loading-overlay {
-      position: fixed; inset: 0; z-index: 9999;
-      display: flex; align-items: center; justify-content: center;
-      background: rgba(26,60,94,0.18);
-      backdrop-filter: blur(3px);
-    }
-    .spinner-wrap {
-      position: relative;
-      width: 64px; height: 64px;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .spinner {
-      position: absolute; inset: 0;
-      border-radius: 50%;
-      border: 3px solid rgba(201,168,76,0.2);
-      border-top-color: #C9A84C;
-      animation: spin 0.8s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-  `]
+  `
 })
 export class LoadingSpinnerComponent {
   constructor(readonly loading: LoadingService) {}

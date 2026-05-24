@@ -165,7 +165,7 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
   propertyTypes: LookupItem[] = [];
   owners: Owner[] = [];
   ownersLoading = false;
-  selectedOwners: Owner[] = [];
+  selectedOwners: (Owner & { ownershipPercentage: number })[] = [];
   ownerTouched = false;
   ownerSearchControl = new FormControl('');
 
@@ -192,7 +192,9 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
 
   addOwner(owner: Owner): void {
     if (!this.isOwnerSelected(owner)) {
-      this.selectedOwners = [...this.selectedOwners, owner];
+      const pct = this.selectedOwners.length === 0 ? 100 : 0;
+      this.selectedOwners = [...this.selectedOwners, { ...owner, ownershipPercentage: pct }];
+      this.redistributeOwnerPercentages();
     }
     this.ownerSearchControl.setValue('', { emitEvent: false });
     this.cdr.markForCheck();
@@ -200,7 +202,20 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
 
   removeOwner(owner: Owner): void {
     this.selectedOwners = this.selectedOwners.filter((o) => o.id !== owner.id);
+    this.redistributeOwnerPercentages();
     this.cdr.markForCheck();
+  }
+
+  redistributeOwnerPercentages(): void {
+    const n = this.selectedOwners.length;
+    if (n === 0) return;
+    const each = Math.round((100 / n) * 100) / 100;
+    this.selectedOwners = this.selectedOwners.map((o, idx) => ({
+      ...o,
+      ownershipPercentage: idx === n - 1
+        ? Math.round((100 - each * (n - 1)) * 100) / 100
+        : each
+    }));
   }
 
   ownerDisplayFn = (o: Owner | null): string => {
@@ -760,6 +775,11 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
       this.snack.error(this.i18n.instant('PROPERTY_FORM.OWNER_REQUIRED'));
       return;
     }
+    const pctSum = this.selectedOwners.reduce((s, o) => s + (o.ownershipPercentage ?? 0), 0);
+    if (Math.abs(pctSum - 100) > 0.01) {
+      this.snack.error(this.i18n.instant('PROPERTY_FORM.OWNER_PERCENT_SUM_INVALID'));
+      return;
+    }
 
     if (this.form.invalid) {
       const missing: string[] = [];
@@ -783,6 +803,10 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
 
     const payload = {
       ownerIds: this.selectedOwners.map((o) => o.id),
+      ownerShares: this.selectedOwners.map((o) => ({
+        ownerId: o.id,
+        ownershipPercentage: o.ownershipPercentage
+      })),
       propertyName: raw.propertyNameAr || raw.propertyName || raw.propertyNameEn,
       propertyNameAr: raw.propertyNameAr || raw.propertyName,
       propertyNameEn: raw.propertyNameEn || raw.propertyName,
@@ -995,7 +1019,9 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
             providerType: mp.providerType
           }));
         }
-        this.selectedOwners = (property.owners ?? []).map((o) => ({
+        const owners = property.owners ?? [];
+        const defaultPct = owners.length > 0 ? Math.round((100 / owners.length) * 100) / 100 : 100;
+        this.selectedOwners = owners.map((o, idx) => ({
           id: o.id,
           fullName: o.fullName,
           fullNameAr: o.fullNameAr,
@@ -1004,7 +1030,10 @@ export class PropertyFormComponent implements OnInit, AfterViewInit {
           phone: o.phone,
           email: o.email,
           active: true,
-          portalAccess: false
+          portalAccess: false,
+          ownershipPercentage: o.ownershipPercentage ?? (idx === owners.length - 1
+            ? Math.round((100 - defaultPct * (owners.length - 1)) * 100) / 100
+            : defaultPct)
         }));
         this.floorUnitsConfig = (property as any).floorUnitsConfig || {};
         this.ownerDocumentUrls = property.ownerDocumentFiles ?? [];

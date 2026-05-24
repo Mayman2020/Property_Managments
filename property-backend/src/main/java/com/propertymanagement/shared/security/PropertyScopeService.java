@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import com.propertymanagement.modules.property.entity.Property;
+import com.propertymanagement.modules.owner.entity.Owner;
 
 @Service
 @RequiredArgsConstructor
@@ -93,9 +94,11 @@ public class PropertyScopeService {
 
     private Set<Long> computeScopedPropertyIds(User user, UserRole effective) {
         if (effective == UserRole.OWNER) {
-            return ownerRepository.findByUserId(user.getId())
-                    .map(o -> propertyIdsForOwnerRecord(o.getId()))
-                    .orElseGet(Set::of);
+            Set<Long> ids = new HashSet<>();
+            for (Owner owner : ownerRepository.findAllByUserIdAndActiveTrueOrderByIdDesc(user.getId())) {
+                ids.addAll(propertyIdsForOwnerRecord(owner.getId()));
+            }
+            return ids;
         }
         List<Long> fromAccess = userPropertyAccessRepository.findPropertyIdsByUserId(user.getId());
         if (!fromAccess.isEmpty()) {

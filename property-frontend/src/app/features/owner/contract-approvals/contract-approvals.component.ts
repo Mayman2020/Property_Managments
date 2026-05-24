@@ -5,6 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTabsModule } from '@angular/material/tabs';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
@@ -28,13 +29,14 @@ import {
   OwnerRenewalDecisionDialogResult
 } from '../owner-renewal-decision-dialog/owner-renewal-decision-dialog.component';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-contract-approvals',
   standalone: true,
   imports: [
     NgFor, NgIf, NgClass, DatePipe, DecimalPipe, RouterLink,
-    TranslateModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatDialogModule,
+    TranslateModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatDialogModule, MatTabsModule,
     PageHeaderComponent, TablePagerComponent
   ],
   templateUrl: './contract-approvals.component.html',
@@ -66,6 +68,21 @@ export class ContractApprovalsComponent implements OnInit {
   maintenanceDraftsPage = 0;
   maintenanceTerminationsPage = 0;
   maintenanceRenewalsPage = 0;
+  selectedTab = 0;
+
+  get isFullyLoaded(): boolean {
+    return !this.loading && !this.loadingTerminations && !this.loadingRenewals
+      && !this.loadingMaintenanceDrafts && !this.loadingMaintenanceTerminations && !this.loadingMaintenanceRenewals;
+  }
+
+  get hasAnyApprovals(): boolean {
+    return this.contracts.length > 0
+      || this.pendingTerminations.length > 0
+      || this.pendingRenewals.length > 0
+      || this.maintenanceDrafts.length > 0
+      || this.maintenancePendingTerminations.length > 0
+      || this.maintenancePendingRenewals.length > 0;
+  }
 
   get pagedContracts() { return this.contracts.slice(this.contractsPage * this.pageSize, (this.contractsPage + 1) * this.pageSize); }
   get pagedTerminations() { return this.pendingTerminations.slice(this.terminationsPage * this.pageSize, (this.terminationsPage + 1) * this.pageSize); }
@@ -95,18 +112,49 @@ export class ContractApprovalsComponent implements OnInit {
     this.loadMaintenancePendingRenewals();
   }
 
+  private maybeSyncSelectedTab(): void {
+    if (!this.isFullyLoaded || !this.hasAnyApprovals) return;
+    const counts = [
+      this.contracts.length,
+      this.pendingTerminations.length,
+      this.pendingRenewals.length,
+      this.maintenanceDrafts.length,
+      this.maintenancePendingTerminations.length,
+      this.maintenancePendingRenewals.length
+    ];
+    if (counts[this.selectedTab] > 0) return;
+    const first = counts.findIndex(c => c > 0);
+    if (first >= 0) this.selectedTab = first;
+  }
+
   load(): void {
     this.loading = true;
-    const req = this.isOwner
-      ? this.ownerPortal.getDraftContracts()
-      : this.contractSvc.getAll({ status: 'DRAFT', size: 200 });
-    req.subscribe({
-      next: (res) => {
-        const raw = res.data?.content ?? res.data ?? [];
-        this.contracts = Array.isArray(raw) ? raw : [];
+    if (this.isOwner) {
+      this.ownerPortal.getDraftContracts().subscribe({
+        next: (res) => {
+          this.contracts = Array.isArray(res.data) ? res.data : [];
+          this.loading = false;
+          this.maybeSyncSelectedTab();
+        },
+        error: () => { this.loading = false; this.maybeSyncSelectedTab(); }
+      });
+      return;
+    }
+    forkJoin({
+      draft: this.contractSvc.getAll({ status: 'DRAFT', size: 200 }),
+      pending: this.contractSvc.getAll({ status: 'PENDING_OWNER_APPROVAL', size: 200 })
+    }).subscribe({
+      next: ({ draft, pending }) => {
+        const d = draft.data?.content ?? draft.data ?? [];
+        const p = pending.data?.content ?? pending.data ?? [];
+        const merged = [...(Array.isArray(d) ? d : []), ...(Array.isArray(p) ? p : [])];
+        const byId = new Map<number, LeaseContract>();
+        merged.forEach((c) => byId.set(c.id, c));
+        this.contracts = Array.from(byId.values());
         this.loading = false;
+        this.maybeSyncSelectedTab();
       },
-      error: () => { this.loading = false; }
+      error: () => { this.loading = false; this.maybeSyncSelectedTab(); }
     });
   }
 
@@ -120,8 +168,9 @@ export class ContractApprovalsComponent implements OnInit {
         const raw = res.data?.content ?? res.data ?? [];
         this.pendingTerminations = Array.isArray(raw) ? raw : [];
         this.loadingTerminations = false;
+        this.maybeSyncSelectedTab();
       },
-      error: () => { this.loadingTerminations = false; }
+      error: () => { this.loadingTerminations = false; this.maybeSyncSelectedTab(); }
     });
   }
 
@@ -135,8 +184,9 @@ export class ContractApprovalsComponent implements OnInit {
         const raw = res.data?.content ?? res.data ?? [];
         this.pendingRenewals = Array.isArray(raw) ? raw : [];
         this.loadingRenewals = false;
+        this.maybeSyncSelectedTab();
       },
-      error: () => { this.loadingRenewals = false; }
+      error: () => { this.loadingRenewals = false; this.maybeSyncSelectedTab(); }
     });
   }
 
@@ -150,8 +200,9 @@ export class ContractApprovalsComponent implements OnInit {
         const rows = res.data ?? [];
         this.maintenanceDrafts = (Array.isArray(rows) ? rows : []).filter((c) => c.status === 'DRAFT');
         this.loadingMaintenanceDrafts = false;
+        this.maybeSyncSelectedTab();
       },
-      error: () => { this.loadingMaintenanceDrafts = false; }
+      error: () => { this.loadingMaintenanceDrafts = false; this.maybeSyncSelectedTab(); }
     });
   }
 
@@ -166,8 +217,9 @@ export class ContractApprovalsComponent implements OnInit {
         this.maintenancePendingTerminations = (Array.isArray(rows) ? rows : [])
           .filter((c) => c.status === 'PENDING_TERMINATION_APPROVAL');
         this.loadingMaintenanceTerminations = false;
+        this.maybeSyncSelectedTab();
       },
-      error: () => { this.loadingMaintenanceTerminations = false; }
+      error: () => { this.loadingMaintenanceTerminations = false; this.maybeSyncSelectedTab(); }
     });
   }
 
@@ -182,8 +234,9 @@ export class ContractApprovalsComponent implements OnInit {
         this.maintenancePendingRenewals = (Array.isArray(rows) ? rows : [])
           .filter((c) => c.status === 'PENDING_RENEWAL_APPROVAL');
         this.loadingMaintenanceRenewals = false;
+        this.maybeSyncSelectedTab();
       },
-      error: () => { this.loadingMaintenanceRenewals = false; }
+      error: () => { this.loadingMaintenanceRenewals = false; this.maybeSyncSelectedTab(); }
     });
   }
 
@@ -712,4 +765,3 @@ export class ContractApprovalsComponent implements OnInit {
     }).format(value);
   }
 }
-

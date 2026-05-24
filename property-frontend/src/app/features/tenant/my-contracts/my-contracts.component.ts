@@ -79,7 +79,6 @@ export class MyContractsComponent implements OnInit {
       case 'PENDING_OWNER_APPROVAL':
         return 1;
       case 'ACTIVE':
-      case 'SUSPENDED':
         return 2;
       case 'EXPIRED':
       case 'TERMINATED':

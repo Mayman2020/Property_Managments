@@ -8,6 +8,7 @@ import com.propertymanagement.modules.maintenance.assignment.repository.Property
 import com.propertymanagement.modules.maintenance.category.repository.MaintenanceCategoryRepository;
 import com.propertymanagement.modules.inventory.service.InventoryService;
 import com.propertymanagement.modules.inventory.dto.StockTransactionRequestDTO;
+import com.propertymanagement.modules.contractor.repository.ContractorCompanyRepository;
 import com.propertymanagement.modules.maintenance.request.entity.MaintenanceRequest;
 import com.propertymanagement.modules.maintenance.request.entity.RequestStatus;
 import com.propertymanagement.modules.maintenance.request.entity.RequestPriority;
@@ -70,6 +71,7 @@ class MaintenanceRequestServiceTest {
     @Mock OwnerPropertyAccessService ownerPropertyAccessService;
     @Mock LocalizedNameResolver localizedNameResolver;
     @Mock InventoryService inventoryService;
+    @Mock ContractorCompanyRepository contractorCompanyRepository;
 
     @InjectMocks MaintenanceRequestService service;
 

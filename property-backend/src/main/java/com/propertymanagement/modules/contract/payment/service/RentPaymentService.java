@@ -10,11 +10,13 @@ import com.propertymanagement.modules.contract.payment.dto.ScheduleItemResponse;
 import com.propertymanagement.modules.contract.payment.dto.UploadPaymentProofRequest;
 import com.propertymanagement.modules.notification.service.NotificationService;
 import com.propertymanagement.modules.notification.entity.NotificationType;
+import com.propertymanagement.modules.ownerportal.service.OwnerRevenueShareService;
 import com.propertymanagement.modules.property.service.PropertyOwnerPortalRecipientService;
 import com.propertymanagement.modules.property.repository.PropertyRepository;
 import com.propertymanagement.modules.tenant.entity.Tenant;
 import com.propertymanagement.modules.tenant.repository.TenantRepository;
 import com.propertymanagement.modules.unit.repository.UnitRepository;
+import com.propertymanagement.shared.config.LateFeeProperties;
 import com.propertymanagement.shared.security.PropertyScopeService;
 import com.propertymanagement.modules.finance.revenue.entity.OtherRevenue;
 import com.propertymanagement.modules.finance.revenue.repository.OtherRevenueWriterRepository;
@@ -31,6 +33,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -65,6 +68,8 @@ public class RentPaymentService {
     private final CodeGenerationService codeGenerationService;
     private final NotificationService notificationService;
     private final PropertyScopeService propertyScopeService;
+    private final LateFeeProperties lateFeeProperties;
+    private final OwnerRevenueShareService ownerRevenueShareService;
 
     public Page<PaymentResponse> getAll(Pageable pageable) {
         return paymentRepository.findAll(pageable).map(this::toResponse);
@@ -132,6 +137,9 @@ public class RentPaymentService {
                 .build();
 
         RentPayment saved = paymentRepository.save(payment);
+        contractRepository.findById(dto.getContractId())
+                .map(LeaseContract::getPropertyId)
+                .ifPresent(propertyId -> ownerRevenueShareService.allocateShares(saved, propertyId));
 
         // Update schedule item status
         if (dto.getScheduleId() != null) {
@@ -251,11 +259,16 @@ public class RentPaymentService {
                                                   String receiptUrl,
                                                   boolean manual,
                                                   AccountantMarkPaidRequest override) {
-        if (paymentRepository.findTopByScheduleIdOrderByIdDesc(schedule.getId()).isPresent()) {
-            return paymentRepository.findTopByScheduleIdOrderByIdDesc(schedule.getId()).get();
-        }
         LeaseContract contract = contractRepository.findById(schedule.getContractId())
                 .orElseThrow(() -> com.propertymanagement.shared.exception.AppException.notFound("Lease contract not found: " + schedule.getContractId()));
+        var existingOpt = paymentRepository.findTopByScheduleIdOrderByIdDesc(schedule.getId());
+        if (existingOpt.isPresent()) {
+            RentPayment existing = existingOpt.get();
+            if (contract.getPropertyId() != null) {
+                ownerRevenueShareService.allocateShares(existing, contract.getPropertyId());
+            }
+            return existing;
+        }
         BigDecimal amount = override != null && override.getAmountPaid() != null ? override.getAmountPaid() : schedule.getAmount();
         LocalDate paymentDate = override != null && override.getPaymentDate() != null
                 ? override.getPaymentDate()
@@ -283,7 +296,11 @@ public class RentPaymentService {
                 .notes(trimToNull(notes))
                 .recordedBy(recordedBy)
                 .build();
-        return paymentRepository.save(payment);
+        RentPayment saved = paymentRepository.save(payment);
+        if (contract.getPropertyId() != null) {
+            ownerRevenueShareService.allocateShares(saved, contract.getPropertyId());
+        }
+        return saved;
     }
 
     private PaymentResponse toResponse(RentPayment p) {
@@ -352,6 +369,9 @@ public class RentPaymentService {
         Tenant tenant = contract != null && contract.getTenantId() != null
                 ? tenantRepository.findById(contract.getTenantId()).orElse(null)
                 : null;
+        com.propertymanagement.modules.unit.entity.Unit unit = contract != null && contract.getUnitId() != null
+                ? unitRepository.findById(contract.getUnitId()).orElse(null)
+                : null;
         com.propertymanagement.modules.property.entity.Property property = contract != null && contract.getPropertyId() != null
                 ? propertyRepository.findById(contract.getPropertyId()).orElse(null)
                 : null;
@@ -362,6 +382,8 @@ public class RentPaymentService {
                 .contractNumber(contract != null ? contract.getContractNumber() : null)
                 .tenantId(contract != null ? contract.getTenantId() : null)
                 .tenantName(tenant != null ? tenant.getFullName() : null)
+                .unitId(unit != null ? unit.getId() : null)
+                .unitNumber(unit != null ? unit.getUnitNumber() : null)
                 .propertyId(property != null ? property.getId() : null)
                 .propertyNameAr(property != null ? (property.getPropertyNameAr() != null ? property.getPropertyNameAr() : property.getPropertyName()) : null)
                 .propertyNameEn(property != null ? (property.getPropertyNameEn() != null ? property.getPropertyNameEn() : property.getPropertyName()) : null)
@@ -489,12 +511,101 @@ public class RentPaymentService {
                             NotificationType.RENT_DUE,
                             "NOTIFICATIONS.RENT_DUE_TITLE",
                             "NOTIFICATIONS.RENT_DUE_BODY",
-                            paymentVars(schedule, contract, null),
+                            paymentVars(schedule, contract, null, null),
                             Map.of("contractId", contract.getId(), "scheduleId", schedule.getId())));
         });
     }
 
+    // PHASE1-DONE: TASK1 RENT_OVERDUE — tenant + accountants when schedule is overdue
+    public void notifyRentOverdue(RentPaymentSchedule schedule, BigDecimal lateFee) {
+        contractRepository.findById(schedule.getContractId()).ifPresent(contract -> {
+            Map<String, Object> vars = paymentVars(schedule, contract, null, lateFee);
+            Map<String, Object> nav = Map.of("contractId", contract.getId(), "scheduleId", schedule.getId());
+            tenantRepository.findById(contract.getTenantId()).map(Tenant::getUserId).filter(Objects::nonNull).ifPresent(userId ->
+                    notificationService.createLocalized(
+                            List.of(userId),
+                            null,
+                            contract.getPropertyId(),
+                            null,
+                            NotificationType.RENT_OVERDUE,
+                            "NOTIFICATIONS.RENT_OVERDUE_TITLE",
+                            "NOTIFICATIONS.RENT_OVERDUE_BODY",
+                            vars,
+                            nav));
+            List<Long> staff = collectAccountantAndAdminUserIds(contract.getPropertyId());
+            if (!staff.isEmpty()) {
+                notificationService.createLocalized(
+                        staff,
+                        null,
+                        contract.getPropertyId(),
+                        null,
+                        NotificationType.RENT_OVERDUE,
+                        "NOTIFICATIONS.RENT_OVERDUE_TITLE",
+                        "NOTIFICATIONS.RENT_OVERDUE_ACCOUNTANT_BODY",
+                        vars,
+                        nav);
+            }
+        });
+    }
+
+    // PHASE1-DONE: TASK2 late fee — accrue late fee on RentPayment after grace period
+    @Transactional
+    public BigDecimal applyLateFeeAccrual(RentPaymentSchedule schedule) {
+        if (schedule == null || schedule.isLateFeeApplied()) {
+            return BigDecimal.ZERO;
+        }
+        LeaseContract contract = contractRepository.findById(schedule.getContractId()).orElse(null);
+        if (contract == null || contract.getTenantId() == null) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal lateFee = calculateLateFee(schedule.getAmount());
+        if (lateFee.signum() <= 0) {
+            schedule.setLateFeeApplied(true);
+            scheduleRepository.save(schedule);
+            return BigDecimal.ZERO;
+        }
+        RentPayment payment = paymentRepository.findTopByScheduleIdOrderByIdDesc(schedule.getId())
+                .orElseGet(() -> RentPayment.builder()
+                        .contractId(schedule.getContractId())
+                        .scheduleId(schedule.getId())
+                        .tenantId(contract.getTenantId())
+                        .paymentDate(LocalDate.now())
+                        .amountPaid(BigDecimal.ZERO)
+                        .amountDue(schedule.getAmount())
+                        .paymentMethod("ACCRUAL")
+                        .referenceNumber(codeGenerationService.generate("LFEE"))
+                        .lateFee(BigDecimal.ZERO)
+                        .discount(BigDecimal.ZERO)
+                        .build());
+        payment.setLateFee(lateFee);
+        payment.setAmountDue(schedule.getAmount().add(lateFee));
+        paymentRepository.save(payment);
+        schedule.setLateFeeApplied(true);
+        scheduleRepository.save(schedule);
+        notifyRentOverdue(schedule, lateFee);
+        return lateFee;
+    }
+
+    private BigDecimal calculateLateFee(BigDecimal rentAmount) {
+        if (rentAmount == null || rentAmount.signum() <= 0) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal fixed = lateFeeProperties.getLateFeeFixedAmount();
+        if (fixed != null && fixed.signum() > 0) {
+            return fixed.setScale(2, RoundingMode.HALF_UP);
+        }
+        BigDecimal pct = lateFeeProperties.getLateFeePercentage();
+        if (pct == null || pct.signum() <= 0) {
+            return BigDecimal.ZERO;
+        }
+        return rentAmount.multiply(pct).divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
+    }
+
     private Map<String, Object> paymentVars(RentPaymentSchedule schedule, LeaseContract contract, String reason) {
+        return paymentVars(schedule, contract, reason, null);
+    }
+
+    private Map<String, Object> paymentVars(RentPaymentSchedule schedule, LeaseContract contract, String reason, BigDecimal lateFee) {
         Map<String, Object> vars = new LinkedHashMap<>();
         vars.put("contractNumber", Objects.toString(contract.getContractNumber(), ""));
         vars.put("dueDate", schedule.getDueDate() != null ? schedule.getDueDate().toString() : "");
@@ -507,6 +618,11 @@ public class RentPaymentService {
                         schedule.getDueDate())
                 : null;
         vars.put("nextDueDate", nextDue != null && nextDue.getDueDate() != null ? nextDue.getDueDate().toString() : "-");
+        if (lateFee != null && lateFee.signum() > 0) {
+            vars.put("lateFee", lateFee.toPlainString());
+        } else {
+            vars.put("lateFee", "0");
+        }
         return vars;
     }
 

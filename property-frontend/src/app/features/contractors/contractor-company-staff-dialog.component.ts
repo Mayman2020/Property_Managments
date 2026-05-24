@@ -36,7 +36,7 @@ export interface ContractorCompanyStaffDialogData {
 
       <div class="loading-box" *ngIf="loading"><mat-spinner diameter="34"></mat-spinner></div>
 
-      <div class="staff-layout" *ngIf="!loading">
+      <div class="staff-layout" *ngIf="!loading && officers.length > 0">
         <div class="staff-list">
           <button
             type="button"
@@ -54,11 +54,6 @@ export interface ContractorCompanyStaffDialogData {
             </div>
             <mat-icon>chevron_left</mat-icon>
           </button>
-
-          <div class="empty-staff" *ngIf="officers.length === 0">
-            <mat-icon>person_off</mat-icon>
-            <strong>{{ ('INLINE_TEXT.NO_STAFF_YET' | translate) }}</strong>
-          </div>
         </div>
 
         <section class="staff-detail" *ngIf="selected">
@@ -92,6 +87,11 @@ export interface ContractorCompanyStaffDialogData {
             </div>
           </div>
         </section>
+      </div>
+
+      <div class="empty-staff" *ngIf="!loading && officers.length === 0">
+        <mat-icon>person_off</mat-icon>
+        <strong>{{ ('INLINE_TEXT.NO_STAFF_YET' | translate) }}</strong>
       </div>
     </mat-dialog-content>
 
@@ -130,7 +130,23 @@ export interface ContractorCompanyStaffDialogData {
     .status-chip { width: fit-content; border-radius: 999px; padding: 4px 10px; }
     .status-chip.active { background: #e8f7ed; color: #16803a; }
     .status-chip.inactive { background: #fdecec; color: #c62828; }
-    .loading-box, .empty-staff { min-height: 160px; display: grid; place-items: center; color: var(--text-muted); }
+    .loading-box { min-height: 160px; display: grid; place-items: center; }
+    .empty-staff {
+      min-height: 220px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      text-align: center;
+      color: var(--text-muted);
+    }
+    .empty-staff mat-icon {
+      font-size: 48px;
+      width: 48px;
+      height: 48px;
+      opacity: 0.45;
+    }
     .dialog-actions-row { padding: 14px 24px; border-top: 1px solid var(--line); }
     @media (max-width: 760px) {
       .staff-dialog-body { min-width: 0; }
@@ -175,16 +191,21 @@ export class ContractorCompanyStaffDialogComponent implements OnInit {
   }
 
   officerName(officer: CompanyOfficer): string {
-    const ar = officer.fullNameAr?.trim();
-    const en = officer.fullNameEn?.trim();
-    const fallback = officer.fullName?.trim();
+    const ar = this.cleanText(officer.fullNameAr);
+    const en = this.cleanText(officer.fullNameEn);
+    const fallback = this.cleanText(officer.fullName);
     return this.isAr ? (ar || en || fallback || '-') : (en || ar || fallback || '-');
   }
 
   propertyLabel(officer: CompanyOfficer): string {
-    const ar = officer.propertyNameAr?.trim();
-    const en = officer.propertyNameEn?.trim();
-    const fallback = officer.propertyName?.trim();
+    const ar = this.cleanText(officer.propertyNameAr);
+    const en = this.cleanText(officer.propertyNameEn);
+    const fallback = this.cleanText(officer.propertyName);
     return this.isAr ? (ar || en || fallback || '-') : (en || ar || fallback || '-');
+  }
+
+  private cleanText(value?: string | null): string {
+    const text = value?.trim() ?? '';
+    return text && !/^[?\s\uFFFD]+$/.test(text) ? text : '';
   }
 }

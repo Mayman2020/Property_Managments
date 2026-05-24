@@ -8,15 +8,50 @@
 
   <!-- Listings section -->
   <section *ngIf="section === 'list'">
-    <div *ngIf="listings.length; else emptyTpl" class="app-card table-card">
-      <div class="app-table-wrap">
+    <div class="app-card table-card" *ngIf="listings.length > 0 || hasFilters(); else emptyTpl">
+      <div class="estate-table-toolbar directory-toolbar" *ngIf="properties.length > 0 || owners.length > 0">
+        <div class="directory-toolbar-top">
+          <div class="finance-filter-strip">
+            <label *ngIf="properties.length > 0">{{ 'VACANCIES.PROPERTY' | translate }}</label>
+            <select *ngIf="properties.length > 0"
+                    [(ngModel)]="filterPropertyId"
+                    (change)="onPropertyFilterChange()"
+                    class="estate-property-select">
+              <option [ngValue]="null">{{ 'COMMON.ALL' | translate }}</option>
+              <option *ngFor="let p of properties" [ngValue]="p.id">
+                {{ isArabic ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName) }}
+              </option>
+            </select>
+            <label *ngIf="owners.length > 0">{{ 'VACANCIES.OWNER' | translate }}</label>
+            <select *ngIf="owners.length > 0"
+                    [(ngModel)]="filterOwnerId"
+                    (change)="onOwnerFilterChange()"
+                    class="estate-property-select">
+              <option [ngValue]="null">{{ 'COMMON.ALL' | translate }}</option>
+              <option *ngFor="let o of owners" [ngValue]="o.id">
+                {{ ownerOptionLabel(o) }}
+              </option>
+            </select>
+          </div>
+          <button mat-icon-button class="clear-filters-btn"
+                  *ngIf="hasFilters()"
+                  (click)="clearFilters()"
+                  [matTooltip]="'ACTIONS.CLEAR_FILTERS' | translate">
+            <mat-icon>filter_alt_off</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <div class="app-table-wrap" *ngIf="listings.length > 0; else filteredEmptyTpl">
         <table class="app-data-table source-table">
           <thead>
             <tr>
               <th>{{ 'VACANCIES.LISTING' | translate }}</th>
               <th>{{ 'VACANCIES.PROPERTY' | translate }}</th>
+              <th>{{ 'VACANCIES.OWNER' | translate }}</th>
               <th>{{ 'VACANCIES.UNIT' | translate }}</th>
               <th>{{ 'VACANCIES.RENT' | translate }}</th>
+              <th>{{ 'VACANCIES.SOURCE' | translate }}</th>
               <th>{{ 'VACANCIES.VIEWS' | translate }}</th>
             </tr>
           </thead>
@@ -26,8 +61,14 @@
                 <div class="row-main">{{ isArabic ? (item.titleAr || item.titleEn || '-') : (item.titleEn || item.titleAr || '-') }}</div>
               </td>
               <td>{{ item.propertyName || '-' }}</td>
+              <td>{{ ownerLabel(item) }}</td>
               <td class="mono">{{ item.unitNumber || '-' }}</td>
               <td class="mono">{{ item.askingRent || 0 }}</td>
+              <td>
+                <span class="source-badge" [class.source-auto]="item.listingSource === 'AUTO_PUBLISHED'" [class.source-manual]="item.listingSource !== 'AUTO_PUBLISHED'">
+                  {{ item.listingSource === 'AUTO_PUBLISHED' ? ('VACANCY.SOURCE_AUTO' | translate) : ('VACANCY.SOURCE_MANUAL' | translate) }}
+                </span>
+              </td>
               <td>
                 <span class="views-badge">
                   <mat-icon>visibility</mat-icon>
@@ -38,6 +79,18 @@
           </tbody>
         </table>
       </div>
+
+      <ng-template #filteredEmptyTpl>
+        <div class="filtered-empty">{{ 'COMMON.NO_RESULTS' | translate }}</div>
+      </ng-template>
+
+      <app-table-pager
+        *ngIf="totalListings > 0"
+        [length]="totalListings"
+        [pageSize]="pageSize"
+        [pageIndex]="pageIndex"
+        (pageIndexChange)="pageIndex = $event; loadListings()">
+      </app-table-pager>
     </div>
   </section>
 
@@ -52,6 +105,7 @@
               <th>{{ 'VACANCIES.PHONE' | translate }}</th>
               <th>{{ 'VACANCIES.EMAIL' | translate }}</th>
               <th>{{ 'VACANCIES.INQUIRY_STATUS' | translate }}</th>
+              <th>{{ 'COMMON.ACTIONS' | translate }}</th>
             </tr>
           </thead>
           <tbody>
@@ -60,9 +114,21 @@
               <td class="mono">{{ item.inquirerPhone }}</td>
               <td class="mono">{{ item.inquirerEmail || '-' }}</td>
               <td>
-                <span class="status-chip" [attr.data-status]="item.status || 'PENDING'">
+                <span class="status-chip" [attr.data-status]="item.status || 'NEW'">
                   {{ item.status || 'NEW' }}
                 </span>
+              </td>
+              <td class="inquiry-actions">
+                <button mat-stroked-button type="button"
+                        [disabled]="actionLoadingId === item.id || item.status === 'CONTACTED'"
+                        (click)="setStatus(item, 'CONTACTED')">
+                  {{ 'VACANCIES.MARK_CONTACTED' | translate }}
+                </button>
+                <button mat-flat-button color="primary" type="button"
+                        [disabled]="actionLoadingId === item.id || item.status === 'CONVERTED'"
+                        (click)="convert(item)">
+                  {{ 'VACANCIES.CONVERT_TO_CONTRACT' | translate }}
+                </button>
               </td>
             </tr>
           </tbody>
@@ -74,7 +140,7 @@
   <ng-template #emptyTpl>
     <div class="app-card empty-card">
       <div class="app-empty-state">
-        <mat-icon class="empty-icon">door_open</mat-icon>
+        <mat-icon class="empty-icon">meeting_room</mat-icon>
         <h4>{{ 'VACANCIES.EMPTY_LISTINGS' | translate }}</h4>
         <p>{{ 'VACANCIES.EMPTY_DESC' | translate }}</p>
       </div>

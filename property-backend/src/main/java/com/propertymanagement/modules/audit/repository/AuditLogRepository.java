@@ -37,4 +37,8 @@ public interface AuditLogRepository extends JpaRepository<AuditLogEntity, Long> 
                                           @Param("action") AuditActionType action,
                                           @Param("propertyIds") Collection<Long> propertyIds,
                                           Pageable pageable);
+
+    Page<AuditLogEntity> findAllByOrderByCreatedAtDesc(Pageable pageable);
+
+    Page<AuditLogEntity> findByPropertyIdInOrderByCreatedAtDesc(Collection<Long> propertyIds, Pageable pageable);
 }

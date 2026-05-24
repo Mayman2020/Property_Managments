@@ -49,11 +49,15 @@ import java.time.Year;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import com.propertymanagement.modules.maintenance.request.entity.MaintenanceRequest;
 import com.propertymanagement.modules.maintenance.request.entity.RequestStatus;
+import com.propertymanagement.modules.maintenance.request.util.MaintenanceSlaCalculator;
 import com.propertymanagement.modules.maintenance.request.entity.RequestPriority;
 import com.propertymanagement.modules.maintenance.request.repository.MaintenanceRequestRepository;
 import com.propertymanagement.modules.owner.entity.Owner;
@@ -356,6 +360,11 @@ public class MaintenanceRequestService {
             }
         }
 
+        LocalDateTime now = LocalDateTime.now();
+        builder.slaDeadline(MaintenanceSlaCalculator.deadlineFor(
+                dto.getPriority() != null ? dto.getPriority() : RequestPriority.NORMAL, now));
+        builder.slaBreached(false);
+        // PHASE2-DONE: TASK2 — slaDeadline on create
         MaintenanceRequest saved = requestRepository.save(builder.build());
         notifyRequestCreated(saved);
         if (resolvedOfficerId != null) {
@@ -553,7 +562,25 @@ public class MaintenanceRequestService {
         }
         requestRepository.save(request);
         notifyVisitReported(request);
+        if (finalStatus == RequestStatus.COMPLETED) {
+            notifyRequestCompleted(request);
+        }
         return toVisitResponse(saved);
+    }
+
+    // PHASE1-DONE: TASK1 REQUEST_COMPLETED — tenant when maintenance is completed
+    private void notifyRequestCompleted(MaintenanceRequest request) {
+        tenantUserId(request.getTenantId()).ifPresent(userId ->
+                notificationService.createLocalized(
+                        List.of(userId),
+                        currentUserId(),
+                        request.getPropertyId(),
+                        request.getId(),
+                        NotificationType.REQUEST_COMPLETED,
+                        "NOTIFICATIONS.REQUEST_COMPLETED_TITLE",
+                        "NOTIFICATIONS.REQUEST_COMPLETED_BODY",
+                        Map.of("requestNumber", Objects.toString(request.getRequestNumber(), "")),
+                        Map.of("requestId", request.getId())));
     }
 
     private void createCompanyInvoiceFromVisitPurchase(MaintenanceRequest request, VisitReport report) {
@@ -696,6 +723,10 @@ public class MaintenanceRequestService {
             }
         }
 
+        LocalDateTime complaintNow = LocalDateTime.now();
+        builder.slaDeadline(MaintenanceSlaCalculator.deadlineFor(
+                dto.getPriority() != null ? dto.getPriority() : RequestPriority.NORMAL, complaintNow));
+        builder.slaBreached(false);
         MaintenanceRequest saved = requestRepository.save(builder.build());
         notifyRequestCreatedFromComplaint(saved);
         if (resolvedOfficerId != null) {
@@ -789,6 +820,21 @@ public class MaintenanceRequestService {
                 "A visit has been scheduled for request " + request.getRequestNumber()
                         + " on " + request.getScheduledDate()
         );
+        Map<String, Object> updateVars = new LinkedHashMap<>();
+        updateVars.put("requestNumber", request.getRequestNumber());
+        updateVars.put("scheduledDate", request.getScheduledDate());
+        Map<String, Object> updateHints = new LinkedHashMap<>();
+        updateHints.put("requestId", request.getId());
+        notificationService.createLocalized(
+                recipientIds,
+                currentUserId(),
+                request.getPropertyId(),
+                request.getId(),
+                NotificationType.MAINTENANCE_UPDATE,
+                "NOTIFICATIONS.MAINTENANCE_UPDATE_TITLE",
+                "NOTIFICATIONS.MAINTENANCE_UPDATE_BODY",
+                updateVars,
+                updateHints);
     }
 
     private void notifyScheduleAccepted(MaintenanceRequest request) {
@@ -1027,6 +1073,82 @@ public class MaintenanceRequestService {
         return staffIds.size() == 1 ? staffIds.get(0) : null;
     }
 
+    // PHASE2-DONE: TASK2 — urgent unassigned auto-reassign from scheduler
+    @Transactional
+    public MaintenanceRequest tryAutoAssignUrgentUnassigned(MaintenanceRequest request) {
+        if (request.getPriority() != RequestPriority.URGENT
+                || request.getAssignedTo() != null
+                || request.getPropertyId() == null
+                || request.getCreatedAt() == null) {
+            return request;
+        }
+        if (request.getCreatedAt().plusHours(1).isAfter(LocalDateTime.now())) {
+            return request;
+        }
+        Property property = propertyRepository.findById(request.getPropertyId()).orElse(null);
+        if (property == null) {
+            return request;
+        }
+        Long companyId = request.getContractorCompanyId();
+        if (companyId == null) {
+            var activeAssignment = assignmentRepository.findActivePrimaryByPropertyId(property.getId());
+            if (activeAssignment.isPresent()) {
+                MaintenanceProvider provider = providerRepository
+                        .findById(activeAssignment.get().getMaintenanceProviderId()).orElse(null);
+                if (provider != null && "COMPANY".equals(provider.getProviderType())) {
+                    companyId = provider.getCompanyId();
+                }
+            }
+            if (companyId == null) {
+                companyId = property.getMaintenanceContractorCompanyId();
+            }
+        }
+        if (companyId == null) {
+            return request;
+        }
+        Long autoAssignee = resolveContractorAutoAssignee(companyId, property.getId());
+        if (autoAssignee == null) {
+            return request;
+        }
+        request.setAssignedTo(autoAssignee);
+        request.setContractorCompanyId(companyId);
+        request.setStatus(RequestStatus.ASSIGNED);
+        MaintenanceRequest saved = requestRepository.save(request);
+        notifyRequestAssigned(saved);
+        return saved;
+    }
+
+    @Transactional(readOnly = true)
+    public List<com.propertymanagement.modules.maintenance.request.dto.MaintenanceSlaReportRow> getSlaReport(
+            Long propertyId, boolean breachedOnly) {
+        return requestRepository.findForSlaReport(propertyId, breachedOnly).stream()
+                .map(r -> {
+                    String propertyName = r.getPropertyId() != null
+                            ? propertyRepository.findById(r.getPropertyId())
+                            .map(Property::getPropertyName).orElse(null)
+                            : null;
+                    return com.propertymanagement.modules.maintenance.request.dto.MaintenanceSlaReportRow.builder()
+                            .id(r.getId())
+                            .requestNumber(r.getRequestNumber())
+                            .propertyId(r.getPropertyId())
+                            .propertyName(propertyName)
+                            .priority(r.getPriority())
+                            .status(r.getStatus())
+                            .slaDeadline(r.getSlaDeadline())
+                            .slaBreached(r.isSlaBreached())
+                            .hoursOverdue(computeHoursOverdue(r))
+                            .build();
+                })
+                .toList();
+    }
+
+    private Long computeHoursOverdue(MaintenanceRequest r) {
+        if (r.getSlaDeadline() == null || !r.getSlaDeadline().isBefore(LocalDateTime.now())) {
+            return 0L;
+        }
+        return java.time.temporal.ChronoUnit.HOURS.between(r.getSlaDeadline(), LocalDateTime.now());
+    }
+
     private MaintenanceRequest find(Long id) {
         return requestRepository.findById(id)
                 .orElseThrow(() -> AppException.notFound("Maintenance request not found: " + id));
@@ -1041,11 +1163,41 @@ public class MaintenanceRequestService {
 
         String assignedOfficerName = null;
         String assignedOfficerPhone = null;
+        String assignedOfficerCompanyName = null;
+        String assignedOfficerCompanyNameAr = null;
+        String assignedOfficerCompanyNameEn = null;
         if (r.getAssignedTo() != null) {
             var officer = userRepository.findById(r.getAssignedTo()).orElse(null);
             if (officer != null) {
                 assignedOfficerName = officer.getFullName();
                 assignedOfficerPhone = officer.getPhone();
+                Long officerCompanyId = officer.getContractorCompanyId();
+                if (officerCompanyId != null) {
+                    var company = contractorCompanyRepository.findById(officerCompanyId).orElse(null);
+                    if (company != null) {
+                        assignedOfficerCompanyNameAr = LocalizedNameResolver.safe(company.getNameAr());
+                        assignedOfficerCompanyNameEn = LocalizedNameResolver.safe(company.getNameEn());
+                        assignedOfficerCompanyName = LocalizedNameResolver.resolve(
+                                assignedOfficerCompanyNameAr,
+                                assignedOfficerCompanyNameEn,
+                                company.getName()
+                        );
+                    } else {
+                        assignedOfficerCompanyName = officer.getMaintenanceCompanyName();
+                    }
+                }
+            }
+        }
+
+        String contractorCompanyName = null;
+        String contractorCompanyNameAr = null;
+        String contractorCompanyNameEn = null;
+        if (r.getContractorCompanyId() != null) {
+            var company = contractorCompanyRepository.findById(r.getContractorCompanyId()).orElse(null);
+            if (company != null) {
+                contractorCompanyNameAr = LocalizedNameResolver.safe(company.getNameAr());
+                contractorCompanyNameEn = LocalizedNameResolver.safe(company.getNameEn());
+                contractorCompanyName = LocalizedNameResolver.resolve(contractorCompanyNameAr, contractorCompanyNameEn, company.getName());
             }
         }
 
@@ -1100,6 +1252,12 @@ public class MaintenanceRequestService {
                 .tenantName(tenantName)
                 .assignedOfficerName(assignedOfficerName)
                 .assignedOfficerPhone(assignedOfficerPhone)
+                .assignedOfficerCompanyName(assignedOfficerCompanyName)
+                .assignedOfficerCompanyNameAr(assignedOfficerCompanyNameAr)
+                .assignedOfficerCompanyNameEn(assignedOfficerCompanyNameEn)
+                .contractorCompanyName(contractorCompanyName)
+                .contractorCompanyNameAr(contractorCompanyNameAr)
+                .contractorCompanyNameEn(contractorCompanyNameEn)
                 .propertyName(propertyName)
                 .propertyNameAr(propertyNameAr)
                 .propertyNameEn(propertyNameEn)
@@ -1108,6 +1266,9 @@ public class MaintenanceRequestService {
                 .categoryNameEn(categoryNameEn)
                 .createdAt(r.getCreatedAt())
                 .updatedAt(r.getUpdatedAt())
+                .slaDeadline(r.getSlaDeadline())
+                .slaBreached(r.isSlaBreached())
+                .hoursOverdue(computeHoursOverdue(r))
                 .createdBy(r.getCreatedBy())
                 .createdByName(resolveUserName(r.getCreatedBy()))
                 .modifiedBy(r.getModifiedBy())

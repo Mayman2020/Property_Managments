@@ -35,6 +35,12 @@ public class MaintenanceRequestResponse {
     private String tenantName;
     private String assignedOfficerName;
     private String assignedOfficerPhone;
+    private String assignedOfficerCompanyName;
+    private String assignedOfficerCompanyNameAr;
+    private String assignedOfficerCompanyNameEn;
+    private String contractorCompanyName;
+    private String contractorCompanyNameAr;
+    private String contractorCompanyNameEn;
     private String propertyName;
     private String propertyNameAr;
     private String propertyNameEn;
@@ -43,6 +49,9 @@ public class MaintenanceRequestResponse {
     private String categoryNameEn;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private LocalDateTime slaDeadline;
+    private Boolean slaBreached;
+    private Long hoursOverdue;
     private Long createdBy;
     private String createdByName;
     private Long modifiedBy;

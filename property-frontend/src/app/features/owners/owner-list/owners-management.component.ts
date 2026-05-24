@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
+import { Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -39,14 +40,16 @@ import { OwnerLinkUserDialogComponent, OwnerLinkUserDialogData } from '../owner-
         [breadcrumbs]="[
           { label: ('NAV.DASHBOARD' | translate), route: '/admin/dashboard' },
           { label: ('OWNERS.TITLE' | translate) }
-        ]">
+        ]"
+        [showBack]="true"
+        (backClick)="goBack()">
         <button mat-flat-button class="navy-btn" type="button" (click)="openDialog(null)">
           <mat-icon>add</mat-icon>
           {{ 'OWNERS.ADD' | translate }}
         </button>
       </app-page-header>
 
-      <div class="loading-center" *ngIf="loading">
+      <div class="loading-wrap" *ngIf="loading">
         <mat-spinner diameter="40"></mat-spinner>
       </div>
 
@@ -94,7 +97,6 @@ import { OwnerLinkUserDialogComponent, OwnerLinkUserDialogData } from '../owner-
                 <th>{{ 'REQUEST_FORM.PROPERTY' | translate }}</th>
                 <th>{{ 'OWNERS.NATIONAL_ID' | translate }}</th>
                 <th>{{ 'OWNERS.PHONE' | translate }}</th>
-                <th>{{ 'OWNERS.EMAIL' | translate }}</th>
                 <th>{{ 'OWNERS.PORTAL_LOGIN' | translate }}</th>
                 <th>{{ 'COMMON.ACTIVE' | translate }}</th>
                 <th>{{ 'REQUEST_LIST.ACTIONS' | translate }}</th>
@@ -120,7 +122,6 @@ import { OwnerLinkUserDialogComponent, OwnerLinkUserDialogData } from '../owner-
                 </td>
                 <td>{{ o.nationalId || '--' }}</td>
                 <td>{{ o.phone || '--' }}</td>
-                <td>{{ o.email || '--' }}</td>
                 <td>
                   <span class="badge" [class.badge-success]="ownerPortalLoginActive(o)" [class.badge-muted]="!ownerPortalLoginActive(o)">
                     <mat-icon>{{ ownerPortalLoginActive(o) ? 'check_circle' : 'cancel' }}</mat-icon>
@@ -149,7 +150,7 @@ import { OwnerLinkUserDialogComponent, OwnerLinkUserDialogData } from '../owner-
                 </td>
               </tr>
               <tr *ngIf="filteredOwners.length === 0">
-                <td colspan="9" class="empty-row">{{ 'COMMON.NO_DATA' | translate }}</td>
+                <td colspan="8" class="empty-row">{{ 'COMMON.NO_DATA' | translate }}</td>
               </tr>
             </tbody>
           </table>
@@ -188,7 +189,7 @@ export class OwnersManagementComponent implements OnInit {
   filterPropertyId: number | null = null;
   searchTerm = '';
   loading = true;
-  readonly pageSize = 10;
+  readonly pageSize = 5;
   pageIndex = 0;
 
   constructor(
@@ -199,8 +200,13 @@ export class OwnersManagementComponent implements OnInit {
     private readonly deleteConfirm: DeleteConfirmService,
     readonly i18n: I18nService,
     readonly auth: AuthService,
-    readonly permissions: PermissionService
+    readonly permissions: PermissionService,
+    private readonly location: Location
   ) {}
+
+  goBack(): void {
+    this.location.back();
+  }
 
   get isSuperAdmin(): boolean { return this.auth.isSuperAdmin(); }
 

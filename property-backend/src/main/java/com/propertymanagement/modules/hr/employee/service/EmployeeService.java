@@ -10,8 +10,10 @@ import com.propertymanagement.modules.user.entity.User;
 import com.propertymanagement.modules.user.repository.UserRepository;
 import com.propertymanagement.modules.user.entity.UserRole;
 import com.propertymanagement.modules.user.service.UserService;
-import com.propertymanagement.shared.exception.AppException;
+import com.propertymanagement.modules.LookupEntity.entity.LookupType;
+import com.propertymanagement.modules.LookupEntity.repository.LookupRepository;
 import com.propertymanagement.shared.i18n.LocalizedNameResolver;
+import com.propertymanagement.shared.exception.AppException;
 import com.propertymanagement.shared.security.PropertyScopeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -40,6 +42,7 @@ public class EmployeeService {
 
     private static final Set<UserRole> EMPLOYEE_PORTAL_ROLES = Set.of(
             UserRole.ACCOUNTANT,
+            UserRole.HR_OFFICER,
             UserRole.PROCEDURES_CLERK,
             UserRole.GENERAL_MANAGER,
             UserRole.MAINTENANCE_OFFICER_INTERNAL,
@@ -49,6 +52,7 @@ public class EmployeeService {
     );
 
     private final EmployeeRepository repository;
+    private final LookupRepository lookupRepository;
     private final ContractorCompanyRepository contractorCompanyRepository;
     private final UserRepository userRepository;
     private final UserService userService;
@@ -309,10 +313,19 @@ public class EmployeeService {
         String titleEn = employee.getJobTitleEn();
         if (employee.getLinkedUserId() != null) {
             User linkedUser = userRepository.findById(employee.getLinkedUserId()).orElse(null);
-            if (linkedUser != null && linkedUser.getRole() == UserRole.MAINTENANCE_OFFICER_COMPANY) {
-                String companyName = resolveContractorName(linkedUser.getContractorCompanyId());
-                titleAr = contractorOfficerTitle(companyName, true);
-                titleEn = contractorOfficerTitle(companyName, false);
+            if (linkedUser != null) {
+                if (linkedUser.getRole() == UserRole.MAINTENANCE_OFFICER_COMPANY) {
+                    String companyName = resolveContractorName(linkedUser.getContractorCompanyId());
+                    titleAr = contractorOfficerTitle(companyName, true);
+                    titleEn = contractorOfficerTitle(companyName, false);
+                } else if (isBlank(titleAr) && isBlank(titleEn)) {
+                    var roleTitle = lookupRepository.findByTypeAndCodeIgnoreCase(
+                            LookupType.JOB_TITLE, linkedUser.getRole().name());
+                    if (roleTitle.isPresent()) {
+                        titleAr = roleTitle.get().getNameAr();
+                        titleEn = roleTitle.get().getNameEn();
+                    }
+                }
             }
         }
         String title = LocalizedNameResolver.resolve(titleAr, titleEn, null);
@@ -379,5 +392,9 @@ public class EmployeeService {
             }
         }
         return null;
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 }

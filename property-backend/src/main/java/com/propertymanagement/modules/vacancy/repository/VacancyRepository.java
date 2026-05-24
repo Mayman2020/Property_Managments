@@ -9,8 +9,14 @@ import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
 
 public interface VacancyRepository extends JpaRepository<VacancyListingEntity, Long> {
+
+    boolean existsByUnitIdAndPublishedTrue(Long unitId);
+
+    Optional<VacancyListingEntity> findByUnitId(Long unitId);
 
     @Query(value = """
             SELECT vl.id AS id,
@@ -21,15 +27,26 @@ public interface VacancyRepository extends JpaRepository<VacancyListingEntity, L
                    vl.asking_rent AS askingRent,
                    vl.available_from AS availableFrom,
                    vl.is_published AS isPublished,
-                   COALESCE(vl.views_count, 0) AS viewsCount
+                   vl.listing_source AS listingSource,
+                   COALESCE(vl.views_count, 0) AS viewsCount,
+                   vl.property_id AS propertyId,
+                   vl.unit_id AS unitId,
+                   o.full_name_ar AS ownerNameAr,
+                   o.full_name_en AS ownerNameEn
             FROM vacancy_listings vl
             LEFT JOIN properties p ON p.id = vl.property_id
             LEFT JOIN units u ON u.id = vl.unit_id
+            LEFT JOIN owners o ON o.id = p.owner_id
             WHERE (:q IS NULL OR
                    LOWER(COALESCE(vl.title_ar, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
                    LOWER(COALESCE(vl.title_en, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
                    LOWER(COALESCE(p.property_name, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
                    LOWER(COALESCE(u.unit_number, '')) LIKE LOWER(CONCAT('%', :q, '%')))
+              AND (:propertyId IS NULL OR vl.property_id = :propertyId)
+              AND (:ownerId IS NULL OR EXISTS (
+                    SELECT 1 FROM property_owners po
+                    WHERE po.property_id = vl.property_id AND po.owner_id = :ownerId
+                  ) OR p.owner_id = :ownerId)
             ORDER BY vl.created_at DESC
             """,
             countQuery = """
@@ -42,9 +59,18 @@ public interface VacancyRepository extends JpaRepository<VacancyListingEntity, L
                    LOWER(COALESCE(vl.title_en, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
                    LOWER(COALESCE(p.property_name, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
                    LOWER(COALESCE(u.unit_number, '')) LIKE LOWER(CONCAT('%', :q, '%')))
+              AND (:propertyId IS NULL OR vl.property_id = :propertyId)
+              AND (:ownerId IS NULL OR EXISTS (
+                    SELECT 1 FROM property_owners po
+                    WHERE po.property_id = vl.property_id AND po.owner_id = :ownerId
+                  ) OR p.owner_id = :ownerId)
             """,
             nativeQuery = true)
-    Page<VacancyListingRow> search(@Param("q") String q, Pageable pageable);
+    Page<VacancyListingRow> search(
+            @Param("q") String q,
+            @Param("propertyId") Long propertyId,
+            @Param("ownerId") Long ownerId,
+            Pageable pageable);
 
     interface VacancyListingRow {
         Long getId();
@@ -55,6 +81,22 @@ public interface VacancyRepository extends JpaRepository<VacancyListingEntity, L
         BigDecimal getAskingRent();
         LocalDate getAvailableFrom();
         Boolean getIsPublished();
+        String getListingSource();
         Integer getViewsCount();
+        Long getPropertyId();
+        Long getUnitId();
+        String getOwnerNameAr();
+        String getOwnerNameEn();
     }
+
+    @Query(value = """
+            SELECT lc.id FROM lease_contracts lc
+            WHERE lc.status IN ('TERMINATED', 'EXPIRED')
+              AND lc.unit_id IS NOT NULL
+              AND NOT EXISTS (
+                  SELECT 1 FROM vacancy_listings vl
+                  WHERE vl.unit_id = lc.unit_id AND vl.is_published = TRUE
+              )
+            """, nativeQuery = true)
+    List<Long> findContractIdsNeedingVacancyPublish();
 }

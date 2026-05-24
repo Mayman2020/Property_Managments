@@ -3,6 +3,7 @@ package com.propertymanagement.modules.complaint.service;
 import com.propertymanagement.modules.complaint.dto.*;
 import com.propertymanagement.modules.complaint.entity.*;
 import com.propertymanagement.modules.complaint.repository.*;
+import com.propertymanagement.modules.contract.lease.entity.LeaseContract;
 import com.propertymanagement.modules.contract.lease.entity.ContractStatus;
 import com.propertymanagement.modules.contract.lease.repository.LeaseContractRepository;
 import com.propertymanagement.modules.maintenance.request.dto.CreateRequestDto;
@@ -17,12 +18,14 @@ import com.propertymanagement.modules.owner.service.OwnerPropertyAccessService;
 import com.propertymanagement.modules.property.entity.Property;
 import com.propertymanagement.modules.property.repository.PropertyRepository;
 import com.propertymanagement.modules.property.service.PropertyOwnerPortalRecipientService;
+import com.propertymanagement.modules.tenant.entity.Tenant;
 import com.propertymanagement.modules.tenant.repository.TenantRepository;
 import com.propertymanagement.modules.unit.entity.Unit;
 import com.propertymanagement.modules.unit.repository.UnitRepository;
+import java.util.Map;
 import com.propertymanagement.modules.user.entity.User;
-import com.propertymanagement.modules.user.entity.UserRole;
 import com.propertymanagement.modules.user.repository.UserRepository;
+import com.propertymanagement.modules.user.entity.UserRole;
 import com.propertymanagement.shared.exception.AppException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -33,7 +36,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -59,13 +62,18 @@ public class TenantComplaintService {
 
     // ── ADMIN / OWNER scope ──────────────────────────────────────────────
 
-    public Page<TenantComplaint> getAll(Pageable pageable) {
+    public Page<ComplaintListItemResponse> getAll(Pageable pageable, String status, Long propertyId) {
         Set<Long> ownerScope = ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner();
+        Page<TenantComplaint> page;
         if (ownerScope != null) {
-            if (ownerScope.isEmpty()) return Page.empty(pageable);
-            return complaintRepository.findByPropertyIdIn(ownerScope, pageable);
+            if (ownerScope.isEmpty()) {
+                return Page.empty(pageable);
+            }
+            page = complaintRepository.findFilteredByPropertyIds(ownerScope, status, propertyId, pageable);
+        } else {
+            page = complaintRepository.findFiltered(status, propertyId, pageable);
         }
-        return complaintRepository.findAll(pageable);
+        return page.map(this::toListItem);
     }
 
     // ── TENANT: their own complaints ─────────────────────────────────────
@@ -123,17 +131,28 @@ public class TenantComplaintService {
 
     // ── CREATE ───────────────────────────────────────────────────────────
 
+    private static final Set<String> ALLOWED_COMPLAINT_TYPES = Set.of(
+            "NEIGHBOR_NOISE", "COMMON_AREA", "CLEANLINESS",
+            "SECURITY", "MANAGEMENT", "SERVICE", "OTHER");
+
+    private static final Set<String> ALLOWED_PRIORITIES = Set.of("LOW", "NORMAL", "HIGH", "URGENT");
+
     @Transactional
     public TenantComplaint create(ComplaintRequest request) {
+        String complaintType = normalizeAllowedValue(
+                request.getComplaintType(), ALLOWED_COMPLAINT_TYPES, "INVALID_COMPLAINT_TYPE");
+        String priority = normalizeAllowedValue(
+                request.getPriority(), ALLOWED_PRIORITIES, "INVALID_COMPLAINT_PRIORITY");
+
         TenantComplaint complaint = TenantComplaint.builder()
                 .tenantId(request.getTenantId())
                 .unitId(request.getUnitId())
                 .propertyId(request.getPropertyId())
-                .complaintType(request.getComplaintType())
+                .complaintType(complaintType)
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .status("OPEN")
-                .priority(request.getPriority() != null ? request.getPriority() : "NORMAL")
+                .priority(priority != null ? priority : "NORMAL")
                 .attachmentUrl(request.getAttachmentUrl())
                 .build();
         TenantComplaint saved = complaintRepository.save(complaint);
@@ -352,6 +371,22 @@ public class TenantComplaintService {
                 .orElseThrow(() -> AppException.notFound("Complaint not found: " + id));
     }
 
+    /**
+     * Normalize and validate a free-text enum-like value against an allow-list.
+     * Returns {@code null} when the caller passed {@code null}/blank so callers
+     * can still apply their own default. Throws an HTTP 400 AppException for
+     * values outside the allow-list instead of letting them leak to the DB
+     * CHECK as DataIntegrityViolationException (HTTP 500).
+     */
+    private static String normalizeAllowedValue(String raw, Set<String> allowed, String errorCode) {
+        if (raw == null || raw.isBlank()) return null;
+        String normalized = raw.trim().toUpperCase();
+        if (!allowed.contains(normalized)) {
+            throw AppException.badRequest(errorCode);
+        }
+        return normalized;
+    }
+
     private User currentUser() {
         return (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     }
@@ -372,6 +407,8 @@ public class TenantComplaintService {
                 .maintenanceRequestId(c.getMaintenanceRequestId())
                 .createdAt(c.getCreatedAt())
                 .resolvedAt(c.getResolvedAt());
+
+        enrichContext(c, b);
 
         // Always include attachments
         List<ComplaintResponse.AttachmentDto> attachments = attachmentRepository
@@ -411,6 +448,103 @@ public class TenantComplaintService {
                             .build()));
         }
         return b.build();
+    }
+
+    private ComplaintListItemResponse toListItem(TenantComplaint c) {
+        ComplaintListItemResponse.ComplaintListItemResponseBuilder b = ComplaintListItemResponse.builder()
+                .id(c.getId())
+                .tenantId(c.getTenantId())
+                .unitId(c.getUnitId())
+                .propertyId(c.getPropertyId())
+                .complaintType(c.getComplaintType())
+                .title(c.getTitle())
+                .description(c.getDescription())
+                .status(c.getStatus())
+                .priority(c.getPriority())
+                .maintenanceRequestId(c.getMaintenanceRequestId())
+                .createdAt(c.getCreatedAt())
+                .resolvedAt(c.getResolvedAt());
+        enrichContext(c, b);
+        return b.build();
+    }
+
+    private void enrichContext(TenantComplaint c, ComplaintResponse.ComplaintResponseBuilder b) {
+        if (c.getTenantId() != null) {
+            tenantRepository.findById(c.getTenantId()).ifPresent(t -> applyTenant(t, b));
+        }
+        if (c.getUnitId() != null) {
+            unitRepository.findById(c.getUnitId()).ifPresent(u -> b.unitNumber(u.getUnitNumber()));
+        }
+        if (c.getPropertyId() != null) {
+            propertyRepository.findById(c.getPropertyId()).ifPresent(p -> applyProperty(p, b));
+        }
+        resolveLinkedContract(c).ifPresent(lc -> {
+            b.contractId(lc.getId());
+            b.contractNumber(lc.getContractNumber());
+            b.contractStatus(lc.getStatus() != null ? lc.getStatus().name() : null);
+        });
+    }
+
+    private void enrichContext(TenantComplaint c, ComplaintListItemResponse.ComplaintListItemResponseBuilder b) {
+        if (c.getTenantId() != null) {
+            tenantRepository.findById(c.getTenantId()).ifPresent(t -> applyTenant(t, b));
+        }
+        if (c.getUnitId() != null) {
+            unitRepository.findById(c.getUnitId()).ifPresent(u -> b.unitNumber(u.getUnitNumber()));
+        }
+        if (c.getPropertyId() != null) {
+            propertyRepository.findById(c.getPropertyId()).ifPresent(p -> applyProperty(p, b));
+        }
+        resolveLinkedContract(c).ifPresent(lc -> {
+            b.contractId(lc.getId());
+            b.contractNumber(lc.getContractNumber());
+            b.contractStatus(lc.getStatus() != null ? lc.getStatus().name() : null);
+        });
+    }
+
+    private void applyTenant(Tenant tenant, ComplaintResponse.ComplaintResponseBuilder b) {
+        b.tenantName(tenant.getFullName());
+        b.tenantNameAr(tenant.getFullNameAr());
+        b.tenantNameEn(tenant.getFullNameEn());
+    }
+
+    private void applyTenant(Tenant tenant, ComplaintListItemResponse.ComplaintListItemResponseBuilder b) {
+        b.tenantName(tenant.getFullName());
+        b.tenantNameAr(tenant.getFullNameAr());
+        b.tenantNameEn(tenant.getFullNameEn());
+    }
+
+    private void applyProperty(Property property, ComplaintResponse.ComplaintResponseBuilder b) {
+        b.propertyName(property.getPropertyName());
+        b.propertyNameAr(property.getPropertyNameAr());
+        b.propertyNameEn(property.getPropertyNameEn());
+    }
+
+    private void applyProperty(Property property, ComplaintListItemResponse.ComplaintListItemResponseBuilder b) {
+        b.propertyName(property.getPropertyName());
+        b.propertyNameAr(property.getPropertyNameAr());
+        b.propertyNameEn(property.getPropertyNameEn());
+    }
+
+    private Optional<LeaseContract> resolveLinkedContract(TenantComplaint c) {
+        if (c.getTenantId() == null) {
+            return Optional.empty();
+        }
+        List<LeaseContract> contracts = leaseContractRepository.findByTenantIdOrderByCreatedAtDesc(c.getTenantId());
+        if (c.getUnitId() != null) {
+            Optional<LeaseContract> activeForUnit = contracts.stream()
+                    .filter(lc -> c.getUnitId().equals(lc.getUnitId()))
+                    .filter(lc -> lc.getStatus() == ContractStatus.ACTIVE)
+                    .findFirst();
+            if (activeForUnit.isPresent()) {
+                return activeForUnit;
+            }
+            return contracts.stream()
+                    .filter(lc -> c.getUnitId().equals(lc.getUnitId()))
+                    .findFirst();
+        }
+        return leaseContractRepository.findFirstByTenantIdAndStatusOrderByStartDateDesc(
+                c.getTenantId(), ContractStatus.ACTIVE);
     }
 
     private List<Long> adminUserIds(Long propertyId) {

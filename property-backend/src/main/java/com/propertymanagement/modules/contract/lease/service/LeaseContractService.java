@@ -66,6 +66,8 @@ import com.propertymanagement.modules.finance.revenue.entity.RevenueCategory;
 import com.propertymanagement.modules.finance.revenue.repository.OtherRevenueWriterRepository;
 import com.propertymanagement.modules.finance.revenue.repository.RevenueCategoryRepository;
 import com.propertymanagement.modules.owner.entity.Owner;
+import com.propertymanagement.modules.inspection.service.UnitInspectionService;
+import com.propertymanagement.modules.vacancy.service.VacancyPublishingService;
 
 @Service
 @RequiredArgsConstructor
@@ -73,7 +75,6 @@ public class LeaseContractService {
 
     private static final List<ContractStatus> UNIT_LIVE_LEASE_STATUSES = List.of(
             ContractStatus.ACTIVE,
-            ContractStatus.SUSPENDED,
             ContractStatus.PENDING_TERMINATION_APPROVAL,
             ContractStatus.PENDING_RENEWAL_APPROVAL);
 
@@ -102,6 +103,8 @@ public class LeaseContractService {
     private final RevenueCategoryRepository revenueCategoryRepository;
     private final ExpenseWriterRepository expenseWriterRepository;
     private final ExpenseCategoryLookupRepository expenseCategoryLookupRepository;
+    private final VacancyPublishingService vacancyPublishingService;
+    private final UnitInspectionService unitInspectionService;
 
     public Page<ContractResponse> getAll(Pageable pageable) {
         Set<Long> scope = propertyScopeService.propertyIdsOrNullIfUnrestricted();
@@ -302,6 +305,26 @@ public class LeaseContractService {
     }
 
     @Transactional
+    public ContractResponse submitForOwnerApproval(Long id, Long actingUserId) {
+        ownerPropertyAccessService.denyOwnerMutation("Owners cannot submit contracts for approval");
+        LeaseContract contract = findById(id);
+        if (contract.getStatus() != ContractStatus.DRAFT) {
+            throw AppException.badRequest("Only DRAFT contracts can be submitted for owner approval");
+        }
+        if (contract.getOwnerId() == null && contract.getPropertyId() == null) {
+            throw AppException.badRequest("Contract has no owner or property linked");
+        }
+        contract.setStatus(ContractStatus.PENDING_OWNER_APPROVAL);
+        contract.setOwnerApprovalStatus("PENDING");
+        contract.setOwnerApprovalNotes(null);
+        appendStaffLog(contract, actingUserId, "SUBMITTED_FOR_OWNER_APPROVAL", "awaiting owner");
+        LeaseContract saved = contractRepository.save(contract);
+        syncUnitRentedFromContracts(saved.getUnitId());
+        notifyOwnersOfDraftContract(saved);
+        return toResponse(saved);
+    }
+
+    @Transactional
     public ContractResponse activate(Long id, Long approvedByUserId) {
         LeaseContract contract = findById(id);
         if (contract.getStatus() != ContractStatus.DRAFT
@@ -410,7 +433,7 @@ public class LeaseContractService {
     }
 
     /**
-     * Sets {@link com.propertymanagement.modules.unit.Unit#rented} from ACTIVE/SUSPENDED leases
+     * Sets {@link com.propertymanagement.modules.unit.Unit#rented} from ACTIVE leases
      * and {@link com.propertymanagement.modules.unit.Unit#reserved} from DRAFT/PENDING when no live lease.
      */
     @Transactional
@@ -664,8 +687,8 @@ public class LeaseContractService {
         if (contract.getStatus() == ContractStatus.PENDING_TERMINATION_APPROVAL) {
             throw AppException.badRequest("error.contract.termination.request.conflicting_pending_termination");
         }
-        if (contract.getStatus() != ContractStatus.ACTIVE && contract.getStatus() != ContractStatus.SUSPENDED) {
-            throw AppException.badRequest("Only ACTIVE or SUSPENDED contracts can be terminated");
+        if (contract.getStatus() != ContractStatus.ACTIVE) {
+            throw AppException.badRequest("Only ACTIVE contracts can be terminated");
         }
         // Persist proposed handover data (these stay as proposals while pending; finalised on approval).
         contract.setTerminationDate(dto.getTerminationDate());
@@ -731,6 +754,7 @@ public class LeaseContractService {
         Long unitId = contract.getUnitId();
         LeaseContract saved = contractRepository.save(contract);
         syncUnitRentedFromContracts(unitId);
+        vacancyPublishingService.autoPublishFromContract(saved);
         tenantPortalWelcomeService.notifyTenantTerminationDecided(saved, true, ownerNotes);
         tenantPortalWelcomeService.notifyAccountantsOfTerminationDecision(saved, true, ownerNotes);
         markLatestActionRequestDecided(saved.getId(), "TERMINATION", "APPROVED", ownerNotes, ownerUserId);
@@ -1252,6 +1276,10 @@ public class LeaseContractService {
     public ContractResponse clearUnit(Long contractId, Long actorUserId) {
         LeaseContract contract = findById(contractId);
         if (contract.getUnitId() == null) throw AppException.badRequest("Contract has no unit");
+        // PHASE2B-DONE: TASK2 — clearUnit requires SIGNED MOVE_OUT
+        if (!unitInspectionService.hasSignedMoveOut(contractId)) {
+            throw AppException.badRequest("Move-out inspection must be completed before clearing unit");
+        }
         unitRepository.findById(contract.getUnitId()).ifPresent(unit -> {
             unit.setRented(false);
             unit.setReserved(false);

@@ -489,7 +489,7 @@ export class ContractFormComponent implements OnInit {
         }
       },
       error: (err) => {
-        this.errorMsg = err?.error?.message ?? 'Error saving contract';
+        this.errorMsg = (err as Error)?.message ?? 'CONTRACTS.SAVE_ERROR';
         this.saving = false;
       }
     });

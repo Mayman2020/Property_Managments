@@ -28,6 +28,7 @@ public class OwnerPortalService {
     private final OwnerStatementRepository ownerStatementRepository;
     private final PropertyRepository propertyRepository;
     private final UnitRepository unitRepository;
+    private final OwnerRevenueShareService ownerRevenueShareService;
 
     public OwnerDashboardResponse getDashboard() {
         Owner owner = currentOwner();
@@ -64,6 +65,8 @@ public class OwnerPortalService {
                         .totalRevenue(item.getTotalRevenue())
                         .totalExpenses(item.getTotalExpenses())
                         .ownerNetAmount(item.getOwnerNetAmount())
+                        .ownershipPercentage(ownerRevenueShareService.ownershipPercentageFor(
+                                item.getPropertyId(), owner.getId()))
                         .status(item.getStatus())
                         .pdfUrl(item.getPdfUrl())
                         .build())

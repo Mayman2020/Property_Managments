@@ -80,6 +80,10 @@ public enum NotificationType {
     SALARY_ADVANCE_REJECTED,
     /** Advance amount deducted from payslip — notifies employee. */
     SALARY_ADVANCE_DEDUCTED,
+    HR_DEDUCTION_SENT_TO_ACCOUNTANT,
+    HR_DEDUCTION_APPROVED,
+    HR_DEDUCTION_REJECTED,
+    PAYROLL_HR_DEDUCTION_APPLIED,
     LEAVE_REQUEST_SUBMITTED,
     LEAVE_REQUEST_APPROVED,
     LEAVE_REQUEST_REJECTED,
@@ -126,5 +130,13 @@ public enum NotificationType {
     /** Accountant confirmed damage payment — notifies owner. */
     DAMAGE_PAYMENT_CONFIRMED,
     /** Owner or accountant cleared the unit inspection — unit is now available. */
-    UNIT_CLEARED
+    UNIT_CLEARED,
+    /** New rental inquiry on a vacancy listing — leasing staff. */
+    RENTAL_INQUIRY_RECEIVED,
+    /** Vacancy listing auto-published or manually published for a unit. */
+    VACANCY_PUBLISHED,
+    /** Move-in or move-out inspection created for tenant. */
+    INSPECTION_SCHEDULED,
+    /** Inspection fully signed by tenant and inspector. */
+    INSPECTION_COMPLETED
 }

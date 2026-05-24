@@ -46,6 +46,15 @@ public class PayrollController {
         return ResponseEntity.ok(ApiResponse.ok("Salary advance saved successfully", advance.getId()));
     }
 
+    @PostMapping("/advances/{advanceId}/reject")
+    @RequiresPermission(module = "hr", action = "approve")
+    public ResponseEntity<ApiResponse<Long>> rejectAdvance(
+            @PathVariable Long advanceId,
+            @RequestParam(required = false) String reason) {
+        var advance = service.rejectAdvance(advanceId, reason);
+        return ResponseEntity.ok(ApiResponse.ok("Salary advance rejected", advance.getId()));
+    }
+
     @PatchMapping("/{id}/payslips/{payslipId}")
     @RequiresPermission(module = "hr", action = "edit")
     public ResponseEntity<ApiResponse<PayrollRunDetailResponse>> adjustPayslip(

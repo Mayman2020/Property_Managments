@@ -1,7 +1,13 @@
 package com.propertymanagement.modules.dashboard.service;
 
+import com.propertymanagement.modules.audit.entity.AuditLogEntity;
+import com.propertymanagement.modules.audit.repository.AuditLogRepository;
+import com.propertymanagement.modules.contract.payment.entity.RentPayment;
+import com.propertymanagement.modules.contract.payment.repository.RentPaymentRepository;
 import com.propertymanagement.modules.dashboard.dto.ChartDataPointDTO;
 import com.propertymanagement.modules.dashboard.dto.DashboardStatsResponseDTO;
+import com.propertymanagement.modules.dashboard.dto.RecentActivityItemDTO;
+import com.propertymanagement.modules.maintenance.request.entity.MaintenanceRequest;
 import com.propertymanagement.modules.complaint.repository.TenantComplaintRepository;
 import com.propertymanagement.modules.contract.lease.entity.ContractStatus;
 import com.propertymanagement.modules.contract.lease.repository.LeaseContractRepository;
@@ -17,6 +23,8 @@ import com.propertymanagement.modules.unit.repository.UnitRepository;
 import com.propertymanagement.shared.exception.AppException;
 import com.propertymanagement.shared.security.PropertyScopeService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -42,6 +50,8 @@ public class DashboardService {
     private final RentPaymentScheduleRepository scheduleRepository;
     private final TenantComplaintRepository complaintRepository;
     private final PropertyScopeService propertyScopeService;
+    private final AuditLogRepository auditLogRepository;
+    private final RentPaymentRepository rentPaymentRepository;
 
     public DashboardStatsResponseDTO getStats() {
         Set<Long> scope = propertyScopeService.propertyIdsOrNullIfUnrestricted();
@@ -372,5 +382,98 @@ public class DashboardService {
                 .overduePayments(scheduleRepository.countOverdueByProperty(propertyId))
                 .openComplaints(complaintRepository.countOpenByProperty(propertyId))
                 .build();
+    }
+
+    public List<RecentActivityItemDTO> getRecentActivity(int limit, Long propertyId) {
+        int perSource = Math.max(5, limit / 3);
+        Pageable page = PageRequest.of(0, perSource);
+        Set<Long> scope = propertyScopeService.propertyIdsOrNullIfUnrestricted();
+        if (scope != null && scope.isEmpty()) {
+            return List.of();
+        }
+        if (propertyId != null) {
+            if (!propertyScopeService.canAccessProperty(propertyId)) {
+                throw AppException.forbidden("You do not have access to this property");
+            }
+            scope = Set.of(propertyId);
+        }
+
+        List<RecentActivityItemDTO> items = new ArrayList<>();
+
+        List<MaintenanceRequest> requests = propertyId != null
+                ? requestRepository.findByPropertyId(propertyId, page).getContent()
+                : (scope == null
+                    ? requestRepository.findFiltered(null, null, null, page).getContent()
+                    : requestRepository.findFilteredForPropertyIds(null, null, scope, page).getContent());
+        for (MaintenanceRequest r : requests) {
+            items.add(RecentActivityItemDTO.builder()
+                    .id("mr-" + r.getId())
+                    .category("MAINTENANCE")
+                    .title(r.getRequestNumber())
+                    .description(r.getTitle())
+                    .actorName(null)
+                    .occurredAt(r.getCreatedAt())
+                    .entityId(r.getId())
+                    .propertyId(r.getPropertyId())
+                    .routePath("/admin/maintenance/" + r.getId())
+                    .icon("construction")
+                    .build());
+        }
+
+        List<RentPayment> payments = scope == null
+                ? rentPaymentRepository.findAllByOrderByPaymentDateDesc(page).getContent()
+                : rentPaymentRepository.findRecentForProperties(scope, page).getContent();
+        for (RentPayment p : payments) {
+            items.add(RecentActivityItemDTO.builder()
+                    .id("pay-" + p.getId())
+                    .category("PAYMENT")
+                    .title(p.getReferenceNumber() != null ? p.getReferenceNumber() : ("PAY-" + p.getId()))
+                    .description(p.getAmountPaid() != null ? p.getAmountPaid().toPlainString() : "")
+                    .actorName(null)
+                    .occurredAt(p.getCreatedAt() != null ? p.getCreatedAt() : p.getPaymentDate().atStartOfDay())
+                    .entityId(p.getContractId())
+                    .propertyId(null)
+                    .routePath(p.getContractId() != null ? "/admin/contracts/" + p.getContractId() : "/admin/finance/dashboard")
+                    .icon("payments")
+                    .build());
+        }
+
+        List<AuditLogEntity> logs = scope == null
+                ? auditLogRepository.findAllByOrderByCreatedAtDesc(page).getContent()
+                : auditLogRepository.findByPropertyIdInOrderByCreatedAtDesc(scope, page).getContent();
+        for (AuditLogEntity a : logs) {
+            items.add(RecentActivityItemDTO.builder()
+                    .id("audit-" + a.getId())
+                    .category("AUDIT")
+                    .title(a.getAction() != null ? a.getAction().name() : "ACTION")
+                    .description(a.getEntityLabel() != null ? a.getEntityLabel() : (a.getEntityType() + (a.getEntityId() != null ? " #" + a.getEntityId() : "")))
+                    .actorName(a.getUserName())
+                    .occurredAt(a.getCreatedAt())
+                    .entityId(a.getEntityId())
+                    .propertyId(a.getPropertyId())
+                    .routePath(mapAuditRoute(a))
+                    .icon("history")
+                    .build());
+        }
+
+        return items.stream()
+                .filter(i -> i.getOccurredAt() != null)
+                .sorted((a, b) -> b.getOccurredAt().compareTo(a.getOccurredAt()))
+                .limit(limit)
+                .collect(Collectors.toList());
+    }
+
+    private String mapAuditRoute(AuditLogEntity a) {
+        if (a.getEntityType() == null) return "/admin/audit-log";
+        return switch (a.getEntityType()) {
+            case "CONTRACT" -> a.getEntityId() != null ? "/admin/contracts/" + a.getEntityId() : "/admin/contracts/list";
+            case "TENANT" -> "/admin/tenants";
+            case "PROPERTY" -> "/admin/properties";
+            case "UNIT" -> "/admin/units";
+            case "MAINTENANCE" -> a.getEntityId() != null ? "/admin/maintenance/" + a.getEntityId() : "/admin/maintenance";
+            case "USER" -> "/admin/users";
+            case "PAYMENT" -> "/admin/finance/dashboard";
+            default -> "/admin/audit-log";
+        };
     }
 }

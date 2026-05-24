@@ -205,7 +205,12 @@ public class CompanyStaffService {
     }
 
     private static String firstNonBlank(String value, String fallback) {
-        return value != null && !value.isBlank() ? value.trim() : fallback;
+        return isMeaningfulText(value) ? value.trim() : fallback;
+    }
+
+    private static boolean isMeaningfulText(String value) {
+        if (value == null || value.isBlank()) return false;
+        return !value.trim().matches("[?\\s]+");
     }
 
     private void syncEmployeeJobTitle(User officer) {

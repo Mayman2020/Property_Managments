@@ -85,6 +85,66 @@ export class UnitPickerDialogComponent {
   pick(c: LeaseContract): void { this.ref.close(c); }
 }
 
+// ─── Tenant Units View Dialog (read-only) ────────────────────────────────────
+
+@Component({
+  selector: 'app-tenant-units-view-dialog',
+  standalone: true,
+  imports: [NgFor, NgIf, MatButtonModule, MatIconModule, MatDialogModule, TranslateModule],
+  template: `
+    <h2 mat-dialog-title>{{ 'TENANTS.VIEW_ALL_UNITS' | translate }}</h2>
+    <mat-dialog-content>
+      <p class="pick-subtitle">{{ data.tenantName }}</p>
+      <div class="unit-pick-list">
+        <ng-container *ngIf="data.contracts.length > 0; else entryList">
+          <div *ngFor="let c of data.contracts" class="unit-pick-btn unit-pick-btn--static">
+            <mat-icon>home</mat-icon>
+            <span class="pick-label">
+              <strong>{{ c.unitNumber || ('#' + c.unitId) }}</strong>
+              <small>{{ c.propertyName || data.propertyLabel(c.propertyId) }}</small>
+            </span>
+          </div>
+        </ng-container>
+        <ng-template #entryList>
+          <div *ngFor="let e of data.entries" class="unit-pick-btn unit-pick-btn--static">
+            <mat-icon>home</mat-icon>
+            <span class="pick-label">
+              <strong>{{ data.unitLabel(e.unitId) }}</strong>
+              <small>{{ data.propertyLabel(e.propertyId) }}</small>
+            </span>
+          </div>
+        </ng-template>
+      </div>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+      <button mat-button mat-dialog-close>{{ 'ACTIONS.CLOSE' | translate }}</button>
+    </mat-dialog-actions>
+  `,
+  styles: [`
+    .pick-subtitle { font-size: 13px; color: #666; margin: 0 0 12px; font-weight: 600; }
+    .unit-pick-list { display: flex; flex-direction: column; gap: 8px; min-width: 280px; max-height: 360px; overflow-y: auto; padding: 4px 0 8px; }
+    .unit-pick-btn {
+      display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+      border: 1px solid #e0e0e0; border-radius: 8px; background: #fff; width: 100%;
+    }
+    .unit-pick-btn--static { cursor: default; }
+    .pick-label { display: flex; flex-direction: column; flex: 1; gap: 2px; }
+    .pick-label strong { font-size: 14px; font-weight: 600; }
+    .pick-label small { font-size: 12px; color: #888; }
+  `]
+})
+export class TenantUnitsViewDialogComponent {
+  constructor(
+    @Inject(MAT_DIALOG_DATA) public data: {
+      tenantName: string;
+      contracts: LeaseContract[];
+      entries: Tenant[];
+      propertyLabel: (id?: number) => string;
+      unitLabel: (id?: number) => string;
+    }
+  ) {}
+}
+
 // ─── Tenant Management Component ─────────────────────────────────────────────
 
 @Component({
@@ -100,7 +160,8 @@ export class UnitPickerDialogComponent {
 })
 export class TenantManagementComponent implements OnInit {
   loading = true;
-  readonly pageSize = 6;
+  readonly pageSize = 5;
+  private static readonly MAX_VISIBLE_UNITS = 3;
   tenants: Tenant[] = [];
   filteredTenants: Tenant[] = [];
   groupedTenants: TenantGroup[] = [];
@@ -389,6 +450,10 @@ export class TenantManagementComponent implements OnInit {
     return this.isAr ? (t.fullNameAr || t.fullName) : (t.fullNameEn || t.fullName);
   }
 
+  tenantCode(t: Tenant): string {
+    return `T-${t.id}`;
+  }
+
   groupPropertyLabels(group: TenantGroup): string {
     const labels = group.contracts.length > 0
       ? group.contracts.map((contract) => contract.propertyName || this.propertyLabel(contract.propertyId))
@@ -401,6 +466,45 @@ export class TenantManagementComponent implements OnInit {
       ? group.contracts.map((contract) => contract.unitNumber || this.unitLabel(contract.unitId))
       : group.entries.map((entry) => this.unitLabel(entry.unitId));
     return Array.from(new Set(labels.filter(Boolean))).join(', ') || '-';
+  }
+
+  displayContracts(group: TenantGroup): LeaseContract[] {
+    if (group.contracts.length <= TenantManagementComponent.MAX_VISIBLE_UNITS) {
+      return group.contracts;
+    }
+    return group.contracts.slice(-TenantManagementComponent.MAX_VISIBLE_UNITS);
+  }
+
+  displayEntries(group: TenantGroup): Tenant[] {
+    if (group.entries.length <= TenantManagementComponent.MAX_VISIBLE_UNITS) {
+      return group.entries;
+    }
+    return group.entries.slice(-TenantManagementComponent.MAX_VISIBLE_UNITS);
+  }
+
+  hasMoreUnits(group: TenantGroup): boolean {
+    const total = group.contracts.length > 0 ? group.contracts.length : group.entries.length;
+    return total > TenantManagementComponent.MAX_VISIBLE_UNITS;
+  }
+
+  hiddenUnitsCount(group: TenantGroup): number {
+    const total = group.contracts.length > 0 ? group.contracts.length : group.entries.length;
+    return Math.max(0, total - TenantManagementComponent.MAX_VISIBLE_UNITS);
+  }
+
+  openViewAllUnits(group: TenantGroup): void {
+    this.dialog.open(TenantUnitsViewDialogComponent, {
+      data: {
+        tenantName: this.tenantDisplayName(group.representative),
+        contracts: group.contracts,
+        entries: group.entries,
+        propertyLabel: (id?: number) => this.propertyLabel(id),
+        unitLabel: (id?: number) => this.unitLabel(id)
+      },
+      width: '420px',
+      maxHeight: '90vh',
+      panelClass: 'app-dialog-panel'
+    });
   }
 
   private applyFilters(): void {

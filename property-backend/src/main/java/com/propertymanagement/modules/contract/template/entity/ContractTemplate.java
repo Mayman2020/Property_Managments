@@ -2,6 +2,8 @@ package com.propertymanagement.modules.contract.template.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -33,7 +35,13 @@ public class ContractTemplate {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
 
-    @Column(columnDefinition = "JSONB")
+    /**
+     * Optional JSON map of template variables (e.g. tokens used inside {@link #content}).
+     * Stored as native JSONB; Hibernate 6 needs {@link JdbcTypeCode} to bind a String to
+     * a jsonb column without the legacy varchar→jsonb cast error.
+     */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
     private String variables;
 
     @Builder.Default

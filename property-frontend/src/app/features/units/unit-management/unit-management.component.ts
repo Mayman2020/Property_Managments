@@ -34,6 +34,7 @@ import { FilterBarComponent, FilterSpec } from '../../../shared/components/filte
 import { LookupCacheService } from '../../../core/services/lookup-cache.service';
 import { LookupItem } from '../../../core/services/lookup.service';
 import { PermissionService } from '../../../core/services/permission.service';
+import { VacancyService } from '../../../core/services/vacancy.service';
 
 @Component({
   selector: 'app-unit-management',
@@ -110,8 +111,11 @@ export class UnitManagementComponent implements OnInit {
     private readonly router: Router,
     private readonly lookupCache: LookupCacheService,
     readonly i18n: I18nService,
-    private readonly permissions: PermissionService
+    private readonly permissions: PermissionService,
+    private readonly vacancySvc: VacancyService
   ) {}
+
+  publishVacancyLoadingId: number | null = null;
 
   canCreateUnit(): boolean {
     return this.permissions.can('units', 'create');
@@ -123,6 +127,29 @@ export class UnitManagementComponent implements OnInit {
 
   canDeleteUnit(): boolean {
     return this.permissions.can('units', 'delete');
+  }
+
+  canPublishVacancy(unit: Unit): boolean {
+    return !unit.rented && !unit.reserved && this.permissions.can('vacancies', 'create');
+  }
+
+  publishVacancy(unit: Unit): void {
+    this.publishVacancyLoadingId = unit.id;
+    this.vacancySvc.createListing({
+      unitId: unit.id,
+      propertyId: unit.propertyId,
+      askingRent: unit.rentAmount ?? undefined,
+      currency: unit.currency
+    }).subscribe({
+      next: () => {
+        this.publishVacancyLoadingId = null;
+        this.snack.success('VACANCY.AUTO_PUBLISHED');
+      },
+      error: (err) => {
+        this.publishVacancyLoadingId = null;
+        this.snack.error((err as Error)?.message || 'COMMON.ERROR');
+      }
+    });
   }
 
   goBack(): void { this.location.back(); }
@@ -612,7 +639,7 @@ export class UnitManagementComponent implements OnInit {
 
   private mergeContractsByUnit(contracts: LeaseContract[]): Record<number, LeaseContract> {
     const priority = (s: string): number =>
-      ({ ACTIVE: 4, SUSPENDED: 3, PENDING_OWNER_APPROVAL: 2, DRAFT: 1 } as Record<string, number>)[s] ?? 0;
+      ({ ACTIVE: 4, PENDING_OWNER_APPROVAL: 2, DRAFT: 1 } as Record<string, number>)[s] ?? 0;
     const out: Record<number, LeaseContract> = {};
     for (const c of contracts) {
       if (!c.unitId) continue;

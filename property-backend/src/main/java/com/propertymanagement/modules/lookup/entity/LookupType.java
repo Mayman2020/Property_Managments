@@ -17,6 +17,12 @@ public enum LookupType {
     COMPLAINT_STATUS,
     COMPLAINT_PRIORITY,
     COMPLAINT_TYPE,
+    LEAVE_TYPE,
+    LEAVE_STATUS,
+    PAYMENT_SCHEDULE_STATUS,
+    EXPENSE_STATUS,
+    PAYROLL_STATUS,
+    MAINTENANCE_REQUEST_STATUS,
     FURNISHED_STATUS,
     /** ISO-like currency codes for contracts and finance. */
     CURRENCY,

@@ -2,6 +2,7 @@ package com.propertymanagement.modules.dashboard.controller;
 
 import com.propertymanagement.modules.dashboard.dto.ChartDataPointDTO;
 import com.propertymanagement.modules.dashboard.dto.DashboardStatsResponseDTO;
+import com.propertymanagement.modules.dashboard.dto.RecentActivityItemDTO;
 import com.propertymanagement.modules.dashboard.service.DashboardService;
 import com.propertymanagement.modules.complaint.dto.ComplaintRatingDashboardItemResponse;
 import com.propertymanagement.modules.complaint.dto.ComplaintRatingsSummaryResponse;
@@ -110,5 +111,13 @@ public class DashboardController {
     @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT','OWNER')")
     public ResponseEntity<ApiResponse<List<ScheduleItemResponse>>> getOverduePayments() {
         return ResponseEntity.ok(ApiResponse.ok(dashboardService.getOverduePayments()));
+    }
+
+    @GetMapping("/recent-activity")
+    public ResponseEntity<ApiResponse<List<RecentActivityItemDTO>>> getRecentActivity(
+            @RequestParam(defaultValue = "12") int limit,
+            @RequestParam(required = false) Long propertyId) {
+        int capped = Math.min(Math.max(limit, 1), 50);
+        return ResponseEntity.ok(ApiResponse.ok(dashboardService.getRecentActivity(capped, propertyId)));
     }
 }

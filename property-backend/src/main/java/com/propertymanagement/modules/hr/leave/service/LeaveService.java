@@ -55,7 +55,7 @@ public class LeaveService {
             if (ownerScope.isEmpty()) return Page.empty(pageable);
             return queryRepository.findAllRowsByPropertyIds(ownerScope, pageable).map(this::toResponse);
         }
-        if (actor.getPropertyId() != null && (actor.getRole() == UserRole.ACCOUNTANT || actor.getRole() == UserRole.PROCEDURES_CLERK)) {
+        if (actor.getPropertyId() != null && (actor.getRole() == UserRole.ACCOUNTANT || actor.getRole() == UserRole.HR_OFFICER || actor.getRole() == UserRole.PROCEDURES_CLERK)) {
             return queryRepository.findAllRowsByPropertyId(actor.getPropertyId(), pageable).map(this::toResponse);
         }
         return queryRepository.findAllRows(pageable).map(this::toResponse);
@@ -110,7 +110,7 @@ public class LeaveService {
             throw AppException.badRequest("Only pending leave requests can be approved");
         }
         User actor = currentUser();
-        if (actor.getRole() != UserRole.OWNER && actor.getRole() != UserRole.SUPER_ADMIN && actor.getRole() != UserRole.GENERAL_MANAGER) {
+        if (actor.getRole() != UserRole.OWNER && actor.getRole() != UserRole.SUPER_ADMIN && actor.getRole() != UserRole.GENERAL_MANAGER && actor.getRole() != UserRole.HR_OFFICER) {
             throw AppException.forbidden("Only owner, super admin, or general manager can approve leave requests");
         }
         Employee employee = employeeRepository.findById(entity.getEmployeeId())
@@ -136,7 +136,7 @@ public class LeaveService {
             throw AppException.badRequest("Only pending leave requests can be rejected");
         }
         User actor = currentUser();
-        if (actor.getRole() != UserRole.OWNER && actor.getRole() != UserRole.SUPER_ADMIN && actor.getRole() != UserRole.GENERAL_MANAGER) {
+        if (actor.getRole() != UserRole.OWNER && actor.getRole() != UserRole.SUPER_ADMIN && actor.getRole() != UserRole.GENERAL_MANAGER && actor.getRole() != UserRole.HR_OFFICER) {
             throw AppException.forbidden("Only owner, super admin, or general manager can reject leave requests");
         }
         Employee employee = employeeRepository.findById(entity.getEmployeeId())
@@ -281,13 +281,13 @@ public class LeaveService {
             }
             return;
         }
-        if ((user.getRole() == UserRole.ACCOUNTANT || user.getRole() == UserRole.PROCEDURES_CLERK)
+        if ((user.getRole() == UserRole.ACCOUNTANT || user.getRole() == UserRole.HR_OFFICER || user.getRole() == UserRole.PROCEDURES_CLERK)
                 && user.getPropertyId() != null
                 && user.getPropertyId().equals(propertyId)) {
             return;
         }
         // Other scoped roles are blocked from cross-property leave access.
-        if (user.getRole() == UserRole.ACCOUNTANT || user.getRole() == UserRole.PROCEDURES_CLERK || user.getRole() == UserRole.OWNER) {
+        if (user.getRole() == UserRole.ACCOUNTANT || user.getRole() == UserRole.HR_OFFICER || user.getRole() == UserRole.PROCEDURES_CLERK || user.getRole() == UserRole.OWNER) {
             throw AppException.forbidden("You do not have access to this property");
         }
     }

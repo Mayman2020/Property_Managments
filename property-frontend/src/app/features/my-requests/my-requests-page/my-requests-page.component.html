@@ -16,7 +16,7 @@
   </section>
 
   <section *ngIf="!loading && requests.length > 0" class="requests-list">
-    <article class="request-row" *ngFor="let item of requests; trackBy: trackByRequest">
+    <article class="request-row" *ngFor="let item of pagedRequests; trackBy: trackByRequest">
       <div class="request-icon" [ngClass]="statusTone(item.status)">
         <mat-icon>assignment</mat-icon>
       </div>
@@ -50,5 +50,12 @@
         {{ ('INLINE_TEXT.OPEN_2' | translate) }}
       </a>
     </article>
+    <app-table-pager
+      *ngIf="requests.length > pageSize"
+      [length]="requests.length"
+      [pageSize]="pageSize"
+      [pageIndex]="pageIndex"
+      (pageIndexChange)="pageIndex = $event">
+    </app-table-pager>
   </section>
 </div>

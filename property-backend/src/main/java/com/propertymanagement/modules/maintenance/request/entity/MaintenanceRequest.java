@@ -110,4 +110,11 @@ public class MaintenanceRequest {
     @LastModifiedDate
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Column(name = "sla_deadline", nullable = false)
+    private LocalDateTime slaDeadline;
+
+    @Builder.Default
+    @Column(name = "sla_breached", nullable = false)
+    private boolean slaBreached = false;
 }

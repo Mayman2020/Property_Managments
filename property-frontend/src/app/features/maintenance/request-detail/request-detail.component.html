@@ -5,14 +5,15 @@
 
   <ng-container *ngIf="!loading && request">
     <div class="detail-breadcrumb">
-      <button type="button" class="breadcrumb-back-btn" (click)="goBack()">
-        <span class="material-icons">arrow_back</span>
+      <div class="breadcrumb-trail">
+        <a [routerLink]="auth.getDashboardRoute()">{{ 'NAV.MAINTENANCE' | translate }}</a>
+        <span class="breadcrumb-sep">/</span>
+        <span>{{ request.requestNumber }}</span>
+      </div>
+      <button type="button" class="app-back-btn" (click)="goBack()">
+        <span class="material-icons back-icon">arrow_back</span>
         {{ 'COMMON.BACK' | translate }}
       </button>
-      <span class="breadcrumb-sep">/</span>
-      <a [routerLink]="auth.getDashboardRoute()">{{ 'NAV.MAINTENANCE' | translate }}</a>
-      <span class="breadcrumb-sep">/</span>
-      <span>{{ request.requestNumber }}</span>
     </div>
 
     <div class="detail-head">
@@ -21,6 +22,7 @@
         <div class="hero-chips">
           <span class="status-badge" [attr.data-status]="request.status">{{ statusLabel(request.status) }}</span>
           <span class="priority-badge" [class]="request.priority">{{ priorityLabel(request.priority) }}</span>
+          <span class="sla-breach-badge" *ngIf="request.slaBreached">{{ 'MAINTENANCE.SLA_BREACHED' | translate }}</span>
           <span class="hero-code">{{ request.requestNumber }}</span>
         </div>
         <h1>{{ request.title }}</h1>
@@ -75,6 +77,10 @@
               <div class="detail-meta-item">
                 <label>{{ 'MAINTENANCE.CATEGORY' | translate }}</label>
                 <span>{{ i18n.currentLang === 'ar' ? (request.categoryNameAr || request.categoryNameEn || '-') : (request.categoryNameEn || request.categoryNameAr || '-') }}</span>
+              </div>
+              <div class="detail-meta-item" *ngIf="request.slaDeadline">
+                <label>{{ 'MAINTENANCE.SLA_DEADLINE' | translate }}</label>
+                <span>{{ request.slaDeadline | date:'dd/MM/yyyy HH:mm' }}</span>
               </div>
               <div class="detail-meta-item">
                 <label>{{ 'REQUEST_DETAIL.PROPERTY_UNIT' | translate }}</label>
@@ -273,25 +279,10 @@
                   </div>
                 </div>
               </div>
-              <button mat-stroked-button type="button" class="full-width contact-officer-btn" [matMenuTriggerFor]="contactOfficerMenu" [disabled]="!request.assignedOfficerPhone">
+              <button mat-stroked-button type="button" class="full-width contact-officer-btn" (click)="showContactDialog = true" [disabled]="!request.assignedOfficerPhone">
                 <span class="material-icons">phone</span>
                 {{ 'REQUEST_DETAIL.CONTACT_OFFICER' | translate }}
               </button>
-              <mat-menu #contactOfficerMenu="matMenu" class="contact-officer-menu">
-                <div class="contact-menu-phone" *ngIf="request.assignedOfficerPhone">
-                  <span class="material-icons">badge</span>
-                  <strong>{{ request.assignedOfficerName || ('REQUEST_DETAIL.OFFICER' | translate) }}</strong>
-                  <small>{{ request.assignedOfficerPhone }}</small>
-                </div>
-                <button mat-menu-item type="button" (click)="openWhatsApp(request.assignedOfficerPhone)">
-                  <span class="material-icons">chat</span>
-                  <span>{{ 'REQUEST_DETAIL.WHATSAPP' | translate }}</span>
-                </button>
-                <button mat-menu-item type="button" (click)="callOfficer(request.assignedOfficerPhone)">
-                  <span class="material-icons">call</span>
-                  <span>{{ 'REQUEST_DETAIL.CALL' | translate }}</span>
-                </button>
-              </mat-menu>
             </div>
           </div>
         </section>
@@ -319,5 +310,29 @@
         </section>
       </aside>
     </div>
+
+    <div class="center-dialog-backdrop" *ngIf="showContactDialog" (click)="showContactDialog = false"></div>
+    <section class="center-contact-dialog" *ngIf="showContactDialog" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <button type="button" class="dialog-close-btn" (click)="showContactDialog = false" [attr.aria-label]="'COMMON.CLOSE' | translate">
+        <span class="material-icons">close</span>
+      </button>
+      <div class="contact-dialog-head">
+        <span class="contact-dialog-avatar">{{ (request.assignedOfficerName || 'ST').slice(0, 2).toUpperCase() }}</span>
+        <div>
+          <strong>{{ request.assignedOfficerName || ('REQUEST_DETAIL.OFFICER' | translate) }}</strong>
+          <small>{{ request.assignedOfficerPhone }}</small>
+        </div>
+      </div>
+      <div class="contact-dialog-actions">
+        <button type="button" class="contact-dialog-action whatsapp" (click)="openWhatsApp(request.assignedOfficerPhone)">
+          <span class="material-icons">chat</span>
+          <span>{{ 'REQUEST_DETAIL.WHATSAPP' | translate }}</span>
+        </button>
+        <button type="button" class="contact-dialog-action" (click)="callOfficer(request.assignedOfficerPhone)">
+          <span class="material-icons">call</span>
+          <span>{{ 'REQUEST_DETAIL.CALL' | translate }}</span>
+        </button>
+      </div>
+    </section>
   </ng-container>
 </div>

@@ -45,6 +45,10 @@ export class ContractService {
     return this.api.patch<any>(AppConstants.API.CONTRACT_ACTIVATE(id));
   }
 
+  submitForOwnerApproval(id: number): Observable<any> {
+    return this.api.patch<any>(AppConstants.API.CONTRACT_SUBMIT_OWNER_APPROVAL(id));
+  }
+
   cancelDraft(id: number, reason?: string): Observable<any> {
     return this.api.patch<any>(AppConstants.API.CONTRACT_CANCEL(id), reason != null && reason !== '' ? { reason } : {});
   }

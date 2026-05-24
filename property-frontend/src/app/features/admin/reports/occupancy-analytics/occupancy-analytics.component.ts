@@ -12,6 +12,7 @@ import { PropertyService, Property } from '../../../../core/services/property.se
 import { SnackService } from '../../../../core/services/snack.service';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { PageHeaderComponent } from '../../../../shared/components/page-header/page-header.component';
+import { TablePagerComponent } from '../../../../shared/components/table-pager/table-pager.component';
 
 @Component({
   selector: 'app-occupancy-analytics',
@@ -20,7 +21,7 @@ import { PageHeaderComponent } from '../../../../shared/components/page-header/p
     NgIf, NgFor, DecimalPipe, FormsModule,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule,
     MatTooltipModule, TranslateModule,
-    PageHeaderComponent,
+    PageHeaderComponent, TablePagerComponent,
   ],
   template: `
     <app-page-header
@@ -94,7 +95,7 @@ import { PageHeaderComponent } from '../../../../shared/components/page-header/p
         <!-- Occupancy Bar per Property -->
         <div class="section-title">{{ ('INLINE_TEXT.BREAKDOWN_BY_PROPERTY' | translate) }}</div>
         <div class="property-bars">
-          <div *ngFor="let prop of data.byProperty" class="property-bar-item">
+          <div *ngFor="let prop of pagedByProperty" class="property-bar-item">
             <div class="prop-header">
               <span class="prop-name">{{ prop.propertyName }}</span>
               <span class="prop-rate" [class.low]="prop.occupancyRate < 50" [class.medium]="prop.occupancyRate >= 50 && prop.occupancyRate < 80">
@@ -113,6 +114,13 @@ import { PageHeaderComponent } from '../../../../shared/components/page-header/p
             </div>
           </div>
         </div>
+        <app-table-pager
+          *ngIf="(data.byProperty?.length ?? 0) > pageSize"
+          [length]="data.byProperty?.length ?? 0"
+          [pageSize]="pageSize"
+          [pageIndex]="pageIndex"
+          (pageIndexChange)="pageIndex = $event">
+        </app-table-pager>
       </ng-container>
     </div>
   `,
@@ -169,6 +177,14 @@ export class OccupancyAnalyticsComponent implements OnInit {
   properties: Property[] = [];
   loading = true;
   filterPropertyId: number | null = null;
+  readonly pageSize = 6;
+  pageIndex = 0;
+
+  get pagedByProperty(): PropertyOccupancy[] {
+    const rows = this.data?.byProperty ?? [];
+    const start = this.pageIndex * this.pageSize;
+    return rows.slice(start, start + this.pageSize);
+  }
 
   constructor(
     private readonly reportsService: ReportsService,
@@ -186,9 +202,10 @@ export class OccupancyAnalyticsComponent implements OnInit {
 
   load(): void {
     this.loading = true;
+    this.pageIndex = 0;
     this.reportsService.getOccupancy(this.filterPropertyId ?? undefined).subscribe({
       next: (res) => { this.data = res.data ?? null; this.loading = false; },
-      error: () => { this.loading = false; this.snack.error('Failed to load report'); }
+      error: () => { this.loading = false; this.snack.error('INLINE_TEXT.FAILED_TO_LOAD_REPORT'); }
     });
   }
 }

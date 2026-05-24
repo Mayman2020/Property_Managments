@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, OnInit } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -13,25 +13,12 @@ import { TranslateModule } from '@ngx-translate/core';
 import { EmployeeItem, HrService } from '../../../core/services/hr.service';
 import { SnackService } from '../../../core/services/snack.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
+import { LookupItem, LookupService } from '../../../core/services/lookup.service';
 
 export interface LeaveRequestDialogData {
   employees: EmployeeItem[];
 }
 
-interface LeaveType {
-  id: number;
-  nameAr: string;
-  nameEn: string;
-}
-
-const LEAVE_TYPES: LeaveType[] = [
-  { id: 1, nameAr: 'إجازة سنوية',     nameEn: 'Annual Leave' },
-  { id: 2, nameAr: 'إجازة مرضية',     nameEn: 'Sick Leave' },
-  { id: 3, nameAr: 'إجازة طارئة',     nameEn: 'Emergency Leave' },
-  { id: 4, nameAr: 'إجازة بدون أجر',  nameEn: 'Unpaid Leave' },
-  { id: 5, nameAr: 'إجازة حج',        nameEn: 'Hajj Leave' },
-  { id: 6, nameAr: 'إجازة وضع',       nameEn: 'Maternity Leave' }
-];
 
 function toYmd(date: Date): string {
   const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -72,8 +59,8 @@ function toYmd(date: Date): string {
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>{{ 'HR.TYPE_COL' | translate }}</mat-label>
           <mat-select formControlName="leaveTypeId" required>
-            <mat-option *ngFor="let lt of leaveTypes" [value]="lt.id">
-              {{ i18n.currentLang === 'ar' ? lt.nameAr : lt.nameEn }}
+            <mat-option *ngFor="let lt of leaveTypes" [value]="leaveTypeId(lt)">
+              {{ lookupName(lt) }}
             </mat-option>
           </mat-select>
         </mat-form-field>
@@ -116,8 +103,8 @@ function toYmd(date: Date): string {
     mat-dialog-content { min-width: 420px; }
   `]
 })
-export class LeaveRequestDialogComponent {
-  readonly leaveTypes = LEAVE_TYPES;
+export class LeaveRequestDialogComponent implements OnInit {
+  leaveTypes: LookupItem[] = [];
   saving = false;
 
   form = this.fb.group({
@@ -134,14 +121,38 @@ export class LeaveRequestDialogComponent {
     private readonly fb: FormBuilder,
     private readonly hrService: HrService,
     private readonly snack: SnackService,
-    readonly i18n: I18nService
+    readonly i18n: I18nService,
+    private readonly lookups: LookupService
   ) {}
+
+  ngOnInit(): void {
+    this.lookups.getByType('LEAVE_TYPE').subscribe({
+      next: (res) => { this.leaveTypes = (res.data ?? []).filter((item) => item.active); },
+      error: () => { this.leaveTypes = []; }
+    });
+  }
 
   empName(emp: EmployeeItem): string {
     const ar = emp.fullNameAr?.trim();
     const en = emp.fullNameEn?.trim();
     const fb = emp.fullName?.trim();
     return this.i18n.currentLang === 'ar' ? (ar || en || fb || `#${emp.id}`) : (en || ar || fb || `#${emp.id}`);
+  }
+
+  leaveTypeId(item: LookupItem): number {
+    return Number(item.code);
+  }
+
+  lookupName(item: LookupItem): string {
+    const preferred = this.i18n.currentLang === 'ar' ? item.nameAr : item.nameEn;
+    const fallback = this.i18n.currentLang === 'ar' ? item.nameEn : item.nameAr;
+    return this.cleanDisplayText(preferred) || this.cleanDisplayText(fallback) || item.code;
+  }
+
+  private cleanDisplayText(value?: string | null): string {
+    const normalized = (value ?? '').trim();
+    if (!normalized || /^[?\s]+$/.test(normalized) || /Ø|Ù|Â/.test(normalized)) return '';
+    return normalized;
   }
 
   submit(): void {

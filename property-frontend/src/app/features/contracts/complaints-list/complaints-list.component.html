@@ -54,11 +54,11 @@
           <tr *ngFor="let c of filteredComplaints">
             <td>{{ c.createdAt | date:'dd/MM/yyyy' }}</td>
             <td>
-              <div class="row-main">{{ c.tenantName }}</div>
-              <div class="row-sub" *ngIf="c.propertyName">{{ c.propertyName }}</div>
+              <div class="row-main">{{ tenantDisplayName(c) }}</div>
+              <div class="row-sub" *ngIf="propertyDisplayName(c)">{{ propertyDisplayName(c) }}</div>
             </td>
-            <td class="col-title">{{ c.title }}</td>
-            <td>{{ lookupCache.label('COMPLAINT_TYPE', c.complaintType) || c.complaintType }}</td>
+            <td class="col-title">{{ complaintDisplayTitle(c) }}</td>
+            <td>{{ complaintTypeLabel(c.complaintType) }}</td>
             <td>
               <span class="status-chip" [ngClass]="getPriorityClass(c.priority)">
                 {{ lookupCache.label('COMPLAINT_PRIORITY', c.priority) || c.priority }}
@@ -70,6 +70,9 @@
               </span>
             </td>
             <td class="actions-col">
+              <button type="button" mat-stroked-button class="details-btn" (click)="openDetails(c)">
+                {{ 'CONTRACTS.DETAILS' | translate }}
+              </button>
               <button type="button" class="app-icon-btn success"
                       *ngIf="canResolveComplaint() && c.status !== 'RESOLVED' && c.status !== 'CLOSED'"
                       (click)="resolve(c.id)"

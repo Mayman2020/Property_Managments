@@ -7,7 +7,6 @@ public enum ContractStatus {
     EXPIRED,
     TERMINATED,
     RENEWED,
-    SUSPENDED,
     /** Draft withdrawn by owner or admin — unit occupancy recomputed without this row. */
     CANCELLED,
     /**

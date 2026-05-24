@@ -44,6 +44,9 @@ public class PropertyRequest {
     @NotEmpty
     private List<Long> ownerIds;
 
+    /** Co-owner percentages; must sum to 100 when provided. */
+    private List<OwnerShareDto> ownerShares;
+
     private List<String> ownerDocumentFiles;
 
     /** Optional: provider type for default maintenance routing — "USER" or "COMPANY". */

@@ -250,7 +250,6 @@ export class RentReceiptsComponent implements OnInit, OnDestroy {
       EXPIRED: 'chip-danger',
       TERMINATED: 'chip-danger',
       RENEWED: 'chip-info',
-      SUSPENDED: 'chip-warn',
       CANCELLED: 'chip-danger',
       PENDING_OWNER_APPROVAL: 'chip-warn',
       PENDING_TERMINATION_APPROVAL: 'chip-warn',
@@ -271,8 +270,20 @@ export class RentReceiptsComponent implements OnInit, OnDestroy {
     if (row.status === 'PARTIAL') return 'st-partial';
     if (row.status === 'PENDING_CONFIRMATION') return 'st-confirming';
     if (row.status === 'PAYMENT_REJECTED') return 'st-rejected';
-    if (row.status === 'OVERDUE') return 'st-overdue';
+    if (row.status === 'OVERDUE' || this.isPastDueUnpaid(row)) return 'st-overdue';
     if (row.status === 'WAIVED') return 'st-waived';
     return 'st-pending';
+  }
+
+  isPastDueUnpaid(row: RentPaymentSchedule): boolean {
+    if (!row.dueDate || row.status === 'PAID' || row.status === 'WAIVED') return false;
+    const due = this.dateOnly(row.dueDate);
+    const today = this.dateOnly(new Date());
+    return due.getTime() < today.getTime();
+  }
+
+  private dateOnly(value: string | Date): Date {
+    const date = value instanceof Date ? value : new Date(value);
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
   }
 }

@@ -1,8 +1,10 @@
 package com.propertymanagement.modules.property.controller;
 
 import com.propertymanagement.modules.permission.annotation.RequiresPermission;
+import com.propertymanagement.modules.property.dto.PropertyRevenueSplitResponse;
 import com.propertymanagement.modules.property.dto.PropertyRequest;
 import com.propertymanagement.modules.property.dto.PropertyResponse;
+import com.propertymanagement.modules.ownerportal.service.OwnerRevenueQueryService;
 import com.propertymanagement.shared.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -11,8 +13,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import com.propertymanagement.modules.property.service.PropertyService;
+
+import java.time.YearMonth;
 
 @RestController
 @RequestMapping("/properties")
@@ -20,6 +25,7 @@ import com.propertymanagement.modules.property.service.PropertyService;
 public class PropertyController {
 
     private final PropertyService propertyService;
+    private final OwnerRevenueQueryService ownerRevenueQueryService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<Page<PropertyResponse>>> getAll(
@@ -32,6 +38,19 @@ public class PropertyController {
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<PropertyResponse>> getById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok(propertyService.getById(id)));
+    }
+
+    @GetMapping("/{id}/revenue-split")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
+    public ResponseEntity<ApiResponse<PropertyRevenueSplitResponse>> revenueSplit(
+            @PathVariable Long id,
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) Integer month) {
+        YearMonth period = (year != null && month != null)
+                ? YearMonth.of(year, month)
+                : YearMonth.now();
+        return ResponseEntity.ok(ApiResponse.ok(
+                ownerRevenueQueryService.propertyRevenueSplit(id, period.getYear(), period.getMonthValue())));
     }
 
     @PostMapping

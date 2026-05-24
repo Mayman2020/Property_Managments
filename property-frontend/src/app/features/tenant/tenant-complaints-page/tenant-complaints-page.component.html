@@ -159,7 +159,7 @@
           <span class="meta-date">{{ selected.createdAt | date:'dd/MM/yyyy' }}</span>
         </div>
       </div>
-      <button class="panel-close-btn" mat-icon-button (click)="closePanel()">
+      <button class="panel-close-btn" mat-icon-button (click)="closePanel()" [matTooltip]="'ACTIONS.CLOSE' | translate">
         <mat-icon>close</mat-icon>
       </button>
     </div>
@@ -255,7 +255,7 @@
   <div class="modal-header">
     <span class="material-icons modal-icon">report_problem</span>
     <h3>{{ 'COMPLAINT.SUBMIT_TITLE' | translate }}</h3>
-    <button mat-icon-button class="modal-close" (click)="showNewDialog = false">
+    <button mat-icon-button class="modal-close" (click)="showNewDialog = false" [matTooltip]="'ACTIONS.CLOSE' | translate">
       <mat-icon>close</mat-icon>
     </button>
   </div>
@@ -296,12 +296,7 @@
         <span>{{ 'COMPLAINT.CATEGORY_LABEL' | translate }}</span>
         <select class="form-select" name="category" [(ngModel)]="newModel.category">
           <option value="">-</option>
-          <option value="MAINTENANCE">{{ 'COMPLAINT.CAT_MAINTENANCE' | translate }}</option>
-          <option value="NOISE">{{ 'COMPLAINT.CAT_NOISE' | translate }}</option>
-          <option value="CLEANLINESS">{{ 'COMPLAINT.CAT_CLEANLINESS' | translate }}</option>
-          <option value="BILLING">{{ 'COMPLAINT.CAT_BILLING' | translate }}</option>
-          <option value="MANAGEMENT">{{ 'COMPLAINT.CAT_MANAGEMENT' | translate }}</option>
-          <option value="OTHER">{{ 'COMPLAINT.CAT_OTHER' | translate }}</option>
+          <option *ngFor="let type of complaintTypes" [value]="type.code">{{ lookupItemLabel(type) }}</option>
         </select>
       </label>
     </div>
@@ -368,7 +363,7 @@
   <div class="modal-header">
     <span class="material-icons modal-icon">star</span>
     <h3>{{ 'COMPLAINT.RATE_COMPLAINT' | translate }}</h3>
-    <button mat-icon-button class="modal-close" (click)="skipRating()">
+    <button mat-icon-button class="modal-close" (click)="skipRating()" [matTooltip]="'ACTIONS.CLOSE' | translate">
       <mat-icon>close</mat-icon>
     </button>
   </div>

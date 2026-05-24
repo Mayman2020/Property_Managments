@@ -12,6 +12,12 @@ export interface OwnerSummary {
   nationalId?: string;
   phone?: string;
   email?: string;
+  ownershipPercentage?: number;
+}
+
+export interface OwnerSharePayload {
+  ownerId: number;
+  ownershipPercentage: number;
 }
 
 export interface MaintenanceProviderSummary {
@@ -54,6 +60,7 @@ export interface Property {
 
 export interface PropertyForm {
   ownerIds: number[];
+  ownerShares?: OwnerSharePayload[];
   propertyName: string;
   propertyNameAr?: string;
   propertyNameEn?: string;

@@ -38,7 +38,9 @@ import { SnackService } from '../../../core/services/snack.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
+import { LookupCacheService } from '../../../core/services/lookup-cache.service';
 import { ComplaintService } from '../../../core/services/complaint.service';
+import { Inspection, InspectionService, InspectionType } from '../../../core/services/inspection.service';
 import { Tenant, TenantService } from '../../../core/services/tenant.service';
 import {
   LeaseContract,
@@ -46,7 +48,7 @@ import {
   TenantComplaint
 } from '../../../core/models/contract.model';
 
-export type ContractDetailSection = 'info' | 'schedule' | 'complaints' | 'annexes' | 'fees';
+export type ContractDetailSection = 'info' | 'schedule' | 'complaints' | 'annexes' | 'fees' | 'inspections';
 
 @Component({
   selector: 'app-contract-detail',
@@ -78,6 +80,8 @@ export class ContractDetailComponent implements OnInit {
   annexDescription = '';
   annexNumber = '';
   annexEffectiveDate = '';
+  inspections: Inspection[] = [];
+  inspectionsLoading = false;
   annexDocumentUrl = '';
   savingAnnex = false;
 
@@ -105,12 +109,14 @@ export class ContractDetailComponent implements OnInit {
     private tenantSvc: TenantService,
     private readonly annexSvc: ContractAnnexService,
     private readonly feeSvc: ContractFeeService,
+    private readonly inspectionSvc: InspectionService,
     private location: Location,
     private dialog: MatDialog,
     private readonly snack: SnackService,
     readonly auth: AuthService,
     readonly permissions: PermissionService,
-    readonly i18n: I18nService
+    readonly i18n: I18nService,
+    private readonly lookupCache: LookupCacheService
   ) {}
 
   goBack(): void { this.location.back(); }
@@ -128,7 +134,8 @@ export class ContractDetailComponent implements OnInit {
       schedule: this.contractSvc.getPaymentSchedule(this.contractId).pipe(catchError(() => of(null))),
       complaints: this.complaintSvc.getAll({ contractId: this.contractId }).pipe(catchError(() => of(null))),
       annexes: this.annexSvc.getByContract(this.contractId).pipe(catchError(() => of(null))),
-      fees: this.feeSvc.getByContract(this.contractId).pipe(catchError(() => of(null)))
+      fees: this.feeSvc.getByContract(this.contractId).pipe(catchError(() => of(null))),
+      lookups: this.lookupCache.preload('COMPLAINT_TYPE').pipe(catchError(() => of(undefined)))
     }).subscribe(({ contract, schedule, complaints, annexes, fees }) => {
       this.contract = contract?.data ?? null;
       const schedPayload = schedule?.data;
@@ -210,6 +217,42 @@ export class ContractDetailComponent implements OnInit {
     if (s === 'annexes' && this.annexes.length === 0) {
       this.loadAnnexes();
     }
+    if (s === 'inspections') {
+      this.loadInspections();
+    }
+  }
+
+  complaintTypeLabel(code: string | null | undefined): string {
+    return this.lookupCache.label('COMPLAINT_TYPE', code) || '-';
+  }
+
+  loadInspections(): void {
+    this.inspectionsLoading = true;
+    this.inspectionSvc.listByContract(this.contractId).subscribe({
+      next: (res) => {
+        this.inspections = res.data ?? [];
+        this.inspectionsLoading = false;
+      },
+      error: () => {
+        this.inspections = [];
+        this.inspectionsLoading = false;
+      }
+    });
+  }
+
+  createInspection(type: InspectionType): void {
+    this.inspectionSvc.create(this.contractId, type).subscribe({
+      next: (res) => {
+        if (res.data?.id) {
+          this.router.navigate(['/admin/inspections', res.data.id]);
+        }
+      },
+      error: () => this.snack.error('COMMON.ERROR')
+    });
+  }
+
+  openInspection(id: number): void {
+    this.router.navigate(['/admin/inspections', id]);
   }
 
   loadAnnexes(): void {
@@ -361,6 +404,34 @@ export class ContractDetailComponent implements OnInit {
   }
 
   /** Matches {@code LeaseContractController}: staff roles + owner (owner scoped by property on activate). */
+  canSubmitForOwnerApproval(): boolean {
+    if (this.contract?.status !== 'DRAFT') return false;
+    if (!this.contract?.ownerId && !this.contract?.propertyId) return false;
+    return this.permissions.can('contracts', 'edit') && !this.auth.isOwner();
+  }
+
+  submitForOwnerApproval(): void {
+    if (!this.contract || !this.canSubmitForOwnerApproval()) return;
+    this.openActionConfirm(
+      this.i18n.instant('INLINE_TEXT.CONFIRM_ACTION'),
+      this.i18n.instant('CONTRACTS.SUBMIT_OWNER_APPROVAL')
+    ).subscribe((ok) => {
+      if (!ok) return;
+      this.actionLoading = true;
+      this.contractSvc.submitForOwnerApproval(this.contract!.id).subscribe({
+        next: () => {
+          this.actionLoading = false;
+          this.snack.success(this.i18n.instant('CONTRACTS.SUBMIT_OWNER_APPROVAL_OK'));
+          this.loadAll();
+        },
+        error: (err: Error) => {
+          this.actionLoading = false;
+          this.snack.error(err?.message || this.i18n.instant('COMMON.ERROR'));
+        }
+      });
+    });
+  }
+
   canActivateContract(): boolean {
     const s = this.contract?.status;
     if (s !== 'DRAFT' && s !== 'PENDING_OWNER_APPROVAL') return false;
@@ -477,7 +548,7 @@ export class ContractDetailComponent implements OnInit {
   }
 
   canTerminate(): boolean {
-    return this.contract?.status === 'ACTIVE' || this.contract?.status === 'SUSPENDED';
+    return this.contract?.status === 'ACTIVE';
   }
 
   canRequestRenewal(): boolean {
@@ -723,7 +794,7 @@ export class ContractDetailComponent implements OnInit {
   getStatusClass(status: string): string {
     const map: Record<string, string> = {
       ACTIVE: 'chip-success', DRAFT: 'chip-default', EXPIRED: 'chip-danger',
-      TERMINATED: 'chip-danger', RENEWED: 'chip-info', SUSPENDED: 'chip-warn',
+      TERMINATED: 'chip-danger', RENEWED: 'chip-info',
       CANCELLED: 'chip-danger', PENDING_OWNER_APPROVAL: 'chip-warn',
       PENDING_TERMINATION_APPROVAL: 'chip-warn',
       PENDING_RENEWAL_APPROVAL: 'chip-warn',
@@ -737,6 +808,13 @@ export class ContractDetailComponent implements OnInit {
 
   isHighlightedSchedule(row: RentPaymentSchedule): boolean {
     return this.highlightedScheduleId === row.id || row.status === 'PENDING_CONFIRMATION';
+  }
+
+  isPastDueUnpaid(row: RentPaymentSchedule): boolean {
+    if (!row.dueDate || row.status === 'PAID' || row.status === 'WAIVED') return false;
+    const due = this.dateOnly(row.dueDate);
+    const today = this.dateOnly(new Date());
+    return due.getTime() < today.getTime();
   }
 
   canReviewProof(row: RentPaymentSchedule): boolean {
@@ -825,6 +903,11 @@ export class ContractDetailComponent implements OnInit {
 
   isPaidLike(row: RentPaymentSchedule): boolean {
     return row.status === 'PAID' || row.status === 'PARTIAL';
+  }
+
+  private dateOnly(value: string | Date): Date {
+    const date = value instanceof Date ? value : new Date(value);
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
   }
 
   openMarkPaidDialog(row: RentPaymentSchedule): void {
@@ -935,4 +1018,3 @@ export class ContractDetailComponent implements OnInit {
     });
   }
 }
-

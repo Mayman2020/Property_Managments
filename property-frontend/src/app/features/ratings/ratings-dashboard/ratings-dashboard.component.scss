@@ -26,12 +26,6 @@
   border: 1px solid var(--card-border);
   background: linear-gradient(180deg, rgba(255, 255, 255, .95), var(--surface));
   box-shadow: var(--shadow-card);
-  transition: transform 0.22s ease, box-shadow 0.22s ease;
-
-  &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 28px rgba(0, 0, 0, .08);
-  }
 
   &::before {
     content: '';
@@ -106,7 +100,6 @@
 
 .ratings-table-card {
   overflow: hidden;
-  animation: fadeUp var(--t-med) var(--e-out) both;
 }
 
 .ratings-toolbar {
@@ -378,8 +371,164 @@
   text-align: end;
 }
 
-.ratings-table {
-  min-width: 900px;
+.rating-list-panel,
+.rating-detail-screen {
+  padding: 18px;
+  min-width: 0;
+}
+
+.rating-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.rating-card {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--line-2);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.rating-card-head,
+.rating-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.rating-card h3 {
+  margin: 0;
+  color: var(--text-main);
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.rating-comment {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.84rem;
+  line-height: 1.6;
+}
+
+.rating-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.rating-meta {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  padding: 9px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--ink-700);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.rating-meta span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rating-card-actions {
+  justify-content: flex-end;
+  padding-top: 2px;
+}
+
+.rating-detail-screen {
+  display: grid;
+  gap: 14px;
+}
+
+.rating-detail-back {
+  justify-self: end;
+}
+
+.detail-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 20px;
+  border: 1px solid var(--line-2);
+  border-radius: 16px;
+  background:
+    linear-gradient(135deg, rgba(26, 60, 94, 0.08), rgba(184, 154, 95, 0.08)),
+    rgba(255, 255, 255, 0.9);
+}
+
+.detail-hero-copy {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.detail-eyebrow {
+  color: var(--brass-700);
+  font-weight: 800;
+}
+
+.detail-hero h2 {
+  margin: 0;
+  color: var(--text-main);
+  font-family: var(--font-display);
+  font-size: 1.55rem;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.detail-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.detail-chip-row span {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.detail-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.detail-info-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 10px;
+  align-items: start;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--line-2);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.detail-info-card span {
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.detail-info-card.span-2 {
+  grid-column: 1 / -1;
 }
 
 .mono-cell {
@@ -387,44 +536,6 @@
   color: var(--ink-700);
   font-size: 12px;
   font-weight: 700;
-}
-
-.title-cell {
-  min-width: 240px;
-}
-
-.title-cell strong,
-.title-cell span {
-  display: block;
-}
-
-.title-cell strong {
-  color: var(--text-main);
-  font-weight: 700;
-}
-
-.title-cell span {
-  margin-top: 4px;
-  color: var(--text-muted);
-  font-size: 0.78rem;
-}
-
-.property-info,
-.unit-info {
-  display: block;
-}
-
-.property-info {
-  color: var(--text-main);
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.unit-info {
-  margin-top: 3px;
-  color: var(--ink-500);
-  font-family: var(--font-mono);
-  font-size: 11px;
 }
 
 .rating-chip {
@@ -457,6 +568,10 @@
   }
 
   .ratings-content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rating-card-grid {
     grid-template-columns: 1fr;
   }
 
@@ -504,5 +619,18 @@
 
   .estate-filter-btn {
     flex: 1 1 96px;
+  }
+
+  .rating-meta-grid,
+  .detail-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-hero {
+    display: grid;
+  }
+
+  .detail-info-card.span-2 {
+    grid-column: auto;
   }
 }

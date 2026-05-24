@@ -5,16 +5,21 @@ import com.propertymanagement.modules.contract.lease.entity.LeaseContract;
 import com.propertymanagement.modules.contract.lease.repository.LeaseContractRepository;
 import com.propertymanagement.modules.finance.budget.repository.BudgetQueryRepository;
 import com.propertymanagement.modules.finance.expense.repository.ExpenseRepository;
+import com.propertymanagement.modules.maintenance.request.entity.MaintenanceRequest;
 import com.propertymanagement.modules.maintenance.request.entity.RequestStatus;
 import com.propertymanagement.modules.maintenance.request.repository.MaintenanceRequestRepository;
+import com.propertymanagement.modules.property.entity.Property;
 import com.propertymanagement.modules.property.repository.PropertyRepository;
 import com.propertymanagement.modules.reports.dto.*;
+import com.propertymanagement.modules.tenant.entity.Tenant;
 import com.propertymanagement.modules.tenant.repository.TenantRepository;
+import com.propertymanagement.modules.unit.entity.Unit;
 import com.propertymanagement.modules.unit.repository.UnitRepository;
 import com.propertymanagement.modules.user.entity.User;
 import com.propertymanagement.modules.user.entity.UserRole;
 import com.propertymanagement.modules.owner.service.OwnerPropertyAccessService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -146,12 +151,39 @@ public class ReportsService {
     // ─── Maintenance Report ──────────────────────────────────────────────────
 
     public MaintenanceReportResponse getMaintenanceReport(Long propertyId) {
-        List<Object[]> statusGroups = maintenanceRepo.countByStatusGrouped();
-        Map<String, Long> byStatus = new LinkedHashMap<>();
-        for (Object[] row : statusGroups) {
-            byStatus.put(row[0].toString(), ((Number) row[1]).longValue());
+        Set<Long> scope = resolvePropertyScope();
+        if (scope != null && propertyId != null && !scope.contains(propertyId)) {
+            return emptyMaintenanceReport();
         }
 
+        List<MaintenanceRequest> requests = loadMaintenanceRequests(propertyId, scope);
+        Map<String, Long> byStatus = requests.stream()
+                .collect(Collectors.groupingBy(
+                        r -> r.getStatus() != null ? r.getStatus().name() : "UNKNOWN",
+                        LinkedHashMap::new,
+                        Collectors.counting()));
+
+        List<MaintenanceReportResponse.RequestSummary> summaries = requests.stream()
+                .map(this::maintenanceSummary)
+                .toList();
+
+        return buildMaintenanceReport(byStatus, summaries);
+    }
+
+    private List<MaintenanceRequest> loadMaintenanceRequests(Long propertyId, Set<Long> scope) {
+        if (propertyId != null) {
+            return maintenanceRepo.findFiltered(null, null, propertyId, Pageable.unpaged()).getContent();
+        }
+        if (scope != null) {
+            if (scope.isEmpty()) return List.of();
+            return maintenanceRepo.findFilteredForPropertyIds(null, null, scope, Pageable.unpaged()).getContent();
+        }
+        return maintenanceRepo.findFiltered(null, null, null, Pageable.unpaged()).getContent();
+    }
+
+    private MaintenanceReportResponse buildMaintenanceReport(
+            Map<String, Long> byStatus,
+            List<MaintenanceReportResponse.RequestSummary> requests) {
         long total = byStatus.values().stream().mapToLong(Long::longValue).sum();
         long open = byStatus.getOrDefault("OPEN", 0L);
         long inProgress = byStatus.getOrDefault("IN_PROGRESS", 0L)
@@ -175,6 +207,49 @@ public class ReportsService {
                 .totalInvoicedAmount(BigDecimal.ZERO)
                 .byStatus(statusList)
                 .byCategory(List.of())
+                .requests(requests)
+                .build();
+    }
+
+    private MaintenanceReportResponse emptyMaintenanceReport() {
+        return buildMaintenanceReport(new LinkedHashMap<>(), List.of());
+    }
+
+    private MaintenanceReportResponse.RequestSummary maintenanceSummary(MaintenanceRequest request) {
+        Property property = request.getPropertyId() == null
+                ? null
+                : propertyRepo.findById(request.getPropertyId()).orElse(null);
+        Unit unit = request.getUnitId() == null
+                ? null
+                : unitRepo.findById(request.getUnitId()).orElse(null);
+        Tenant tenant = request.getTenantId() == null
+                ? null
+                : tenantRepo.findById(request.getTenantId()).orElse(null);
+
+        return MaintenanceReportResponse.RequestSummary.builder()
+                .id(request.getId())
+                .requestNumber(request.getRequestNumber())
+                .title(request.getTitle())
+                .description(request.getDescription())
+                .status(request.getStatus() != null ? request.getStatus().name() : null)
+                .priority(request.getPriority() != null ? request.getPriority().name() : null)
+                .propertyId(request.getPropertyId())
+                .propertyName(property != null ? property.getPropertyName() : null)
+                .propertyNameAr(property != null ? property.getPropertyNameAr() : null)
+                .propertyNameEn(property != null ? property.getPropertyNameEn() : null)
+                .unitId(request.getUnitId())
+                .unitNumber(unit != null ? unit.getUnitNumber() : null)
+                .tenantId(request.getTenantId())
+                .tenantName(tenant != null ? tenant.getFullName() : null)
+                .tenantNameAr(tenant != null ? tenant.getFullNameAr() : null)
+                .tenantNameEn(tenant != null ? tenant.getFullNameEn() : null)
+                .assignedTo(request.getAssignedTo())
+                .scheduledDate(request.getScheduledDate())
+                .scheduledTimeFrom(request.getScheduledTimeFrom())
+                .scheduledTimeTo(request.getScheduledTimeTo())
+                .slaDeadline(request.getSlaDeadline())
+                .slaBreached(request.isSlaBreached())
+                .createdAt(request.getCreatedAt())
                 .build();
     }
 

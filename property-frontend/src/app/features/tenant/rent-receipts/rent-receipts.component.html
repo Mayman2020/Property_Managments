@@ -109,14 +109,22 @@
                   <p class="sm-notes rejected-note" *ngIf="s.status === 'PAYMENT_REJECTED' && s.rejectionReason">{{ s.rejectionReason }}</p>
                 </td>
                 <td class="proof-action-cell">
-                  <button mat-stroked-button type="button" *ngIf="canUploadProof(s)" (click)="openProofDialog(s)" [disabled]="submittingScheduleId === s.id">
+                  <button mat-icon-button class="app-icon-btn success" type="button" *ngIf="canUploadProof(s)"
+                          (click)="openProofDialog(s)"
+                          [disabled]="submittingScheduleId === s.id"
+                          [matTooltip]="'TENANT_PORTAL.ATTACH_RENT_RECEIPT' | translate"
+                          [attr.aria-label]="'TENANT_PORTAL.ATTACH_RENT_RECEIPT' | translate">
                     <mat-icon>upload_file</mat-icon>
-                    {{ 'TENANT_PORTAL.ATTACH_RENT_RECEIPT' | translate }}
                   </button>
                   <div class="proof-links" *ngIf="!canUploadProof(s) && (s.proofUrls?.length || s.proofUrl || s.receiptUrl)">
-                    <a *ngFor="let url of (s.proofUrls?.length ? s.proofUrls : [s.proofUrl || s.receiptUrl])" [href]="url" target="_blank" rel="noopener">
+                    <a mat-icon-button class="app-icon-btn accent"
+                       *ngFor="let url of (s.proofUrls?.length ? s.proofUrls : [s.proofUrl || s.receiptUrl])"
+                       [href]="url"
+                       target="_blank"
+                       rel="noopener"
+                       [matTooltip]="'COMMON.VIEW_FILE' | translate"
+                       [attr.aria-label]="'COMMON.VIEW_FILE' | translate">
                       <mat-icon>attach_file</mat-icon>
-                      {{ 'COMMON.VIEW_FILE' | translate }}
                     </a>
                   </div>
                   <span class="text-muted" *ngIf="!canUploadProof(s) && !(s.proofUrls?.length || s.proofUrl || s.receiptUrl)">

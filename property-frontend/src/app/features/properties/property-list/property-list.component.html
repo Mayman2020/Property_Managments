@@ -6,7 +6,9 @@
     [breadcrumbs]="[
       { label: ('NAV.DASHBOARD' | translate), route: '/admin/dashboard' },
       { label: ('NAV.PROPERTIES' | translate) }
-    ]">
+    ]"
+    [showBack]="true"
+    (backClick)="goBack()">
     <button mat-flat-button type="button" (click)="openAddDialog()" *ngIf="canCreateProperty()">
       <span class="material-icons">add</span>
       {{ 'PROPERTY_LIST.ADD_PROPERTY' | translate }}
@@ -55,7 +57,7 @@
     </article>
   </section>
 
-  <div class="loading-center" *ngIf="loading">
+  <div class="loading-wrap" *ngIf="loading">
     <mat-spinner diameter="40"></mat-spinner>
   </div>
 
@@ -214,46 +216,15 @@
       </table>
     </div>
 
-    <div class="srs-pager-shell" *ngIf="totalElements > pageSize">
-      <div class="srs-pager__info">
-        {{ 'PROPERTY_LIST.PAGE_RANGE' | translate:{ start: pageStart, end: pageEnd, total: totalElements } }}
-      </div>
-
-      <div class="srs-pager__controls">
-        <button type="button" class="srs-pager__nav" (click)="previousPage()" [disabled]="page === 0">
-          <span class="material-icons">chevron_left</span>
-        </button>
-
-        <ng-container *ngFor="let item of pageItems()">
-          <span *ngIf="item === 'ellipsis'" class="srs-pager__gap">...</span>
-          <button
-            *ngIf="item !== 'ellipsis'"
-            type="button"
-            class="srs-pager__page"
-            [class.srs-pager__page--active]="item === page + 1"
-            (click)="goToPage(item)">
-            {{ item }}
-          </button>
-        </ng-container>
-
-        <button type="button" class="srs-pager__nav" (click)="nextPage()" [disabled]="page + 1 >= totalPages">
-          <span class="material-icons">chevron_right</span>
-        </button>
-      </div>
-
-      <div class="srs-pager__size">
-        <span class="srs-pager__size-label">{{ 'PROPERTY_LIST.RESULTS' | translate }}: {{ filteredProperties.length }}</span>
-      </div>
+    <div class="pager-range" *ngIf="totalElements > 0">
+      {{ 'PROPERTY_LIST.PAGE_RANGE' | translate:{ start: pageStart, end: pageEnd, total: totalElements } }}
     </div>
 
-    <mat-paginator
-      class="property-paginator"
+    <app-table-pager
       [length]="totalElements"
-      [pageIndex]="page"
       [pageSize]="pageSize"
-      [pageSizeOptions]="[pageSize]"
-      [hidePageSize]="true"
-      (page)="onPage($event)">
-    </mat-paginator>
+      [pageIndex]="page"
+      (pageIndexChange)="onPageIndexChange($event)">
+    </app-table-pager>
   </section>
 </div>

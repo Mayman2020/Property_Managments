@@ -34,6 +34,7 @@ import com.propertymanagement.shared.i18n.AppMessages;
 import com.propertymanagement.shared.i18n.BilingualNotificationText;
 import com.propertymanagement.shared.i18n.LocalizedNameResolver;
 import com.propertymanagement.shared.security.PropertyScopeService;
+import com.propertymanagement.codegen.CodeGenerationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -88,6 +89,7 @@ public class UserService {
     private final NotificationService notificationService;
     private final AppMessages appMessages;
     private final PropertyScopeService propertyScopeService;
+    private final CodeGenerationService codeGenerationService;
 
     private static final Set<UserRole> EMPLOYEE_ROLES = Set.of(
             UserRole.ACCOUNTANT,
@@ -267,8 +269,10 @@ public class UserService {
 
     private void autoCreateEmployee(User user) {
         if (user.getEmail() != null && employeeRepository.findByEmail(user.getEmail()).isPresent()) return;
-        String code = "EMP-" + LocalDateTime.now().format(
-                java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        // Use the shared sequence-backed generator (employees_employee_code_key is unique). The
+        // legacy "EMP-yyyyMMddHHmmss" stamp collided whenever two employee-role users were created
+        // within the same second.
+        String code = codeGenerationService.generate("EMP");
         String n = firstNonBlank(user.getFullName(), "Employee");
         String ar = firstNonBlank(user.getFullNameAr(), n);
         String en = firstNonBlank(user.getFullNameEn(), n);

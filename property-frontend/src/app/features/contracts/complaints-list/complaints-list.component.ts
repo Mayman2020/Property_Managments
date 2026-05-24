@@ -7,6 +7,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { TranslateModule } from '@ngx-translate/core';
 import { Location } from '@angular/common';
 import { catchError, of } from 'rxjs';
@@ -19,16 +20,17 @@ import { ComplaintService } from '../../../core/services/complaint.service';
 import { TenantComplaint } from '../../../core/models/contract.model';
 import { PropertyService, Property } from '../../../core/services/property.service';
 import { LookupCacheService } from '../../../core/services/lookup-cache.service';
-import { LookupItem } from '../../../core/services/lookup.service';
+import { LookupItem, LookupType } from '../../../core/services/lookup.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { PermissionService } from '../../../core/services/permission.service';
+import { ComplaintDetailDialogComponent } from '../complaint-detail-dialog/complaint-detail-dialog.component';
 
 @Component({
   selector: 'app-complaints-list',
   standalone: true,
   imports: [
     NgIf, NgFor, DatePipe, NgClass, FormsModule,
-    MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule,
+    MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule, MatDialogModule,
     TranslateModule, PageHeaderComponent, TablePagerComponent, FilterBarComponent,
     EmptyStateComponent
   ],
@@ -40,7 +42,7 @@ export class ComplaintsListComponent implements OnInit {
   complaints: TenantComplaint[] = [];
   totalElements = 0;
   creatingRequestId: number | null = null;
-  pageSize = 10;
+  pageSize = 5;
   pageIndex = 0;
   filterStatus = '';
   filterPropertyId: number | null = null;
@@ -54,6 +56,7 @@ export class ComplaintsListComponent implements OnInit {
     private readonly complaintSvc: ComplaintService,
     private readonly propertySvc: PropertyService,
     private readonly location: Location,
+    private readonly dialog: MatDialog,
     readonly lookupCache: LookupCacheService,
     readonly i18n: I18nService,
     private readonly permissions: PermissionService
@@ -150,7 +153,21 @@ export class ComplaintsListComponent implements OnInit {
     const q = this.searchTerm.trim().toLowerCase();
     if (!q) return this.complaints;
     return this.complaints.filter(c =>
-      [c.title, c.tenantName, c.propertyName, c.complaintType, c.status, c.priority]
+      [
+        c.title,
+        c.tenantName,
+        c.tenantNameAr,
+        c.tenantNameEn,
+        c.propertyName,
+        c.propertyNameAr,
+        c.propertyNameEn,
+        c.unitNumber,
+        this.tenantDisplayName(c),
+        this.complaintDisplayTitle(c),
+        this.lookupLabel('COMPLAINT_TYPE', c.complaintType),
+        this.lookupLabel('COMPLAINT_STATUS', c.status),
+        this.lookupLabel('COMPLAINT_PRIORITY', c.priority)
+      ]
         .join(' ').toLowerCase().includes(q)
     );
   }
@@ -196,6 +213,50 @@ export class ComplaintsListComponent implements OnInit {
     return this.i18n.currentLang === 'ar'
       ? (p.propertyNameAr || p.propertyName)
       : (p.propertyNameEn || p.propertyName);
+  }
+
+  complaintTypeLabel(code: string | null | undefined): string {
+    return this.lookupLabel('COMPLAINT_TYPE', code);
+  }
+
+  tenantDisplayName(c: TenantComplaint): string {
+    const ar = this.i18n.currentLang === 'ar';
+    const name = ar
+      ? (c.tenantNameAr || c.tenantNameEn || c.tenantName)
+      : (c.tenantNameEn || c.tenantNameAr || c.tenantName);
+    return name || '—';
+  }
+
+  propertyDisplayName(c: TenantComplaint): string {
+    const ar = this.i18n.currentLang === 'ar';
+    const name = ar
+      ? (c.propertyNameAr || c.propertyNameEn || c.propertyName)
+      : (c.propertyNameEn || c.propertyNameAr || c.propertyName);
+    return name || '';
+  }
+
+  complaintDisplayTitle(c: TenantComplaint): string {
+    const title = (c.title || '').trim();
+    if (title && !/^Complaint\s[A-Z]+-\d/i.test(title)) {
+      return title;
+    }
+    return this.complaintTypeLabel(c.complaintType);
+  }
+
+  openDetails(c: TenantComplaint): void {
+    this.dialog.open(ComplaintDetailDialogComponent, {
+      width: '760px',
+      maxWidth: '95vw',
+      maxHeight: '92vh',
+      panelClass: 'app-dialog-panel',
+      data: { complaintId: c.id }
+    }).afterClosed().subscribe(changed => {
+      if (changed) this.load();
+    });
+  }
+
+  private lookupLabel(type: LookupType, code: string | null | undefined): string {
+    return this.lookupCache.label(type, code) || '-';
   }
 
   getPriorityClass(code: string): string {

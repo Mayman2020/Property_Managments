@@ -106,8 +106,8 @@ public class RolePermissionService {
 
     public Map<String, Map<String, Boolean>> getPermissionMap(UserRole role) {
         Map<String, Map<String, Boolean>> stored = readPermissions(findOrCreate(role).getPermissionsJson());
-        if (role == UserRole.ACCOUNTANT) {
-            return mergePermissionMaps(List.of(stored, defaultPermissions(UserRole.ACCOUNTANT)));
+        if (role == UserRole.SUPER_ADMIN || role == UserRole.ACCOUNTANT) {
+            return mergePermissionMaps(List.of(stored, defaultPermissions(role)));
         }
         return stored;
     }
@@ -122,9 +122,13 @@ public class RolePermissionService {
     }
 
     private RolePermissionResponseDTO toResponse(RolePermissionEntity entity) {
+        Map<String, Map<String, Boolean>> permissions = readPermissions(entity.getPermissionsJson());
+        if (entity.getRole() == UserRole.SUPER_ADMIN || entity.getRole() == UserRole.ACCOUNTANT) {
+            permissions = mergePermissionMaps(List.of(permissions, defaultPermissions(entity.getRole())));
+        }
         return RolePermissionResponseDTO.builder()
                 .role(entity.getRole())
-                .permissions(readPermissions(entity.getPermissionsJson()))
+                .permissions(permissions)
                 .build();
     }
 
@@ -198,10 +202,16 @@ public class RolePermissionService {
                 allow(permissions, "profile", "enabled", "menu", "view", "edit");
                 allow(permissions, "contracts", "enabled", "menu", "view", "create", "edit", "delete", "approve", "reject", "export");
                 allow(permissions, "finance", "enabled", "menu", "view", "create", "edit", "delete", "approve", "reject", "export");
-                allow(permissions, "hr", "enabled", "menu", "view", "create", "edit", "export");
+                allow(permissions, "hr", "enabled", "menu", "view", "create", "edit", "approve", "reject", "export");
                 allow(permissions, "vacancies", "enabled", "menu", "view", "create", "edit", "export");
                 allow(permissions, "notifications", "enabled", "menu", "view");
                 allow(permissions, "audit", "enabled", "menu", "view", "export");
+            }
+            case HR_OFFICER -> {
+                allow(permissions, "dashboard", "enabled", "menu", "view");
+                allow(permissions, "hr", "enabled", "menu", "view", "create", "edit", "submit", "approve", "reject", "export");
+                allow(permissions, "notifications", "enabled", "menu", "view");
+                allow(permissions, "profile", "enabled", "menu", "view", "edit");
             }
             case MAINTENANCE_OFFICER_INTERNAL,
                  MAINTENANCE_OFFICER_COMPANY,
@@ -254,7 +264,8 @@ public class RolePermissionService {
                 "dashboard", "properties", "units", "tenants", "maintenance", "inventory",
                 "reports", "users", "lookups", "contractors", "ratings", "schedule",
                 "profile", "my_unit", "new_request", "my_requests", "permissions",
-                "contracts", "finance", "hr", "owner_portal", "vacancies", "notifications", "audit"
+                "contracts", "finance", "hr", "owner_portal", "vacancies", "notifications", "audit",
+                "settings"
         };
         String[] actions = {
                 "enabled", "menu", "view", "create", "edit", "delete", "assign", "schedule",

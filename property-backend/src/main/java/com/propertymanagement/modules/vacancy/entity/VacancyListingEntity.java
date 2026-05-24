@@ -46,4 +46,9 @@ public class VacancyListingEntity {
     private LocalDateTime createdAt;
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(name = "listing_source", nullable = false, length = 20)
+    private ListingSource listingSource = ListingSource.MANUAL;
 }

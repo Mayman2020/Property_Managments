@@ -160,6 +160,10 @@
       <ng-container *ngTemplateOutlet="classificationGrid; context: { lists: contractLists }"></ng-container>
     </mat-tab>
 
+    <mat-tab [label]="'LOOKUPS.TAB_STATUS_COMPLAINTS' | translate">
+      <ng-container *ngTemplateOutlet="classificationGrid; context: { lists: statusAndComplaintLists }"></ng-container>
+    </mat-tab>
+
     <mat-tab [label]="'LOOKUPS.TAB_JOB_TITLES' | translate">
       <ng-container *ngTemplateOutlet="classificationGrid; context: { lists: jobLists }"></ng-container>
     </mat-tab>

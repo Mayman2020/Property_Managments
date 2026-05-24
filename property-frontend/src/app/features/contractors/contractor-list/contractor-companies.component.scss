@@ -50,10 +50,17 @@
 }
 
 .actions-cell {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-  flex-wrap: wrap;
+  width: 200px;
+  min-width: 200px;
+  white-space: nowrap;
+
+  .table-actions {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    flex-wrap: nowrap;
+    justify-content: center;
+  }
 }
 
 .company-name-cell {

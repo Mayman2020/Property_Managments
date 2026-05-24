@@ -64,7 +64,7 @@
             <!-- Name / ID -->
             <td>
               <div class="user-cell">
-                <div class="user-avatar">{{ group.representative.fullName.charAt(0) }}</div>
+                <div class="user-avatar">{{ tenantCode(group.representative) }}</div>
                 <div class="user-info">
                   <div class="user-name">{{ group.representative.fullName }}</div>
                   <div class="user-email" *ngIf="group.representative.nationalId">ID: {{ group.representative.nationalId }}</div>
@@ -72,27 +72,27 @@
               </div>
             </td>
 
-            <!-- Property — one row per active contract (fallback: tenant entries) -->
+            <!-- Property — show last 3 units/contracts in row -->
             <td>
               <ng-container *ngIf="group.contracts.length > 0; else propFallback">
-                <div *ngFor="let c of group.contracts" class="property-cell multi-entry-cell">
+                <div *ngFor="let c of displayContracts(group)" class="property-cell multi-entry-cell">
                   <mat-icon>apartment</mat-icon>
                   <span>{{ c.propertyName || propertyLabel(c.propertyId) }}</span>
                 </div>
               </ng-container>
               <ng-template #propFallback>
-                <div *ngFor="let e of group.entries" class="property-cell multi-entry-cell">
+                <div *ngFor="let e of displayEntries(group)" class="property-cell multi-entry-cell">
                   <mat-icon>apartment</mat-icon>
                   <span>{{ propertyLabel(e.propertyId) }}</span>
                 </div>
               </ng-template>
             </td>
 
-            <!-- Unit — one row per active contract (fallback: tenant entries) -->
+            <!-- Unit — show last 3; view-all for the rest -->
             <td class="center-col">
               <div class="unit-info-cell">
                 <ng-container *ngIf="group.contracts.length > 0; else unitFallback">
-                  <div *ngFor="let c of group.contracts" class="unit-entry multi-entry-cell">
+                  <div *ngFor="let c of displayContracts(group)" class="unit-entry multi-entry-cell">
                     <span class="unit-badge unit-badge--rented">{{ c.unitNumber || unitLabel(c.unitId) }}</span>
                     <div class="contract-meta-badges">
                       <span class="cmb cmb-discount" *ngIf="c.rentDiscountReason">
@@ -105,10 +105,15 @@
                   </div>
                 </ng-container>
                 <ng-template #unitFallback>
-                  <div *ngFor="let e of group.entries" class="unit-entry multi-entry-cell">
+                  <div *ngFor="let e of displayEntries(group)" class="unit-entry multi-entry-cell">
                     <span class="unit-badge" [class.unit-badge--rented]="!!e.unitId">{{ unitLabel(e.unitId) }}</span>
                   </div>
                 </ng-template>
+                <button *ngIf="hasMoreUnits(group)" type="button" class="view-all-units-btn"
+                        (click)="openViewAllUnits(group)"
+                        [matTooltip]="'TENANTS.VIEW_ALL_UNITS' | translate">
+                  {{ 'ACTIONS.VIEW' | translate }} ({{ hiddenUnitsCount(group) }})
+                </button>
               </div>
             </td>
 

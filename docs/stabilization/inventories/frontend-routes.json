@@ -1,0 +1,425 @@
+{
+  "generatedAt": "2026-05-24T12:20:06.827Z",
+  "routes": [
+    {
+      "path": "/admin",
+      "source": "property-frontend/src/app/app.routes.ts",
+      "segment": "admin"
+    },
+    {
+      "path": "/admin/accountant-portal",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "accountant-portal"
+    },
+    {
+      "path": "/admin/attendance",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "attendance"
+    },
+    {
+      "path": "/admin/audit-log",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "audit-log"
+    },
+    {
+      "path": "/admin/budget",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "budget"
+    },
+    {
+      "path": "/admin/complaints",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "complaints"
+    },
+    {
+      "path": "/admin/contractors",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "contractors"
+    },
+    {
+      "path": "/admin/contracts",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "contracts"
+    },
+    {
+      "path": "/admin/dashboard",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "dashboard"
+    },
+    {
+      "path": "/admin/deductions",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "deductions"
+    },
+    {
+      "path": "/admin/employees",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "employees"
+    },
+    {
+      "path": "/admin/employees/new",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "employees/new"
+    },
+    {
+      "path": "/admin/expenses",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "expenses"
+    },
+    {
+      "path": "/admin/finance",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "finance"
+    },
+    {
+      "path": "/admin/home",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "home"
+    },
+    {
+      "path": "/admin/hr",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "hr"
+    },
+    {
+      "path": "/admin/inventory",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "inventory"
+    },
+    {
+      "path": "/admin/leaves",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "leaves"
+    },
+    {
+      "path": "/admin/legal-entities",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "legal-entities"
+    },
+    {
+      "path": "/admin/list",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "list"
+    },
+    {
+      "path": "/admin/lookups",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "lookups"
+    },
+    {
+      "path": "/admin/maintenance",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "maintenance"
+    },
+    {
+      "path": "/admin/maintenance-invoices",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "maintenance-invoices"
+    },
+    {
+      "path": "/admin/maintenance/new",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "maintenance/new"
+    },
+    {
+      "path": "/admin/module-settings",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "module-settings"
+    },
+    {
+      "path": "/admin/my-requests",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "my-requests"
+    },
+    {
+      "path": "/admin/notifications",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "notifications"
+    },
+    {
+      "path": "/admin/overdue-payments",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "overdue-payments"
+    },
+    {
+      "path": "/admin/owner-portal",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "owner-portal"
+    },
+    {
+      "path": "/admin/owner-portal/contract-approvals",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "owner-portal/contract-approvals"
+    },
+    {
+      "path": "/admin/owners",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "owners"
+    },
+    {
+      "path": "/admin/payroll",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "payroll"
+    },
+    {
+      "path": "/admin/permissions",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "permissions"
+    },
+    {
+      "path": "/admin/profile",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "profile"
+    },
+    {
+      "path": "/admin/properties",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "properties"
+    },
+    {
+      "path": "/admin/ratings",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "ratings"
+    },
+    {
+      "path": "/admin/renewal-requests",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "renewal-requests"
+    },
+    {
+      "path": "/admin/rent-confirmation",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "rent-confirmation"
+    },
+    {
+      "path": "/admin/reports",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "reports"
+    },
+    {
+      "path": "/admin/reports/budget-vs-actual",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "reports/budget-vs-actual"
+    },
+    {
+      "path": "/admin/reports/cashflow",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "reports/cashflow"
+    },
+    {
+      "path": "/admin/reports/contract-expiry",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "reports/contract-expiry"
+    },
+    {
+      "path": "/admin/reports/maintenance",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "reports/maintenance"
+    },
+    {
+      "path": "/admin/reports/occupancy",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "reports/occupancy"
+    },
+    {
+      "path": "/admin/reports/owner-statement",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "reports/owner-statement"
+    },
+    {
+      "path": "/admin/reports/pnl",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "reports/pnl"
+    },
+    {
+      "path": "/admin/revenues",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "revenues"
+    },
+    {
+      "path": "/admin/screens",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "screens"
+    },
+    {
+      "path": "/admin/statements",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "statements"
+    },
+    {
+      "path": "/admin/templates",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "templates"
+    },
+    {
+      "path": "/admin/tenants",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "tenants"
+    },
+    {
+      "path": "/admin/units",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "units"
+    },
+    {
+      "path": "/admin/user-access",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "user-access"
+    },
+    {
+      "path": "/admin/users",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "users"
+    },
+    {
+      "path": "/admin/vacancies",
+      "source": "property-frontend/src/app/features/admin/admin.routes.ts",
+      "segment": "vacancies"
+    },
+    {
+      "path": "/auth",
+      "source": "property-frontend/src/app/app.routes.ts",
+      "segment": "auth"
+    },
+    {
+      "path": "/auth/login",
+      "source": "property-frontend/src/app/features/auth/auth.routes.ts",
+      "segment": "login"
+    },
+    {
+      "path": "/change-password",
+      "source": "property-frontend/src/app/app.routes.ts",
+      "segment": "change-password"
+    },
+    {
+      "path": "/employee",
+      "source": "property-frontend/src/app/app.routes.ts",
+      "segment": "employee"
+    },
+    {
+      "path": "/employee/my-payslips",
+      "source": "property-frontend/src/app/features/employee-portal/employee-portal.routes.ts",
+      "segment": "my-payslips"
+    },
+    {
+      "path": "/employee/notifications",
+      "source": "property-frontend/src/app/features/employee-portal/employee-portal.routes.ts",
+      "segment": "notifications"
+    },
+    {
+      "path": "/employee/profile",
+      "source": "property-frontend/src/app/features/employee-portal/employee-portal.routes.ts",
+      "segment": "profile"
+    },
+    {
+      "path": "/officer",
+      "source": "property-frontend/src/app/app.routes.ts",
+      "segment": "officer"
+    },
+    {
+      "path": "/officer/company-queue",
+      "source": "property-frontend/src/app/features/officer/officer.routes.ts",
+      "segment": "company-queue"
+    },
+    {
+      "path": "/officer/invoices",
+      "source": "property-frontend/src/app/features/officer/officer.routes.ts",
+      "segment": "invoices"
+    },
+    {
+      "path": "/officer/my-requests",
+      "source": "property-frontend/src/app/features/officer/officer.routes.ts",
+      "segment": "my-requests"
+    },
+    {
+      "path": "/officer/my-staff",
+      "source": "property-frontend/src/app/features/officer/officer.routes.ts",
+      "segment": "my-staff"
+    },
+    {
+      "path": "/officer/notifications",
+      "source": "property-frontend/src/app/features/officer/officer.routes.ts",
+      "segment": "notifications"
+    },
+    {
+      "path": "/officer/profile",
+      "source": "property-frontend/src/app/features/officer/officer.routes.ts",
+      "segment": "profile"
+    },
+    {
+      "path": "/officer/requests",
+      "source": "property-frontend/src/app/features/officer/officer.routes.ts",
+      "segment": "requests"
+    },
+    {
+      "path": "/officer/schedule",
+      "source": "property-frontend/src/app/features/officer/officer.routes.ts",
+      "segment": "schedule"
+    },
+    {
+      "path": "/tenant",
+      "source": "property-frontend/src/app/app.routes.ts",
+      "segment": "tenant"
+    },
+    {
+      "path": "/tenant/complaints",
+      "source": "property-frontend/src/app/features/tenant/tenant.routes.ts",
+      "segment": "complaints"
+    },
+    {
+      "path": "/tenant/contract-request",
+      "source": "property-frontend/src/app/features/tenant/tenant.routes.ts",
+      "segment": "contract-request"
+    },
+    {
+      "path": "/tenant/dashboard",
+      "source": "property-frontend/src/app/features/tenant/tenant.routes.ts",
+      "segment": "dashboard"
+    },
+    {
+      "path": "/tenant/my-contract",
+      "source": "property-frontend/src/app/features/tenant/tenant.routes.ts",
+      "segment": "my-contract"
+    },
+    {
+      "path": "/tenant/my-contracts",
+      "source": "property-frontend/src/app/features/tenant/tenant.routes.ts",
+      "segment": "my-contracts"
+    },
+    {
+      "path": "/tenant/my-requests",
+      "source": "property-frontend/src/app/features/tenant/tenant.routes.ts",
+      "segment": "my-requests"
+    },
+    {
+      "path": "/tenant/my-unit",
+      "source": "property-frontend/src/app/features/tenant/tenant.routes.ts",
+      "segment": "my-unit"
+    },
+    {
+      "path": "/tenant/new-request",
+      "source": "property-frontend/src/app/features/tenant/tenant.routes.ts",
+      "segment": "new-request"
+    },
+    {
+      "path": "/tenant/notifications",
+      "source": "property-frontend/src/app/features/tenant/tenant.routes.ts",
+      "segment": "notifications"
+    },
+    {
+      "path": "/tenant/profile",
+      "source": "property-frontend/src/app/features/tenant/tenant.routes.ts",
+      "segment": "profile"
+    },
+    {
+      "path": "/tenant/rent-receipts",
+      "source": "property-frontend/src/app/features/tenant/tenant.routes.ts",
+      "segment": "rent-receipts"
+    },
+    {
+      "path": "/tenant/requests",
+      "source": "property-frontend/src/app/features/tenant/tenant.routes.ts",
+      "segment": "requests"
+    }
+  ]
+}

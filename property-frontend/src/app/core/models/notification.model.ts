@@ -31,6 +31,11 @@ export type NotificationType =
   | 'PAYMENT_RECEIVED'
   | 'PAYROLL_GENERATED'
   | 'FINANCE_ALERT'
+  | 'BUDGET_THRESHOLD_EXCEEDED'
+  | 'VACANCY_PUBLISHED'
+  | 'RENTAL_INQUIRY_RECEIVED'
+  | 'INSPECTION_COMPLETED'
+  | 'RENT_GRACE_PERIOD_ENDING'
   | 'MAINTENANCE_UPDATE'
   | 'MAINTENANCE_PROVIDER_ASSIGNED'
   | 'MAINTENANCE_PROVIDER_UNASSIGNED'
@@ -69,6 +74,10 @@ export interface NotificationParams {
   fromComplaint?: boolean;
   complaintId?: number;
   invoiceId?: number;
+  listingId?: number;
+  expenseId?: number;
+  inspectionId?: number;
+  inquiryId?: number;
   color?: string;
 }
 

@@ -87,13 +87,13 @@ import { PermissionService } from '../../../core/services/permission.service';
           </div>
         </section>
 
-        <section class="stat-grid">
-          <article class="stat-card" *ngFor="let card of dashboardCards">
-            <span class="material-icons stat-icon">{{ card.icon }}</span>
-            <div class="stat-content">
-              <div class="stat-label">{{ card.label }}</div>
-              <div class="stat-value">{{ card.value }}</div>
+        <section class="estate-stat-grid finance-stat-grid">
+          <article class="estate-stat-card teal" *ngFor="let card of dashboardCards">
+            <div class="estate-stat-top">
+              <span class="estate-stat-label">{{ card.label }}</span>
+              <div class="estate-stat-icon"><span class="material-icons">{{ card.icon }}</span></div>
             </div>
+            <div class="estate-stat-value">{{ card.value }}</div>
           </article>
         </section>
 
@@ -252,7 +252,50 @@ import { PermissionService } from '../../../core/services/permission.service';
     .overview-net { padding: 20px; display: grid; align-content: center; gap: 8px; }
     .overview-net span { color: var(--text-muted, #6c7890); font-weight: 700; }
     .overview-net strong { color: var(--navy-900, #102238); font-size: 2rem; font-weight: 800; }
-    .stat-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .finance-stat-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(180px, 1fr));
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+    .finance-stat-grid .estate-stat-card {
+      position: relative;
+      overflow: hidden;
+      background: var(--surface, #fffdf8);
+      border: 1px solid var(--card-border, #e4d8c8);
+      border-radius: 8px;
+      padding: 18px;
+      box-shadow: 0 10px 24px rgba(15, 34, 55, 0.05);
+      min-height: 132px;
+    }
+    .finance-stat-grid .estate-stat-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .finance-stat-grid .estate-stat-label {
+      color: var(--text-muted, #6c7890);
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+    .finance-stat-grid .estate-stat-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: #f5ead5;
+      color: #9a6a1f;
+      flex-shrink: 0;
+    }
+    .finance-stat-grid .estate-stat-value {
+      color: var(--navy-900, #102238);
+      font-size: 1.55rem;
+      font-weight: 800;
+      margin-top: 20px;
+      line-height: 1.1;
+    }
     .stat-card { padding: 18px; display: flex; align-items: center; gap: 14px; min-height: 112px; }
     .stat-icon { width: 42px; height: 42px; border-radius: 8px; display: grid; place-items: center; background: #f5ead5; color: #9a6a1f; }
     .stat-label { color: var(--text-muted, #6c7890); font-size: 0.85rem; margin-bottom: 6px; }
@@ -273,11 +316,11 @@ import { PermissionService } from '../../../core/services/permission.service';
     .status-badge[data-status="PAID"] { background: #e8f7ed; color: #16803a; }
     .status-badge[data-status="PENDING"] { background: #fff3d6; color: #9a6a1f; }
     @media (max-width: 1100px) {
-      .stat-grid, .quick-actions-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .finance-stat-grid, .quick-actions-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .finance-overview, .ledger-grid { grid-template-columns: 1fr; }
     }
     @media (max-width: 680px) {
-      .stat-grid, .quick-actions-grid { grid-template-columns: 1fr; }
+      .finance-stat-grid, .quick-actions-grid { grid-template-columns: 1fr; }
     }
   `]
 })
@@ -519,4 +562,3 @@ export class FinanceWorkspaceComponent implements OnInit {
     });
   }
 }
-

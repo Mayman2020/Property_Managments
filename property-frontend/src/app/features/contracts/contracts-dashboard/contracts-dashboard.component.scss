@@ -16,10 +16,135 @@
 }
 
 /* ── KPI Grid ─────────────────────────────────────────── */
+.contracts-kpi-grid,
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(180px, 1fr));
   gap: 16px;
+  margin-bottom: 0;
+}
+
+.contracts-kpi-grid .estate-stat-card {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: var(--shadow-card);
+  min-height: 132px;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: var(--brass-300);
+    box-shadow: var(--shadow-hover);
+  }
+
+  &.selected {
+    border-color: var(--navy-700);
+    box-shadow: 0 0 0 2px rgba(14, 31, 51, 0.12);
+  }
+}
+
+.contracts-kpi-grid .estate-stat-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.contracts-kpi-grid .estate-stat-label {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.contracts-kpi-grid .estate-stat-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  background: var(--paper-2);
+  color: var(--ink-700);
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+  }
+}
+
+.contracts-kpi-grid .estate-stat-value {
+  color: var(--text-main);
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+  margin-top: 24px;
+}
+
+.contracts-kpi-grid .estate-stat-card.navy .estate-stat-icon { background: var(--navy-900); color: var(--brass-400); }
+.contracts-kpi-grid .estate-stat-card.teal .estate-stat-icon { background: var(--teal-bg); color: var(--teal); }
+.contracts-kpi-grid .estate-stat-card.gold .estate-stat-icon { background: var(--amber-50); color: var(--amber-700); }
+.contracts-kpi-grid .estate-stat-card.danger .estate-stat-icon { background: var(--bad-bg); color: var(--bad); }
+.contracts-kpi-grid .estate-stat-card.purple .estate-stat-icon { background: var(--violet-bg); color: var(--violet); }
+
+.dashboard-drilldown {
+  display: grid;
+  gap: 0;
+  overflow: hidden;
+}
+
+.drilldown-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--line-2, var(--card-border));
+}
+
+.drilldown-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.drilldown-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--paper-2);
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.ref-cell {
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.details-btn {
+  min-height: 34px;
+  line-height: 32px;
+  padding: 0 14px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
 }
 
 .kpi-card {
@@ -440,11 +565,13 @@
 
 /* ── Responsive ───────────────────────────────────────── */
 @media (max-width: 1200px) {
+  .contracts-kpi-grid,
   .kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .quick-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 900px) {
+  .contracts-kpi-grid,
   .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .expiring-item {
     grid-template-columns: 1fr 1fr;
@@ -458,6 +585,7 @@
 }
 
 @media (max-width: 600px) {
+  .contracts-kpi-grid,
   .kpi-grid { grid-template-columns: 1fr; }
   .quick-actions { grid-template-columns: 1fr; }
   .expiring-item { grid-template-columns: 1fr; }

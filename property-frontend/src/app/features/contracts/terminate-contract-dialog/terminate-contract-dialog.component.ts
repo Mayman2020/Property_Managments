@@ -87,7 +87,7 @@ export class TerminateContractDialogComponent {
         this.dialogRef.close(true);
       },
       error: (err) => {
-        this.errorMsg = err?.error?.message ?? 'Error';
+        this.errorMsg = (err as Error)?.message ?? 'COMMON.ERROR';
         this.saving = false;
       }
     });

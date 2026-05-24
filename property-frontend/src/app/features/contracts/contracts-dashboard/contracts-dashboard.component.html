@@ -6,7 +6,8 @@
     [breadcrumbs]="[
       { label: ('NAV.DASHBOARD' | translate), route: '/admin/dashboard' },
       { label: ('NAV.CONTRACTS_DASHBOARD' | translate) }
-    ]">
+    ]"
+    [showBack]="true">
      <div class="contracts-dashboard-header-actions">
        <button mat-flat-button class="new-contract-btn" *ngIf="permissions.can('contracts', 'create')" (click)="openContractDialog()">
          <mat-icon>add</mat-icon>
@@ -21,124 +22,71 @@
 
 <div class="contracts-dashboard-page" *ngIf="!loading">
 
-  <!-- KPI row -->
-  <div class="kpi-grid">
-    <article class="kpi-card active-rental-contracts kpi-clickable"
-      routerLink="/admin/contracts/list" [queryParams]="{type:'LEASE', status:'ACTIVE'}"
-      [matTooltip]="'CONTRACTS.CLICK_TO_VIEW' | translate">
-      <div class="kpi-icon-wrap">
-        <mat-icon>description</mat-icon>
+  <section class="estate-stat-grid contracts-kpi-grid">
+    <article
+      class="estate-stat-card kpi-link"
+      [ngClass]="[card.variant, selectedCardKey === card.key ? 'selected' : '']"
+      *ngFor="let card of kpiCards"
+      (click)="selectCard(card)"
+      [matTooltip]="'CONTRACTS.CLICK_TO_VIEW_LIST' | translate">
+      <div class="estate-stat-top">
+        <span class="estate-stat-label">{{ card.labelKey | translate }}</span>
+        <div class="estate-stat-icon"><mat-icon>{{ card.icon }}</mat-icon></div>
       </div>
-      <div class="kpi-body">
-        <div class="kpi-value">{{ stats.activeRentalContracts }}</div>
-        <div class="kpi-label">{{ 'CONTRACTS.ACTIVE_RENTAL_CONTRACTS' | translate }}</div>
-      </div>
+      <div class="estate-stat-value">{{ card.value }}</div>
     </article>
+  </section>
 
-    <article class="kpi-card cancelled-rental-contracts kpi-clickable"
-      routerLink="/admin/contracts/list" [queryParams]="{type:'LEASE', status:'CANCELLED'}"
-      [matTooltip]="'CONTRACTS.CLICK_TO_VIEW' | translate">
-      <div class="kpi-icon-wrap">
-        <mat-icon>block</mat-icon>
-      </div>
-      <div class="kpi-body">
-        <div class="kpi-value">{{ stats.cancelledRentalContracts }}</div>
-        <div class="kpi-label">{{ 'CONTRACTS.CANCELLED_RENTAL_CONTRACTS' | translate }}</div>
-      </div>
-    </article>
+  <section class="dashboard-drilldown app-card table-card" *ngIf="selectedCardKey">
+    <div class="drilldown-header">
+      <h3 class="drilldown-title">{{ selectedCardLabel }}</h3>
+      <span class="drilldown-count">{{ drillRows.length }}</span>
+    </div>
 
-    <article class="kpi-card rental-expiring-soon kpi-clickable"
-      routerLink="/admin/contracts/list" [queryParams]="{type:'LEASE', status:'ACTIVE'}">
-      <div class="kpi-icon-wrap">
-        <mat-icon>event_upcoming</mat-icon>
-      </div>
-      <div class="kpi-body">
-        <div class="kpi-value">{{ stats.rentalExpiringIn30Days }}</div>
-        <div class="kpi-label">{{ 'CONTRACTS.RENTAL_EXPIRING_30_DAYS' | translate }}</div>
-      </div>
-    </article>
+    <div class="app-table-wrap" *ngIf="pagedDrillRows.length; else drillEmptyTpl">
+      <table class="app-data-table">
+        <thead>
+          <tr>
+            <th>{{ 'CONTRACTS.CONTRACT_NUMBER' | translate }}</th>
+            <th>{{ drillCol2Header | translate }}</th>
+            <th>{{ drillCol3Header | translate }}</th>
+            <th>{{ drillCol4Header | translate }}</th>
+            <th>{{ 'COMMON.ACTIONS' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of pagedDrillRows">
+            <td class="ref-cell">{{ row.ref }}</td>
+            <td>{{ row.primary }}</td>
+            <td>{{ row.secondary }}</td>
+            <td>{{ row.meta }}</td>
+            <td class="actions-cell">
+              <a mat-stroked-button class="details-btn" [routerLink]="row.detailRoute">
+                {{ 'CONTRACTS.DETAILS' | translate }}
+              </a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
-    <article class="kpi-card active-maintenance-contracts kpi-clickable"
-      routerLink="/admin/contracts/list" [queryParams]="{type:'MAINTENANCE', status:'ACTIVE'}"
-      [matTooltip]="'CONTRACTS.CLICK_TO_VIEW' | translate">
-      <div class="kpi-icon-wrap">
-        <mat-icon>engineering</mat-icon>
-      </div>
-      <div class="kpi-body">
-        <div class="kpi-value">{{ stats.activeMaintenanceContracts }}</div>
-        <div class="kpi-label">{{ 'CONTRACTS.ACTIVE_MAINTENANCE_CONTRACTS' | translate }}</div>
-      </div>
-    </article>
+    <app-table-pager
+      *ngIf="drillRows.length > drillPageSize"
+      [length]="drillRows.length"
+      [pageSize]="drillPageSize"
+      [pageIndex]="drillPageIndex"
+      (pageIndexChange)="drillPageIndex = $event">
+    </app-table-pager>
 
-    <article class="kpi-card cancelled-maintenance-contracts kpi-clickable"
-      routerLink="/admin/contracts/list" [queryParams]="{type:'MAINTENANCE', status:'CANCELLED'}"
-      [matTooltip]="'CONTRACTS.CLICK_TO_VIEW' | translate">
-      <div class="kpi-icon-wrap">
-        <mat-icon>do_not_disturb_on</mat-icon>
-      </div>
-      <div class="kpi-body">
-        <div class="kpi-value">{{ stats.cancelledMaintenanceContracts }}</div>
-        <div class="kpi-label">{{ 'CONTRACTS.CANCELLED_MAINTENANCE_CONTRACTS' | translate }}</div>
-      </div>
-    </article>
+    <ng-template #drillEmptyTpl>
+      <app-empty-state
+        icon="inbox"
+        [title]="'COMMON.NO_DATA' | translate"
+        [message]="'CONTRACTS.DASHBOARD_NO_ITEMS' | translate">
+      </app-empty-state>
+    </ng-template>
+  </section>
 
-    <article class="kpi-card maintenance-expiring-soon kpi-clickable"
-      routerLink="/admin/contracts/list" [queryParams]="{type:'MAINTENANCE', status:'ACTIVE'}">
-      <div class="kpi-icon-wrap">
-        <mat-icon>pending_actions</mat-icon>
-      </div>
-      <div class="kpi-body">
-        <div class="kpi-value">{{ stats.maintenanceExpiringIn30Days }}</div>
-        <div class="kpi-label">{{ 'CONTRACTS.MAINTENANCE_EXPIRING_30_DAYS' | translate }}</div>
-      </div>
-    </article>
-
-    <article class="kpi-card draft-contracts kpi-clickable"
-      routerLink="/admin/contracts/list" [queryParams]="{status:'DRAFT'}"
-      [matTooltip]="'CONTRACTS.DRAFT_CONTRACTS_HINT' | translate">
-      <div class="kpi-icon-wrap">
-        <mat-icon>edit_note</mat-icon>
-      </div>
-      <div class="kpi-body">
-        <div class="kpi-value">{{ stats.draftContracts }}</div>
-        <div class="kpi-label">{{ 'CONTRACTS.DRAFT_CONTRACTS' | translate }}</div>
-      </div>
-    </article>
-
-    <article class="kpi-card maintenance-pending kpi-clickable"
-      routerLink="/admin/owner-portal/contract-approvals"
-      [matTooltip]="'CONTRACTS.MAINTENANCE_PENDING_APPROVAL_HINT' | translate">
-      <div class="kpi-icon-wrap">
-        <mat-icon>engineering</mat-icon>
-      </div>
-      <div class="kpi-body">
-        <div class="kpi-value">{{ stats.maintenancePendingApproval }}</div>
-        <div class="kpi-label">{{ 'CONTRACTS.MAINTENANCE_PENDING_APPROVAL' | translate }}</div>
-      </div>
-    </article>
-
-    <article class="kpi-card overdue-payments">
-      <div class="kpi-icon-wrap">
-        <mat-icon>payment</mat-icon>
-      </div>
-      <div class="kpi-body">
-        <div class="kpi-value">{{ stats.overduePayments }}</div>
-        <div class="kpi-label">{{ 'CONTRACTS.OVERDUE_PAYMENTS' | translate }}</div>
-      </div>
-    </article>
-
-    <article class="kpi-card open-complaints">
-      <div class="kpi-icon-wrap">
-        <mat-icon>chat_bubble_outline</mat-icon>
-      </div>
-      <div class="kpi-body">
-        <div class="kpi-value">{{ stats.openComplaints }}</div>
-        <div class="kpi-label">{{ 'CONTRACTS.OPEN_COMPLAINTS' | translate }}</div>
-      </div>
-    </article>
-  </div>
-
-  <!-- Quick actions -->
   <div class="quick-actions">
     <a class="action-tile" routerLink="/admin/contracts/list">
       <mat-icon>grid_view</mat-icon>
@@ -149,51 +97,6 @@
       <span>{{ 'CONTRACTS.OPEN_COMPLAINTS' | translate }}</span>
     </a>
   </div>
-
-  <!-- Expiring contracts -->
-  <section class="expiring-section" *ngIf="expiringContracts.length > 0">
-    <div class="section-header">
-      <div class="section-titles">
-        <span class="section-eyebrow">{{ ('INLINE_TEXT.ALERTS' | translate) }}</span>
-        <h3 class="section-main-title">{{ 'CONTRACTS.EXPIRING_SOON' | translate }}</h3>
-      </div>
-      <button mat-button class="view-all-link" routerLink="/admin/contracts/list">
-        {{ 'CONTRACTS.VIEW_ALL' | translate }}
-        <mat-icon>open_in_new</mat-icon>
-      </button>
-    </div>
-
-    <div class="expiring-list">
-      <div class="expiring-item app-card" *ngFor="let c of expiringContracts" [routerLink]="['/admin/contracts', c.id]">
-        <div class="item-main">
-          <div class="expiry-badge" [class.critical]="c.daysUntilExpiry <= 15">
-            <mat-icon>schedule</mat-icon>
-            {{ c.daysUntilExpiry }} {{ 'CONTRACTS.DAYS_LEFT' | translate }}
-          </div>
-          
-          <div class="contract-meta">
-            <span class="cnt-number">{{ c.contractNumber }}</span>
-            <strong class="cnt-price">{{ c.monthlyRent | number }} {{ c.currency }}</strong>
-          </div>
-        </div>
-
-        <div class="item-tenant">
-          <span class="label">{{ ('INLINE_TEXT.TENANT' | translate) }}</span>
-          <span class="value">{{ c.tenantName || '—' }}</span>
-        </div>
-
-        <div class="item-property">
-          <div class="prop-info">
-            <span class="p-name">{{ c.propertyName || '—' }}</span>
-            <span class="u-num">{{ c.unitNumber || '—' }}</span>
-          </div>
-          <mat-icon class="prop-icon">apartment</mat-icon>
-        </div>
-
-        <mat-icon class="arrow-icon">{{ i18n.currentLang === 'ar' ? 'chevron_left' : 'chevron_right' }}</mat-icon>
-      </div>
-    </div>
-  </section>
 
 </div>
 </div>

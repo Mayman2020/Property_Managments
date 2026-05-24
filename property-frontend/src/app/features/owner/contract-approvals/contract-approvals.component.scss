@@ -1,6 +1,105 @@
 .page-content { padding: 24px; }
 .loading-center { display: flex; justify-content: center; padding: 64px; }
 
+.approval-tabs {
+  margin-top: 4px;
+}
+
+::ng-deep .approval-tabs .mat-mdc-tab-header {
+  border: 1px solid var(--card-border, #e2e8f0);
+  border-radius: 10px;
+  background: var(--paper-2, #f8fafc);
+  padding: 6px;
+}
+
+::ng-deep .approval-tabs .mat-mdc-tab-labels {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  overflow-x: auto;
+}
+
+::ng-deep .approval-tabs .mat-mdc-tab {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: none;
+  border-radius: 8px;
+  height: auto;
+  min-height: 48px;
+}
+
+::ng-deep .approval-tabs .mat-mdc-tab .mdc-tab__content {
+  padding: 8px 10px;
+}
+
+::ng-deep .approval-tabs .mat-mdc-tab .mdc-tab__text-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--text-main) !important;
+  font-weight: 700;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  white-space: normal;
+  text-align: center;
+}
+
+::ng-deep .approval-tabs .mat-mdc-tab.mdc-tab--active {
+  background: var(--navy-900, #0c2340);
+}
+
+::ng-deep .approval-tabs .mat-mdc-tab.mdc-tab--active .mdc-tab__text-label {
+  color: #f4e7c4 !important;
+}
+
+::ng-deep .approval-tabs .mat-mdc-tab-indicator {
+  display: none;
+}
+
+::ng-deep .approval-tabs .mat-mdc-tab-body-content {
+  padding-top: 18px;
+  overflow: visible;
+}
+
+.tab-label-text {
+  display: inline-block;
+}
+
+.tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: var(--accent, #c89a3d);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+::ng-deep .approval-tabs .mat-mdc-tab.mdc-tab--active .tab-badge {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+
+.tab-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.tab-empty {
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--text-muted);
+  border: 1px dashed var(--card-border, #e2e8f0);
+  border-radius: 12px;
+  background: var(--surface, #fff);
+}
+
 .empty-state {
   text-align: center; padding: 64px; color: var(--text-secondary);
   mat-icon { font-size: 48px; width: 48px; height: 48px; margin-bottom: 12px; color: var(--success, #4caf50); }
@@ -13,14 +112,8 @@
 }
 
 .section-heading {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: var(--ink-700, #1f2937);
-  margin: 24px 0 12px;
-  padding-block-end: 6px;
-  border-block-end: 1px solid var(--card-border, #e2e8f0);
+  display: none;
 }
-.section-heading:first-of-type { margin-top: 0; }
 
 .contract-card.pending-termination {
   border-color: rgba(214, 147, 41, 0.55);
@@ -184,6 +277,13 @@
 .info-row.highlight {
   color: #059669; font-weight: 600;
   mat-icon { color: #059669; }
+}
+
+@media (max-width: 900px) {
+  ::ng-deep .approval-tabs .mat-mdc-tab {
+    flex: 0 0 auto;
+    min-width: 180px;
+  }
 }
 
 @media (max-width: 520px) {

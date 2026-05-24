@@ -6,7 +6,9 @@ import com.propertymanagement.modules.ownerportal.dto.OwnerDashboardResponse;
 import com.propertymanagement.modules.ownerportal.dto.OwnerPropertyResponse;
 import com.propertymanagement.modules.ownerportal.dto.OwnerRejectDraftRequest;
 import com.propertymanagement.modules.ownerportal.dto.UnitOptionDto;
+import com.propertymanagement.modules.ownerportal.dto.OwnerRevenueShareResponse;
 import com.propertymanagement.modules.ownerportal.dto.OwnerStatementResponse;
+import com.propertymanagement.modules.ownerportal.service.OwnerRevenueQueryService;
 import com.propertymanagement.shared.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -17,8 +19,10 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.YearMonth;
 import java.util.List;
 import com.propertymanagement.modules.ownerportal.service.OwnerPortalService;
 import com.propertymanagement.modules.ownerportal.service.OwnerPortalDraftContractService;
@@ -32,6 +36,7 @@ public class OwnerPortalController {
 
     private final OwnerPortalService service;
     private final OwnerPortalDraftContractService draftContractService;
+    private final OwnerRevenueQueryService ownerRevenueQueryService;
 
     @GetMapping("/dashboard")
     @PreAuthorize("hasRole('OWNER')")
@@ -43,6 +48,19 @@ public class OwnerPortalController {
     @PreAuthorize("hasRole('OWNER')")
     public ResponseEntity<ApiResponse<List<OwnerStatementResponse>>> statements() {
         return ResponseEntity.ok(ApiResponse.ok(service.getStatements()));
+    }
+
+    @GetMapping("/admin/owners/{ownerId}/revenue-shares")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
+    public ResponseEntity<ApiResponse<List<OwnerRevenueShareResponse>>> adminRevenueShares(
+            @PathVariable Long ownerId,
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) Integer month) {
+        YearMonth period = (year != null && month != null)
+                ? YearMonth.of(year, month)
+                : YearMonth.now();
+        return ResponseEntity.ok(ApiResponse.ok(
+                ownerRevenueQueryService.listSharesForOwner(ownerId, period.getYear(), period.getMonthValue())));
     }
 
     @GetMapping("/properties")

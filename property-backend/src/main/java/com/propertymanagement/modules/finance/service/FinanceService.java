@@ -14,8 +14,13 @@ import com.propertymanagement.modules.finance.revenue.repository.OtherRevenueRep
 import com.propertymanagement.modules.finance.revenue.repository.OtherRevenueWriterRepository;
 import com.propertymanagement.modules.finance.revenue.dto.CreateRevenueRequest;
 import com.propertymanagement.modules.finance.revenue.dto.OtherRevenueResponse;
+import com.propertymanagement.modules.notification.entity.NotificationType;
+import com.propertymanagement.modules.notification.service.NotificationService;
 import com.propertymanagement.modules.owner.service.OwnerPropertyAccessService;
 import com.propertymanagement.modules.owner.repository.OwnerRepository;
+import com.propertymanagement.modules.user.entity.User;
+import com.propertymanagement.modules.user.entity.UserRole;
+import com.propertymanagement.modules.user.repository.UserRepository;
 import com.propertymanagement.modules.ownerportal.repository.OwnerStatementRepository;
 import com.propertymanagement.modules.property.repository.PropertyRepository;
 import jakarta.persistence.EntityManager;
@@ -30,7 +35,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Service
@@ -46,6 +53,8 @@ public class FinanceService {
     private final OwnerRepository ownerRepository;
     private final PropertyRepository propertyRepository;
     private final OwnerPropertyAccessService ownerPropertyAccessService;
+    private final NotificationService notificationService;
+    private final UserRepository userRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -390,6 +399,7 @@ public class FinanceService {
                 .build();
 
         expense = expenseWriterRepository.save(expense);
+        checkBudgetThreshold(expense);
         return ExpenseResponse.builder()
                 .id(expense.getId())
                 .expenseNumber(expense.getExpenseNumber())
@@ -427,6 +437,67 @@ public class FinanceService {
                 .currency(revenue.getCurrency())
                 .revenueDate(revenue.getRevenueDate())
                 .build();
+    }
+
+    // PHASE1-DONE: TASK1 BUDGET_THRESHOLD_EXCEEDED
+    private void checkBudgetThreshold(Expense expense) {
+        if (expense.getPropertyId() == null || expense.getCategoryId() == null) {
+            return;
+        }
+        LocalDate expenseDate = expense.getExpenseDate() != null ? expense.getExpenseDate() : LocalDate.now();
+        LocalDate monthStart = expenseDate.withDayOfMonth(1);
+        LocalDate monthEnd = monthStart.plusMonths(1).minusDays(1);
+        BigDecimal spent = expenseWriterRepository.sumAmountByPropertyCategoryBetween(
+                expense.getPropertyId(), expense.getCategoryId(), monthStart, monthEnd);
+        budgetRepository.findAllRowsByProperty(expense.getPropertyId()).stream()
+                .filter(row -> row.getCategoryId() != null && row.getCategoryId().equals(expense.getCategoryId()))
+                .findFirst()
+                .ifPresent(row -> {
+                    BigDecimal budgeted = row.getBudgetedAmount() != null ? row.getBudgetedAmount() : BigDecimal.ZERO;
+                    if (budgeted.signum() > 0 && spent.compareTo(budgeted) > 0) {
+                        List<Long> recipients = financeAlertRecipients(expense.getPropertyId());
+                        if (!recipients.isEmpty()) {
+                            Map<String, Object> nav = new LinkedHashMap<>();
+                            nav.put("expenseId", expense.getId());
+                            nav.put("propertyId", expense.getPropertyId());
+                            notificationService.createForRecipients(
+                                    recipients,
+                                    null,
+                                    expense.getPropertyId(),
+                                    null,
+                                    NotificationType.BUDGET_THRESHOLD_EXCEEDED,
+                                    "تجاوز الميزانية",
+                                    "المصروفات (" + spent + ") تجاوزت الميزانية (" + budgeted + ") للفئة "
+                                            + row.getCategoryName(),
+                                    nav);
+                            Map<String, Object> vars = new LinkedHashMap<>();
+                            vars.put("spent", spent);
+                            vars.put("budgeted", budgeted);
+                            vars.put("categoryName", row.getCategoryName());
+                            notificationService.createLocalized(
+                                    recipients,
+                                    null,
+                                    expense.getPropertyId(),
+                                    expense.getId(),
+                                    NotificationType.FINANCE_ALERT,
+                                    "NOTIFICATIONS.FINANCE_ALERT_TITLE",
+                                    "NOTIFICATIONS.FINANCE_ALERT_BODY",
+                                    vars,
+                                    nav);
+                        }
+                    }
+                });
+    }
+
+    private List<Long> financeAlertRecipients(Long propertyId) {
+        List<Long> ids = new ArrayList<>();
+        userRepository.findByRoleAndActiveTrue(UserRole.SUPER_ADMIN).stream().map(User::getId).forEach(ids::add);
+        userRepository.findByRoleAndActiveTrue(UserRole.GENERAL_MANAGER).stream().map(User::getId).forEach(ids::add);
+        if (propertyId != null) {
+            userRepository.findByPropertyIdAndRoleAndActiveTrue(propertyId, UserRole.ACCOUNTANT).stream()
+                    .map(User::getId).forEach(ids::add);
+        }
+        return ids.stream().distinct().toList();
     }
 
     private String trimToNull(String value) {

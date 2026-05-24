@@ -325,7 +325,7 @@ export class PermissionRoleDialogComponent {
                 <td>
                   <div class="role-title-cell">
                     <span class="material-icons">{{ role.icon }}</span>
-                    <div>
+                    <div class="role-title-text">
                       <strong>{{ roleLabel(role.key) }}</strong>
                       <small>{{ role.key }}</small>
                     </div>
@@ -373,7 +373,8 @@ export class PermissionRoleDialogComponent {
       display: flex;
       align-items: center;
       gap: 10px;
-      min-width: 230px;
+      min-width: 360px;
+      white-space: nowrap;
     }
 
     .role-title-cell .material-icons {
@@ -386,14 +387,17 @@ export class PermissionRoleDialogComponent {
       color: var(--brand-deep);
     }
 
-    .role-title-cell div {
-      display: grid;
-      gap: 2px;
+    .role-title-text {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 10px;
+      min-width: 0;
     }
 
     .role-title-cell small {
       color: var(--text-muted);
       font-size: 0.78rem;
+      white-space: nowrap;
     }
 
     .count-pill {
@@ -441,7 +445,7 @@ export class PermissionManagementComponent implements OnInit {
     { key: 'lookups', icon: 'public' },
     { key: 'contractors', icon: 'engineering' },
     { key: 'contracts', icon: 'description' },
-    { key: 'vacancies', icon: 'door_open' },
+    { key: 'vacancies', icon: 'meeting_room' },
     { key: 'ratings', icon: 'star_rate' },
     { key: 'finance', icon: 'bar_chart' },
     { key: 'hr', icon: 'badge' },
@@ -481,6 +485,7 @@ export class PermissionManagementComponent implements OnInit {
     SUPER_ADMIN: {},
     GENERAL_MANAGER: {},
     ACCOUNTANT: {},
+    HR_OFFICER: {},
     MAINTENANCE_OFFICER_INTERNAL: {},
     MAINTENANCE_OFFICER_COMPANY: {},
     MAINTENANCE_COMPANY: {},

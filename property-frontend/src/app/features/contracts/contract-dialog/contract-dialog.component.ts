@@ -213,7 +213,7 @@ export interface ContractDialogData {
 
         <div class="error-banner full" *ngIf="errorMsg">
           <mat-icon>error_outline</mat-icon>
-          {{ errorMsg }}
+          {{ errorMsg | translate }}
         </div>
 
       </form>
@@ -539,10 +539,10 @@ export class ContractDialogComponent implements OnInit {
       units: this.unitSvc.getByProperty(propertyId, 0, 500).pipe(catchError(() => of(null))),
       active: this.contractSvc.getAll({ status: 'ACTIVE', size: 500 }).pipe(catchError(() => of(null))),
       draft: this.contractSvc.getAll({ status: 'DRAFT', size: 500 }).pipe(catchError(() => of(null))),
-      suspended: this.contractSvc.getAll({ status: 'SUSPENDED', size: 500 }).pipe(catchError(() => of(null)))
-    }).subscribe(({ units, active, draft, suspended }) => {
+      pendingOwner: this.contractSvc.getAll({ status: 'PENDING_OWNER_APPROVAL', size: 500 }).pipe(catchError(() => of(null)))
+    }).subscribe(({ units, active, draft, pendingOwner }) => {
       const busyUnitIds = new Set<number>();
-      for (const c of [...pageContracts(active), ...pageContracts(draft), ...pageContracts(suspended)]) {
+      for (const c of [...pageContracts(active), ...pageContracts(draft), ...pageContracts(pendingOwner)]) {
         if (sameProperty(c) && c.unitId != null) {
           busyUnitIds.add(Number(c.unitId));
         }

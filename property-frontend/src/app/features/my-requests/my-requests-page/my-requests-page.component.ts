@@ -7,6 +7,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { MyRequestItem, MyRequestsService } from '../../../core/services/my-requests.service';
@@ -17,7 +18,7 @@ import { MyRequestItem, MyRequestsService } from '../../../core/services/my-requ
   imports: [
     NgIf, NgFor, NgClass, DatePipe, RouterLink,
     TranslateModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule,
-    PageHeaderComponent
+    PageHeaderComponent, TablePagerComponent
   ],
   templateUrl: './my-requests-page.component.html',
   styleUrl: './my-requests-page.component.scss'
@@ -25,6 +26,13 @@ import { MyRequestItem, MyRequestsService } from '../../../core/services/my-requ
 export class MyRequestsPageComponent implements OnInit {
   loading = true;
   requests: MyRequestItem[] = [];
+  readonly pageSize = 6;
+  pageIndex = 0;
+
+  get pagedRequests(): MyRequestItem[] {
+    const start = this.pageIndex * this.pageSize;
+    return this.requests.slice(start, start + this.pageSize);
+  }
 
   constructor(
     private readonly service: MyRequestsService,
@@ -41,6 +49,7 @@ export class MyRequestsPageComponent implements OnInit {
     this.service.listMine().subscribe({
       next: (res) => {
         this.requests = res.data ?? [];
+        this.pageIndex = 0;
         this.loading = false;
       },
       error: () => {

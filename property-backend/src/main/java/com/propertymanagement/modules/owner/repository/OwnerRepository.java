@@ -96,7 +96,14 @@ public interface OwnerRepository extends JpaRepository<Owner, Long> {
     @Query("SELECT CASE WHEN COUNT(o) > 0 THEN true ELSE false END FROM Owner o WHERE o.nationalId = :nid AND o.id <> :excludeId")
     boolean existsByNationalIdAndIdNot(@Param("nid") String nationalId, @Param("excludeId") Long excludeId);
 
-    Optional<Owner> findByUserId(Long userId);
+    /** QA and co-owner flows may link the same portal user to multiple owner rows; pick the latest. */
+    Optional<Owner> findTopByUserIdOrderByIdDesc(Long userId);
+
+    List<Owner> findAllByUserIdAndActiveTrueOrderByIdDesc(Long userId);
+
+    default Optional<Owner> findByUserId(Long userId) {
+        return findTopByUserIdOrderByIdDesc(userId);
+    }
 
     /** Portal login users to notify when {@code ownerIds} are attached to a property (active + portal access). */
     @Query("SELECT o.userId FROM Owner o WHERE o.id IN :ownerIds AND o.active = true AND o.portalAccess = true AND o.userId IS NOT NULL")

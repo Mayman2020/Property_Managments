@@ -63,7 +63,7 @@
 
           <div class="estate-search-inline ratings-search">
             <span class="material-icons">search</span>
-            <input [value]="searchTerm" (input)="searchTerm = $any($event.target).value; applyFilters()" [placeholder]="'ACTIONS.SEARCH' | translate">
+            <input [value]="searchTerm" (input)="searchTerm = $any($event.target).value; applyFilters()" [placeholder]="searchPlaceholder">
           </div>
 
           <button mat-icon-button class="clear-filters-btn" type="button" (click)="resetFilters()" [matTooltip]="'ACTIONS.CLEAR_FILTERS' | translate">
@@ -131,42 +131,104 @@
           </div>
         </aside>
 
-        <div class="app-table-wrap">
-          <table class="app-data-table ratings-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>{{ 'REQUEST_LIST.REQUEST_TITLE' | translate }}</th>
-                <th>{{ 'REQUEST_LIST.PROPERTY_UNIT' | translate }}</th>
-                <th>{{ 'REQUEST_LIST.TENANT' | translate }}</th>
-                <th>{{ 'RATING.STARS' | translate }}</th>
-                <th>{{ 'REQUEST_LIST.CREATED_AT' | translate }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let item of recentRatings; trackBy: trackByRatingId">
-                <td><span class="mono-cell">{{ item.number || item.sourceId }}</span></td>
-                <td class="title-cell">
-                  <strong>{{ item.title || '-' }}</strong>
-                  <span *ngIf="item.type">{{ item.type }}</span>
-                  <span *ngIf="item.comment">{{ item.comment }}</span>
-                </td>
-                <td>
-                  <div class="property-info">{{ item.propertyName || '-' }}</div>
-                  <div class="unit-info">{{ 'REQUEST_LIST.UNIT' | translate }} {{ item.unitNumber || '-' }}</div>
-                </td>
-                <td>{{ item.tenantName || '-' }}</td>
-                <td>
-                  <span class="rating-chip" [ngClass]="'rating-' + item.rating">
-                    <mat-icon>star</mat-icon>
-                    {{ ratingLabel(item) }}
-                  </span>
-                </td>
-                <td>{{ item.createdAt | date:'dd/MM/yyyy' }}</td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="rating-list-panel" *ngIf="!selectedRating; else ratingDetails">
+          <div class="rating-card-grid">
+            <article class="rating-card" *ngFor="let item of recentRatings; trackBy: trackByRatingId">
+              <div class="rating-card-head">
+                <span class="mono-cell">{{ item.number || item.sourceId }}</span>
+                <span class="rating-chip" [ngClass]="'rating-' + item.rating">
+                  <mat-icon>star</mat-icon>
+                  {{ ratingLabel(item) }}
+                </span>
+              </div>
+
+              <h3>{{ item.title || '-' }}</h3>
+              <p class="rating-comment" *ngIf="ratingDescription(item)">{{ ratingDescription(item) }}</p>
+
+              <div class="rating-meta-grid">
+                <div class="rating-meta">
+                  <mat-icon>apartment</mat-icon>
+                  <span>{{ propertyDisplayName(item) }}</span>
+                </div>
+                <div class="rating-meta">
+                  <mat-icon>meeting_room</mat-icon>
+                  <span>{{ 'REQUEST_LIST.UNIT' | translate }} {{ displayValue(item.unitNumber) }}</span>
+                </div>
+                <div class="rating-meta">
+                  <mat-icon>person</mat-icon>
+                  <span>{{ tenantDisplayName(item) }}</span>
+                </div>
+                <div class="rating-meta">
+                  <mat-icon>event</mat-icon>
+                  <span>{{ item.createdAt | date:'dd/MM/yyyy' }}</span>
+                </div>
+              </div>
+
+              <div class="rating-card-actions">
+                <button mat-stroked-button type="button" (click)="openDetails(item)">
+                  <mat-icon>visibility</mat-icon>
+                  {{ 'ACTIONS.DETAILS' | translate }}
+                </button>
+              </div>
+            </article>
+          </div>
         </div>
+
+        <ng-template #ratingDetails>
+          <section class="rating-detail-screen" *ngIf="selectedRating as selected">
+            <button type="button" class="app-back-btn rating-detail-back" (click)="closeDetails()">
+              <mat-icon class="back-icon">arrow_back</mat-icon>
+              {{ 'COMMON.BACK' | translate }}
+            </button>
+
+            <div class="detail-hero">
+              <div class="detail-hero-copy">
+                <span class="detail-eyebrow">{{ detailTypeLabel() }}</span>
+                <h2>{{ selected.title || '-' }}</h2>
+                <p>{{ ratingDescription(selected) || '-' }}</p>
+              </div>
+              <span class="rating-chip detail-rating" [ngClass]="'rating-' + selected.rating">
+                <mat-icon>star</mat-icon>
+                {{ ratingLabel(selected) }}
+              </span>
+            </div>
+
+            <div class="detail-chip-row">
+              <span class="mono-cell">{{ selected.number || selected.sourceId }}</span>
+              <span>{{ selected.createdAt | date:'dd/MM/yyyy' }}</span>
+              <span *ngIf="selected.status || selected.requestStatus">{{ statusLabel(selected) }}</span>
+              <span *ngIf="selected.priority">{{ priorityLabel(selected.priority) }}</span>
+            </div>
+
+            <div class="detail-card-grid">
+              <article class="detail-info-card">
+                <mat-icon>apartment</mat-icon>
+                <span>{{ 'COMMON.PROPERTY' | translate }}</span>
+                <strong>{{ propertyDisplayName(selected) }}</strong>
+              </article>
+              <article class="detail-info-card">
+                <mat-icon>meeting_room</mat-icon>
+                <span>{{ 'REQUEST_LIST.UNIT' | translate }}</span>
+                <strong>{{ displayValue(selected.unitNumber) }}</strong>
+              </article>
+              <article class="detail-info-card">
+                <mat-icon>person</mat-icon>
+                <span>{{ 'REQUEST_LIST.TENANT' | translate }}</span>
+                <strong>{{ tenantDisplayName(selected) }}</strong>
+              </article>
+              <article class="detail-info-card">
+                <mat-icon>category</mat-icon>
+                <span>{{ detailCategoryLabel() }}</span>
+                <strong>{{ detailCategoryValue(selected) }}</strong>
+              </article>
+              <article class="detail-info-card span-2">
+                <mat-icon>notes</mat-icon>
+                <span>{{ 'COMMON.NOTES' | translate }}</span>
+                <strong>{{ selected.comment || selected.title || '-' }}</strong>
+              </article>
+            </div>
+          </section>
+        </ng-template>
       </div>
 
       <app-empty-state

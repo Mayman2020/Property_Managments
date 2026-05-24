@@ -12,6 +12,7 @@ public enum UserRole {
     GENERAL_MANAGER,
     /** المحاسب — properties, units, tenants, contracts, finance, receipts */
     ACCOUNTANT,
+    HR_OFFICER,
     /** موظف صيانة (داخلي) */
     MAINTENANCE_OFFICER_INTERNAL,
     /** موظف صيانة تابع لشركة */

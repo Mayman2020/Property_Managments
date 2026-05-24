@@ -128,6 +128,30 @@ export interface PayrollMarkPaidPayload {
   referenceNumber?: string;
 }
 
+export type PayrollDeductionStatus = 'DRAFT' | 'SENT_TO_ACCOUNTANT' | 'APPROVED' | 'REJECTED';
+
+export interface PayrollDeductionItem {
+  id: number;
+  employeeId: number;
+  employeeName?: string;
+  amount: number;
+  reason: string;
+  deductionDate: string;
+  payrollMonth: string;
+  status: PayrollDeductionStatus;
+  reviewNote?: string;
+  reviewedAt?: string;
+  createdAt?: string;
+}
+
+export interface PayrollDeductionPayload {
+  employeeId: number;
+  amount: number;
+  reason: string;
+  deductionDate: string;
+  payrollMonth: string;
+}
+
 export interface LeaveRequestItem {
   id: number;
   employeeId?: number;
@@ -223,6 +247,26 @@ export class HrService {
 
   markPayrollPaid(payrollId: number, payload: PayrollMarkPaidPayload): Observable<ApiResponse<PayrollRunDetail>> {
     return this.api.post(AppConstants.API.HR_PAYROLL_MARK_PAID(payrollId), payload);
+  }
+
+  getDeductions(params: Record<string, string | number> = {}): Observable<ApiResponse<PagedResponse<PayrollDeductionItem>>> {
+    return this.api.get(AppConstants.API.HR_DEDUCTIONS, params);
+  }
+
+  createDeduction(payload: PayrollDeductionPayload): Observable<ApiResponse<PayrollDeductionItem>> {
+    return this.api.post(AppConstants.API.HR_DEDUCTIONS, payload);
+  }
+
+  sendDeduction(id: number): Observable<ApiResponse<PayrollDeductionItem>> {
+    return this.api.post(AppConstants.API.HR_DEDUCTION_SEND(id), {});
+  }
+
+  approveDeduction(id: number, note?: string): Observable<ApiResponse<PayrollDeductionItem>> {
+    return this.api.post(AppConstants.API.HR_DEDUCTION_APPROVE(id), { note });
+  }
+
+  rejectDeduction(id: number, note?: string): Observable<ApiResponse<PayrollDeductionItem>> {
+    return this.api.post(AppConstants.API.HR_DEDUCTION_REJECT(id), { note });
   }
 
   rejectPayroll(payrollId: number, reason?: string): Observable<ApiResponse<PayrollRunDetail>> {

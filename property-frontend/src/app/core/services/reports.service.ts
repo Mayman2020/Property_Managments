@@ -44,6 +44,32 @@ export interface MaintenanceStatusBreakdown {
   count: number;
 }
 
+export interface MaintenanceReportRequest {
+  id: number;
+  requestNumber?: string;
+  title?: string;
+  description?: string;
+  status?: string;
+  priority?: string;
+  propertyId?: number;
+  propertyName?: string;
+  propertyNameAr?: string;
+  propertyNameEn?: string;
+  unitId?: number;
+  unitNumber?: string;
+  tenantId?: number;
+  tenantName?: string;
+  tenantNameAr?: string;
+  tenantNameEn?: string;
+  assignedTo?: number;
+  scheduledDate?: string;
+  scheduledTimeFrom?: string;
+  scheduledTimeTo?: string;
+  slaDeadline?: string;
+  slaBreached?: boolean;
+  createdAt?: string;
+}
+
 export interface MaintenanceReport {
   totalRequests: number;
   openRequests: number;
@@ -53,6 +79,7 @@ export interface MaintenanceReport {
   overdueRequests: number;
   totalInvoicedAmount: number;
   byStatus: MaintenanceStatusBreakdown[];
+  requests?: MaintenanceReportRequest[];
 }
 
 export interface BudgetVsActualRow {

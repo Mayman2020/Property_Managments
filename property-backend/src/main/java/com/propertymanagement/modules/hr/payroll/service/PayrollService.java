@@ -33,10 +33,13 @@ import com.propertymanagement.modules.hr.payroll.entity.PayrollRun;
 import com.propertymanagement.modules.hr.payroll.entity.Payslip;
 import com.propertymanagement.modules.hr.payroll.entity.SalaryAdvance;
 import com.propertymanagement.modules.hr.payroll.entity.EmployeeBonus;
+import com.propertymanagement.modules.hr.payroll.entity.PayrollDeduction;
+import com.propertymanagement.modules.hr.payroll.entity.PayrollDeductionStatus;
 import com.propertymanagement.modules.hr.payroll.repository.PayrollRepository;
 import com.propertymanagement.modules.hr.payroll.repository.PayslipRepository;
 import com.propertymanagement.modules.hr.payroll.repository.SalaryAdvanceRepository;
 import com.propertymanagement.modules.hr.payroll.repository.EmployeeBonusRepository;
+import com.propertymanagement.modules.hr.payroll.repository.PayrollDeductionRepository;
 import com.propertymanagement.modules.owner.entity.Owner;
 import com.propertymanagement.modules.property.entity.Property;
 
@@ -51,6 +54,7 @@ public class PayrollService {
     private final EmployeeRepository employeeRepository;
     private final SalaryAdvanceRepository salaryAdvanceRepository;
     private final EmployeeBonusRepository employeeBonusRepository;
+    private final PayrollDeductionRepository payrollDeductionRepository;
     private final ExpenseWriterRepository expenseWriterRepository;
     private final ExpenseCategoryLookupRepository expenseCategoryLookupRepository;
     private final NotificationService notificationService;
@@ -66,7 +70,7 @@ public class PayrollService {
             return repository.findAllByPropertyIdInOrderByPayPeriodYearDescPayPeriodMonthDesc(ownerScope, pageable)
                     .map(this::toResponse);
         }
-        if (actor.getPropertyId() != null && actor.getRole() == UserRole.ACCOUNTANT) {
+        if (actor.getPropertyId() != null && (actor.getRole() == UserRole.ACCOUNTANT || actor.getRole() == UserRole.HR_OFFICER)) {
             return repository.findAllByPropertyIdOrderByPayPeriodYearDescPayPeriodMonthDesc(actor.getPropertyId(), pageable)
                     .map(this::toResponse);
         }
@@ -110,6 +114,11 @@ public class PayrollService {
                     .map(SalaryAdvance::getAmount)
                     .filter(Objects::nonNull)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal hrDeduction = approvedHrDeductions(employee.getId(), request.getPayPeriodYear(), request.getPayPeriodMonth())
+                    .stream()
+                    .map(PayrollDeduction::getAmount)
+                    .filter(Objects::nonNull)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             Payslip slip = Payslip.builder()
                     .payrollRunId(run.getId())
@@ -119,6 +128,7 @@ public class PayrollService {
                     .transportAllowance(n(employee.getTransportAllowance()))
                     .otherAllowances(n(employee.getOtherAllowances()))
                     .advanceDeduction(advanceDeduction)
+                    .otherDeductions(hrDeduction)
                     .notes(null)
                     .build();
             recalculateSlip(slip);
@@ -127,7 +137,9 @@ public class PayrollService {
 
         refreshRunTotals(run);
         createPayrollExpense(run);
+        notifyPayrollGenerated(run);
         notifyPayrollSubmitted(run);
+        notifyHrDeductionsApplied(run);
         return toDetailResponse(run);
     }
 
@@ -188,7 +200,7 @@ public class PayrollService {
         Employee employee = employeeRepository.findById(request.getEmployeeId())
                 .orElseThrow(() -> AppException.notFound("Employee not found: " + request.getEmployeeId()));
 
-        return salaryAdvanceRepository.save(SalaryAdvance.builder()
+        SalaryAdvance saved = salaryAdvanceRepository.save(SalaryAdvance.builder()
                 .employeeId(employee.getId())
                 .amount(request.getAmount())
                 .requestDate(request.getRequestDate())
@@ -200,6 +212,27 @@ public class PayrollService {
                 .approvedBy(currentUser().getId())
                 .notes(trimToNull(request.getNotes()))
                 .build());
+        notifySalaryAdvanceCreated(saved, employee);
+        return saved;
+    }
+
+    @Transactional
+    public SalaryAdvance rejectAdvance(Long advanceId, String reason) {
+        SalaryAdvance advance = salaryAdvanceRepository.findById(advanceId)
+                .orElseThrow(() -> AppException.notFound("Salary advance not found: " + advanceId));
+        if ("REJECTED".equalsIgnoreCase(advance.getStatus())) {
+            return advance;
+        }
+        if ("DEDUCTED".equalsIgnoreCase(advance.getStatus())) {
+            throw AppException.badRequest("Cannot reject a salary advance that was already deducted");
+        }
+        Employee employee = employeeRepository.findById(advance.getEmployeeId())
+                .orElseThrow(() -> AppException.notFound("Employee not found: " + advance.getEmployeeId()));
+        advance.setStatus("REJECTED");
+        advance.setNotes(trimToNull(reason));
+        salaryAdvanceRepository.save(advance);
+        notifySalaryAdvanceRejected(advance, employee, reason);
+        return advance;
     }
 
     @Transactional
@@ -262,7 +295,7 @@ public class PayrollService {
             return repository.findByIdAndPropertyIdIn(id, ownerScope)
                     .orElseThrow(() -> AppException.notFound("Payroll run not found: " + id));
         }
-        if (actor.getPropertyId() != null && actor.getRole() == UserRole.ACCOUNTANT) {
+        if (actor.getPropertyId() != null && (actor.getRole() == UserRole.ACCOUNTANT || actor.getRole() == UserRole.HR_OFFICER)) {
             return repository.findByIdAndPropertyId(id, actor.getPropertyId())
                     .orElseThrow(() -> AppException.notFound("Payroll run not found: " + id));
         }
@@ -422,7 +455,94 @@ public class PayrollService {
                     .findByEmployeeIdAndStatusAndDeductedYearAndDeductedMonth(employeeId, "APPROVED", run.getPayPeriodYear(), run.getPayPeriodMonth());
             advances.forEach(item -> item.setStatus("DEDUCTED"));
             salaryAdvanceRepository.saveAll(advances);
+            employeeRepository.findById(employeeId).ifPresent(emp ->
+                    advances.forEach(adv -> notifySalaryAdvanceDeducted(emp, adv, run)));
         }
+    }
+
+    // PHASE1-DONE: TASK1 PAYROLL_GENERATED
+    private void notifyPayrollGenerated(PayrollRun run) {
+        List<Long> recipients = payrollHrRecipients(run.getPropertyId());
+        if (recipients.isEmpty()) {
+            return;
+        }
+        notificationService.createForRecipients(
+                recipients,
+                currentUser().getId(),
+                run.getPropertyId(),
+                run.getId(),
+                NotificationType.PAYROLL_GENERATED,
+                "تم إنشاء مسير الرواتب",
+                "مسير رواتب " + run.getPayPeriodMonth() + "/" + run.getPayPeriodYear() + " جاهز للمراجعة");
+    }
+
+    // PHASE1-DONE: TASK1 SALARY_ADVANCE_* 
+    private void notifySalaryAdvanceCreated(SalaryAdvance advance, Employee employee) {
+        Long propertyId = employee.getPropertyId();
+        List<Long> hr = payrollHrRecipients(propertyId);
+        if (!hr.isEmpty()) {
+            notificationService.createForRecipients(
+                    hr,
+                    currentUser().getId(),
+                    propertyId,
+                    advance.getId(),
+                    NotificationType.SALARY_ADVANCE_REQUESTED,
+                    "طلب سلفة راتب",
+                    employee.getFullName() + " — مبلغ " + advance.getAmount());
+        }
+        if (employee.getLinkedUserId() != null) {
+            notificationService.createForRecipients(
+                    List.of(employee.getLinkedUserId()),
+                    currentUser().getId(),
+                    propertyId,
+                    advance.getId(),
+                    NotificationType.SALARY_ADVANCE_APPROVED,
+                    "تمت الموافقة على السلفة",
+                    "مبلغ " + advance.getAmount() + " — خصم " + advance.getDeductedMonth() + "/" + advance.getDeductedYear());
+        }
+    }
+
+    private void notifySalaryAdvanceDeducted(Employee employee, SalaryAdvance advance, PayrollRun run) {
+        if (employee.getLinkedUserId() == null) {
+            return;
+        }
+        notificationService.createForRecipients(
+                List.of(employee.getLinkedUserId()),
+                null,
+                employee.getPropertyId(),
+                advance.getId(),
+                NotificationType.SALARY_ADVANCE_DEDUCTED,
+                "خصم السلفة من الراتب",
+                "تم خصم " + advance.getAmount() + " من راتب " + run.getPayPeriodMonth() + "/" + run.getPayPeriodYear());
+    }
+
+    private void notifySalaryAdvanceRejected(SalaryAdvance advance, Employee employee, String reason) {
+        if (employee.getLinkedUserId() == null) {
+            return;
+        }
+        Map<String, Object> vars = new LinkedHashMap<>();
+        vars.put("amount", advance.getAmount());
+        vars.put("reason", reason != null && !reason.isBlank() ? reason : "—");
+        notificationService.createLocalized(
+                List.of(employee.getLinkedUserId()),
+                currentUser().getId(),
+                employee.getPropertyId(),
+                advance.getId(),
+                NotificationType.SALARY_ADVANCE_REJECTED,
+                "NOTIFICATIONS.SALARY_ADVANCE_REJECTED_TITLE",
+                "NOTIFICATIONS.SALARY_ADVANCE_REJECTED_BODY",
+                vars);
+    }
+
+    private List<Long> payrollHrRecipients(Long propertyId) {
+        List<Long> recipients = new ArrayList<>();
+        userRepository.findByRoleAndActiveTrue(UserRole.SUPER_ADMIN).stream().map(User::getId).forEach(recipients::add);
+        userRepository.findByRoleAndActiveTrue(UserRole.GENERAL_MANAGER).stream().map(User::getId).forEach(recipients::add);
+        if (propertyId != null) {
+            userRepository.findByPropertyIdAndRoleAndActiveTrue(propertyId, UserRole.ACCOUNTANT).stream()
+                    .map(User::getId).forEach(recipients::add);
+        }
+        return recipients.stream().distinct().toList();
     }
 
     private void ensureEditable(PayrollRun run) {
@@ -511,6 +631,38 @@ public class PayrollService {
         );
     }
 
+    private List<PayrollDeduction> approvedHrDeductions(Long employeeId, int year, int month) {
+        return payrollDeductionRepository.findByEmployeeIdAndPayrollMonthAndStatus(
+                employeeId,
+                payrollMonthKey(year, month),
+                PayrollDeductionStatus.APPROVED);
+    }
+
+    private String payrollMonthKey(int year, int month) {
+        return year + "-" + String.format("%02d", month);
+    }
+
+    private void notifyHrDeductionsApplied(PayrollRun run) {
+        boolean hasApprovedDeductions = payslipRepository.findByPayrollRunIdOrderByIdAsc(run.getId()).stream()
+                .anyMatch(slip -> approvedHrDeductions(slip.getEmployeeId(), run.getPayPeriodYear(), run.getPayPeriodMonth()).stream()
+                        .anyMatch(deduction -> n(deduction.getAmount()).signum() > 0));
+        if (!hasApprovedDeductions) return;
+        List<Long> recipients = userRepository.findByPropertyIdAndRoleAndActiveTrue(run.getPropertyId(), UserRole.ACCOUNTANT)
+                .stream().map(User::getId).distinct().toList();
+        if (recipients.isEmpty()) return;
+        notificationService.createLocalized(
+                recipients,
+                currentUser().getId(),
+                run.getPropertyId(),
+                run.getId(),
+                NotificationType.PAYROLL_HR_DEDUCTION_APPLIED,
+                "NOTIFICATIONS.PAYROLL_HR_DEDUCTION_APPLIED_TITLE",
+                "NOTIFICATIONS.PAYROLL_HR_DEDUCTION_APPLIED_BODY",
+                Map.of("month", payrollMonthKey(run.getPayPeriodYear(), run.getPayPeriodMonth())),
+                Map.of("route", "/admin/hr/payroll/" + run.getId())
+        );
+    }
+
     private void notifyPayrollApproved(PayrollRun run) {
         List<Long> recipients = new ArrayList<>();
         recipients.addAll(propertyOwnerPortalRecipientService.portalRecipientUserIds(run.getPropertyId()));
@@ -544,6 +696,7 @@ public class PayrollService {
             run.setNotes(reason.trim());
         }
         repository.save(run);
+        syncPayrollExpense(run);
         notifyPayrollRejected(run);
         return toDetailResponse(run);
     }

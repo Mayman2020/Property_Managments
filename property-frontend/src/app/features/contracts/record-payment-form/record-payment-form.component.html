@@ -99,7 +99,7 @@
       <textarea matInput formControlName="notes" rows="2"></textarea>
     </mat-form-field>
 
-    <div *ngIf="errorMsg" class="error-msg">{{ errorMsg }}</div>
+    <div *ngIf="errorMsg" class="error-msg">{{ errorMsg | translate }}</div>
 
     <div class="form-actions">
       <button mat-stroked-button type="button" (click)="cancel()">{{ 'COMMON.CANCEL' | translate }}</button>

@@ -132,6 +132,9 @@ export class MaintenanceContractDialogComponent implements OnInit, OnDestroy {
 
       if (this.data?.contractorCompanyId) {
         this.form.patchValue({ contractorCompanyId: this.data.contractorCompanyId });
+        if (this.mode === 'create') {
+          this.form.get('contractorCompanyId')?.disable({ emitEvent: false });
+        }
       }
 
       if (this.data?.contractId && this.mode !== 'create') {

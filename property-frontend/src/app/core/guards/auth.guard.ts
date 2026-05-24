@@ -67,6 +67,7 @@ export const adminGuard: CanActivateFn = roleGuard([
   'SUPER_ADMIN',
   'GENERAL_MANAGER',
   'ACCOUNTANT',
+  'HR_OFFICER',
   'MAINTENANCE_OFFICER_INTERNAL',
   'MAINTENANCE_OFFICER_COMPANY',
   'MAINTENANCE_COMPANY',
@@ -130,8 +131,11 @@ function resolveFallbackRoute(auth: AuthService, permissions: PermissionService)
     ]);
   }
   if (roles.includes('ACCOUNTANT')) {
+    // `/admin/home` redirects to `/admin/dashboard`; the candidate's permission
+    // must mirror what the redirect target actually requires, otherwise users
+    // without `dashboard.view` land in a guard loop.
     blocks.push([
-      { route: '/admin/home', permission: 'finance', action: 'view' },
+      { route: '/admin/home', permission: 'dashboard', action: 'view' },
       { route: '/admin/finance/dashboard', permission: 'finance', action: 'view' },
       { route: '/admin/contracts/list', permission: 'contracts', action: 'view' },
       { route: '/admin/profile', permission: 'profile', action: 'view' }
@@ -139,8 +143,16 @@ function resolveFallbackRoute(auth: AuthService, permissions: PermissionService)
   }
   if (roles.includes('PROCEDURES_CLERK')) {
     blocks.push([
-      { route: '/admin/home', permission: 'hr', action: 'view' },
+      { route: '/admin/home', permission: 'dashboard', action: 'view' },
       { route: '/admin/hr/employees', permission: 'hr', action: 'view' },
+      { route: '/admin/profile', permission: 'profile', action: 'view' }
+    ]);
+  }
+  if (roles.includes('HR_OFFICER')) {
+    blocks.push([
+      { route: '/admin/home', permission: 'dashboard', action: 'view' },
+      { route: '/admin/hr/employees', permission: 'hr', action: 'view' },
+      { route: '/admin/hr/attendance', permission: 'hr', action: 'view' },
       { route: '/admin/profile', permission: 'profile', action: 'view' }
     ]);
   }

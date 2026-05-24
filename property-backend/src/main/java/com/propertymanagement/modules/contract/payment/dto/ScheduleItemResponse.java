@@ -15,6 +15,8 @@ public class ScheduleItemResponse {
     private String contractNumber;
     private Long tenantId;
     private String tenantName;
+    private Long unitId;
+    private String unitNumber;
     private LocalDate dueDate;
     private BigDecimal amount;
     private LocalDate periodFrom;

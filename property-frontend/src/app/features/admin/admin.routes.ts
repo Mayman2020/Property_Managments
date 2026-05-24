@@ -208,8 +208,13 @@ export const ADMIN_ROUTES: Routes = [
           },
           {
             path: 'attendance',
-            redirectTo: 'employees',
-            pathMatch: 'full'
+            data: { section: 'attendance' },
+            loadComponent: () => import('../hr/hr-workspace/hr-workspace.component').then((m) => m.HrWorkspaceComponent)
+          },
+          {
+            path: 'deductions',
+            data: { section: 'deductions' },
+            loadComponent: () => import('../hr/hr-workspace/hr-workspace.component').then((m) => m.HrWorkspaceComponent)
           },
           {
             path: 'payroll',
@@ -268,6 +273,12 @@ export const ADMIN_ROUTES: Routes = [
             loadComponent: () => import('../finance/overdue-payments/overdue-payments.component').then((m) => m.OverduePaymentsComponent)
           }
         ]
+      },
+      {
+        path: 'inspections/:id',
+        canActivate: [moduleGuard],
+        data: { module: 'contracts' },
+        loadComponent: () => import('../inspections/inspection-detail/inspection-detail.component').then((m) => m.InspectionDetailComponent)
       },
       {
         path: 'vacancies',

@@ -113,15 +113,21 @@ export class RequestListComponent implements OnInit {
         next: (res) => { this.properties = res.data?.content ?? []; }
       });
     } else if (this.listContext === 'officer') {
-      this.invoiceSvc.getMyProperties().subscribe({
-        next: (res) => {
-          this.properties = res.data ?? [];
-          if (this.properties.length === 1) {
-            this.filterPropertyId = this.properties[0].id;
-          }
-          if (this.filterPropertyId) this.load();
-        }
-      });
+      if (this.auth.hasRole('MAINTENANCE_OFFICER_INTERNAL')) {
+        // Internal officers are not tied to contractor-company properties.
+        this.load();
+      } else {
+        this.invoiceSvc.getMyProperties().subscribe({
+          next: (res) => {
+            this.properties = res.data ?? [];
+            if (this.properties.length === 1) {
+              this.filterPropertyId = this.properties[0].id;
+            }
+            if (this.filterPropertyId) this.load();
+          },
+          error: () => this.load()
+        });
+      }
     }
     this.load();
   }
@@ -286,6 +292,21 @@ export class RequestListComponent implements OnInit {
 
   contractStatusLabel(status: string): string {
     return this.i18n.instant(`CONTRACTS.STATUS_${status}`);
+  }
+
+  responsibleLabel(req: MaintenanceRequest): string {
+    const officer = this.cleanText(req.assignedOfficerName);
+    const company = this.localizedName(
+      req.assignedOfficerCompanyNameAr,
+      req.assignedOfficerCompanyNameEn,
+      req.assignedOfficerCompanyName
+    ) || this.localizedName(
+      req.contractorCompanyNameAr,
+      req.contractorCompanyNameEn,
+      req.contractorCompanyName
+    );
+    if (officer && company) return `${officer} - ${company}`;
+    return officer || company || '—';
   }
 
   detailLink(id: number): string[] {
@@ -456,7 +477,13 @@ export class RequestListComponent implements OnInit {
         req.propertyName,
         req.unitNumber,
         req.tenantName,
-        req.assignedOfficerName
+        req.assignedOfficerName,
+        req.assignedOfficerCompanyName,
+        req.assignedOfficerCompanyNameAr,
+        req.assignedOfficerCompanyNameEn,
+        req.contractorCompanyName,
+        req.contractorCompanyNameAr,
+        req.contractorCompanyNameEn
       ].join(' ').toLowerCase().includes(q)
     );
   }
@@ -480,5 +507,33 @@ export class RequestListComponent implements OnInit {
     this.adminPageIndex = 0;
     this.tenantCurrentPageIndex = 0;
     this.tenantPreviousPageIndex = 0;
+  }
+
+  isSlaAtRisk(req: MaintenanceRequest): boolean {
+    if (req.slaBreached) return true;
+    if (!req.slaDeadline) return false;
+    const terminal = ['COMPLETED', 'CANCELLED'];
+    if (terminal.includes(req.status)) return false;
+    return new Date(req.slaDeadline).getTime() < Date.now();
+  }
+
+  slaDeadlineLabel(req: MaintenanceRequest): string {
+    if (!req.slaDeadline) return '—';
+    const d = new Date(req.slaDeadline);
+    return Number.isNaN(d.getTime()) ? req.slaDeadline : d.toLocaleString();
+  }
+
+  private localizedName(ar?: string | null, en?: string | null, fallback?: string | null): string {
+    const arText = this.cleanText(ar);
+    const enText = this.cleanText(en);
+    const fallbackText = this.cleanText(fallback);
+    return this.i18n.currentLang === 'ar'
+      ? (arText || enText || fallbackText)
+      : (enText || arText || fallbackText);
+  }
+
+  private cleanText(value?: string | null): string {
+    const text = value?.trim() ?? '';
+    return text && !/^[?\s\uFFFD]+$/.test(text) ? text : '';
   }
 }

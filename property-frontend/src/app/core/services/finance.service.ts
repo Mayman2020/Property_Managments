@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
 import { AppConstants } from '../constants/app-constants';
@@ -55,9 +56,14 @@ export interface BudgetItem {
   budgetedAmount: number;
 }
 
+export type FinanceExportType = 'RENT_INCOME' | 'EXPENSES' | 'PAYROLL' | 'ALL';
+
 @Injectable({ providedIn: 'root' })
 export class FinanceService {
-  constructor(private readonly api: ApiService) {}
+  constructor(
+    private readonly api: ApiService,
+    private readonly http: HttpClient
+  ) {}
 
   getDashboard(propertyId?: number): Observable<ApiResponse<FinanceDashboardDto>> {
     return this.api.get(AppConstants.API.FINANCE_DASHBOARD, propertyId ? { propertyId } : {});
@@ -97,5 +103,12 @@ export class FinanceService {
 
   getOwnerStatements(propertyId?: number): Observable<ApiResponse<FinancialReportRow[]>> {
     return this.api.get(AppConstants.API.FINANCE_REPORTS_OWNER_STATEMENTS, propertyId ? { propertyId } : {});
+  }
+
+  downloadCsv(from: string, to: string, type: FinanceExportType): Observable<Blob> {
+    return this.http.get(this.api.buildUrl(AppConstants.API.FINANCE_EXPORT_CSV), {
+      params: { from, to, type },
+      responseType: 'blob'
+    });
   }
 }

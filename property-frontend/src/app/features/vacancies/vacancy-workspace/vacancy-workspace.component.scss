@@ -13,6 +13,22 @@
   font-size: 0.86rem;
 }
 
+.source-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+.source-auto {
+  background: rgba(22, 163, 74, 0.15);
+  color: #16a34a;
+}
+.source-manual {
+  background: var(--surface-alt, #f3f4f6);
+  color: var(--text-muted);
+}
+
 .views-badge {
   display: inline-flex;
   align-items: center;
@@ -36,6 +52,49 @@
   &[data-status='CONTACTED'] { background: #dbeafe; color: #1e40af; }
   &[data-status='CONVERTED'] { background: #d1fae5; color: #065f46; }
   &[data-status='REJECTED']  { background: #fee2e2; color: #991b1b; }
+}
+
+.inquiry-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.finance-filter-strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--line-2, #e4d8c8);
+
+  label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+}
+
+.directory-toolbar-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+}
+
+.filtered-empty {
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.table-card {
+  padding: 0;
+  overflow: hidden;
 }
 
 .empty-card {

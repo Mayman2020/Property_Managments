@@ -250,7 +250,7 @@ export class BudgetVsActualComponent implements OnInit {
     this.loading = true;
     this.reportsService.getBudgetVsActual(this.filterPropertyId ?? undefined, this.filterYear).subscribe({
       next: (res) => { this.data = res.data ?? null; this.loading = false; },
-      error: () => { this.loading = false; this.snack.error('Failed to load report'); }
+      error: () => { this.loading = false; this.snack.error('INLINE_TEXT.FAILED_TO_LOAD_REPORT'); }
     });
   }
 

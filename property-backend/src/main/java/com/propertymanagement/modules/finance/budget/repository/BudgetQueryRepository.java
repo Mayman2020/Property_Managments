@@ -12,6 +12,7 @@ public interface BudgetQueryRepository extends Repository<BudgetEntity, Long> {
     @Query(value = """
             SELECT b.id AS id,
                    b.property_id AS propertyId,
+                   b.category_id AS categoryId,
                    COALESCE(ec.category_name_ar, ec.category_name_en) AS categoryName,
                    b.budgeted_amount AS budgetedAmount
             FROM budgets b
@@ -23,6 +24,7 @@ public interface BudgetQueryRepository extends Repository<BudgetEntity, Long> {
     @Query(value = """
             SELECT b.id AS id,
                    b.property_id AS propertyId,
+                   b.category_id AS categoryId,
                    COALESCE(ec.category_name_ar, ec.category_name_en) AS categoryName,
                    b.budgeted_amount AS budgetedAmount
             FROM budgets b
@@ -35,6 +37,7 @@ public interface BudgetQueryRepository extends Repository<BudgetEntity, Long> {
     interface BudgetRow {
         Long getId();
         Long getPropertyId();
+        Long getCategoryId();
         String getCategoryName();
         BigDecimal getBudgetedAmount();
     }

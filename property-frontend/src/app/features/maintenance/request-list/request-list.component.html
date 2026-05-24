@@ -140,7 +140,7 @@
                 <span class="req-title">{{ req.title }}</span>
                 <span class="unit-info">{{ req.propertyName || '-' }} · {{ req.unitNumber || '-' }}</span>
               </td>
-              <td>{{ req.assignedOfficerName || '—' }}</td>
+              <td>{{ responsibleLabel(req) }}</td>
               <td><span class="status-badge" [attr.data-status]="req.status">{{ statusLabel(req.status) }}</span></td>
               <td><span class="priority-badge" [class]="req.priority">{{ priorityLabel(req.priority) }}</span></td>
               <td>{{ req.createdAt | date:'dd/MM/yyyy' }}</td>
@@ -217,12 +217,13 @@
             <th>{{ 'REQUEST_LIST.OFFICER' | translate }}</th>
             <th>{{ 'MAINTENANCE.STATUS' | translate }}</th>
             <th>{{ 'MAINTENANCE.PRIORITY' | translate }}</th>
+            <th>{{ 'MAINTENANCE.SLA_DEADLINE' | translate }}</th>
             <th>{{ 'REQUEST_LIST.CREATED_AT' | translate }}</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let req of pagedAdminRequests">
+          <tr *ngFor="let req of pagedAdminRequests" [class.sla-breach-row]="isSlaAtRisk(req)">
             <td><span class="req-number">{{ req.requestNumber }}</span></td>
             <td class="request-cell">
               <span class="req-title">{{ req.title }}</span>
@@ -233,9 +234,13 @@
               <span class="material-icons timeline-hint">account_tree</span>
             </td>
             <td>{{ req.tenantName || '—' }}</td>
-            <td>{{ req.assignedOfficerName || '—' }}</td>
+            <td>{{ responsibleLabel(req) }}</td>
             <td><span class="status-badge" [attr.data-status]="req.status">{{ statusLabel(req.status) }}</span></td>
             <td><span class="priority-badge" [class]="req.priority">{{ priorityLabel(req.priority) }}</span></td>
+            <td>
+              <span class="sla-deadline-cell">{{ slaDeadlineLabel(req) }}</span>
+              <span class="sla-breach-badge" *ngIf="req.slaBreached || isSlaAtRisk(req)">{{ 'MAINTENANCE.SLA_BREACHED' | translate }}</span>
+            </td>
             <td>{{ req.createdAt | date:'dd/MM/yyyy' }}</td>
             <td class="actions-col">
               <div class="table-actions">

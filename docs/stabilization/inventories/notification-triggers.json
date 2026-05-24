@@ -1,0 +1,758 @@
+{
+  "generatedAt": "2026-05-24T13:51:31.546Z",
+  "types": [
+    {
+      "type": "REQUEST_CREATED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/maintenance/request/service/MaintenanceRequestService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "REQUEST_ASSIGNED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/maintenance/request/service/MaintenanceRequestService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "REQUEST_SCHEDULED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/maintenance/request/service/MaintenanceRequestService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "REQUEST_SCHEDULE_ACCEPTED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/maintenance/request/service/MaintenanceRequestService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "REQUEST_SCHEDULE_REJECTED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/maintenance/request/service/MaintenanceRequestService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "REQUEST_VISIT_REPORTED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/maintenance/request/service/MaintenanceRequestService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "MAINTENANCE_PROVIDER_ASSIGNED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/maintenance/assignment/service/MaintenanceAssignmentService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "MAINTENANCE_PROVIDER_UNASSIGNED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/maintenance/assignment/service/MaintenanceAssignmentService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "MAINTENANCE_CONTRACT_AWAITING_OWNER_REVIEW",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contract/service/MaintenanceContractService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "MAINTENANCE_CONTRACT_APPROVED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contract/service/MaintenanceContractService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "MAINTENANCE_CONTRACT_REJECTED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contract/service/MaintenanceContractService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "MAINTENANCE_CONTRACT_TERMINATION_REQUESTED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contract/service/MaintenanceContractService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "MAINTENANCE_CONTRACT_TERMINATION_APPROVED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contract/service/MaintenanceContractService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "MAINTENANCE_CONTRACT_TERMINATION_REJECTED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contract/service/MaintenanceContractService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "MAINTENANCE_CONTRACT_RENEWAL_REQUESTED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contract/service/MaintenanceContractService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "MAINTENANCE_CONTRACT_RENEWAL_APPROVED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contract/service/MaintenanceContractService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "MAINTENANCE_CONTRACT_RENEWAL_REJECTED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contract/service/MaintenanceContractService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "MAINTENANCE_CONTRACT_INVOICE_ISSUED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contract/service/MaintenanceContractService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "MAINTENANCE_CONTRACT_PAYMENT_SCHEDULED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contractinvoice/service/MaintenanceContractInvoiceService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "MAINTENANCE_CONTRACT_PAYMENT_DUE_SOON",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contractinvoice/service/MaintenanceContractInvoiceService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "MAINTENANCE_CONTRACT_PAYMENT_DUE_TODAY",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contractinvoice/service/MaintenanceContractInvoiceService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "MAINTENANCE_CONTRACT_PAYMENT_RECEIVED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contractinvoice/service/MaintenanceContractInvoiceService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "REQUEST_COMPLETED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/maintenance/request/service/MaintenanceRequestService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "REQUEST_RATED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/maintenance/rating/service/VisitRatingService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "REQUEST_CANCELLED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/maintenance/request/service/MaintenanceRequestService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "RENT_DUE",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/contract/payment/service/RentPaymentService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "RENT_OVERDUE",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/contract/payment/service/RentPaymentService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "CONTRACT_EXPIRING",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/service/LeaseContractService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "CONTRACT_ACTIVATED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/tenant/service/TenantPortalWelcomeService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "CONTRACT_AWAITING_OWNER_REVIEW",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/service/LeaseContractService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "TENANT_DRAFT_LEASE_PENDING_OWNER",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/tenant/service/TenantPortalWelcomeService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "TENANT_LEASE_REJECTED_BY_OWNER",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/tenant/service/TenantPortalWelcomeService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "TENANT_LEASE_AMENDED_BY_OWNER",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/tenant/service/TenantPortalWelcomeService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "TENANT_LEASE_OWNER_APPROVAL_DENIED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/tenant/service/TenantPortalWelcomeService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "ACCOUNTANT_LEASE_OWNER_APPROVAL_DENIED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/tenant/service/TenantPortalWelcomeService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "CONTRACT_TERMINATION_REQUESTED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/service/LeaseContractService.java",
+        "property-backend/src/main/java/com/propertymanagement/modules/tenantportal/service/TenantPortalService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "TENANT_CONTRACT_TERMINATION_REQUESTED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/tenant/service/TenantPortalWelcomeService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "CONTRACT_TERMINATION_APPROVED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/tenant/service/TenantPortalWelcomeService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "CONTRACT_TERMINATION_REJECTED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/tenant/service/TenantPortalWelcomeService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "CONTRACT_RENEWAL_REQUESTED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/service/LeaseContractService.java",
+        "property-backend/src/main/java/com/propertymanagement/modules/tenantportal/service/TenantPortalService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "TENANT_CONTRACT_RENEWAL_REQUESTED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/tenant/service/TenantPortalWelcomeService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "CONTRACT_RENEWAL_APPROVED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/service/LeaseContractService.java",
+        "property-backend/src/main/java/com/propertymanagement/modules/tenant/service/TenantPortalWelcomeService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "CONTRACT_RENEWAL_REJECTED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/service/LeaseContractService.java",
+        "property-backend/src/main/java/com/propertymanagement/modules/tenant/service/TenantPortalWelcomeService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "ACCOUNTANT_CONTRACT_RENEWAL_APPROVED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/tenant/service/TenantPortalWelcomeService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "ACCOUNTANT_CONTRACT_RENEWAL_REJECTED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/tenant/service/TenantPortalWelcomeService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "PAYMENT_RECEIVED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/contract/payment/service/RentPaymentService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "PAYROLL_GENERATED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/hr/payroll/service/PayrollService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "PAYROLL_SUBMITTED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/hr/payroll/service/PayrollService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "PAYROLL_APPROVED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/hr/payroll/service/PayrollService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "PAYROLL_REJECTED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/hr/payroll/service/PayrollService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "PAYROLL_MARKED_PAID",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/hr/payroll/service/PayrollService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "PAYSLIP_AVAILABLE",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/hr/payroll/service/PayrollService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "SALARY_ADVANCE_REQUESTED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/hr/payroll/service/PayrollService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "SALARY_ADVANCE_APPROVED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/hr/payroll/service/PayrollService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "SALARY_ADVANCE_REJECTED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/hr/payroll/service/PayrollService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "SALARY_ADVANCE_DEDUCTED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/hr/payroll/service/PayrollService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "HR_DEDUCTION_SENT_TO_ACCOUNTANT",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/hr/payroll/service/PayrollDeductionService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "HR_DEDUCTION_APPROVED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/hr/payroll/service/PayrollDeductionService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "HR_DEDUCTION_REJECTED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/hr/payroll/service/PayrollDeductionService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "PAYROLL_HR_DEDUCTION_APPLIED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/hr/payroll/service/PayrollService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "LEAVE_REQUEST_SUBMITTED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/hr/leave/service/LeaveService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "LEAVE_REQUEST_APPROVED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/hr/leave/service/LeaveService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "LEAVE_REQUEST_REJECTED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/hr/leave/service/LeaveService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "LEAVE_BALANCE_LOW",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/scheduler/OperationalScheduler.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "FINANCE_ALERT",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/finance/service/FinanceService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "MAINTENANCE_UPDATE",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/maintenance/request/service/MaintenanceRequestService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "MAINTENANCE_REQUEST_OVERDUE",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/scheduler/OperationalScheduler.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "INVENTORY_LOW_STOCK",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/scheduler/OperationalScheduler.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "BUDGET_THRESHOLD_EXCEEDED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/finance/service/FinanceService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "OWNER_STATEMENT",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/ownerportal/service/OwnerStatementGenerationService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "NEW_LOGIN_ALERT",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/auth/service/AuthService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "ACCOUNT_LOCKED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/auth/service/AuthService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "DOCUMENT_EXPIRY_WARNING",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/scheduler/OperationalScheduler.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "RENT_GRACE_PERIOD_ENDING",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/contract/scheduler/ContractScheduler.java",
+        "property-backend/src/main/java/com/propertymanagement/modules/scheduler/OperationalScheduler.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "PROPERTY_LINKED_TO_OWNER",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/property/service/PropertyService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "UNIT_ADDED_TO_OWNER_PROPERTY",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/unit/service/UnitService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "TENANT_REGISTERED_ON_OWNER_PROPERTY",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/tenant/service/TenantService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "GENERAL",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/service/LeaseContractService.java",
+        "property-backend/src/main/java/com/propertymanagement/modules/owner/service/OwnerService.java",
+        "property-backend/src/main/java/com/propertymanagement/modules/tenant/service/TenantPortalWelcomeService.java",
+        "property-backend/src/main/java/com/propertymanagement/modules/user/service/UserService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "COMPLAINT_SUBMITTED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/complaint/service/TenantComplaintService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "COMPLAINT_REPLY_RECEIVED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/complaint/service/TenantComplaintService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "COMPLAINT_CLOSED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/complaint/service/TenantComplaintService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "COMPLAINT_RATED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/complaint/service/TenantComplaintService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "CONTRACT_EXPIRING_SOON",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/service/LeaseContractService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "NO_RENEWAL_INTENT_SUBMITTED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/service/LeaseContractService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "DEPOSIT_RETURNED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/service/LeaseContractService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "UNIT_DAMAGE_REPORTED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/service/LeaseContractService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "DAMAGE_RECEIPT_SUBMITTED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/service/LeaseContractService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "DAMAGE_PAYMENT_CONFIRMED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/service/LeaseContractService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "UNIT_CLEARED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/service/LeaseContractService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "RENTAL_INQUIRY_RECEIVED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/vacancy/service/VacancyService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "VACANCY_PUBLISHED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/vacancy/service/VacancyPublishingService.java",
+        "property-backend/src/main/java/com/propertymanagement/modules/vacancy/service/VacancyService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "INSPECTION_SCHEDULED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/inspection/service/UnitInspectionService.java"
+      ],
+      "category": "live"
+    },
+    {
+      "type": "INSPECTION_COMPLETED",
+      "hasServiceEmitter": true,
+      "emitterFiles": [
+        "property-backend/src/main/java/com/propertymanagement/modules/inspection/service/UnitInspectionService.java"
+      ],
+      "category": "live"
+    }
+  ]
+}

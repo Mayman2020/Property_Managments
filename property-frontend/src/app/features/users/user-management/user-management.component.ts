@@ -306,10 +306,8 @@ export class UserManagementComponent implements OnInit {
     return code ? `${name} (${code})` : name || '—';
   }
 
-  userInitials(user: User): string {
-    const words = (user.fullName ?? user.username ?? '').trim().split(/\s+/).filter(Boolean);
-    if (!words.length) return 'U';
-    return words.slice(0, 2).map(w => w[0]?.toUpperCase() ?? '').join('');
+  userCode(user: User): string {
+    return `U-${user.id}`;
   }
 
 

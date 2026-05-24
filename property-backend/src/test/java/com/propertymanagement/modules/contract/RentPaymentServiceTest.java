@@ -13,6 +13,7 @@ import com.propertymanagement.modules.contract.payment.dto.AccountantMarkPaidReq
 import com.propertymanagement.modules.contract.payment.dto.ReviewPaymentProofRequest;
 import com.propertymanagement.modules.contract.payment.dto.UploadPaymentProofRequest;
 import com.propertymanagement.modules.notification.service.NotificationService;
+import com.propertymanagement.modules.ownerportal.service.OwnerRevenueShareService;
 import com.propertymanagement.modules.finance.revenue.entity.OtherRevenue;
 import com.propertymanagement.modules.finance.revenue.repository.OtherRevenueWriterRepository;
 import com.propertymanagement.modules.property.entity.Property;
@@ -59,6 +60,7 @@ class RentPaymentServiceTest {
     @Mock CodeGenerationService codeGenerationService;
     @Mock NotificationService notificationService;
     @Mock PropertyOwnerPortalRecipientService propertyOwnerPortalRecipientService;
+    @Mock OwnerRevenueShareService ownerRevenueShareService;
 
     @InjectMocks RentPaymentService service;
 

@@ -1,0 +1,74 @@
+<div class="app-page inspection-detail-page">
+  <div class="loading-center" *ngIf="loading">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <ng-container *ngIf="!loading && inspection">
+    <app-page-header
+      [title]="(inspection.inspectionType === 'MOVE_IN' ? 'INSPECTION.MOVE_IN' : 'INSPECTION.MOVE_OUT') | translate"
+      [subtitle]="('INSPECTION.STATUS_' + inspection.status) | translate"
+      [showBack]="true"
+      (backClick)="goBack()">
+      <button mat-stroked-button *ngIf="inspection.status === 'PENDING'" [disabled]="actionLoading" (click)="complete()">
+        {{ 'INSPECTION.COMPLETED' | translate }}
+      </button>
+      <button mat-flat-button *ngIf="inspection.status === 'COMPLETED' && !inspection.inspectorSignedAt"
+              [disabled]="actionLoading" (click)="signInspector()">
+        {{ 'INSPECTION.SIGN_AS_INSPECTOR' | translate }}
+      </button>
+      <button mat-stroked-button *ngIf="inspection.inspectionType === 'MOVE_OUT' && inspection.status !== 'PENDING'"
+              (click)="linkDamages()">
+        {{ 'INSPECTION.TOTAL_DEDUCTION' | translate }}
+      </button>
+    </app-page-header>
+
+    <section class="app-card timeline-card">
+      <span class="timeline-step" [class.done]="inspection.status !== 'PENDING'">{{ 'INSPECTION.PENDING' | translate }}</span>
+      <span class="timeline-step" [class.done]="inspection.status === 'COMPLETED' || inspection.status === 'SIGNED'">{{ 'INSPECTION.COMPLETED' | translate }}</span>
+      <span class="timeline-step" [class.done]="inspection.status === 'SIGNED'">{{ 'INSPECTION.SIGNED' | translate }}</span>
+      <div class="sign-row">
+        <span>{{ 'INSPECTION.SIGN_AS_INSPECTOR' | translate }}: {{ inspection.inspectorSignedAt ? '✓' : '—' }}</span>
+        <span>{{ 'INSPECTION.SIGN_AS_TENANT' | translate }}: {{ inspection.tenantSignedAt ? '✓' : '—' }}</span>
+      </div>
+    </section>
+
+    <section class="app-card">
+      <table class="app-data-table">
+        <thead>
+          <tr>
+            <th>{{ 'INSPECTION.AREA' | translate }}</th>
+            <th>{{ 'INSPECTION.CONDITION' | translate }}</th>
+            <th>{{ 'INSPECTION.PHOTO' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of inspection.items">
+            <td>{{ item.area }}</td>
+            <td>
+              <select [ngModel]="item.condition" (ngModelChange)="updateItem(item.id, $event)"
+                      [disabled]="inspection.status === 'SIGNED'">
+                <option [ngValue]="undefined">—</option>
+                <option *ngFor="let c of conditions" [ngValue]="c">{{ conditionLabel(c) | translate }}</option>
+              </select>
+            </td>
+            <td>
+              <input type="file" accept="image/*" (change)="onPhotoSelected(item.id, $event)" [disabled]="inspection.status === 'SIGNED'">
+              <a *ngIf="item.photoUrl" [href]="item.photoUrl" target="_blank" rel="noopener">View</a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="app-card damage-summary" *ngIf="inspection.inspectionType === 'MOVE_OUT' && damagedItems.length">
+      <h3>{{ 'INSPECTION.DAMAGE_SUMMARY' | translate }}</h3>
+      <ul>
+        <li *ngFor="let d of damagedItems">{{ d.area }} — {{ d.estimatedDeduction || 0 }}</li>
+      </ul>
+      <p *ngIf="linkResult || inspection.totalDeduction">
+        <strong>{{ 'INSPECTION.TOTAL_DEDUCTION' | translate }}:</strong>
+        {{ linkResult?.totalDeduction ?? inspection.totalDeduction }}
+      </p>
+    </section>
+  </ng-container>
+</div>

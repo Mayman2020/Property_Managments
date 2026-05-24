@@ -83,6 +83,12 @@
         {{ 'CONTRACTS.REJECT_DRAFT' | translate }}
       </button>
 
+      <button mat-stroked-button *ngIf="canSubmitForOwnerApproval()"
+              (click)="submitForOwnerApproval()" [disabled]="actionLoading">
+        <mat-icon>send</mat-icon>
+        {{ 'CONTRACTS.SUBMIT_OWNER_APPROVAL' | translate }}
+      </button>
+
       <button mat-flat-button *ngIf="canActivateContract()"
               (click)="activate()" [disabled]="actionLoading">
         <mat-spinner diameter="16" *ngIf="actionLoading"></mat-spinner>
@@ -230,6 +236,10 @@
     <button type="button" class="csn-tile" [class.csn-tile--active]="section === 'annexes'" (click)="setSection('annexes')">
       <span class="csn-ico"><mat-icon>attach_file</mat-icon></span>
       <span class="csn-label">{{ 'CONTRACTS.TAB_ANNEXES' | translate }}</span>
+    </button>
+    <button type="button" class="csn-tile" [class.csn-tile--active]="section === 'inspections'" (click)="setSection('inspections')">
+      <span class="material-icons">fact_check</span>
+      <span>{{ 'INSPECTION.TITLE' | translate }}</span>
     </button>
     <button type="button" class="csn-tile" [class.csn-tile--active]="section === 'fees'" (click)="setSection('fees')">
       <span class="csn-ico">
@@ -656,9 +666,15 @@
             <tr
               *ngFor="let s of schedulePageSlice; let i = index"
               [class.schedule-row-highlight]="isHighlightedSchedule(s)"
+              [class.schedule-row-overdue]="isPastDueUnpaid(s)"
               [class.schedule-row-paid]="s.status === 'PAID'">
               <td class="center-col"><span class="row-index">{{ schedulePageIndex * schedulePageSize + i + 1 }}</span></td>
-              <td><strong>{{ s.dueDate | date:'dd/MM/yyyy' }}</strong></td>
+              <td>
+                <strong>{{ s.dueDate | date:'dd/MM/yyyy' }}</strong>
+                <span class="schedule-overdue-badge" *ngIf="isPastDueUnpaid(s)">
+                  {{ 'CONTRACTS.SCHED_OVERDUE' | translate }}
+                </span>
+              </td>
               <td class="text-muted">{{ s.periodFrom | date:'dd/MM/yyyy' }} — {{ s.periodTo | date:'dd/MM/yyyy' }}</td>
               <td><span class="amount-cell">{{ s.amount | number }} <span class="currency-tag">{{ contract.currency }}</span></span></td>
               <td class="flag-cell">
@@ -666,11 +682,12 @@
                   <span class="flag-visual" *ngIf="!hasProof(s)" [class.flag-visual--on]="isPaidLike(s)" [class.flag-visual--waived]="s.status === 'WAIVED'">
                     <mat-icon>{{ s.status === 'WAIVED' ? 'block' : 'flag' }}</mat-icon>
                   </span>
-                  <button type="button" mat-stroked-button class="flag-action-btn"
+                  <button type="button" mat-icon-button class="app-icon-btn success"
                           *ngIf="canOpenMarkPaid(s)"
-                          (click)="openMarkPaidDialog(s)">
+                          (click)="openMarkPaidDialog(s)"
+                          [matTooltip]="'CONTRACTS.MARK_PAID_WITH_RECEIPT' | translate"
+                          [attr.aria-label]="'CONTRACTS.MARK_PAID_WITH_RECEIPT' | translate">
                     <mat-icon>upload_file</mat-icon>
-                    {{ 'CONTRACTS.MARK_PAID_WITH_RECEIPT' | translate }}
                   </button>
                   <span class="waived-label" *ngIf="s.status === 'WAIVED'">{{ 'CONTRACTS.SCHED_WAIVED' | translate }}</span>
                   <span class="pending-proof-label" *ngIf="s.status === 'PENDING_CONFIRMATION'">
@@ -683,25 +700,40 @@
                     <span class="flag-visual" [class.flag-visual--on]="isPaidLike(s)" [class.flag-visual--waived]="s.status === 'WAIVED'">
                       <mat-icon>{{ s.status === 'WAIVED' ? 'block' : 'flag' }}</mat-icon>
                     </span>
-                    <button type="button" mat-stroked-button (click)="openProofDetails(s)">
+                    <button type="button" mat-icon-button class="app-icon-btn accent"
+                            (click)="openProofDetails(s)"
+                            [matTooltip]="'INLINE_TEXT.DETAILS' | translate"
+                            [attr.aria-label]="'INLINE_TEXT.DETAILS' | translate">
                       <mat-icon>info</mat-icon>
-                      {{ ('INLINE_TEXT.DETAILS' | translate) }}
                     </button>
-                    <button type="button" mat-stroked-button *ngFor="let url of proofUrls(s); let i = index" (click)="viewProof(url)">
+                    <button type="button" mat-icon-button class="app-icon-btn accent"
+                            *ngFor="let url of proofUrls(s); let i = index"
+                            (click)="viewProof(url)"
+                            [matTooltip]="(('INLINE_TEXT.VIEW_ATTACHMENT' | translate) + (proofUrls(s).length > 1 ? ' ' + (i + 1) : ''))"
+                            [attr.aria-label]="(('INLINE_TEXT.VIEW_ATTACHMENT' | translate) + (proofUrls(s).length > 1 ? ' ' + (i + 1) : ''))">
                       <mat-icon>visibility</mat-icon>
-                      {{ ('INLINE_TEXT.VIEW_ATTACHMENT' | translate) }} {{ proofUrls(s).length > 1 ? i + 1 : '' }}
                     </button>
-                    <a mat-stroked-button *ngFor="let url of proofUrls(s); let i = index" [href]="url" download>
+                    <a mat-icon-button class="app-icon-btn"
+                       *ngFor="let url of proofUrls(s); let i = index"
+                       [href]="url"
+                       download
+                       [matTooltip]="(('INLINE_TEXT.DOWNLOAD' | translate) + (proofUrls(s).length > 1 ? ' ' + (i + 1) : ''))"
+                       [attr.aria-label]="(('INLINE_TEXT.DOWNLOAD' | translate) + (proofUrls(s).length > 1 ? ' ' + (i + 1) : ''))">
                       <mat-icon>download</mat-icon>
-                      {{ ('INLINE_TEXT.DOWNLOAD' | translate) }} {{ proofUrls(s).length > 1 ? i + 1 : '' }}
                     </a>
-                    <button type="button" mat-flat-button color="primary" *ngIf="canReviewProof(s)" (click)="reviewProof(s, 'APPROVED')">
+                    <button type="button" mat-icon-button class="app-icon-btn success"
+                            *ngIf="canReviewProof(s)"
+                            (click)="reviewProof(s, 'APPROVED')"
+                            [matTooltip]="'INLINE_TEXT.APPROVE' | translate"
+                            [attr.aria-label]="'INLINE_TEXT.APPROVE' | translate">
                       <mat-icon>check_circle</mat-icon>
-                      {{ ('INLINE_TEXT.APPROVE' | translate) }}
                     </button>
-                    <button type="button" mat-stroked-button color="warn" *ngIf="canReviewProof(s)" (click)="reviewProof(s, 'REJECTED')">
+                    <button type="button" mat-icon-button class="app-icon-btn danger"
+                            *ngIf="canReviewProof(s)"
+                            (click)="reviewProof(s, 'REJECTED')"
+                            [matTooltip]="'INLINE_TEXT.REJECT' | translate"
+                            [attr.aria-label]="'INLINE_TEXT.REJECT' | translate">
                       <mat-icon>cancel</mat-icon>
-                      {{ ('INLINE_TEXT.REJECT' | translate) }}
                     </button>
                   </div>
                   <p class="sm-notes rejected-note" *ngIf="s.status === 'PAYMENT_REJECTED' && s.rejectionReason">{{ s.rejectionReason }}</p>
@@ -792,7 +824,7 @@
           <tbody>
             <tr *ngFor="let c of complaints">
               <td>{{ c.title }}</td>
-              <td>{{ c.complaintType }}</td>
+              <td>{{ complaintTypeLabel(c.complaintType) }}</td>
               <td>
                 <span class="status-chip" [ngClass]="getStatusClass(c.priority)">{{ c.priority }}</span>
               </td>
@@ -857,7 +889,7 @@
                 <span *ngIf="!a.documentUrl">—</span>
               </td>
               <td *ngIf="canManageAnnexes()">
-                <button mat-icon-button class="app-icon-btn danger" (click)="deleteAnnex(a.id)">
+                <button mat-icon-button class="app-icon-btn danger" (click)="deleteAnnex(a.id)" [matTooltip]="'ACTIONS.DELETE' | translate">
                   <mat-icon>delete</mat-icon>
                 </button>
               </td>
@@ -872,6 +904,38 @@
         <p>{{ 'CONTRACTS.NO_ANNEXES' | translate }}</p>
       </div>
     </ng-template>
+  </div>
+
+  <!-- Section: Inspections -->
+  <div class="section-panel" *ngIf="section === 'inspections'">
+    <div class="app-card">
+      <div class="section-card-header" style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;">
+        <button mat-stroked-button type="button" (click)="createInspection('MOVE_IN')">
+          {{ 'INSPECTION.MOVE_IN' | translate }}
+        </button>
+        <button mat-stroked-button type="button" (click)="createInspection('MOVE_OUT')">
+          {{ 'INSPECTION.MOVE_OUT' | translate }}
+        </button>
+      </div>
+      <div *ngIf="inspectionsLoading"><mat-spinner diameter="32"></mat-spinner></div>
+      <table class="app-data-table" *ngIf="!inspectionsLoading && inspections.length">
+        <thead>
+          <tr>
+            <th>{{ 'INSPECTION.TYPE' | translate }}</th>
+            <th>{{ 'MAINTENANCE.STATUS' | translate }}</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let insp of inspections">
+            <td>{{ (insp.inspectionType === 'MOVE_IN' ? 'INSPECTION.MOVE_IN' : 'INSPECTION.MOVE_OUT') | translate }}</td>
+            <td>{{ ('INSPECTION.STATUS_' + insp.status) | translate }}</td>
+            <td><button mat-button type="button" (click)="openInspection(insp.id)">{{ 'ACTIONS.VIEW' | translate }}</button></td>
+          </tr>
+        </tbody>
+      </table>
+      <p *ngIf="!inspectionsLoading && !inspections.length">{{ 'COMMON.NO_DATA' | translate }}</p>
+    </div>
   </div>
 
   <!-- Section: Fees -->

@@ -29,9 +29,15 @@ export interface MaintenanceRequest {
   priority: RequestPriority;
   status: RequestStatus;
   contractorCompanyId?: number;
+  contractorCompanyName?: string;
+  contractorCompanyNameAr?: string;
+  contractorCompanyNameEn?: string;
   assignedTo?: number;
   assignedOfficerName?: string;
   assignedOfficerPhone?: string;
+  assignedOfficerCompanyName?: string;
+  assignedOfficerCompanyNameAr?: string;
+  assignedOfficerCompanyNameEn?: string;
   scheduledDate?: string;
   scheduledTimeFrom?: string;
   scheduledTimeTo?: string;
@@ -39,6 +45,9 @@ export interface MaintenanceRequest {
   closedAt?: string;
   scheduleAccepted?: boolean;
   scheduleRejectionNote?: string;
+  slaDeadline?: string;
+  slaBreached?: boolean;
+  hoursOverdue?: number;
   createdAt: string;
   updatedAt: string;
   createdBy?: number;

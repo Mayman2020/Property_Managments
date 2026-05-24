@@ -10,8 +10,14 @@ import com.propertymanagement.modules.hr.employee.repository.EmployeeRepository;
 import com.propertymanagement.modules.hr.leave.repository.LeaveRequestRepository;
 import com.propertymanagement.modules.inventory.entity.InventoryItemEntity;
 import com.propertymanagement.modules.inventory.repository.InventoryRepository;
+import com.propertymanagement.modules.maintenance.request.entity.MaintenanceRequest;
+import com.propertymanagement.modules.maintenance.request.entity.RequestPriority;
+import com.propertymanagement.modules.maintenance.request.repository.MaintenanceRequestRepository;
+import com.propertymanagement.modules.maintenance.request.service.MaintenanceRequestService;
 import com.propertymanagement.modules.notification.entity.NotificationType;
 import com.propertymanagement.modules.notification.service.NotificationService;
+import com.propertymanagement.modules.property.attachment.entity.PropertyAttachment;
+import com.propertymanagement.modules.property.attachment.repository.PropertyAttachmentRepository;
 import com.propertymanagement.modules.user.entity.User;
 import com.propertymanagement.modules.user.entity.UserRole;
 import com.propertymanagement.modules.user.repository.UserRepository;
@@ -22,9 +28,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.Year;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Objects;
+import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
@@ -33,16 +43,19 @@ public class OperationalScheduler {
 
     private static final int LEAVE_LOW_THRESHOLD_DAYS = 5;
     private static final int GRACE_PERIOD_DAYS = 3;
+    private static final int DOCUMENT_EXPIRY_LOOKAHEAD_DAYS = 30;
 
     private final InventoryRepository inventoryRepo;
     private final LeaveRequestRepository leaveRepo;
     private final EmployeeRepository employeeRepo;
     private final LeaseContractRepository contractRepo;
     private final RentPaymentScheduleRepository scheduleRepo;
+    private final MaintenanceRequestRepository maintenanceRequestRepository;
+    private final MaintenanceRequestService maintenanceRequestService;
+    private final PropertyAttachmentRepository propertyAttachmentRepository;
     private final UserRepository userRepo;
     private final NotificationService notificationService;
 
-    /** Daily 8:00 AM — alert managers for any inventory item below minQuantity. */
     @Scheduled(cron = "0 0 8 * * *")
     @Transactional
     public void checkLowStock() {
@@ -67,7 +80,35 @@ public class OperationalScheduler {
         log.info("Low-stock check: {} items below minimum", lowItems.size());
     }
 
-    /** Daily 8:30 AM — notify employees whose leave balance ≤ 5 days remaining. */
+    @Scheduled(cron = "0 0 8 * * *")
+    @Transactional
+    public void checkDocumentExpiry() {
+        LocalDate today = LocalDate.now();
+        LocalDate horizon = today.plusDays(DOCUMENT_EXPIRY_LOOKAHEAD_DAYS);
+        List<PropertyAttachment> expiring = propertyAttachmentRepository.findByExpiryDateBetween(today, horizon);
+        int notified = 0;
+        for (PropertyAttachment attachment : expiring) {
+            if (attachment.getPropertyId() == null) {
+                continue;
+            }
+            List<Long> recipients = propertyAdminIds(attachment.getPropertyId());
+            if (recipients.isEmpty()) {
+                continue;
+            }
+            notificationService.createForRecipients(
+                    recipients,
+                    null,
+                    attachment.getPropertyId(),
+                    attachment.getId(),
+                    NotificationType.DOCUMENT_EXPIRY_WARNING,
+                    "انتهاء مستند قريب",
+                    "المستند «" + attachment.getOriginalName() + "» ينتهي في "
+                            + attachment.getExpiryDate());
+            notified++;
+        }
+        log.info("Document expiry warnings sent: {}", notified);
+    }
+
     @Scheduled(cron = "0 30 8 * * *")
     @Transactional
     public void checkLeaveBalanceLow() {
@@ -95,7 +136,63 @@ public class OperationalScheduler {
         log.info("Leave-balance check: {} employees notified", notified);
     }
 
-    /** Daily 9:30 AM — send RENT_GRACE_PERIOD_ENDING for payments overdue ≥ 3 days. */
+    // PHASE2-DONE: TASK2 — SLA deadline enforcement
+    @Scheduled(cron = "0 0 9 * * *")
+    @Transactional
+    public void checkMaintenanceRequestOverdue() {
+        LocalDateTime now = LocalDateTime.now();
+        int notified = 0;
+        int autoAssigned = 0;
+        for (MaintenanceRequest request : maintenanceRequestRepository.findOpenPastSlaDeadline(now)) {
+            if (request.getPropertyId() == null) {
+                continue;
+            }
+            boolean firstBreach = !request.isSlaBreached();
+            if (firstBreach) {
+                request.setSlaBreached(true);
+                maintenanceRequestRepository.save(request);
+            }
+
+            MaintenanceRequest current = request;
+            if (request.getPriority() == RequestPriority.URGENT
+                    && request.getAssignedTo() == null
+                    && request.getCreatedAt() != null
+                    && request.getCreatedAt().plusHours(1).isBefore(now)) {
+                current = maintenanceRequestService.tryAutoAssignUrgentUnassigned(request);
+                if (current.getAssignedTo() != null) {
+                    autoAssigned++;
+                }
+            }
+
+            List<Long> recipients = new ArrayList<>();
+            if (current.getAssignedTo() != null) {
+                recipients.add(current.getAssignedTo());
+            }
+            recipients.addAll(propertyAdminIds(current.getPropertyId()));
+            if (current.getPriority() == RequestPriority.URGENT
+                    && current.getSlaDeadline() != null
+                    && current.getSlaDeadline().plusHours(1).isBefore(now)) {
+                userRepo.findByRoleAndActiveTrue(UserRole.GENERAL_MANAGER).stream()
+                        .map(User::getId).forEach(recipients::add);
+            }
+            recipients = recipients.stream().distinct().toList();
+            if (recipients.isEmpty()) {
+                continue;
+            }
+            long hoursOver = ChronoUnit.HOURS.between(current.getSlaDeadline(), now);
+            notificationService.createForRecipients(
+                    recipients,
+                    null,
+                    current.getPropertyId(),
+                    current.getId(),
+                    NotificationType.MAINTENANCE_REQUEST_OVERDUE,
+                    "طلب صيانة متأخر",
+                    "الطلب " + current.getRequestNumber() + " تجاوز مهلة SLA بـ " + hoursOver + " ساعة");
+            notified++;
+        }
+        log.info("Maintenance SLA overdue: {} notifications, {} auto-assignments", notified, autoAssigned);
+    }
+
     @Scheduled(cron = "0 30 9 * * *")
     @Transactional
     public void checkRentGracePeriod() {
@@ -120,5 +217,18 @@ public class OperationalScheduler {
     private List<Long> accountantsOf(Long propertyId) {
         return userRepo.findByPropertyIdAndRoleAndActiveTrue(propertyId, UserRole.ACCOUNTANT)
                 .stream().map(User::getId).toList();
+    }
+
+    private List<Long> propertyAdminIds(Long propertyId) {
+        Set<Long> ids = new LinkedHashSet<>();
+        userRepo.findByRoleAndActiveTrue(UserRole.SUPER_ADMIN).stream().map(User::getId).forEach(ids::add);
+        if (propertyId != null) {
+            userRepo.findByPropertyIdAndRoleAndActiveTrue(propertyId, UserRole.GENERAL_MANAGER).stream()
+                    .map(User::getId).forEach(ids::add);
+        } else {
+            userRepo.findByRoleAndActiveTrue(UserRole.GENERAL_MANAGER).stream()
+                    .map(User::getId).forEach(ids::add);
+        }
+        return new ArrayList<>(ids);
     }
 }

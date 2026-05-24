@@ -31,8 +31,20 @@ export class LookupCacheService {
   label(type: LookupType, code: string | null | undefined): string {
     if (!code) return '';
     const item = this.cache.get(type)?.find(i => i.code === code);
-    if (!item) return code;
-    return this.i18n.currentLang === 'ar' ? item.nameAr : item.nameEn;
+    if (!item) return this.isBadDisplayText(code) ? '' : code;
+    const preferred = this.i18n.currentLang === 'ar' ? item.nameAr : item.nameEn;
+    const fallback = this.i18n.currentLang === 'ar' ? item.nameEn : item.nameAr;
+    return this.cleanDisplayText(preferred) || this.cleanDisplayText(fallback) || '';
+  }
+
+  cleanDisplayText(value: string | null | undefined): string {
+    const normalized = (value ?? '').trim();
+    return this.isBadDisplayText(normalized) ? '' : normalized;
+  }
+
+  private isBadDisplayText(value: string | null | undefined): boolean {
+    const normalized = (value ?? '').trim();
+    return !normalized || /^[?\s]+$/.test(normalized) || /Ø|Ù|Â/.test(normalized);
   }
 
   private load(type: LookupType): Observable<LookupItem[]> {

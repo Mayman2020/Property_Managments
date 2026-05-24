@@ -137,4 +137,28 @@ public interface MaintenanceRequestRepository extends JpaRepository<MaintenanceR
             @Param("unitId") Long unitId,
             @Param("statuses") Collection<RequestStatus> statuses,
             Pageable pageable);
+
+    @Query("""
+            SELECT r FROM MaintenanceRequest r
+            WHERE r.status NOT IN ('COMPLETED', 'CANCELLED')
+            """)
+    List<MaintenanceRequest> findOpenNonTerminal();
+
+    @Query("""
+            SELECT r FROM MaintenanceRequest r
+            WHERE r.status NOT IN ('COMPLETED', 'CANCELLED')
+              AND r.slaDeadline < :now
+            """)
+    List<MaintenanceRequest> findOpenPastSlaDeadline(@Param("now") LocalDateTime now);
+
+    @Query("""
+            SELECT r FROM MaintenanceRequest r
+            WHERE r.status NOT IN ('COMPLETED', 'CANCELLED')
+              AND (:propertyId IS NULL OR r.propertyId = :propertyId)
+              AND (:breachedOnly = false OR r.slaBreached = true)
+            ORDER BY r.slaDeadline ASC
+            """)
+    List<MaintenanceRequest> findForSlaReport(
+            @Param("propertyId") Long propertyId,
+            @Param("breachedOnly") boolean breachedOnly);
 }

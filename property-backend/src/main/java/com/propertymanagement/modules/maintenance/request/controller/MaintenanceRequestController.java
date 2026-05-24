@@ -40,6 +40,14 @@ public class MaintenanceRequestController {
     private final VisitRatingService ratingService;
 
     /** Admin/officer view — requires maintenance.view or schedule.view */
+    @GetMapping("/sla-report")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
+    public ResponseEntity<ApiResponse<List<MaintenanceSlaReportRow>>> slaReport(
+            @RequestParam(required = false) Long propertyId,
+            @RequestParam(defaultValue = "false") boolean breachedOnly) {
+        return ResponseEntity.ok(ApiResponse.ok(requestService.getSlaReport(propertyId, breachedOnly)));
+    }
+
     @GetMapping
     @RequiresPermission(module = "maintenance", action = "view")
     public ResponseEntity<ApiResponse<Page<MaintenanceRequestResponse>>> getAll(

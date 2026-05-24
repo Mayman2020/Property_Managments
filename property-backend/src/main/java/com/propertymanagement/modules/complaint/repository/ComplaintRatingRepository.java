@@ -32,7 +32,9 @@ public interface ComplaintRatingRepository extends JpaRepository<ComplaintRating
                 p.propertyNameEn,
                 c.unitId,
                 u.unitNumber,
-                t.fullName
+                t.fullName,
+                t.fullNameAr,
+                t.fullNameEn
             )
             FROM ComplaintRating r
             JOIN TenantComplaint c ON c.id = r.complaintId
@@ -60,7 +62,9 @@ public interface ComplaintRatingRepository extends JpaRepository<ComplaintRating
                 p.propertyNameEn,
                 c.unitId,
                 u.unitNumber,
-                t.fullName
+                t.fullName,
+                t.fullNameAr,
+                t.fullNameEn
             )
             FROM ComplaintRating r
             JOIN TenantComplaint c ON c.id = r.complaintId

@@ -12,6 +12,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
 import { PaymentService } from '../../../core/services/payment.service';
 import { PropertyService, Property } from '../../../core/services/property.service';
 import { SnackService } from '../../../core/services/snack.service';
@@ -28,7 +29,7 @@ import { RentPaymentSchedule } from '../../../core/models/contract.model';
     NgFor, NgIf, NgClass, DatePipe, DecimalPipe, ReactiveFormsModule,
     TranslateModule, MatButtonModule, MatFormFieldModule, MatInputModule,
     MatSelectModule, MatIconModule, MatProgressSpinnerModule, MatDialogModule,
-    MatTooltipModule, PageHeaderComponent
+    MatTooltipModule, PageHeaderComponent, TablePagerComponent
   ],
   templateUrl: './rent-confirmation.component.html',
   styleUrl: './rent-confirmation.component.scss'
@@ -38,6 +39,8 @@ export class RentConfirmationComponent implements OnInit {
   properties: Property[] = [];
   loading = true;
   filterForm: FormGroup;
+  readonly pageSize = 5;
+  pageIndex = 0;
 
   readonly months = Array.from({ length: 12 }, (_, i) => i + 1);
   readonly currentYear = new Date().getFullYear();
@@ -60,6 +63,9 @@ export class RentConfirmationComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.filterForm.valueChanges.subscribe(() => {
+      this.pageIndex = 0;
+    });
     this.propertySvc.getAll(0, 500).subscribe({
       next: (res) => { this.properties = res.data?.content ?? []; },
       error: () => { this.properties = []; }
@@ -85,6 +91,11 @@ export class RentConfirmationComponent implements OnInit {
     });
   }
 
+  get pagedReceipts(): RentPaymentSchedule[] {
+    const start = this.pageIndex * this.pageSize;
+    return this.filteredReceipts.slice(start, start + this.pageSize);
+  }
+
   propertyLabel(p: Property): string {
     return this.i18n.currentLang === 'ar'
       ? (p.propertyNameAr || p.propertyName)
@@ -94,7 +105,7 @@ export class RentConfirmationComponent implements OnInit {
   load(): void {
     this.loading = true;
     this.svc.getPendingProofs().subscribe({
-      next: res => { this.receipts = res.data ?? []; this.loading = false; },
+      next: res => { this.receipts = res.data ?? []; this.pageIndex = 0; this.loading = false; },
       error: () => { this.loading = false; }
     });
   }

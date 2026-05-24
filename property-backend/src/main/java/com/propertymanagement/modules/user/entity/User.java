@@ -90,6 +90,9 @@ public class User implements UserDetails {
     @Column(name = "last_login")
     private LocalDateTime lastLogin;
 
+    @Column(name = "last_login_ip", length = 45)
+    private String lastLoginIp;
+
     @CreatedBy
     @Column(name = "created_by", updatable = false)
     private Long createdBy;

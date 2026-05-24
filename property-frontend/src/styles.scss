@@ -453,6 +453,109 @@ a:hover {
 
 .app-page-header .page-actions {
   margin-inline-start: 8px;
+  align-items: center;
+}
+
+.app-back-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 0 20px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(29, 78, 216, 0.28);
+  transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.app-back-btn:hover {
+  background: linear-gradient(180deg, #1d4ed8 0%, #1e40af 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(29, 78, 216, 0.34);
+}
+
+.app-back-btn:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 2px;
+}
+
+.app-back-btn .back-icon,
+.app-back-btn mat-icon.back-icon {
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
+  line-height: 22px;
+}
+
+[dir='rtl'] .app-back-btn .back-icon,
+[dir='rtl'] .app-back-btn mat-icon.back-icon {
+  transform: scaleX(-1);
+}
+
+/* ── Global page loading overlay (blur + spinner) ── */
+.app-loading-overlay,
+.loading-wrap:not(.loading-contained),
+.loading-center:not(.loading-contained) {
+  position: fixed;
+  z-index: 1100;
+  top: var(--topbar-height, 64px);
+  inset-inline-end: 0;
+  bottom: 0;
+  inset-inline-start: var(--sidebar-w, 248px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 !important;
+  margin: 0 !important;
+  min-height: 0 !important;
+  background: color-mix(in srgb, var(--paper) 68%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  pointer-events: all;
+}
+
+.app-shell.sidebar-collapsed .app-loading-overlay,
+.app-shell.sidebar-collapsed .loading-wrap:not(.loading-contained),
+.app-shell.sidebar-collapsed .loading-center:not(.loading-contained) {
+  inset-inline-start: var(--sidebar-w-collapsed, 76px);
+}
+
+.loading-contained {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 !important;
+  background: color-mix(in srgb, var(--paper) 78%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border-radius: inherit;
+}
+
+.app-loading-overlay .mat-mdc-progress-spinner,
+.loading-wrap:not(.loading-contained) .mat-mdc-progress-spinner,
+.loading-center:not(.loading-contained) .mat-mdc-progress-spinner {
+  --mdc-circular-progress-active-indicator-color: #2563eb;
+}
+
+@media (max-width: 768px) {
+  .app-loading-overlay,
+  .loading-wrap:not(.loading-contained),
+  .loading-center:not(.loading-contained) {
+    inset-inline-start: 0;
+  }
 }
 
 .app-page-title {

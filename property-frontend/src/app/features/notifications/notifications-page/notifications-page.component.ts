@@ -2,7 +2,9 @@
 import { DatePipe, NgFor, NgIf } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
-import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { Location } from '@angular/common';
+import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
+import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
@@ -25,15 +27,22 @@ import { resolveNotificationBodyLine, resolveNotificationTitle } from '../../../
     MatButtonModule,
     MatTooltipModule,
     MatTabsModule,
-    MatPaginatorModule,
-    PageHeaderComponent
+    PageHeaderComponent,
+    EmptyStateComponent,
+    TablePagerComponent
   ],
   template: `
     <div class="app-page">
       <app-page-header
         [eyebrow]="'NAV.NOTIFICATIONS' | translate"
         [title]="'NOTIFICATIONS.TITLE' | translate"
-        [subtitle]="'NOTIFICATIONS.SUBTITLE' | translate">
+        [subtitle]="'NOTIFICATIONS.SUBTITLE' | translate"
+        [breadcrumbs]="[
+          { label: ('NAV.DASHBOARD' | translate), route: dashboardRoute() },
+          { label: ('NAV.NOTIFICATIONS' | translate) }
+        ]"
+        [showBack]="true"
+        (backClick)="goBack()">
         <button mat-stroked-button type="button" (click)="markAllRead()">{{ 'NOTIFICATIONS.MARK_ALL_READ' | translate }}</button>
       </app-page-header>
 
@@ -77,27 +86,21 @@ import { resolveNotificationBodyLine, resolveNotificationTitle } from '../../../
               <span class="app-icon-btn accent notification-open" [matTooltip]="'NOTIFICATIONS.OPEN_LINK' | translate"><span class="material-icons">arrow_forward</span></span>
             </button>
           </div>
-          <mat-paginator
-            class="notifications-paginator"
+          <app-table-pager
             [length]="totalElements"
             [pageSize]="pageSize"
             [pageIndex]="pageIndex"
-            [pageSizeOptions]="[pageSize]"
-            [hidePageSize]="true"
-            [showFirstLastButtons]="true"
-            (page)="onPage($event)">
-          </mat-paginator>
+            (pageIndexChange)="onPageIndexChange($event)">
+          </app-table-pager>
         </ng-container>
       </div>
 
       <ng-template #emptyTpl>
-        <div class="app-card notifications-empty-card">
-          <div class="app-empty-state">
-            <span class="material-icons empty-icon">notifications_none</span>
-            <h4>{{ 'NOTIFICATIONS.EMPTY' | translate }}</h4>
-            <p>{{ 'NOTIFICATIONS.EMPTY_TAB_HINT' | translate }}</p>
-          </div>
-        </div>
+        <app-empty-state
+          icon="notifications_none"
+          [title]="'NOTIFICATIONS.EMPTY' | translate"
+          [message]="'NOTIFICATIONS.EMPTY_TAB_HINT' | translate">
+        </app-empty-state>
       </ng-template>
     </div>
   `,
@@ -107,10 +110,6 @@ import { resolveNotificationBodyLine, resolveNotificationTitle } from '../../../
     }
     .notifications-card { overflow: hidden; margin-top: 12px; }
     .notifications-empty-card { margin-top: 12px; padding: 8px 0 24px; }
-    .notifications-paginator {
-      border-top: 1px solid var(--line-2);
-      background: var(--surface);
-    }
     .notification-list { display: grid; }
     .notification-row {
       display: grid;
@@ -185,8 +184,24 @@ export class NotificationsPageComponent implements OnInit {
     private readonly service: NotificationService,
     private readonly auth: AuthService,
     private readonly router: Router,
-    private readonly i18n: I18nService
+    private readonly i18n: I18nService,
+    private readonly location: Location
   ) {}
+
+  goBack(): void {
+    this.location.back();
+  }
+
+  dashboardRoute(): string {
+    const role = this.auth.getRole();
+    if (role === 'TENANT') return '/tenant/my-unit';
+    if (role === 'OWNER') return '/admin/owner-portal/dashboard';
+    if (role === 'MAINTENANCE_OFFICER_INTERNAL' || role === 'MAINTENANCE_OFFICER_COMPANY' || role === 'MAINTENANCE_COMPANY') {
+      return '/officer/schedule';
+    }
+    if (role === 'PROCEDURES_CLERK' || role === 'PROPERTY_GUARD') return '/employee/my-payslips';
+    return '/admin/dashboard';
+  }
 
   ngOnInit(): void {
     this.load();
@@ -199,8 +214,8 @@ export class NotificationsPageComponent implements OnInit {
     this.load();
   }
 
-  onPage(event: PageEvent): void {
-    this.pageIndex = event.pageIndex;
+  onPageIndexChange(index: number): void {
+    this.pageIndex = index;
     this.load();
   }
 

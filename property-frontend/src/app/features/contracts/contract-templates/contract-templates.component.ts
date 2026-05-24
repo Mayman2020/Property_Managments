@@ -126,7 +126,7 @@ export class ContractTemplatesComponent implements OnInit {
         this.loadTemplates();
       },
       error: (err) => {
-        this.errorMsg = err?.error?.message ?? 'Error saving template';
+        this.errorMsg = (err as Error)?.message ?? 'CONTRACTS.TEMPLATE_SAVE_ERROR';
         this.saving = false;
       }
     });

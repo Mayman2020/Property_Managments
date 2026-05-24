@@ -94,7 +94,7 @@
               [class.fs-expired]="s === 'EXPIRED' || s === 'ENDED'"
               [class.fs-terminated]="s === 'TERMINATED' || s === 'CANCELLED' || s === 'OWNER_REJECTED'"
               [class.fs-renewed]="s === 'RENEWED' || s === 'PENDING_RENEWAL_APPROVAL'"
-              [class.fs-suspended]="s === 'SUSPENDED' || s === 'PENDING_OWNER_APPROVAL' || s === 'PENDING_TERMINATION_APPROVAL'"
+              [class.fs-suspended]="s === 'PENDING_OWNER_APPROVAL' || s === 'PENDING_TERMINATION_APPROVAL'"
               (click)="filterStatus = s; onFilterChange()">
               {{ statusLabel(s) }}
             </button>

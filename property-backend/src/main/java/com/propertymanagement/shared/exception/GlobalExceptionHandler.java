@@ -10,11 +10,18 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import java.time.format.DateTimeParseException;
 import java.util.stream.Collectors;
 import com.propertymanagement.modules.tenant.entity.Tenant;
 import com.propertymanagement.modules.user.entity.User;
@@ -87,6 +94,52 @@ public class GlobalExceptionHandler {
         log.error("Data integrity violation", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error(tr("error.internal", request), "INTERNAL_ERROR"));
+    }
+
+    @ExceptionHandler({ NoHandlerFoundException.class, NoResourceFoundException.class })
+    public ResponseEntity<ApiResponse<Void>> handleNotFound(Exception ex, WebRequest request) {
+        // Spring Boot 3.2 throws NoResourceFoundException for unmapped URLs; older
+        // releases throw NoHandlerFoundException. Both must surface as 404 rather
+        // than getting swallowed by the catch-all handleGeneral → 500 below.
+        log.warn("No handler for request: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(tr("error.not_found", request), "NOT_FOUND"));
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMethodNotAllowed(HttpRequestMethodNotSupportedException ex,
+                                                                    WebRequest request) {
+        log.warn("Method not allowed: {} {}", ex.getMethod(), ex.getMessage());
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
+                .body(ApiResponse.error(tr("error.method_not_allowed", request), "METHOD_NOT_ALLOWED"));
+    }
+
+    @ExceptionHandler(DateTimeParseException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDateParse(DateTimeParseException ex, WebRequest request) {
+        log.warn("Bad date format: {}", ex.getMessage());
+        return ResponseEntity.badRequest()
+                .body(ApiResponse.error(tr("error.invalid_date_format", request), "INVALID_DATE_FORMAT"));
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiResponse<Void>> handleTypeMismatch(MethodArgumentTypeMismatchException ex, WebRequest request) {
+        log.warn("Type mismatch on parameter {}: {}", ex.getName(), ex.getMessage());
+        return ResponseEntity.badRequest()
+                .body(ApiResponse.error(tr("error.invalid_parameter", request), "INVALID_PARAMETER"));
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMissingParam(MissingServletRequestParameterException ex, WebRequest request) {
+        log.warn("Missing request parameter: {}", ex.getParameterName());
+        return ResponseEntity.badRequest()
+                .body(ApiResponse.error(tr("error.missing_parameter", request), "MISSING_PARAMETER"));
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiResponse<Void>> handleJsonParse(HttpMessageNotReadableException ex, WebRequest request) {
+        log.warn("Unreadable HTTP message body: {}", ex.getMostSpecificCause() != null ? ex.getMostSpecificCause().getMessage() : ex.getMessage());
+        return ResponseEntity.badRequest()
+                .body(ApiResponse.error(tr("error.invalid_request_body", request), "INVALID_REQUEST_BODY"));
     }
 
     @ExceptionHandler(Exception.class)

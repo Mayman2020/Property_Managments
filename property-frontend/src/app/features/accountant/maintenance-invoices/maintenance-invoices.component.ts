@@ -47,7 +47,7 @@ export class MaintenanceInvoicesComponent implements OnInit {
   contractInvoices: MaintenanceContractInvoiceResponse[] = [];
   loading = true;
   activeTab: 'contractor' | 'contract' = 'contractor';
-  readonly pageSize = 6;
+  readonly pageSize = 5;
   invoicePage = 0;
   contractPage = 0;
 
@@ -252,4 +252,3 @@ export class MaintenanceInvoicesComponent implements OnInit {
     });
   }
 }
-

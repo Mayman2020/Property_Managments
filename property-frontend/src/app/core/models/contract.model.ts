@@ -5,7 +5,6 @@ export type ContractStatus =
   | 'EXPIRED'
   | 'TERMINATED'
   | 'RENEWED'
-  | 'SUSPENDED'
   | 'CANCELLED'
   | 'PENDING_TERMINATION_APPROVAL'
   | 'PENDING_RENEWAL_APPROVAL';
@@ -197,9 +196,17 @@ export interface TenantComplaint {
   id: number;
   tenantId?: number;
   tenantName?: string;
+  tenantNameAr?: string;
+  tenantNameEn?: string;
   unitId?: number;
+  unitNumber?: string;
   propertyId?: number;
   propertyName?: string;
+  propertyNameAr?: string;
+  propertyNameEn?: string;
+  contractId?: number;
+  contractNumber?: string;
+  contractStatus?: string;
   complaintType?: string;
   title: string;
   description: string;
@@ -211,6 +218,29 @@ export interface TenantComplaint {
   maintenanceRequestId?: number;
   createdAt: string;
   resolvedAt?: string;
+}
+
+export interface ComplaintReply {
+  id: number;
+  senderUserId?: number;
+  senderName?: string;
+  senderRole?: string;
+  message: string;
+  createdAt: string;
+}
+
+export interface ComplaintAttachmentItem {
+  id?: number;
+  fileUrl: string;
+  fileType?: string;
+  fileName?: string;
+  fileSizeKb?: number;
+}
+
+export interface ComplaintDetail extends TenantComplaint {
+  replies?: ComplaintReply[];
+  attachments?: ComplaintAttachmentItem[];
+  rating?: { id: number; rating: string; raterRole?: string; ratedAt?: string };
 }
 
 export interface ContractTemplate {

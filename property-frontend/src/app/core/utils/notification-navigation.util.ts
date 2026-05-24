@@ -40,8 +40,33 @@ function idsFromPayload(n: AppNotification): {
 export function resolveNotificationTargetUrl(n: AppNotification, auth: AuthService): string | null {
   const role = auth.getRole();
 
+  if (
+    (n.type === 'CONTRACT_AWAITING_OWNER_REVIEW'
+      || n.type === 'CONTRACT_TERMINATION_REQUESTED'
+      || n.type === 'CONTRACT_RENEWAL_REQUESTED'
+      || n.type === 'MAINTENANCE_CONTRACT_AWAITING_OWNER_REVIEW'
+      || n.type === 'MAINTENANCE_CONTRACT_TERMINATION_REQUESTED'
+      || n.type === 'MAINTENANCE_CONTRACT_RENEWAL_REQUESTED') &&
+    (role === 'OWNER' ||
+      role === 'SUPER_ADMIN' ||
+      role === 'GENERAL_MANAGER' ||
+      role === 'ACCOUNTANT')
+  ) {
+    return '/admin/owner-portal/contract-approvals';
+  }
+
+  const listingId = num(n.params?.listingId);
+  if (n.type === 'RENTAL_INQUIRY_RECEIVED' && listingId != null) {
+    return `/admin/vacancies/${listingId}/inquiries`;
+  }
+
+  const inspectionId = num(n.params?.inspectionId);
+  if (n.type === 'INSPECTION_COMPLETED' && inspectionId != null) {
+    return `/admin/inspections/${inspectionId}`;
+  }
+
   const reqId = n.requestId != null && n.requestId > 0 ? n.requestId : undefined;
-  if (reqId != null) {
+  if (reqId != null && n.type.startsWith('REQUEST_')) {
     if (
       role === 'MAINTENANCE_OFFICER_INTERNAL' ||
       role === 'MAINTENANCE_OFFICER_COMPANY' ||
@@ -109,21 +134,6 @@ export function resolveNotificationTargetUrl(n: AppNotification, auth: AuthServi
     return '/tenant/my-contracts';
   }
 
-  if (
-    (n.type === 'CONTRACT_AWAITING_OWNER_REVIEW'
-      || n.type === 'CONTRACT_TERMINATION_REQUESTED'
-      || n.type === 'CONTRACT_RENEWAL_REQUESTED'
-      || n.type === 'MAINTENANCE_CONTRACT_AWAITING_OWNER_REVIEW'
-      || n.type === 'MAINTENANCE_CONTRACT_TERMINATION_REQUESTED'
-      || n.type === 'MAINTENANCE_CONTRACT_RENEWAL_REQUESTED') &&
-    (role === 'OWNER' ||
-      role === 'SUPER_ADMIN' ||
-      role === 'GENERAL_MANAGER' ||
-      role === 'ACCOUNTANT')
-  ) {
-    return '/admin/owner-portal/contract-approvals';
-  }
-
   const maintenanceContractFollowUpTypes = [
     'MAINTENANCE_CONTRACT_APPROVED',
     'MAINTENANCE_CONTRACT_REJECTED',
@@ -180,6 +190,25 @@ export function resolveNotificationTargetUrl(n: AppNotification, auth: AuthServi
     (role === 'ACCOUNTANT' || role === 'SUPER_ADMIN' || role === 'GENERAL_MANAGER')
   ) {
     return '/admin/accountant-portal/rent-confirmation';
+  }
+
+  if (
+    (n.type === 'BUDGET_THRESHOLD_EXCEEDED' || n.type === 'FINANCE_ALERT') &&
+    (role === 'SUPER_ADMIN' || role === 'GENERAL_MANAGER' || role === 'ACCOUNTANT')
+  ) {
+    return '/admin/finance/expenses';
+  }
+
+  if (
+    n.type === 'VACANCY_PUBLISHED' &&
+    (role === 'SUPER_ADMIN' ||
+      role === 'GENERAL_MANAGER' ||
+      role === 'ACCOUNTANT' ||
+      role === 'OWNER' ||
+      role === 'PROCEDURES_CLERK')
+  ) {
+    const listingId = num(n.params?.listingId);
+    return listingId != null ? `/admin/vacancies/${listingId}/inquiries` : '/admin/vacancies/list';
   }
 
   return null;

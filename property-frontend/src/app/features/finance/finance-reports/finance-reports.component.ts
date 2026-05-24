@@ -7,7 +7,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
 import { ExportColumn, TableExportToolbarComponent } from '../../../shared/components/table-export-toolbar/table-export-toolbar.component';
-import { FinancialReportRow, FinanceService } from '../../../core/services/finance.service';
+import { FinancialReportRow, FinanceExportType, FinanceService } from '../../../core/services/finance.service';
 import { Property, PropertyService } from '../../../core/services/property.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 
@@ -44,6 +44,25 @@ import { I18nService } from '../../../core/i18n/i18n.service';
           [rows]="rows">
         </app-table-export-toolbar>
       </app-page-header>
+
+      <section class="app-card export-card">
+        <div class="export-filters">
+          <label>{{ 'FINANCE.EXPORT_FROM' | translate }}</label>
+          <input type="date" [(ngModel)]="exportFrom">
+          <label>{{ 'FINANCE.EXPORT_TO' | translate }}</label>
+          <input type="date" [(ngModel)]="exportTo">
+          <label>{{ 'FINANCE.EXPORT_TYPE' | translate }}</label>
+          <select [(ngModel)]="exportType" class="estate-property-select">
+            <option value="ALL">{{ 'FINANCE.EXPORT_TYPE_ALL' | translate }}</option>
+            <option value="RENT_INCOME">{{ 'FINANCE.EXPORT_TYPE_RENT' | translate }}</option>
+            <option value="EXPENSES">{{ 'FINANCE.EXPORT_TYPE_EXPENSES' | translate }}</option>
+            <option value="PAYROLL">{{ 'FINANCE.EXPORT_TYPE_PAYROLL' | translate }}</option>
+          </select>
+          <button mat-flat-button color="primary" [disabled]="exportLoading || !exportFrom || !exportTo" (click)="downloadServerCsv()">
+            {{ 'FINANCE.EXPORT_DOWNLOAD' | translate }}
+          </button>
+        </div>
+      </section>
 
       <div class="app-card" *ngIf="rows.length; else emptyTpl">
         <div class="app-table-wrap">
@@ -99,6 +118,12 @@ import { I18nService } from '../../../core/i18n/i18n.service';
       background: var(--surface-alt, #f9fafb);
       border-top: 2px solid var(--line);
     }
+    .export-card { margin-bottom: 1rem; }
+    .export-filters {
+      display: flex; flex-wrap: wrap; gap: 0.75rem 1rem; align-items: center; padding: 1rem;
+    }
+    .export-filters label { font-size: 0.85rem; color: var(--ink-500); }
+    .export-filters input[type="date"] { padding: 0.35rem 0.5rem; border: 1px solid var(--line); border-radius: 6px; }
   `]
 })
 export class FinanceReportsComponent implements OnInit {
@@ -112,6 +137,10 @@ export class FinanceReportsComponent implements OnInit {
   readonly years = Array.from({ length: 8 }, (_, i) => this.currentYear - i);
   yearFrom = this.currentYear;
   yearTo = this.currentYear;
+  exportFrom = '';
+  exportTo = '';
+  exportType: FinanceExportType = 'ALL';
+  exportLoading = false;
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -146,6 +175,12 @@ export class FinanceReportsComponent implements OnInit {
 
   ngOnInit(): void {
     this.report = this.route.snapshot.data['report'] ?? 'pnl';
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const lastDay = new Date(y, now.getMonth() + 1, 0).getDate();
+    this.exportFrom = `${y}-${m}-01`;
+    this.exportTo = `${y}-${m}-${String(lastDay).padStart(2, '0')}`;
     this.propertyService.getAll(0, 100).subscribe({
       next: (res) => { this.properties = res.data?.content ?? []; },
       error: () => {}
@@ -212,6 +247,23 @@ export class FinanceReportsComponent implements OnInit {
   private normalizedPropertyId(): number | undefined {
     const value = Number(this.selectedPropertyId);
     return Number.isFinite(value) && value > 0 ? value : undefined;
+  }
+
+  downloadServerCsv(): void {
+    if (!this.exportFrom || !this.exportTo) return;
+    this.exportLoading = true;
+    this.service.downloadCsv(this.exportFrom, this.exportTo, this.exportType).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `finance-export-${this.exportType.toLowerCase()}-${this.exportFrom}_${this.exportTo}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.exportLoading = false;
+      },
+      error: () => { this.exportLoading = false; }
+    });
   }
 
 }

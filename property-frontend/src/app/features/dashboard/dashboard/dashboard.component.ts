@@ -9,13 +9,15 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
-import { DashboardService, DashboardStats } from '../../../core/services/dashboard.service';
+import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
+import { DashboardService, DashboardStats, RecentActivityItem } from '../../../core/services/dashboard.service';
 import { MaintenanceService, MaintenanceRequest } from '../../../core/services/maintenance.service';
 import { InventoryService, InventoryItem } from '../../../core/services/inventory.service';
 import { PropertyService, Property } from '../../../core/services/property.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { PermissionService } from '../../../core/services/permission.service';
+import { FinanceDashboardDto, FinanceService } from '../../../core/services/finance.service';
 
 interface StatusTile {
   status: string;
@@ -37,7 +39,8 @@ interface StatusTile {
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
-    PageHeaderComponent
+    PageHeaderComponent,
+    TablePagerComponent
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
@@ -50,9 +53,15 @@ export class DashboardComponent implements OnInit {
   loading = true;
   properties: Property[] = [];
   selectedPropertyId: number | null = null;
+  financeStats: FinanceDashboardDto | null = null;
+  recentActivity: RecentActivityItem[] = [];
+  readonly activityPageSize = 5;
+  activityPageIndex = 0;
+  trendLabels: string[] = [];
 
   constructor(
     private readonly dashSvc: DashboardService,
+    private readonly financeSvc: FinanceService,
     private readonly maintSvc: MaintenanceService,
     private readonly invSvc: InventoryService,
     private readonly propertySvc: PropertyService,
@@ -100,6 +109,12 @@ export class DashboardComponent implements OnInit {
       ? this.invSvc.getItems(pid ?? undefined, 0, 5).pipe(catchError(() => of({ data: { content: [] } })))
       : of({ data: { content: [] } });
 
+    const financeObs$ = this.permissions.can('finance', 'view')
+      ? this.financeSvc.getDashboard(pid ?? undefined).pipe(catchError(() => of({ data: null })))
+      : of({ data: null });
+
+    const activityObs$ = this.dashSvc.getRecentActivity(12, pid ?? undefined).pipe(catchError(() => of({ data: [] })));
+
     forkJoin({
       stats: statsObs$,
       requests: maintenanceEnabled
@@ -108,15 +123,23 @@ export class DashboardComponent implements OnInit {
       stock: stockObs$,
       trend: maintenanceEnabled
         ? this.dashSvc.getMonthlyTrend(pid ?? undefined).pipe(catchError(() => of({ data: [] })))
-        : of({ data: [] })
-    }).subscribe(({ stats, requests, stock, trend }) => {
+        : of({ data: [] }),
+      finance: financeObs$,
+      activity: activityObs$
+    }).subscribe(({ stats, requests, stock, trend, finance, activity }) => {
       this.stats = stats.data ?? null;
+      this.financeStats = finance.data ?? null;
+      this.recentActivity = activity.data ?? [];
+      this.activityPageIndex = 0;
       this.recentRequests = requests.data?.content ?? [];
       this.lowStockItems = ((stock.data as { content?: InventoryItem[] })?.content ?? []).slice(0, 5);
-      this.trendValues = (trend.data ?? []).map((item) => item.value);
+      const trendPoints = trend.data ?? [];
+      this.trendValues = trendPoints.map((item) => item.value);
+      this.trendLabels = trendPoints.map((item) => item.label);
 
-      if (this.trendValues.length < 6) {
+      if (this.trendValues.length < 2) {
         this.trendValues = this.fallbackTrend();
+        this.trendLabels = [];
       }
 
       this.loading = false;
@@ -165,6 +188,18 @@ export class DashboardComponent implements OnInit {
     return this.permissions.can('inventory', 'view');
   }
 
+  get showFinanceInsights(): boolean {
+    return this.permissions.can('finance', 'view') && this.financeStats != null;
+  }
+
+  formatCurrency(amount: number): string {
+    return new Intl.NumberFormat(this.i18n.currentLang === 'ar' ? 'ar-SA' : 'en-US', {
+      style: 'currency',
+      currency: 'SAR',
+      maximumFractionDigits: 0
+    }).format(amount ?? 0);
+  }
+
   get donutCircumference(): number {
     return 2 * Math.PI * 78;
   }
@@ -207,6 +242,17 @@ export class DashboardComponent implements OnInit {
 
   priorityLabel(priority: string): string {
     return this.i18n.instant(`PRIORITY.${priority}`);
+  }
+
+  activityLabel(item: RecentActivityItem): string {
+    const key = `DASHBOARD.ACTIVITY_${item.category}`;
+    const translated = this.i18n.instant(key);
+    return translated !== key ? translated : item.category;
+  }
+
+  get pagedRecentActivity(): RecentActivityItem[] {
+    const start = this.activityPageIndex * this.activityPageSize;
+    return this.recentActivity.slice(start, start + this.activityPageSize);
   }
 
   openMaintenanceContractDialog(): void {

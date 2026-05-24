@@ -24,4 +24,10 @@ public class RatingDashboardItemResponse {
     private Long unitId;
     private String unitNumber;
     private String tenantName;
+    private String tenantNameAr;
+    private String tenantNameEn;
+    private String categoryNameAr;
+    private String categoryNameEn;
+    private String requestStatus;
+    private Long contractorCompanyId;
 }

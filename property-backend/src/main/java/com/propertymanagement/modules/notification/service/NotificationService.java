@@ -13,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -46,6 +47,7 @@ public class NotificationService {
      * via {@code params} so the frontend renders the final localized text. {@code title} / {@code message}
      * may be empty strings when {@code params} is supplied (kept non-null to satisfy the column).
      */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void createForRecipients(Collection<Long> recipientIds,
                                     Long actorUserId,
                                     Long propertyId,
@@ -161,15 +163,7 @@ public class NotificationService {
     @Transactional
     public void markAllRead() {
         Long userId = currentUserId();
-        Page<NotificationEntity> page = notificationRepository.findByRecipientUserIdOrderByCreatedAtDesc(
-                userId, Pageable.ofSize(500));
-        LocalDateTime now = LocalDateTime.now();
-        page.getContent().forEach(notification -> {
-            if (notification.getReadAt() == null) {
-                notification.setReadAt(now);
-            }
-        });
-        notificationRepository.saveAll(page.getContent());
+        notificationRepository.markAllReadForUser(userId, LocalDateTime.now());
     }
 
     private NotificationResponseDTO toResponse(NotificationEntity n, String actorDisplayName) {

@@ -13,6 +13,7 @@ import { catchError } from 'rxjs/operators';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { ContractorCompany, ContractorCompanyService, ContractorPropertyContract } from '../../../core/services/contractor-company.service';
 import { CompanyOfficer } from '../../../core/services/company-staff.service';
+import { DashboardService, RatingDashboardItem } from '../../../core/services/dashboard.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { SnackService } from '../../../core/services/snack.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -41,6 +42,7 @@ export class ContractorDetailComponent implements OnInit {
   company: ContractorCompany | null = null;
   contracts: ContractorPropertyContract[] = [];
   staff: CompanyOfficer[] = [];
+  companyRatings: RatingDashboardItem[] = [];
   loading = true;
   activeTab: Tab = 'info';
 
@@ -48,6 +50,7 @@ export class ContractorDetailComponent implements OnInit {
     private readonly route: ActivatedRoute,
     private readonly router: Router,
     private readonly svc: ContractorCompanyService,
+    private readonly dashboardSvc: DashboardService,
     private readonly dialog: MatDialog,
     private readonly snack: SnackService,
     readonly i18n: I18nService,
@@ -66,11 +69,13 @@ export class ContractorDetailComponent implements OnInit {
     forkJoin({
       company: this.svc.getById(this.companyId).pipe(catchError(() => of(null))),
       contracts: this.svc.getMaintenanceContracts(this.companyId).pipe(catchError(() => of(null))),
-      staff: this.svc.getOfficers(this.companyId).pipe(catchError(() => of(null)))
-    }).subscribe(({ company, contracts, staff }) => {
+      staff: this.svc.getOfficers(this.companyId).pipe(catchError(() => of(null))),
+      ratings: this.dashboardSvc.getRatingsDetails().pipe(catchError(() => of(null)))
+    }).subscribe(({ company, contracts, staff, ratings }) => {
       this.company = company?.data ?? null;
       this.contracts = contracts?.data ?? [];
       this.staff = staff?.data ?? [];
+      this.companyRatings = (ratings?.data ?? []).filter((item) => item.contractorCompanyId === this.companyId);
       this.loading = false;
       if (!this.company) {
         this.router.navigate(['/admin/contractors']);
@@ -81,6 +86,35 @@ export class ContractorDetailComponent implements OnInit {
   companyName(): string {
     if (!this.company) return '';
     return (this.isArabic ? this.company.nameAr : this.company.nameEn) || this.company.name || '';
+  }
+
+  get activeContractsCount(): number {
+    return this.contracts.filter((contract) => contract.status === 'ACTIVE').length;
+  }
+
+  get latestContract(): ContractorPropertyContract | null {
+    return this.contracts[0] ?? null;
+  }
+
+  get ratingAverage(): number {
+    if (this.companyRatings.length === 0) return 0;
+    const sum = this.companyRatings.reduce((total, item) => total + (item.rating || 0), 0);
+    return sum / this.companyRatings.length;
+  }
+
+  get ratingPercent(): number {
+    if (this.companyRatings.length === 0) return 0;
+    return Math.round((this.ratingAverage / 4) * 100);
+  }
+
+  get satisfiedRatingPercent(): number {
+    if (this.companyRatings.length === 0) return 0;
+    const satisfied = this.companyRatings.filter((item) => item.rating >= 3).length;
+    return Math.round((satisfied / this.companyRatings.length) * 100);
+  }
+
+  get latestRatings(): RatingDashboardItem[] {
+    return this.companyRatings.slice(0, 3);
   }
 
   openEdit(): void {
@@ -120,6 +154,30 @@ export class ContractorDetailComponent implements OnInit {
     return (this.isArabic ? c.propertyNameAr : c.propertyNameEn) || '-';
   }
 
+  ratingTitle(item: RatingDashboardItem): string {
+    return item.requestTitle?.trim() || item.requestNumber || `#${item.requestId}`;
+  }
+
+  ratingLocation(item: RatingDashboardItem): string {
+    const ar = item.propertyNameAr?.trim();
+    const en = item.propertyNameEn?.trim();
+    const fallback = item.propertyName?.trim();
+    const property = this.isArabic ? (ar || en || fallback || '-') : (en || ar || fallback || '-');
+    return `${property} - ${item.unitNumber || '-'}`;
+  }
+
+  officerName(officer: CompanyOfficer): string {
+    const ar = this.cleanText(officer.fullNameAr);
+    const en = this.cleanText(officer.fullNameEn);
+    const fallback = this.cleanText(officer.fullName);
+    return this.isArabic ? (ar || en || fallback || '-') : (en || ar || fallback || '-');
+  }
+
+  officerInitial(officer: CompanyOfficer): string {
+    const name = this.officerName(officer);
+    return (name === '-' ? '?' : name.charAt(0)).toUpperCase();
+  }
+
   formatDate(value?: string): string {
     if (!value) return '-';
     const d = new Date(value);
@@ -129,5 +187,10 @@ export class ContractorDetailComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate(['/admin/contractors']);
+  }
+
+  private cleanText(value?: string | null): string {
+    const text = value?.trim() ?? '';
+    return text && !/^[?\s\uFFFD]+$/.test(text) ? text : '';
   }
 }

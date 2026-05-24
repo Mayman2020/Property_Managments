@@ -3,6 +3,7 @@ package com.propertymanagement.modules.property.attachment.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -34,6 +35,9 @@ public class PropertyAttachment {
 
     @Column(name = "uploaded_by")
     private Long uploadedBy;
+
+    @Column(name = "expiry_date")
+    private LocalDate expiryDate;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

@@ -7,7 +7,6 @@
   transition: opacity 0.15s, transform 0.15s;
   &:hover { opacity: 0.82; transform: scale(1.04); }
 }
-.loading-wrap { display: flex; justify-content: center; padding: 60px 0; }
 
 .search-bar-shell { display: flex; align-items: center; gap: 8px; padding: 16px; background: var(--surface); border-bottom: 1px solid var(--line); flex-wrap: nowrap; }
 .search-input-box { flex: 0 1 260px; min-width: 180px; display: flex; align-items: center; gap: 6px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 0 10px; height: 40px; transition: all 0.2s; }

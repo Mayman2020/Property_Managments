@@ -55,6 +55,12 @@ user:
   default:
     password: ${USER_DEFAULT_PASSWORD:12345}
 
+property:
+  late-fee:
+    grace-period-days: 3
+    late-fee-percentage: 5
+    late-fee-fixed-amount: 0
+
 file:
   upload-dir: ${UPLOAD_DIR:D:/files}
   base-url: ${FILE_BASE_URL:http://localhost:8080}

@@ -15,8 +15,11 @@ import com.propertymanagement.shared.exception.AppException;
 import com.propertymanagement.shared.i18n.AppMessages;
 import com.propertymanagement.shared.i18n.LocalizedNameResolver;
 import com.propertymanagement.shared.security.JwtUtil;
+import com.propertymanagement.modules.notification.entity.NotificationType;
+import com.propertymanagement.modules.notification.service.NotificationService;
 import com.propertymanagement.shared.security.LoginAttemptService;
 import com.propertymanagement.shared.security.TokenBlacklistService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -49,17 +52,25 @@ public class AuthService {
     private final PortalProfileBridge portalProfileBridge;
     private final LoginAttemptService loginAttemptService;
     private final TokenBlacklistService tokenBlacklist;
+    private final NotificationService notificationService;
+    private final AccountLockNotificationService accountLockNotificationService;
 
     @Value("${jwt.expiration}")
     private long jwtExpiration;
 
     @Transactional
     public LoginResponse login(LoginRequest request) {
+        return login(request, null);
+    }
+
+    @Transactional
+    public LoginResponse login(LoginRequest request, HttpServletRequest httpRequest) {
         if (request.getEmail() == null || request.getPassword() == null) {
             throw AppException.badRequest(appMessages.get("auth.error.credentials_required"));
         }
         String rawEmail = request.getEmail().trim();
         if (loginAttemptService.isLocked(rawEmail)) {
+            accountLockNotificationService.notifyAccountLocked(rawEmail);
             throw AppException.badRequest("Account temporarily locked due to too many failed attempts. Try again later.");
         }
         User resolved = userRepository.findByEmail(rawEmail)
@@ -78,18 +89,62 @@ public class AuthService {
             );
             User user = (User) auth.getPrincipal();
             loginAttemptService.recordSuccess(rawEmail);
+            String clientIp = resolveClientIp(httpRequest);
+            notifyNewLoginIfUnknownDevice(user, clientIp);
             user.setLastLogin(LocalDateTime.now());
+            user.setLastLoginIp(clientIp);
             userRepository.save(user);
             return buildResponse(user);
         } catch (DisabledException e) {
             throw AppException.badRequest(appMessages.get("auth.error.account_inactive"));
         } catch (BadCredentialsException e) {
-            loginAttemptService.recordFailure(rawEmail);
+            handleLoginFailure(rawEmail);
             throw AppException.badRequest(appMessages.get("auth.error.invalid_password"));
         } catch (AuthenticationException e) {
-            loginAttemptService.recordFailure(rawEmail);
+            handleLoginFailure(rawEmail);
             throw AppException.badRequest(appMessages.get("auth.error.invalid_password"));
         }
+    }
+
+    // PHASE1-DONE: TASK1 ACCOUNT_LOCKED
+    private void handleLoginFailure(String rawEmail) {
+        loginAttemptService.recordFailure(rawEmail);
+        if (loginAttemptService.isLocked(rawEmail)) {
+            accountLockNotificationService.notifyAccountLocked(rawEmail);
+        }
+    }
+
+    // PHASE1-DONE: TASK1 NEW_LOGIN_ALERT
+    private void notifyNewLoginIfUnknownDevice(User user, String clientIp) {
+        if (clientIp == null || clientIp.isBlank()) {
+            return;
+        }
+        String previous = user.getLastLoginIp();
+        if (previous != null && !previous.isBlank() && previous.equals(clientIp)) {
+            return;
+        }
+        if (previous == null || previous.isBlank()) {
+            return;
+        }
+        notificationService.createForRecipients(
+                List.of(user.getId()),
+                null,
+                user.getPropertyId(),
+                null,
+                NotificationType.NEW_LOGIN_ALERT,
+                "تسجيل دخول من جهاز جديد",
+                "تم تسجيل الدخول من عنوان IP: " + clientIp);
+    }
+
+    private static String resolveClientIp(HttpServletRequest request) {
+        if (request == null) {
+            return null;
+        }
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isBlank()) {
+            return forwarded.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
     }
 
     public void logout(String bearerToken) {

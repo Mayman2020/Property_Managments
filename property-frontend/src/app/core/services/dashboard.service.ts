@@ -59,6 +59,12 @@ export interface RatingDashboardItem {
   unitId?: number;
   unitNumber?: string;
   tenantName?: string;
+  tenantNameAr?: string;
+  tenantNameEn?: string;
+  categoryNameAr?: string;
+  categoryNameEn?: string;
+  requestStatus?: string;
+  contractorCompanyId?: number;
 }
 
 export interface ComplaintRatingsSummary {
@@ -68,6 +74,19 @@ export interface ComplaintRatingsSummary {
   dissatisfied: number;
   satisfied: number;
   verySatisfied: number;
+}
+
+export interface RecentActivityItem {
+  id: string;
+  category: string;
+  title: string;
+  description?: string;
+  actorName?: string;
+  occurredAt: string;
+  entityId?: number;
+  propertyId?: number;
+  routePath?: string;
+  icon?: string;
 }
 
 export interface ComplaintRatingDashboardItem {
@@ -87,6 +106,8 @@ export interface ComplaintRatingDashboardItem {
   unitId?: number;
   unitNumber?: string;
   tenantName?: string;
+  tenantNameAr?: string;
+  tenantNameEn?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -128,5 +149,11 @@ export class DashboardService {
 
   getComplaintRatingsDetails(): Observable<ApiResponse<ComplaintRatingDashboardItem[]>> {
     return this.api.get(AppConstants.API.DASHBOARD_COMPLAINT_RATINGS_DETAILS);
+  }
+
+  getRecentActivity(limit = 12, propertyId?: number): Observable<ApiResponse<RecentActivityItem[]>> {
+    const params: Record<string, string | number> = { limit };
+    if (propertyId != null) params['propertyId'] = propertyId;
+    return this.api.get(AppConstants.API.DASHBOARD_RECENT_ACTIVITY, params);
   }
 }

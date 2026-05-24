@@ -44,7 +44,7 @@
       <p class="warn staff-amendment-warn" *ngIf="staffAmendmentLookupItems.length === 0">
         {{ 'CONTRACTS.STAFF_MOD_LOOKUP_EMPTY' | translate }}
       </p>
-      <div *ngIf="errorMsg" class="error-msg staff-amendment-error">{{ errorMsg }}</div>
+      <div *ngIf="errorMsg" class="error-msg staff-amendment-error">{{ errorMsg | translate }}</div>
       <mat-form-field appearance="outline" class="full-width">
         <mat-label>{{ 'CONTRACTS.STAFF_MOD_REASON_LABEL' | translate }}</mat-label>
         <mat-select formControlName="staffModificationReason">
@@ -346,7 +346,7 @@
             </mat-hint>
           </mat-form-field>
 
-          <div *ngIf="errorMsg" class="error-msg">{{ errorMsg }}</div>
+          <div *ngIf="errorMsg" class="error-msg">{{ errorMsg | translate }}</div>
 
           <div class="step-actions">
             <button mat-stroked-button matStepperPrevious>

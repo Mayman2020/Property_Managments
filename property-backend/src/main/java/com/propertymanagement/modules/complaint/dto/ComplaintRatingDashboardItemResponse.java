@@ -26,4 +26,6 @@ public class ComplaintRatingDashboardItemResponse {
     private Long unitId;
     private String unitNumber;
     private String tenantName;
+    private String tenantNameAr;
+    private String tenantNameEn;
 }

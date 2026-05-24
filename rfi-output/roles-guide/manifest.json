@@ -1,0 +1,925 @@
+[
+  {
+    "roleKey": "accountant",
+    "roleLabel": "المحاسب",
+    "chapter": "1. المحاسب",
+    "id": "acc-dashboard",
+    "route": "/admin/dashboard",
+    "title": "لوحة المعلومات",
+    "actions": [
+      "متابعة مؤشرات الإشغال والإيرادات والصيانة",
+      "الوصول السريع للتنبيهات التشغيلية"
+    ],
+    "file": "accountant-acc-dashboard.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "accountant",
+    "roleLabel": "المحاسب",
+    "chapter": "1. المحاسب",
+    "id": "acc-finance-dashboard",
+    "route": "/admin/finance/dashboard",
+    "title": "لوحة المالية",
+    "actions": [
+      "عرض ملخص الإيرادات والمصروفات حسب العقار",
+      "اختيار عقار محدد لتصفية الأرقام"
+    ],
+    "selectProperty": true,
+    "file": "accountant-acc-finance-dashboard.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "accountant",
+    "roleLabel": "المحاسب",
+    "chapter": "1. المحاسب",
+    "id": "acc-finance-revenues",
+    "route": "/admin/finance/revenues",
+    "title": "الإيرادات",
+    "actions": [
+      "مراجعة إيرادات الإيجار المحصّلة",
+      "تصفية حسب العقار والفترة"
+    ],
+    "selectProperty": true,
+    "file": "accountant-acc-finance-revenues.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "accountant",
+    "roleLabel": "المحاسب",
+    "chapter": "1. المحاسب",
+    "id": "acc-finance-expenses",
+    "route": "/admin/finance/expenses",
+    "title": "المصروفات",
+    "actions": [
+      "مراجعة مصروفات التشغيل والصيانة",
+      "تصفية حسب العقار"
+    ],
+    "selectProperty": true,
+    "file": "accountant-acc-finance-expenses.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "accountant",
+    "roleLabel": "المحاسب",
+    "chapter": "1. المحاسب",
+    "id": "acc-finance-budget",
+    "route": "/admin/finance/budget",
+    "title": "الميزانية",
+    "actions": [
+      "مقارنة الميزانية المعتمدة بالفعلي",
+      "اختيار عقار لعرض بند الميزانية"
+    ],
+    "selectProperty": true,
+    "file": "accountant-acc-finance-budget.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "accountant",
+    "roleLabel": "المحاسب",
+    "chapter": "1. المحاسب",
+    "id": "acc-finance-overdue",
+    "route": "/admin/finance/overdue-payments",
+    "title": "المتأخرات",
+    "actions": [
+      "متابعة الدفعات المتأخرة",
+      "تحديد المستأجرين والعقود المتعثرة"
+    ],
+    "file": "accountant-acc-finance-overdue.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "accountant",
+    "roleLabel": "المحاسب",
+    "chapter": "1. المحاسب",
+    "id": "acc-finance-pnl",
+    "route": "/admin/finance/reports/pnl",
+    "title": "تقرير الأرباح والخسائر",
+    "actions": [
+      "استخراج بيان الدخل للفترة",
+      "تصفية حسب العقار"
+    ],
+    "selectProperty": true,
+    "file": "accountant-acc-finance-pnl.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "accountant",
+    "roleLabel": "المحاسب",
+    "chapter": "1. المحاسب",
+    "id": "acc-rent-confirmation",
+    "route": "/admin/accountant-portal/rent-confirmation",
+    "title": "تأكيد إيجار",
+    "actions": [
+      "مراجعة إثباتات السداد المرفوعة من المستأجرين",
+      "اعتماد أو رفض الإثبات"
+    ],
+    "file": "accountant-acc-rent-confirmation.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "accountant",
+    "roleLabel": "المحاسب",
+    "chapter": "1. المحاسب",
+    "id": "acc-renewal-requests",
+    "route": "/admin/accountant-portal/renewal-requests",
+    "title": "طلبات التجديد",
+    "actions": [
+      "متابعة طلبات تجديد العقود",
+      "التنسيق مع الإدارة والمالك"
+    ],
+    "file": "accountant-acc-renewal-requests.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "accountant",
+    "roleLabel": "المحاسب",
+    "chapter": "1. المحاسب",
+    "id": "acc-maint-invoices",
+    "route": "/admin/accountant-portal/maintenance-invoices",
+    "title": "فواتير صيانة المقاولين",
+    "actions": [
+      "مراجعة فواتير عقود الصيانة الشهرية",
+      "اعتماد الدفع أو الرفض"
+    ],
+    "file": "accountant-acc-maint-invoices.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "accountant",
+    "roleLabel": "المحاسب",
+    "chapter": "1. المحاسب",
+    "id": "acc-contracts-dashboard",
+    "route": "/admin/contracts/dashboard",
+    "title": "لوحة العقود",
+    "actions": [
+      "عرض إحصائيات العقود النشطة والمنتهية",
+      "متابعة العقود قريبة الانتهاء"
+    ],
+    "file": "accountant-acc-contracts-dashboard.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "accountant",
+    "roleLabel": "المحاسب",
+    "chapter": "1. المحاسب",
+    "id": "acc-contracts-list",
+    "route": "/admin/contracts/list",
+    "title": "سجل العقود",
+    "actions": [
+      "البحث في عقود الإيجار وعقود الصيانة",
+      "فتح تفاصيل العقد من الرقم"
+    ],
+    "file": "accountant-acc-contracts-list.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "accountant",
+    "roleLabel": "المحاسب",
+    "chapter": "1. المحاسب",
+    "id": "acc-contracts-complaints",
+    "route": "/admin/contracts/complaints",
+    "title": "الشكاوى",
+    "actions": [
+      "متابعة شكاوى المستأجرين",
+      "تعيين مسؤول ومتابعة الحل"
+    ],
+    "file": "accountant-acc-contracts-complaints.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "accountant",
+    "roleLabel": "المحاسب",
+    "chapter": "1. المحاسب",
+    "id": "acc-properties",
+    "route": "/admin/properties",
+    "title": "العقارات",
+    "actions": [
+      "عرض قائمة العقارات",
+      "تصفية حسب عقار محدد عند توفر أكثر من عقار"
+    ],
+    "selectScopedProperty": true,
+    "file": "accountant-acc-properties.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "accountant",
+    "roleLabel": "المحاسب",
+    "chapter": "1. المحاسب",
+    "id": "acc-units",
+    "route": "/admin/units",
+    "title": "الوحدات",
+    "actions": [
+      "عرض وحدات عقار محدد",
+      "متابعة حالة الإشغال والإيجار"
+    ],
+    "queryPropertyId": 1,
+    "file": "accountant-acc-units.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "accountant",
+    "roleLabel": "المحاسب",
+    "chapter": "1. المحاسب",
+    "id": "acc-tenants",
+    "route": "/admin/tenants",
+    "title": "المستأجرين",
+    "actions": [
+      "عرض المستأجرين وعقودهم",
+      "تصفية حسب العقار"
+    ],
+    "selectProperty": true,
+    "file": "accountant-acc-tenants.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "accountant",
+    "roleLabel": "المحاسب",
+    "chapter": "1. المحاسب",
+    "id": "acc-maintenance",
+    "route": "/admin/maintenance",
+    "title": "طلبات الصيانة",
+    "actions": [
+      "متابعة طلبات الصيانة لكل العقارات",
+      "تعيين الفنيين ومتابعة الحالة"
+    ],
+    "file": "accountant-acc-maintenance.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "accountant",
+    "roleLabel": "المحاسب",
+    "chapter": "1. المحاسب",
+    "id": "acc-reports",
+    "route": "/admin/reports",
+    "title": "مركز التقارير",
+    "actions": [
+      "الوصول لتقارير الإشغال والصيانة والعقود"
+    ],
+    "file": "accountant-acc-reports.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "accountant",
+    "roleLabel": "المحاسب",
+    "chapter": "1. المحاسب",
+    "id": "acc-report-occupancy",
+    "route": "/admin/reports/occupancy",
+    "title": "تقرير الإشغال",
+    "actions": [
+      "تحليل نسب الإشغال",
+      "تصدير للإدارة"
+    ],
+    "file": "accountant-acc-report-occupancy.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "accountant",
+    "roleLabel": "المحاسب",
+    "chapter": "1. المحاسب",
+    "id": "acc-report-contract-expiry",
+    "route": "/admin/reports/contract-expiry",
+    "title": "انتهاء العقود",
+    "actions": [
+      "متابعة العقود القريبة من الانتهاء"
+    ],
+    "file": "accountant-acc-report-contract-expiry.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "accountant",
+    "roleLabel": "المحاسب",
+    "chapter": "1. المحاسب",
+    "id": "acc-owners",
+    "route": "/admin/owners",
+    "title": "الملاك",
+    "actions": [
+      "عرض بيانات الملاك",
+      "تصفية حسب العقار المرتبط"
+    ],
+    "selectProperty": true,
+    "file": "accountant-acc-owners.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "accountant",
+    "roleLabel": "المحاسب",
+    "chapter": "1. المحاسب",
+    "id": "acc-contractors",
+    "route": "/admin/contractors",
+    "title": "شركات المقاولين",
+    "actions": [
+      "عرض شركات الصيانة المتعاقدة",
+      "تصفية حسب العقار"
+    ],
+    "selectProperty": true,
+    "file": "accountant-acc-contractors.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "accountant",
+    "roleLabel": "المحاسب",
+    "chapter": "1. المحاسب",
+    "id": "acc-hr-payroll",
+    "route": "/admin/hr/payroll",
+    "title": "مسيرات الرواتب",
+    "actions": [
+      "مراجعة الرواتب المعتمدة",
+      "متابعة حالة الصرف"
+    ],
+    "selectProperty": true,
+    "file": "accountant-acc-hr-payroll.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "accountant",
+    "roleLabel": "المحاسب",
+    "chapter": "1. المحاسب",
+    "id": "acc-notifications",
+    "route": "/admin/notifications",
+    "title": "الإشعارات",
+    "actions": [
+      "متابعة التنبيهات المالية والتعاقدية"
+    ],
+    "file": "accountant-acc-notifications.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "accountant",
+    "roleLabel": "المحاسب",
+    "chapter": "1. المحاسب",
+    "id": "acc-profile",
+    "route": "/admin/profile",
+    "title": "الملف الشخصي",
+    "actions": [
+      "تحديث بيانات الحساب وكلمة المرور"
+    ],
+    "file": "accountant-acc-profile.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "owner",
+    "roleLabel": "المالك",
+    "chapter": "2. المالك",
+    "id": "own-dashboard",
+    "route": "/admin/dashboard",
+    "title": "لوحة المعلومات",
+    "actions": [
+      "متابعة أداء عقاراته المملوكة",
+      "عرض مؤشرات الإشغال والإيرادات"
+    ],
+    "file": "owner-own-dashboard.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "owner",
+    "roleLabel": "المالك",
+    "chapter": "2. المالك",
+    "id": "own-portal-dashboard",
+    "route": "/admin/owner-portal/dashboard",
+    "title": "لوحة المالك",
+    "actions": [
+      "ملخص العقارات والإيرادات",
+      "مؤشرات الأداء المالي"
+    ],
+    "file": "owner-own-portal-dashboard.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "owner",
+    "roleLabel": "المالك",
+    "chapter": "2. المالك",
+    "id": "own-portal-properties",
+    "route": "/admin/owner-portal/properties",
+    "title": "عقاراتي",
+    "actions": [
+      "عرض العقارات المملوكة وحالتها",
+      "متابعة الوحدات والإشغال"
+    ],
+    "file": "owner-own-portal-properties.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "owner",
+    "roleLabel": "المالك",
+    "chapter": "2. المالك",
+    "id": "own-portal-statements",
+    "route": "/admin/owner-portal/statements",
+    "title": "كشوف الحساب",
+    "actions": [
+      "تحميل كشوف التحصيل والمصروفات",
+      "مراجعة صافي العائد"
+    ],
+    "file": "owner-own-portal-statements.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "owner",
+    "roleLabel": "المالك",
+    "chapter": "2. المالك",
+    "id": "own-contract-approvals",
+    "route": "/admin/owner-portal/contract-approvals",
+    "title": "موافقات العقود",
+    "actions": [
+      "الموافقة على عقود إيجار جديدة",
+      "الموافقة على التجديد أو الإنهاء"
+    ],
+    "file": "owner-own-contract-approvals.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "owner",
+    "roleLabel": "المالك",
+    "chapter": "2. المالك",
+    "id": "own-properties",
+    "route": "/admin/properties",
+    "title": "العقارات (عرض)",
+    "actions": [
+      "عرض تفاصيل العقارات المملوكة فقط"
+    ],
+    "selectScopedProperty": true,
+    "file": "owner-own-properties.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "owner",
+    "roleLabel": "المالك",
+    "chapter": "2. المالك",
+    "id": "own-units",
+    "route": "/admin/units",
+    "title": "الوحدات",
+    "actions": [
+      "متابعة وحدات العقار وحالة الإشغال"
+    ],
+    "queryPropertyId": 1,
+    "file": "owner-own-units.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "owner",
+    "roleLabel": "المالك",
+    "chapter": "2. المالك",
+    "id": "own-contracts-list",
+    "route": "/admin/contracts/list",
+    "title": "عقود الإيجار",
+    "actions": [
+      "عرض عقود عقاراته",
+      "متابعة تواريخ الانتهاء والإيجار"
+    ],
+    "file": "owner-own-contracts-list.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "owner",
+    "roleLabel": "المالك",
+    "chapter": "2. المالك",
+    "id": "own-finance-dashboard",
+    "route": "/admin/finance/dashboard",
+    "title": "الملخص المالي",
+    "actions": [
+      "عرض إيرادات ومصروفات عقاراته"
+    ],
+    "selectProperty": true,
+    "file": "owner-own-finance-dashboard.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "owner",
+    "roleLabel": "المالك",
+    "chapter": "2. المالك",
+    "id": "own-finance-overdue",
+    "route": "/admin/finance/overdue-payments",
+    "title": "المتأخرات",
+    "actions": [
+      "متابعة متأخرات مستأجري عقاراته"
+    ],
+    "file": "owner-own-finance-overdue.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "owner",
+    "roleLabel": "المالك",
+    "chapter": "2. المالك",
+    "id": "own-maintenance",
+    "route": "/admin/maintenance",
+    "title": "الصيانة",
+    "actions": [
+      "متابعة طلبات الصيانة على عقاراته"
+    ],
+    "file": "owner-own-maintenance.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "owner",
+    "roleLabel": "المالك",
+    "chapter": "2. المالك",
+    "id": "own-notifications",
+    "route": "/admin/notifications",
+    "title": "الإشعارات",
+    "actions": [
+      "تنبيهات الموافقات والتحصيل"
+    ],
+    "file": "owner-own-notifications.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "owner",
+    "roleLabel": "المالك",
+    "chapter": "2. المالك",
+    "id": "own-profile",
+    "route": "/admin/profile",
+    "title": "الملف الشخصي",
+    "actions": [
+      "تحديث بيانات الحساب"
+    ],
+    "file": "owner-own-profile.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "tenant",
+    "roleLabel": "المستأجر",
+    "chapter": "3. المستأجر",
+    "id": "ten-my-unit",
+    "route": "/tenant/my-unit",
+    "title": "وحدتي",
+    "actions": [
+      "اختيار الوحدة المستأجرة من القائمة",
+      "عرض حالة العقد والإيجار القادم",
+      "متابعة طلبات الصيانة للوحدة"
+    ],
+    "selectTenantUnit": true,
+    "file": "tenant-ten-my-unit.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "tenant",
+    "roleLabel": "المستأجر",
+    "chapter": "3. المستأجر",
+    "id": "ten-my-contracts",
+    "route": "/tenant/my-contracts",
+    "title": "عقودي",
+    "actions": [
+      "اختيار عقد من القائمة",
+      "عرض تفاصيل العقد وجدول الدفعات"
+    ],
+    "selectTenantContract": true,
+    "file": "tenant-ten-my-contracts.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "tenant",
+    "roleLabel": "المستأجر",
+    "chapter": "3. المستأجر",
+    "id": "ten-rent-receipts",
+    "route": "/tenant/rent-receipts",
+    "title": "إيصالات الإيجار",
+    "actions": [
+      "عرض سجل الدفعات",
+      "رفع إثبات السداد"
+    ],
+    "file": "tenant-ten-rent-receipts.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "tenant",
+    "roleLabel": "المستأجر",
+    "chapter": "3. المستأجر",
+    "id": "ten-contract-request",
+    "route": "/tenant/contract-request",
+    "title": "طلب تجديد / عقد",
+    "actions": [
+      "اختيار العقد المراد تجديده",
+      "تقديم طلب تجديد"
+    ],
+    "selectTenantContract": true,
+    "file": "tenant-ten-contract-request.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "tenant",
+    "roleLabel": "المستأجر",
+    "chapter": "3. المستأجر",
+    "id": "ten-requests",
+    "route": "/tenant/requests",
+    "title": "طلبات الصيانة",
+    "actions": [
+      "عرض طلبات الصيانة السابقة",
+      "متابعة حالة التنفيذ"
+    ],
+    "file": "tenant-ten-requests.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "tenant",
+    "roleLabel": "المستأجر",
+    "chapter": "3. المستأجر",
+    "id": "ten-new-request",
+    "route": "/tenant/new-request",
+    "title": "طلب صيانة جديد",
+    "actions": [
+      "تقديم بلاغ عطل أو صيانة",
+      "إرفاق صور ووصف المشكلة"
+    ],
+    "file": "tenant-ten-new-request.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "tenant",
+    "roleLabel": "المستأجر",
+    "chapter": "3. المستأجر",
+    "id": "ten-complaints",
+    "route": "/tenant/complaints",
+    "title": "الشكاوى",
+    "actions": [
+      "تقديم شكوى مرتبطة بالوحدة",
+      "متابعة الردود"
+    ],
+    "selectTenantUnit": true,
+    "file": "tenant-ten-complaints.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "tenant",
+    "roleLabel": "المستأجر",
+    "chapter": "3. المستأجر",
+    "id": "ten-notifications",
+    "route": "/tenant/notifications",
+    "title": "الإشعارات",
+    "actions": [
+      "تنبيهات العقد والدفع والصيانة"
+    ],
+    "file": "tenant-ten-notifications.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "tenant",
+    "roleLabel": "المستأجر",
+    "chapter": "3. المستأجر",
+    "id": "ten-profile",
+    "route": "/tenant/profile",
+    "title": "الملف الشخصي",
+    "actions": [
+      "تحديث بيانات التواصل وكلمة المرور"
+    ],
+    "file": "tenant-ten-profile.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "officer_internal",
+    "roleLabel": "موظف صيانة (داخلي)",
+    "chapter": "4. موظف الصيانة (داخلي)",
+    "id": "off-int-schedule",
+    "route": "/officer/schedule",
+    "title": "جدول الزيارات",
+    "actions": [
+      "عرض مواعيد الزيارات اليومية والأسبوعية",
+      "الانتقال لتفاصيل الطلب"
+    ],
+    "file": "officer_internal-off-int-schedule.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "officer_internal",
+    "roleLabel": "موظف صيانة (داخلي)",
+    "chapter": "4. موظف الصيانة (داخلي)",
+    "id": "off-int-requests",
+    "route": "/officer/requests",
+    "title": "طلبات الصيانة",
+    "actions": [
+      "عرض الطلبات المعينة له",
+      "بدء التنفيذ وتحديث الحالة"
+    ],
+    "file": "officer_internal-off-int-requests.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "officer_internal",
+    "roleLabel": "موظف صيانة (داخلي)",
+    "chapter": "4. موظف الصيانة (داخلي)",
+    "id": "off-int-request-detail",
+    "route": "/officer/requests/1",
+    "title": "تفاصيل طلب صيانة",
+    "actions": [
+      "عرض تفاصيل العطل والوحدة",
+      "تسجيل تقرير الزيارة بعد الإنجاز"
+    ],
+    "dynamicRequestId": true,
+    "file": "officer_internal-off-int-request-detail.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "officer_internal",
+    "roleLabel": "موظف صيانة (داخلي)",
+    "chapter": "4. موظف الصيانة (داخلي)",
+    "id": "off-int-my-requests",
+    "route": "/officer/my-requests",
+    "title": "طلباتي",
+    "actions": [
+      "متابعة الطلبات التي أنشأها أو يتابعها"
+    ],
+    "file": "officer_internal-off-int-my-requests.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "officer_internal",
+    "roleLabel": "موظف صيانة (داخلي)",
+    "chapter": "4. موظف الصيانة (داخلي)",
+    "id": "off-int-profile",
+    "route": "/officer/profile",
+    "title": "الملف الشخصي",
+    "actions": [
+      "تحديث بيانات الحساب"
+    ],
+    "file": "officer_internal-off-int-profile.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "company",
+    "roleLabel": "شركة الصيانة",
+    "chapter": "5. شركة الصيانة",
+    "id": "co-schedule",
+    "route": "/officer/schedule",
+    "title": "جدول الزيارات",
+    "actions": [
+      "جدولة زيارات فريق الشركة"
+    ],
+    "file": "company-co-schedule.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "company",
+    "roleLabel": "شركة الصيانة",
+    "chapter": "5. شركة الصيانة",
+    "id": "co-requests",
+    "route": "/officer/requests",
+    "title": "طلبات الصيانة",
+    "actions": [
+      "عرض الطلبات المسندة للشركة",
+      "توزيعها على الفنيين"
+    ],
+    "file": "company-co-requests.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "company",
+    "roleLabel": "شركة الصيانة",
+    "chapter": "5. شركة الصيانة",
+    "id": "co-company-queue",
+    "route": "/officer/company-queue",
+    "title": "طابور الشركة",
+    "actions": [
+      "طلبات جديدة بانتظار التعيين",
+      "سحب الطلب وتوزيعه"
+    ],
+    "file": "company-co-company-queue.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "company",
+    "roleLabel": "شركة الصيانة",
+    "chapter": "5. شركة الصيانة",
+    "id": "co-my-staff",
+    "route": "/officer/my-staff",
+    "title": "فريق العمل",
+    "actions": [
+      "إدارة فنيي الشركة",
+      "تفعيل/تعطيل الحسابات"
+    ],
+    "file": "company-co-my-staff.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "company",
+    "roleLabel": "شركة الصيانة",
+    "chapter": "5. شركة الصيانة",
+    "id": "co-invoices",
+    "route": "/officer/invoices",
+    "title": "فواتير الشركة",
+    "actions": [
+      "عرض فواتير عقود الصيانة",
+      "متابعة حالة الدفع"
+    ],
+    "file": "company-co-invoices.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "company",
+    "roleLabel": "شركة الصيانة",
+    "chapter": "5. شركة الصيانة",
+    "id": "co-my-requests",
+    "route": "/officer/my-requests",
+    "title": "طلباتي",
+    "actions": [
+      "متابعة الطلبات الشخصية"
+    ],
+    "file": "company-co-my-requests.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "company",
+    "roleLabel": "شركة الصيانة",
+    "chapter": "5. شركة الصيانة",
+    "id": "co-profile",
+    "route": "/officer/profile",
+    "title": "الملف الشخصي",
+    "actions": [
+      "بيانات حساب الشركة"
+    ],
+    "file": "company-co-profile.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "officer_company",
+    "roleLabel": "موظف شركة صيانة",
+    "chapter": "6. موظف شركة الصيانة",
+    "id": "off-co-schedule",
+    "route": "/officer/schedule",
+    "title": "جدول الزيارات",
+    "actions": [
+      "مواعيد الزيارات المعينة له"
+    ],
+    "file": "officer_company-off-co-schedule.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "officer_company",
+    "roleLabel": "موظف شركة صيانة",
+    "chapter": "6. موظف شركة الصيانة",
+    "id": "off-co-requests",
+    "route": "/officer/requests",
+    "title": "طلبات الصيانة",
+    "actions": [
+      "تنفيذ الطلبات المسندة",
+      "تحديث الحالة ميدانياً"
+    ],
+    "file": "officer_company-off-co-requests.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "officer_company",
+    "roleLabel": "موظف شركة صيانة",
+    "chapter": "6. موظف شركة الصيانة",
+    "id": "off-co-request-detail",
+    "route": "/officer/requests/1",
+    "title": "تفاصيل الطلب",
+    "actions": [
+      "عرض تفاصيل الطلب",
+      "إدخال تقرير الزيارة"
+    ],
+    "dynamicRequestId": true,
+    "file": "officer_company-off-co-request-detail.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "officer_company",
+    "roleLabel": "موظف شركة صيانة",
+    "chapter": "6. موظف شركة الصيانة",
+    "id": "off-co-company-queue",
+    "route": "/officer/company-queue",
+    "title": "طابور الشركة",
+    "actions": [
+      "طلبات متاحة للسحب",
+      "بدء العمل على طلب جديد"
+    ],
+    "file": "officer_company-off-co-company-queue.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "officer_company",
+    "roleLabel": "موظف شركة صيانة",
+    "chapter": "6. موظف شركة الصيانة",
+    "id": "off-co-invoices",
+    "route": "/officer/invoices",
+    "title": "فواتير (عرض)",
+    "actions": [
+      "متابعة فواتير الشركة"
+    ],
+    "file": "officer_company-off-co-invoices.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "officer_company",
+    "roleLabel": "موظف شركة صيانة",
+    "chapter": "6. موظف شركة الصيانة",
+    "id": "off-co-my-requests",
+    "route": "/officer/my-requests",
+    "title": "طلباتي",
+    "actions": [
+      "متابعة طلباته الشخصية"
+    ],
+    "file": "officer_company-off-co-my-requests.png",
+    "status": "ok"
+  },
+  {
+    "roleKey": "officer_company",
+    "roleLabel": "موظف شركة صيانة",
+    "chapter": "6. موظف شركة الصيانة",
+    "id": "off-co-profile",
+    "route": "/officer/profile",
+    "title": "الملف الشخصي",
+    "actions": [
+      "تحديث الحساب"
+    ],
+    "file": "officer_company-off-co-profile.png",
+    "status": "ok"
+  }
+]

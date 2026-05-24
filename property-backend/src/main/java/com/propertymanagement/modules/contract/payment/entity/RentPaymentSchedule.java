@@ -72,6 +72,10 @@ public class RentPaymentSchedule {
     @Column(name = "rejection_reason", columnDefinition = "TEXT")
     private String rejectionReason;
 
+    @Builder.Default
+    @Column(name = "late_fee_applied")
+    private boolean lateFeeApplied = false;
+
     @CreatedDate
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

@@ -17,5 +17,10 @@ public class VacancyListingResponseDTO {
     private BigDecimal askingRent;
     private LocalDate availableFrom;
     private Boolean isPublished;
+    private String listingSource;
+    private Long unitId;
+    private Long propertyId;
     private Integer viewsCount;
+    private String ownerNameAr;
+    private String ownerNameEn;
 }

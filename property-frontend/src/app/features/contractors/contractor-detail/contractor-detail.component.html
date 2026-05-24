@@ -6,19 +6,43 @@
       { label: ('NAV.DASHBOARD' | translate), route: '/admin/dashboard' },
       { label: ('CONTRACTORS.TITLE' | translate), route: '/admin/contractors' },
       { label: companyName() }
-    ]">
+    ]"
+    [showBack]="true"
+    (backClick)="goBack()">
     <button mat-stroked-button type="button" (click)="openEdit()">
       <mat-icon>edit</mat-icon>
       {{ 'ACTIONS.EDIT' | translate }}
     </button>
   </app-page-header>
 
-  <!-- Status chips -->
-  <div class="company-chips">
-    <span class="badge" [ngClass]="company.active ? 'badge-success' : 'badge-muted'">
+  <section class="company-metric-grid">
+    <article class="company-metric-card status-card" [class.active]="company.active">
       <mat-icon>{{ company.active ? 'check_circle' : 'cancel' }}</mat-icon>
-      {{ (company.active ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') | translate }}
-    </span>
+      <span>{{ 'COMMON.STATUS' | translate }}</span>
+      <strong>{{ (company.active ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') | translate }}</strong>
+    </article>
+
+    <article class="company-metric-card">
+      <mat-icon>handshake</mat-icon>
+      <span>{{ 'CONTRACTORS.TAB_CONTRACTS' | translate }}</span>
+      <strong>{{ activeContractsCount }} / {{ contracts.length }}</strong>
+    </article>
+
+    <article class="company-metric-card">
+      <mat-icon>apartment</mat-icon>
+      <span>{{ 'CONTRACTORS.PROPERTIES_COUNT' | translate }}</span>
+      <strong>{{ company.propertiesCount ?? contracts.length }}</strong>
+    </article>
+
+    <article class="company-metric-card rating-card">
+      <mat-icon>star</mat-icon>
+      <span>{{ 'RATING.AVERAGE' | translate }}</span>
+      <strong>{{ companyRatings.length ? (ratingAverage | number:'1.1-1') + ' / 4' : '-' }}</strong>
+      <small *ngIf="companyRatings.length">{{ ratingPercent }}% · {{ satisfiedRatingPercent }}%</small>
+    </article>
+  </section>
+
+  <div class="company-chips">
     <span class="chip-stat" *ngIf="(company.propertiesCount ?? 0) > 0">
       <mat-icon>apartment</mat-icon>
       {{ company.propertiesCount }} {{ 'CONTRACTORS.PROPERTIES_COUNT' | translate }}
@@ -76,9 +100,33 @@
         <span class="info-label">{{ 'CONTRACTORS.CONTRACT_END' | translate }}</span>
         <span class="info-value">{{ formatDate(company.latestContractEnd || company.contractEnd) }}</span>
       </div>
+      <div class="info-item">
+        <span class="info-label">{{ 'CONTRACTORS.CONTRACT_VALUE' | translate }}</span>
+        <span class="info-value">{{ latestContract?.contractValue != null ? (latestContract?.contractValue | number:'1.0-2') : (company.latestContractValue != null ? (company.latestContractValue | number:'1.0-2') : '-') }}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">{{ 'RATING.TOTAL' | translate }}</span>
+        <span class="info-value">{{ companyRatings.length ? companyRatings.length + ' - ' + (ratingPercent + '%') : '-' }}</span>
+      </div>
       <div class="info-item full" *ngIf="company.notes">
         <span class="info-label">{{ 'CONTRACTORS.NOTES' | translate }}</span>
         <span class="info-value">{{ company.notes }}</span>
+      </div>
+    </div>
+
+    <div class="ratings-summary-section" *ngIf="latestRatings.length > 0">
+      <p class="section-label">{{ 'RATINGS_DASHBOARD.RECENT_RATINGS' | translate }}</p>
+      <div class="company-rating-list">
+        <article class="company-rating-item" *ngFor="let rating of latestRatings">
+          <div>
+            <strong>{{ ratingTitle(rating) }}</strong>
+            <span>{{ ratingLocation(rating) }}</span>
+          </div>
+          <span class="rating-pill">
+            <mat-icon>star</mat-icon>
+            {{ rating.rating }} / 4
+          </span>
+        </article>
       </div>
     </div>
 
@@ -159,9 +207,9 @@
                 <div class="staff-name-cell">
                   <img *ngIf="s.profileImageUrl" [src]="s.profileImageUrl" class="staff-avatar" alt="">
                   <span class="avatar-sm" *ngIf="!s.profileImageUrl">
-                    {{ (s.fullNameAr || s.fullName || '?').charAt(0).toUpperCase() }}
+                    {{ officerInitial(s) }}
                   </span>
-                  <span>{{ s.fullNameAr || s.fullName }}</span>
+                  <span>{{ officerName(s) }}</span>
                 </div>
               </td>
               <td>{{ s.phone || '-' }}</td>

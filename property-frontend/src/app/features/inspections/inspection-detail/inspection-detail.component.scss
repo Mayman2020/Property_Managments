@@ -1,0 +1,18 @@
+.inspection-detail-page {
+  .timeline-card {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    padding: 1rem;
+  }
+  .timeline-step {
+    padding: 0.25rem 0.6rem;
+    border-radius: 4px;
+    background: var(--surface-alt);
+    font-size: 0.85rem;
+    &.done { background: rgba(22, 163, 74, 0.15); color: #16a34a; font-weight: 600; }
+  }
+  .sign-row { width: 100%; display: flex; gap: 1.5rem; font-size: 0.9rem; }
+  .damage-summary ul { margin: 0.5rem 0; padding-inline-start: 1.25rem; }
+}

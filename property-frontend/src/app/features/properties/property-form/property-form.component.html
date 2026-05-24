@@ -148,6 +148,7 @@
                 <th>{{ 'PROPERTY_FORM.OWNER_CIVIL_ID' | translate }}</th>
                 <th>{{ 'PROPERTY_FORM.OWNER_PHONE' | translate }}</th>
                 <th>{{ 'PROPERTY_FORM.OWNER_EMAIL' | translate }}</th>
+                <th>{{ 'PROPERTY_FORM.OWNERSHIP_PERCENT' | translate }}</th>
                 <th *ngIf="!isViewMode" class="col-action"></th>
               </tr>
             </thead>
@@ -158,6 +159,12 @@
                 <td>{{ owner.nationalId || '—' }}</td>
                 <td>{{ owner.phone || '—' }}</td>
                 <td>{{ owner.email || '—' }}</td>
+                <td>
+                  <input *ngIf="!isViewMode" type="number" min="0.01" max="100" step="0.01"
+                         class="owner-pct-input" [(ngModel)]="owner.ownershipPercentage"
+                         [ngModelOptions]="{standalone: true}" />
+                  <span *ngIf="isViewMode">{{ owner.ownershipPercentage }}%</span>
+                </td>
                 <td *ngIf="!isViewMode" class="col-action">
                   <button mat-icon-button type="button" (click)="removeOwner(owner)" class="remove-owner-btn"
                           [matTooltip]="'PROPERTY_FORM.REMOVE_TABLE_ROW' | translate">

@@ -8,10 +8,19 @@
   .detail-breadcrumb {
     display: flex;
     align-items: center;
-    gap: 6px;
+    justify-content: space-between;
+    gap: 16px;
     margin-bottom: 12px;
     color: var(--ink-500);
     font-size: 12px;
+  }
+
+  .breadcrumb-trail {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    flex-wrap: wrap;
   }
 
   .detail-breadcrumb a {
@@ -19,23 +28,7 @@
     text-decoration: none;
   }
 
-  .breadcrumb-back-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--accent);
-    font-size: 12px;
-    font-weight: 600;
-    padding: 0;
-    .material-icons { font-size: 16px; }
-  }
-
   .breadcrumb-sep { color: var(--ink-400); }
-
-  [dir='rtl'] .breadcrumb-back-btn .material-icons { transform: scaleX(-1); }
 
   .detail-head {
     display: flex;
@@ -66,6 +59,16 @@
     flex-wrap: wrap;
     gap: 10px;
     margin-bottom: 8px;
+  }
+
+  .sla-breach-badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    border-radius: 4px;
+    background: var(--red-500, #ef4444);
+    color: #fff;
   }
 
   .hero-code {
@@ -557,31 +560,105 @@
   width: 100%;
 }
 
-.contact-menu-phone {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 2px 10px;
-  min-width: 240px;
-  padding: 12px 16px 10px;
-  border-bottom: 1px solid var(--line-2);
+.center-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(15, 23, 42, 0.45);
 }
 
-.contact-menu-phone .material-icons {
-  grid-row: span 2;
-  align-self: center;
-  color: var(--amber-700);
+.center-contact-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 1201;
+  width: min(420px, calc(100vw - 32px));
+  transform: translate(-50%, -50%);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: 0 22px 60px rgba(15, 23, 42, 0.28);
+  padding: 20px;
 }
 
-.contact-menu-phone strong {
+.dialog-close-btn {
+  position: absolute;
+  inset-inline-end: 12px;
+  top: 12px;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--surface-2);
   color: var(--text-main);
-  font-size: 0.9rem;
+  cursor: pointer;
 }
 
-.contact-menu-phone small {
+.dialog-close-btn .material-icons {
+  font-size: 19px;
+}
+
+.contact-dialog-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-inline-end: 42px;
+}
+
+.contact-dialog-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, var(--brass-400), var(--brass-600));
+  color: var(--navy-900);
+  font-weight: 800;
+}
+
+.contact-dialog-head div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.contact-dialog-head strong {
+  color: var(--text-main);
+  font-size: 1rem;
+}
+
+.contact-dialog-head small {
   color: var(--text-muted);
   direction: ltr;
-  text-align: start;
   unicode-bidi: embed;
+}
+
+.contact-dialog-actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.contact-dialog-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 52px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-2);
+  color: var(--text-main);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.contact-dialog-action.whatsapp {
+  border-color: rgba(22, 163, 74, 0.28);
+  background: #ecfdf3;
+  color: #116c35;
 }
 
 @media (max-width: 1080px) {

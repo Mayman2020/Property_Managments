@@ -19,7 +19,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import com.propertymanagement.modules.finance.export.ExportType;
+import com.propertymanagement.modules.finance.service.FinanceExportService;
 import com.propertymanagement.modules.finance.service.FinanceService;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
+
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/finance")
@@ -27,6 +34,7 @@ import com.propertymanagement.modules.finance.service.FinanceService;
 public class FinanceController {
 
     private final FinanceService service;
+    private final FinanceExportService financeExportService;
 
     @GetMapping("/dashboard")
     @RequiresPermission(module = "finance", action = "view")
@@ -97,5 +105,20 @@ public class FinanceController {
     @RequiresPermission(module = "finance", action = "export")
     public ResponseEntity<ApiResponse<List<FinancialReportRowResponse>>> ownerStatements(@RequestParam(required = false) Long propertyId) {
         return ResponseEntity.ok(ApiResponse.ok(service.getOwnerStatementReport(propertyId)));
+    }
+
+    @GetMapping("/export/csv")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
+    @RequiresPermission(module = "finance", action = "view")
+    public ResponseEntity<byte[]> exportCsv(
+            @RequestParam LocalDate from,
+            @RequestParam LocalDate to,
+            @RequestParam(defaultValue = "ALL") ExportType type) {
+        byte[] body = financeExportService.exportTransactions(from, to, type);
+        String filename = "finance-export-" + type.name().toLowerCase() + "-" + from + "_" + to + ".csv";
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
+                .body(body);
     }
 }

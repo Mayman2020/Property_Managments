@@ -1,0 +1,79 @@
+{
+  "ownerIds": [
+    30,
+    31,
+    32,
+    33
+  ],
+  "propertyIds": [
+    12,
+    13
+  ],
+  "unitIdsByProperty": {
+    "12": [
+      49,
+      50,
+      51,
+      52,
+      53,
+      54
+    ],
+    "13": [
+      55,
+      56,
+      57,
+      58,
+      59,
+      60
+    ]
+  },
+  "vacantUnitIds": [
+    49,
+    50,
+    51,
+    52,
+    53,
+    54,
+    55,
+    56,
+    57,
+    58,
+    59,
+    60
+  ],
+  "tenantIds": [
+    4
+  ],
+  "tenantUnitIds": [
+    13,
+    14
+  ],
+  "roleUserIds": {
+    "GENERAL_MANAGER": 14,
+    "HR_OFFICER": 16,
+    "ACCOUNTANT": 23,
+    "OWNER": 28,
+    "MAINTENANCE_OFFICER_INTERNAL": 33,
+    "PROPERTY_GUARD": 34,
+    "PROCEDURES_CLERK": 35,
+    "MAINTENANCE_OFFICER_COMPANY": 43,
+    "MAINTENANCE_COMPANY": 54
+  },
+  "roleEmails": {
+    "GENERAL_MANAGER": "qa.gm@propmgmt.com",
+    "HR_OFFICER": "qa.hr@propmgmt.com",
+    "ACCOUNTANT": "qa.accountant@propmgmt.com",
+    "OWNER": "qa.owner@propmgmt.com",
+    "MAINTENANCE_OFFICER_INTERNAL": "qa.officer.internal@propmgmt.com",
+    "PROPERTY_GUARD": "qa.guard@propmgmt.com",
+    "PROCEDURES_CLERK": "qa.clerk@propmgmt.com",
+    "MAINTENANCE_OFFICER_COMPANY": "qa.officer.company@propmgmt.com",
+    "TENANT": "qa.tenant2@propmgmt.com",
+    "MAINTENANCE_COMPANY": "qa.maint.company@propmgmt.com"
+  },
+  "blockers": [],
+  "placeholderFileUrl": "http://localhost:8081/api/v1/files/40078af6-eb4d-41a8-acb9-215e4b696f75.png",
+  "firstContractorCompanyId": 3,
+  "firstContractId": 1,
+  "firstMaintenanceRequestId": 64
+}

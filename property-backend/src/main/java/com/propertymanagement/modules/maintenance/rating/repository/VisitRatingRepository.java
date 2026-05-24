@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.Set;
 import com.propertymanagement.modules.maintenance.rating.entity.VisitRating;
 import com.propertymanagement.modules.maintenance.rating.dto.RatingDashboardItemResponse;
+import com.propertymanagement.modules.maintenance.category.entity.MaintenanceCategory;
 import com.propertymanagement.modules.maintenance.request.entity.MaintenanceRequest;
 import com.propertymanagement.modules.property.entity.Property;
 import com.propertymanagement.modules.tenant.entity.Tenant;
@@ -44,13 +45,20 @@ public interface VisitRatingRepository extends JpaRepository<VisitRating, Long> 
                 p.propertyNameEn,
                 mr.unitId,
                 u.unitNumber,
-                t.fullName
+                t.fullName,
+                t.fullNameAr,
+                t.fullNameEn,
+                mc.nameAr,
+                mc.nameEn,
+                mr.status,
+                mr.contractorCompanyId
             )
             FROM VisitRating r
             JOIN MaintenanceRequest mr ON mr.id = r.requestId
             LEFT JOIN Property p ON p.id = mr.propertyId
             LEFT JOIN Unit u ON u.id = mr.unitId
             LEFT JOIN Tenant t ON t.id = mr.tenantId
+            LEFT JOIN MaintenanceCategory mc ON mc.id = mr.categoryId
             ORDER BY r.createdAt DESC
             """)
     List<RatingDashboardItemResponse> findDashboardDetails();
@@ -70,13 +78,20 @@ public interface VisitRatingRepository extends JpaRepository<VisitRating, Long> 
                 p.propertyNameEn,
                 mr.unitId,
                 u.unitNumber,
-                t.fullName
+                t.fullName,
+                t.fullNameAr,
+                t.fullNameEn,
+                mc.nameAr,
+                mc.nameEn,
+                mr.status,
+                mr.contractorCompanyId
             )
             FROM VisitRating r
             JOIN MaintenanceRequest mr ON mr.id = r.requestId
             LEFT JOIN Property p ON p.id = mr.propertyId
             LEFT JOIN Unit u ON u.id = mr.unitId
             LEFT JOIN Tenant t ON t.id = mr.tenantId
+            LEFT JOIN MaintenanceCategory mc ON mc.id = mr.categoryId
             WHERE mr.propertyId IN :propertyIds
             ORDER BY r.createdAt DESC
             """)

@@ -22,6 +22,7 @@ public class PropertyResponse {
         private String nationalId;
         private String phone;
         private String email;
+        private java.math.BigDecimal ownershipPercentage;
     }
 
     @Data

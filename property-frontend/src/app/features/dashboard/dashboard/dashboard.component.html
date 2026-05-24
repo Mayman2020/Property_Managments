@@ -84,6 +84,30 @@
           </button>
         </div>
       </article>
+
+      <article class="estate-stat-card gold kpi-link" *ngIf="showFinanceInsights" routerLink="/admin/finance/dashboard">
+        <div class="estate-stat-top">
+          <span class="estate-stat-label">{{ 'DASHBOARD.RENT_COLLECTED_MONTH' | translate }}</span>
+          <div class="estate-stat-icon"><span class="material-icons">payments</span></div>
+        </div>
+        <div class="estate-stat-value">{{ formatCurrency(financeStats!.thisMonthCollected) }}</div>
+        <div class="estate-stat-foot">
+          <span class="material-icons kpi-nav-arrow">arrow_forward</span>
+          <span>{{ 'NAV.FINANCE_DASHBOARD' | translate }}</span>
+        </div>
+      </article>
+
+      <article class="estate-stat-card danger kpi-link" *ngIf="showFinanceInsights && (financeStats!.overdueAmount ?? 0) > 0" routerLink="/admin/finance/overdue-payments">
+        <div class="estate-stat-top">
+          <span class="estate-stat-label">{{ 'DASHBOARD.OVERDUE_RENT' | translate }}</span>
+          <div class="estate-stat-icon"><span class="material-icons">warning</span></div>
+        </div>
+        <div class="estate-stat-value">{{ formatCurrency(financeStats!.overdueAmount) }}</div>
+        <div class="estate-stat-foot">
+          <span class="material-icons kpi-nav-arrow">arrow_forward</span>
+          <span>{{ 'OVERDUE.TITLE' | translate }}</span>
+        </div>
+      </article>
     </section>
 
     <section class="dashboard-grid dashboard-grid-top" *ngIf="showMaintenanceInsights || showInventoryInsights">
@@ -113,11 +137,8 @@
             <path [attr.d]="trendPath" class="trend-line"></path>
           </svg>
           <div class="trend-axis">
-            <span>Mar 23</span>
-            <span>Mar 30</span>
-            <span>Apr 06</span>
-            <span>Apr 13</span>
-            <span>Apr 20</span>
+            <span *ngFor="let lbl of trendLabels">{{ lbl }}</span>
+            <span *ngIf="trendLabels.length === 0">{{ lastThirtyLabel }}</span>
           </div>
         </div>
       </article>
@@ -239,6 +260,36 @@
         </ng-template>
       </article>
     </section>
+
+    <article class="app-card estate-panel recent-activity-panel">
+      <div class="app-card-header">
+        <span class="app-card-title">{{ 'DASHBOARD.RECENT_ACTIVITY' | translate }}</span>
+      </div>
+      <div class="activity-feed" *ngIf="recentActivity.length > 0; else emptyActivity">
+        <a class="activity-row" *ngFor="let item of pagedRecentActivity" [routerLink]="item.routePath || null">
+          <span class="material-icons activity-icon">{{ item.icon || 'notifications' }}</span>
+          <span class="activity-copy">
+            <strong>{{ item.title }}</strong>
+            <span class="activity-meta">{{ activityLabel(item) }} · {{ item.description }}</span>
+            <span class="activity-time">{{ item.occurredAt | date:'dd/MM/yyyy HH:mm' }}</span>
+          </span>
+          <span class="material-icons activity-arrow">chevron_right</span>
+        </a>
+      </div>
+      <app-table-pager
+        *ngIf="recentActivity.length > 0"
+        [length]="recentActivity.length"
+        [pageSize]="activityPageSize"
+        [pageIndex]="activityPageIndex"
+        (pageIndexChange)="activityPageIndex = $event">
+      </app-table-pager>
+      <ng-template #emptyActivity>
+        <div class="card-empty">
+          <span class="material-icons">history</span>
+          <span>{{ 'DASHBOARD.NO_RECENT_ACTIVITY' | translate }}</span>
+        </div>
+      </ng-template>
+    </article>
 
     <article class="app-card estate-panel status-strip" *ngIf="showMaintenanceInsights">
       <div class="app-card-header">

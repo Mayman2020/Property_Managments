@@ -1,6 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
-import { NgIf } from '@angular/common';
+import { NgFor, NgIf } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -11,12 +11,14 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
 import { ComplaintService } from '../../../core/services/complaint.service';
 import { SnackService } from '../../../core/services/snack.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
+import { LookupCacheService } from '../../../core/services/lookup-cache.service';
+import { LookupItem } from '../../../core/services/lookup.service';
 
 @Component({
   selector: 'app-submit-complaint',
   standalone: true,
   imports: [
-    NgIf, FormsModule,
+    NgIf, NgFor, FormsModule,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule,
     TranslateModule, PageHeaderComponent
   ],
@@ -62,12 +64,7 @@ import { I18nService } from '../../../core/i18n/i18n.service';
               <span>{{ 'COMPLAINT.CATEGORY_LABEL' | translate }}</span>
               <select class="form-select" name="category" [(ngModel)]="model.category">
                 <option value="">-</option>
-                <option value="MAINTENANCE">{{ 'COMPLAINT.CAT_MAINTENANCE' | translate }}</option>
-                <option value="NOISE">{{ 'COMPLAINT.CAT_NOISE' | translate }}</option>
-                <option value="CLEANLINESS">{{ 'COMPLAINT.CAT_CLEANLINESS' | translate }}</option>
-                <option value="BILLING">{{ 'COMPLAINT.CAT_BILLING' | translate }}</option>
-                <option value="MANAGEMENT">{{ 'COMPLAINT.CAT_MANAGEMENT' | translate }}</option>
-                <option value="OTHER">{{ 'COMPLAINT.CAT_OTHER' | translate }}</option>
+                <option *ngFor="let type of complaintTypes" [value]="type.code">{{ lookupItemLabel(type) }}</option>
               </select>
             </label>
           </div>
@@ -194,7 +191,7 @@ import { I18nService } from '../../../core/i18n/i18n.service';
     }
   `]
 })
-export class SubmitComplaintComponent {
+export class SubmitComplaintComponent implements OnInit {
   model = { subject: '', category: '', description: '' };
   loading = false;
   submitted = false;
@@ -203,15 +200,28 @@ export class SubmitComplaintComponent {
     private readonly complaintSvc: ComplaintService,
     private readonly snack: SnackService,
     private readonly router: Router,
-    readonly i18n: I18nService
+    readonly i18n: I18nService,
+    private readonly lookupCache: LookupCacheService
   ) {}
+
+  ngOnInit(): void {
+    this.lookupCache.preload('COMPLAINT_TYPE').subscribe();
+  }
+
+  get complaintTypes(): LookupItem[] {
+    return this.lookupCache.items('COMPLAINT_TYPE');
+  }
+
+  lookupItemLabel(item: LookupItem): string {
+    return this.i18n.currentLang === 'ar' ? item.nameAr : item.nameEn;
+  }
 
   submit(form: NgForm): void {
     if (form.invalid || this.loading) return;
     this.loading = true;
     this.complaintSvc.create({
-      subject: this.model.subject,
-      category: this.model.category || null,
+      title: this.model.subject,
+      complaintType: this.model.category || null,
       description: this.model.description
     }).subscribe({
       next: () => {

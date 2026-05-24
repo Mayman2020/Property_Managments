@@ -77,18 +77,18 @@ public class VisitRatingService {
     public RatingsSummaryResponse getSummary() {
         Double avg = ratingRepository.getAverageRating();
         long total = ratingRepository.countAll();
-        long[] breakdown = new long[5];
-        for (int i = 1; i <= 5; i++) {
+        long[] breakdown = new long[4];
+        for (int i = 1; i <= 4; i++) {
             breakdown[i - 1] = ratingRepository.countByRating((short) i);
         }
+        long legacyFiveStar = ratingRepository.countByRating((short) 5);
         return RatingsSummaryResponse.builder()
-                .averageRating(avg != null ? Math.round(avg * 10.0) / 10.0 : 0.0)
+                .averageRating(avg != null ? Math.min(4.0, Math.round(avg * 10.0) / 10.0) : 0.0)
                 .totalRatings(total)
                 .oneStar(breakdown[0])
                 .twoStar(breakdown[1])
                 .threeStar(breakdown[2])
-                .fourStar(breakdown[3])
-                .fiveStar(breakdown[4])
+                .fourStar(breakdown[3] + legacyFiveStar)
                 .build();
     }
 
@@ -102,6 +102,7 @@ public class VisitRatingService {
             items = ratingRepository.findDashboardDetailsByPropertyIds(allowedPropertyIds);
         }
         return items.stream()
+                .peek(item -> item.setRating(normalizeRating(item.getRating())))
                 .peek(item -> item.setPropertyName(
                         LocalizedNameResolver.resolve(item.getPropertyNameAr(), item.getPropertyNameEn(), item.getPropertyName())
                 ))
@@ -144,9 +145,9 @@ public class VisitRatingService {
         return VisitRatingResponse.builder()
                 .id(r.getId())
                 .requestId(r.getRequestId())
-                .rating(r.getRating())
-                .ratingLabel(ratingScaleLabel(r.getRating()))
-                .ratingIcon(ratingScaleIcon(r.getRating()))
+                .rating(normalizeRating(r.getRating()))
+                .ratingLabel(ratingScaleLabel(normalizeRating(r.getRating())))
+                .ratingIcon(ratingScaleIcon(normalizeRating(r.getRating())))
                 .comment(r.getComment())
                 .createdAt(r.getCreatedAt())
                 .build();
@@ -189,5 +190,12 @@ public class VisitRatingService {
             case 1 -> "sentiment_very_dissatisfied";
             default -> "sentiment_neutral";
         };
+    }
+
+    private Short normalizeRating(Short rating) {
+        if (rating == null) return null;
+        if (rating < 1) return 1;
+        if (rating > 4) return 4;
+        return rating;
     }
 }

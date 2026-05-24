@@ -57,6 +57,9 @@ export class OfficerScheduleComponent implements OnInit {
   }
 
   loadProperties(): void {
+    if (this.auth.hasRole('MAINTENANCE_OFFICER_INTERNAL')) {
+      return;
+    }
     this.invoiceService.getMyProperties().subscribe({
       next: (res) => {
         this.properties = res.data ?? [];
@@ -64,6 +67,9 @@ export class OfficerScheduleComponent implements OnInit {
           this.selectedPropertyId = this.properties[0].id;
           this.load();
         }
+      },
+      error: () => {
+        this.properties = [];
       }
     });
   }

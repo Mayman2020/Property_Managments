@@ -10,6 +10,7 @@ import com.propertymanagement.modules.hr.payroll.entity.Payslip;
 import com.propertymanagement.modules.hr.payroll.entity.SalaryAdvance;
 import com.propertymanagement.modules.hr.payroll.repository.EmployeeBonusRepository;
 import com.propertymanagement.modules.hr.payroll.repository.PayrollRepository;
+import com.propertymanagement.modules.hr.payroll.repository.PayrollDeductionRepository;
 import com.propertymanagement.modules.hr.payroll.repository.PayslipRepository;
 import com.propertymanagement.modules.hr.payroll.repository.SalaryAdvanceRepository;
 import com.propertymanagement.modules.hr.payroll.service.PayrollService;
@@ -47,6 +48,7 @@ class PayrollServiceTest {
     @Mock EmployeeRepository employeeRepository;
     @Mock SalaryAdvanceRepository salaryAdvanceRepository;
     @Mock EmployeeBonusRepository employeeBonusRepository;
+    @Mock PayrollDeductionRepository payrollDeductionRepository;
     @Mock ExpenseWriterRepository expenseWriterRepository;
     @Mock ExpenseCategoryLookupRepository expenseCategoryLookupRepository;
     @Mock NotificationService notificationService;
@@ -120,6 +122,8 @@ class PayrollServiceTest {
 
         when(salaryAdvanceRepository.findByEmployeeIdAndStatusAndDeductedYearAndDeductedMonth(
                 anyLong(), anyString(), anyInt(), anyInt())).thenReturn(List.of());
+        when(payrollDeductionRepository.findByEmployeeIdAndPayrollMonthAndStatus(anyLong(), anyString(), any()))
+                .thenReturn(List.of());
         when(employeeBonusRepository.findByPayrollRunIdAndEmployeeId(anyLong(), anyLong()))
                 .thenReturn(List.of());
         when(payslipRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));

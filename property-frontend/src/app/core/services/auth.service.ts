@@ -157,6 +157,7 @@ export class AuthService {
   }
   isTenant(): boolean { return this.hasRole('TENANT'); }
   isAccountant(): boolean { return this.hasRole('ACCOUNTANT'); }
+  isHrOfficer(): boolean { return this.hasRole('HR_OFFICER'); }
   isProceduresClerk(): boolean { return this.hasRole('PROCEDURES_CLERK'); }
   isPropertyGuard(): boolean { return this.hasRole('PROPERTY_GUARD'); }
   isOwner(): boolean { return this.hasRole('OWNER'); }
@@ -164,6 +165,7 @@ export class AuthService {
     return this.isSuperAdmin()
       || this.isGeneralManager()
       || this.isAccountant()
+      || this.isHrOfficer()
       || this.isOfficer()
       || this.isPropertyGuard()
       || this.isProceduresClerk()
@@ -186,7 +188,7 @@ export class AuthService {
     const firstAllowed = merged.find((item) => this.hasPermission(item.permission, item.action));
     if (firstAllowed) return firstAllowed.route;
 
-    if (roles.some((r) => ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'PROCEDURES_CLERK', 'PROPERTY_GUARD', 'OWNER'].includes(r))) {
+    if (roles.some((r) => ['SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT', 'HR_OFFICER', 'PROCEDURES_CLERK', 'PROPERTY_GUARD', 'OWNER'].includes(r))) {
       return '/admin/home';
     }
     if (
@@ -276,15 +278,20 @@ export class AuthService {
           { route: '/officer/profile', permission: 'profile', action: 'view' }
         ];
       case 'ACCOUNTANT':
+        // `/admin/home` redirects to `/admin/dashboard`, whose permissionGuard
+        // requires `dashboard.view`. The candidate's permission check must
+        // mirror that — otherwise we land users without `dashboard.view` on
+        // /admin/home and the guard kicks them into a redirect loop.
         return [
-          { route: '/admin/home', permission: 'finance', action: 'view' },
+          { route: '/admin/home', permission: 'dashboard', action: 'view' },
           { route: '/admin/finance/dashboard', permission: 'finance', action: 'view' },
           { route: '/admin/contracts/list', permission: 'contracts', action: 'view' },
           { route: '/admin/profile', permission: 'profile', action: 'view' }
         ];
       case 'PROCEDURES_CLERK':
+      case 'HR_OFFICER':
         return [
-          { route: '/admin/home', permission: 'hr', action: 'view' },
+          { route: '/admin/home', permission: 'dashboard', action: 'view' },
           { route: '/admin/hr/employees', permission: 'hr', action: 'view' },
           { route: '/admin/profile', permission: 'profile', action: 'view' }
         ];

@@ -13,7 +13,7 @@
   </app-page-header>
 
   <div class="loading-wrap" *ngIf="loading">
-    <mat-spinner diameter="40"></mat-spinner>
+    <mat-spinner diameter="52"></mat-spinner>
   </div>
 
   <!-- Empty state: no data and no active search/filter -->
@@ -122,6 +122,11 @@
                 <button class="app-icon-btn navy" type="button" *ngIf="(unit.rented || unit.reserved) && contractByUnitId[unit.id]"
                         (click)="viewContract(unit)" [matTooltip]="'CONTRACTS.VIEW_DETAILS' | translate">
                   <mat-icon>description</mat-icon>
+                </button>
+                <button *ngIf="canPublishVacancy(unit)" class="app-icon-btn success" type="button"
+                        [disabled]="publishVacancyLoadingId === unit.id"
+                        (click)="publishVacancy(unit)" [matTooltip]="'VACANCY.PUBLISH_BUTTON' | translate">
+                  <mat-icon>meeting_room</mat-icon>
                 </button>
                 <button *ngIf="canEditUnit() && !unit.rented && !unit.reserved" class="app-icon-btn success" type="button"
                         (click)="openAssignTenant(unit)" [matTooltip]="'TENANTS.ASSIGN_UNIT' | translate">

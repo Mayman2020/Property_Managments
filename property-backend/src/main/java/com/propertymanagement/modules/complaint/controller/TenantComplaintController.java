@@ -30,9 +30,11 @@ public class TenantComplaintController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT','OWNER')")
-    public ResponseEntity<ApiResponse<Page<TenantComplaint>>> getAll(
+    public ResponseEntity<ApiResponse<Page<ComplaintListItemResponse>>> getAll(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Long propertyId,
             @PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.ok(complaintService.getAll(pageable)));
+        return ResponseEntity.ok(ApiResponse.ok(complaintService.getAll(pageable, status, propertyId)));
     }
 
     @GetMapping("/my")

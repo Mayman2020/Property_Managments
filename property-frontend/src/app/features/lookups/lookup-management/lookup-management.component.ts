@@ -88,6 +88,19 @@ export class LookupManagementComponent implements OnInit {
     { type: 'CONTRACT_DRAFT_AMEND_REASON', labelKey: 'LOOKUPS.LIST_CONTRACT_DRAFT_AMEND_REASON', icon: 'edit_note', items: [], pageIndex: 0, loading: false }
   ];
 
+  readonly statusAndComplaintLists: ClassificationList[] = [
+    { type: 'CONTRACT_STATUS', labelKey: 'LOOKUPS.LIST_CONTRACT_STATUS', icon: 'fact_check', items: [], pageIndex: 0, loading: false },
+    { type: 'LEAVE_STATUS', labelKey: 'LOOKUPS.LIST_LEAVE_STATUS', icon: 'event_available', items: [], pageIndex: 0, loading: false },
+    { type: 'LEAVE_TYPE', labelKey: 'LOOKUPS.LIST_LEAVE_TYPE', icon: 'event_note', items: [], pageIndex: 0, loading: false },
+    { type: 'PAYMENT_SCHEDULE_STATUS', labelKey: 'LOOKUPS.LIST_PAYMENT_SCHEDULE_STATUS', icon: 'payments', items: [], pageIndex: 0, loading: false },
+    { type: 'EXPENSE_STATUS', labelKey: 'LOOKUPS.LIST_EXPENSE_STATUS', icon: 'receipt_long', items: [], pageIndex: 0, loading: false },
+    { type: 'PAYROLL_STATUS', labelKey: 'LOOKUPS.LIST_PAYROLL_STATUS', icon: 'account_balance_wallet', items: [], pageIndex: 0, loading: false },
+    { type: 'MAINTENANCE_REQUEST_STATUS', labelKey: 'LOOKUPS.LIST_MAINTENANCE_REQUEST_STATUS', icon: 'handyman', items: [], pageIndex: 0, loading: false },
+    { type: 'COMPLAINT_TYPE', labelKey: 'LOOKUPS.LIST_COMPLAINT_TYPE', icon: 'report_problem', items: [], pageIndex: 0, loading: false },
+    { type: 'COMPLAINT_STATUS', labelKey: 'LOOKUPS.LIST_COMPLAINT_STATUS', icon: 'rate_review', items: [], pageIndex: 0, loading: false },
+    { type: 'COMPLAINT_PRIORITY', labelKey: 'LOOKUPS.LIST_COMPLAINT_PRIORITY', icon: 'priority_high', items: [], pageIndex: 0, loading: false }
+  ];
+
   readonly financeLists: ClassificationList[] = [
     { type: 'CURRENCY', labelKey: 'LOOKUPS.LIST_CURRENCY', icon: 'payments', items: [], pageIndex: 0, loading: false },
     { type: 'PAYMENT_METHOD', labelKey: 'LOOKUPS.LIST_PAYMENT_METHOD', icon: 'account_balance_wallet', items: [], pageIndex: 0, loading: false },
@@ -114,7 +127,14 @@ export class LookupManagementComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadLocationData();
-    [...this.propertyLists, ...this.contractLists, ...this.financeLists, ...this.jobLists, ...this.inventoryLists].forEach((list) => this.loadClassification(list));
+    [
+      ...this.propertyLists,
+      ...this.contractLists,
+      ...this.statusAndComplaintLists,
+      ...this.financeLists,
+      ...this.jobLists,
+      ...this.inventoryLists
+    ].forEach((list) => this.loadClassification(list));
   }
 
   get isArabic(): boolean {
@@ -155,11 +175,21 @@ export class LookupManagementComponent implements OnInit {
   }
 
   nameOf(item: LookupItem): string {
-    return this.isArabic ? item.nameAr : item.nameEn;
+    const preferred = this.isArabic ? item.nameAr : item.nameEn;
+    const fallback = this.isArabic ? item.nameEn : item.nameAr;
+    return this.cleanDisplayText(preferred) || this.cleanDisplayText(fallback) || item.code;
   }
 
   cityGovernorateName(city: CityRow): string {
-    return this.isArabic ? city.governorateNameAr : city.governorateNameEn;
+    const preferred = this.isArabic ? city.governorateNameAr : city.governorateNameEn;
+    const fallback = this.isArabic ? city.governorateNameEn : city.governorateNameAr;
+    return this.cleanDisplayText(preferred) || this.cleanDisplayText(fallback) || '-';
+  }
+
+  private cleanDisplayText(value: string | null | undefined): string {
+    const normalized = (value ?? '').trim();
+    if (!normalized || /^[?\s]+$/.test(normalized) || /Ø|Ù|Â/.test(normalized)) return '';
+    return normalized;
   }
 
   pagedListItems(list: ClassificationList): LookupItem[] {

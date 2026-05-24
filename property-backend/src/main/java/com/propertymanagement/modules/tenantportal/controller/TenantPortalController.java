@@ -23,6 +23,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import com.propertymanagement.modules.inspection.dto.InspectionResponse;
+import com.propertymanagement.modules.inspection.dto.SignInspectionRequest;
+import com.propertymanagement.modules.inspection.entity.InspectionSignerRole;
+import com.propertymanagement.modules.inspection.service.UnitInspectionService;
 import com.propertymanagement.modules.tenantportal.service.TenantPortalService;
 
 @RestController
@@ -31,6 +35,7 @@ import com.propertymanagement.modules.tenantportal.service.TenantPortalService;
 public class TenantPortalController {
 
     private final TenantPortalService service;
+    private final UnitInspectionService unitInspectionService;
 
     // ── Tenant endpoints ──────────────────────────────────────────────────
 
@@ -52,6 +57,25 @@ public class TenantPortalController {
     @PreAuthorize("hasRole('TENANT')")
     public ResponseEntity<ApiResponse<ContractResponse>> getTenantContract(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok(service.getContractForTenantUser(currentUserId(), id)));
+    }
+
+    @GetMapping("/contracts/{id}/inspections")
+    @PreAuthorize("hasRole('TENANT')")
+    public ResponseEntity<ApiResponse<List<InspectionResponse>>> getTenantInspections(@PathVariable Long id) {
+        unitInspectionService.verifyTenantCanView(id, currentUserId());
+        return ResponseEntity.ok(ApiResponse.ok(unitInspectionService.listByContract(id)));
+    }
+
+    @PatchMapping("/inspections/{inspectionId}/sign")
+    @PreAuthorize("hasRole('TENANT')")
+    public ResponseEntity<ApiResponse<InspectionResponse>> signTenantInspection(
+            @PathVariable Long inspectionId,
+            @Valid @RequestBody SignInspectionRequest request) {
+        if (request.getRole() != InspectionSignerRole.TENANT) {
+            throw AppException.badRequest("Tenants may only sign as TENANT");
+        }
+        return ResponseEntity.ok(ApiResponse.ok(
+                unitInspectionService.signInspection(inspectionId, InspectionSignerRole.TENANT, currentUserId())));
     }
 
     @GetMapping("/contracts/{id}/payment-schedule")

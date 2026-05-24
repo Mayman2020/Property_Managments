@@ -1,0 +1,1495 @@
+{
+  "generatedAt": "2026-05-24T12:20:06.942Z",
+  "endpoints": [
+    {
+      "method": "PATCH",
+      "path": "/{assignmentId}/end",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/assignment/controller/MaintenanceAssignmentController.java"
+    },
+    {
+      "method": "DELETE",
+      "path": "/{attachmentId}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/property/attachment/controller/PropertyAttachmentController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/{attachmentId}/download",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/property/attachment/controller/PropertyAttachmentController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/{attachmentId}/view",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/property/attachment/controller/PropertyAttachmentController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/{contractId}/inspections",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/controller/LeaseContractController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/{contractId}/inspections",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/controller/LeaseContractController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/{filename:.+}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/files/controller/FileUploadController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/complaint/controller/TenantComplaintController.java"
+    },
+    {
+      "method": "PUT",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/annex/controller/ContractAnnexController.java"
+    },
+    {
+      "method": "DELETE",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/annex/controller/ContractAnnexController.java"
+    },
+    {
+      "method": "DELETE",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/fee/controller/ContractFeeController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/controller/LeaseContractController.java"
+    },
+    {
+      "method": "PUT",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/controller/LeaseContractController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/template/controller/ContractTemplateController.java"
+    },
+    {
+      "method": "PUT",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/template/controller/ContractTemplateController.java"
+    },
+    {
+      "method": "PUT",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contractor/controller/CompanyStaffController.java"
+    },
+    {
+      "method": "DELETE",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contractor/controller/CompanyStaffController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contractor/controller/ContractorCompanyController.java"
+    },
+    {
+      "method": "PUT",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contractor/controller/ContractorCompanyController.java"
+    },
+    {
+      "method": "DELETE",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contractor/controller/ContractorCompanyController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/hr/employee/controller/EmployeeController.java"
+    },
+    {
+      "method": "PUT",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/hr/employee/controller/EmployeeController.java"
+    },
+    {
+      "method": "DELETE",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/hr/employee/controller/EmployeeController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/hr/payroll/controller/PayrollController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/inspection/controller/UnitInspectionController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/inventory/controller/InventoryController.java"
+    },
+    {
+      "method": "PUT",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/inventory/controller/InventoryController.java"
+    },
+    {
+      "method": "DELETE",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/inventory/controller/InventoryController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/legalentity/controller/LegalEntityController.java"
+    },
+    {
+      "method": "PUT",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/legalentity/controller/LegalEntityController.java"
+    },
+    {
+      "method": "DELETE",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/legalentity/controller/LegalEntityController.java"
+    },
+    {
+      "method": "PUT",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/lookup/controller/LookupController.java"
+    },
+    {
+      "method": "DELETE",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/lookup/controller/LookupController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/category/controller/MaintenanceCategoryController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/company/MaintenanceCompanyController.java"
+    },
+    {
+      "method": "PUT",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/company/MaintenanceCompanyController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/request/controller/MaintenanceRequestController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/owner/controller/OwnerController.java"
+    },
+    {
+      "method": "PUT",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/owner/controller/OwnerController.java"
+    },
+    {
+      "method": "DELETE",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/owner/controller/OwnerController.java"
+    },
+    {
+      "method": "PUT",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/property/controller/FloorController.java"
+    },
+    {
+      "method": "DELETE",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/property/controller/FloorController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/property/controller/PropertyController.java"
+    },
+    {
+      "method": "PUT",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/property/controller/PropertyController.java"
+    },
+    {
+      "method": "DELETE",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/property/controller/PropertyController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/tenant/controller/TenantController.java"
+    },
+    {
+      "method": "PUT",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/tenant/controller/TenantController.java"
+    },
+    {
+      "method": "DELETE",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/tenant/controller/TenantController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/unit/controller/UnitController.java"
+    },
+    {
+      "method": "PUT",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/unit/controller/UnitController.java"
+    },
+    {
+      "method": "DELETE",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/unit/controller/UnitController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/user/controller/UserController.java"
+    },
+    {
+      "method": "PUT",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/user/controller/UserController.java"
+    },
+    {
+      "method": "DELETE",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/user/controller/UserController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/vendor/controller/VendorController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/{id}/accept-schedule",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/request/controller/MaintenanceRequestController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/{id}/activate",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/controller/LeaseContractController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/{id}/approve",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/hr/leave/controller/LeaveController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/{id}/approve",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/hr/payroll/controller/PayrollController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/{id}/approve",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/hr/payroll/controller/PayrollDeductionController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/{id}/assign",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/complaint/controller/TenantComplaintController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/{id}/assign",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/request/controller/MaintenanceRequestController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/{id}/attachments",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/request/controller/MaintenanceRequestController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/{id}/attachments",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/request/controller/MaintenanceRequestController.java"
+    },
+    {
+      "method": "DELETE",
+      "path": "/{id}/attachments/{attachmentId}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/request/controller/MaintenanceRequestController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/{id}/bonuses",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/hr/payroll/controller/PayrollController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/{id}/cancel",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/controller/LeaseContractController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/{id}/cancel",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/request/controller/MaintenanceRequestController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/{id}/cancel-renewal-request",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/controller/LeaseContractController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/{id}/cancel-termination-request",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/controller/LeaseContractController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/{id}/clear-unit",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/controller/LeaseContractController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/{id}/close",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/complaint/controller/TenantComplaintController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/{id}/complete",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/inspection/controller/UnitInspectionController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/{id}/confirm-damage-payment",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/controller/LeaseContractController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/{id}/inquiries",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/vacancy/controller/VacancyController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/{id}/items",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/inspection/controller/UnitInspectionController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/{id}/items/{itemId}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/inspection/controller/UnitInspectionController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/{id}/link-damages",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/inspection/controller/UnitInspectionController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/{id}/link-user",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/owner/controller/OwnerController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/{id}/maintenance-contracts",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contractor/controller/ContractorCompanyController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/{id}/maintenance-request",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/complaint/controller/TenantComplaintController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/{id}/mark-paid",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/fee/controller/ContractFeeController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/{id}/mark-paid",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/hr/payroll/controller/PayrollController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/{id}/no-renewal-intent",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/controller/LeaseContractController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/{id}/officers",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contractor/controller/ContractorCompanyController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/{id}/payslips/{payslipId}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/hr/payroll/controller/PayrollController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/{id}/rating",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/complaint/controller/TenantComplaintController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/{id}/rating",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/complaint/controller/TenantComplaintController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/{id}/rating",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/request/controller/MaintenanceRequestController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/{id}/rating",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/request/controller/MaintenanceRequestController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/{id}/read",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/notification/controller/NotificationController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/{id}/reject",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/hr/leave/controller/LeaveController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/{id}/reject",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/hr/payroll/controller/PayrollController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/{id}/reject",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/hr/payroll/controller/PayrollDeductionController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/{id}/reject-schedule",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/request/controller/MaintenanceRequestController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/{id}/renew",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/controller/LeaseContractController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/{id}/renewal-context",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/controller/LeaseContractController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/{id}/rental-status",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/unit/controller/UnitController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/{id}/reply",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/complaint/controller/TenantComplaintController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/{id}/report-damages",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/controller/LeaseContractController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/{id}/request-renewal",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/controller/LeaseContractController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/{id}/resolve",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/complaint/controller/TenantComplaintController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/{id}/return-deposit",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/controller/LeaseContractController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/{id}/revenue-split",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/property/controller/PropertyController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/{id}/role",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/user/controller/UserController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/{id}/schedule",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/request/controller/MaintenanceRequestController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/{id}/send",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/hr/payroll/controller/PayrollDeductionController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/{id}/sign",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/inspection/controller/UnitInspectionController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/{id}/start",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/request/controller/MaintenanceRequestController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/{id}/stock",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/inventory/controller/InventoryController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/{id}/submit-damage-receipt",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/controller/LeaseContractController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/{id}/submit-for-owner-approval",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/controller/LeaseContractController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/{id}/terminate",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/controller/LeaseContractController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/{id}/toggle-active",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contractor/controller/CompanyStaffController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/{id}/toggle-active",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/property/controller/PropertyController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/{id}/toggle-active",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/unit/controller/UnitController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/{id}/toggle-active",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/user/controller/UserController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/{id}/unlink-unit",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/tenant/controller/TenantController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/{id}/visit-report",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/request/controller/MaintenanceRequestController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/{id}/visit-report",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/request/controller/MaintenanceRequestController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/{listingId}/inquiries",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/vacancy/controller/VacancyController.java"
+    },
+    {
+      "method": "PUT",
+      "path": "/{role}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/permission/controller/RolePermissionController.java"
+    },
+    {
+      "method": "PUT",
+      "path": "/{screenKey}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/permission/controller/ScreenSettingController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/active",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/template/controller/ContractTemplateController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/admin/contract-requests/{id}/review",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/tenantportal/controller/TenantPortalController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/contract-requests/pending",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/tenantportal/controller/TenantPortalController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/owners/{ownerId}/revenue-shares",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/ownerportal/controller/OwnerPortalController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/admin/receipts/{id}/review",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/tenantportal/controller/TenantPortalController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/receipts/contract/{contractId}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/tenantportal/controller/TenantPortalController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/receipts/for-tenant",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/tenantportal/controller/TenantPortalController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/advances",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/hr/payroll/controller/PayrollController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/balances",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/hr/leave/controller/LeaveController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/budget-vs-actual",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/reports/controller/ReportsController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/budgets",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/finance/controller/FinanceController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/by-type",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/lookup/controller/LookupController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/by-unit/{unitId}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/tenant/controller/TenantController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/by-unit/{unitId}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/vacancy/controller/VacancyController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/by-user/{userId}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/tenant/controller/TenantController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/cities",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/lookup/controller/LookupController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/cities",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/lookup/controller/LookupController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/classifications",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/lookup/controller/LookupController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/classifications",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/lookup/controller/LookupController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/company-queue",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/request/controller/MaintenanceRequestController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/complaint-ratings-details",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/dashboard/controller/DashboardController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/complaint-ratings-summary",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/dashboard/controller/DashboardController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/contract-expiring",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/devops/controller/DevSchedulerController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/contract-expiring-reminders",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/devops/controller/DevSchedulerController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/contract-expiry",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/reports/controller/ReportsController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/contract-requests",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/tenantportal/controller/TenantPortalController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/contract-requests",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/tenantportal/controller/TenantPortalController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/contract/{contractId}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/fee/controller/ContractFeeController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/contracts/{contractId}/decision",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/controller/OwnerApprovalController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/contracts/{contractId}/force-end-date-past",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/devops/controller/DevQaController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/contracts/{contractId}/payment-schedule",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/payment/controller/RentPaymentController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/contracts/{contractId}/payment-schedule/{scheduleId}/proof",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/tenantportal/controller/TenantPortalController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/contracts/{contractId}/renewal-decision",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/controller/OwnerApprovalController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/contracts/{contractId}/termination-decision",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/controller/OwnerApprovalController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/contracts/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/tenantportal/controller/TenantPortalController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/contracts/{id}/inspections",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/tenantportal/controller/TenantPortalController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/contracts/{id}/payment-schedule",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/tenantportal/controller/TenantPortalController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/countries",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/lookup/controller/LookupController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/countries",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/lookup/controller/LookupController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/countries/oman",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/lookup/controller/LookupController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/dashboard",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/finance/controller/FinanceController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/dashboard",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/ownerportal/controller/OwnerPortalController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/definitions",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/moduleconfig/controller/ModuleCatalogController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/document-expiry",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/devops/controller/DevSchedulerController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/draft-contracts",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/ownerportal/controller/OwnerPortalController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/draft-contracts/{id}/amend",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/ownerportal/controller/OwnerPortalController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/draft-contracts/{id}/reject",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/ownerportal/controller/OwnerPortalController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/draft-contracts/{id}/unit-options",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/ownerportal/controller/OwnerPortalController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/expenses",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/finance/controller/FinanceController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/expenses",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/finance/controller/FinanceController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/expiring",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/controller/LeaseContractController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/expiring-contracts",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/dashboard/controller/DashboardController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/export/csv",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/finance/controller/FinanceController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/finance-export-test",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/devops/controller/DevSchedulerController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/generate",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/hr/payroll/controller/PayrollController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/inquiries/{id}/convert",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/vacancy/controller/VacancyController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/inquiries/{id}/status",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/vacancy/controller/VacancyController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/inspections/{inspectionId}/sign",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/tenantportal/controller/TenantPortalController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/login",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/auth/controller/AuthController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/logout",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/auth/controller/AuthController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/low-stock",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/inventory/controller/InventoryController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/low-stock/property/{propertyId}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/inventory/controller/InventoryController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/maintenance",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/reports/controller/ReportsController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/maintenance-assignable-contractor",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/user/controller/UserController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/maintenance-companies/{companyId}/contracts",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contract/controller/MaintenanceContractController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/maintenance-contracts",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contract/controller/MaintenanceContractController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/maintenance-contracts",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contract/controller/MaintenanceContractController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/maintenance-contracts/{contractId}/generate-monthly-invoices",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contractinvoice/controller/MaintenanceContractInvoiceController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/maintenance-contracts/{contractId}/invoices",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contractinvoice/controller/MaintenanceContractInvoiceController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/maintenance-contracts/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contract/controller/MaintenanceContractController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/maintenance-contracts/{id}/activate",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contract/controller/MaintenanceContractController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/maintenance-contracts/{id}/cancel",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contract/controller/MaintenanceContractController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/maintenance-contracts/{id}/cancel-renewal-request",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contract/controller/MaintenanceContractController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/maintenance-contracts/{id}/cancel-termination-request",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contract/controller/MaintenanceContractController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/maintenance-contracts/{id}/renewal-decision",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contract/controller/MaintenanceContractController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/maintenance-contracts/{id}/request-renewal",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contract/controller/MaintenanceContractController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/maintenance-contracts/{id}/terminate",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contract/controller/MaintenanceContractController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/maintenance-contracts/{id}/termination-decision",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contract/controller/MaintenanceContractController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/maintenance-invoice-reminders",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/devops/controller/DevSchedulerController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/maintenance-invoices",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/accountantportal/controller/AccountantPortalController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/maintenance-invoices",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contractinvoice/controller/MaintenanceContractInvoiceController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/maintenance-invoices/{id}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contractinvoice/controller/MaintenanceContractInvoiceController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/maintenance-invoices/{id}/cancel",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contractinvoice/controller/MaintenanceContractInvoiceController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/maintenance-invoices/{id}/mark-paid",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contractinvoice/controller/MaintenanceContractInvoiceController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/maintenance-invoices/{id}/payment-plan",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contractinvoice/controller/MaintenanceContractInvoiceController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/maintenance-invoices/{id}/review",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/accountantportal/controller/AccountantPortalController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/maintenance-invoices/{invoiceId}/payments/{paymentId}/mark-paid",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contractinvoice/controller/MaintenanceContractInvoiceController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/maintenance-invoices/filter-options",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/accountantportal/controller/AccountantPortalController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/maintenance-overdue",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/devops/controller/DevSchedulerController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/maintenance-sla",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/devops/controller/DevSchedulerController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/me",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/moduleconfig/controller/PropertyModuleSettingController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/me",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/permission/controller/RolePermissionController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/me",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/user/controller/UserController.java"
+    },
+    {
+      "method": "PUT",
+      "path": "/me",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/user/controller/UserController.java"
+    },
+    {
+      "method": "PUT",
+      "path": "/me/change-password",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/user/controller/UserController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/me/property-access",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/user/controller/UserController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/monthly-trend",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/dashboard/controller/DashboardController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/my",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/complaint/controller/TenantComplaintController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/my",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/invoice/controller/MaintenanceInvoiceController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/my",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/notification/controller/NotificationController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/my-active-units",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/complaint/controller/TenantComplaintController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/my-contract",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/tenantportal/controller/TenantPortalController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/my-contracts",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/tenantportal/controller/TenantPortalController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/my-payslips",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/hr/payroll/controller/PayrollController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/my-payslips/{payslipId}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/hr/payroll/controller/PayrollController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/my-properties",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/invoice/controller/MaintenanceInvoiceController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/my/read-all",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/notification/controller/NotificationController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/my/unread-count",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/notification/controller/NotificationController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/occupancy",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/reports/controller/ReportsController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/officer/{officerId}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/request/controller/MaintenanceRequestController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/officer/{officerId}/open-count",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/request/controller/MaintenanceRequestController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/officers",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contractor/controller/ContractorCompanyController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/onboard",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/tenant/controller/TenantController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/overdue-payments",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/dashboard/controller/DashboardController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/owner-portal/maintenance-contracts/{id}/decision",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contract/controller/MaintenanceContractController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/owner-portal/maintenance-contracts/{id}/renewal-decision",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contract/controller/MaintenanceContractController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/owner-portal/maintenance-contracts/{id}/termination-decision",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contract/controller/MaintenanceContractController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/owner-portal/maintenance-contracts/drafts",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contract/controller/MaintenanceContractController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/owner-portal/maintenance-contracts/pending-renewals",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contract/controller/MaintenanceContractController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/owner-portal/maintenance-contracts/pending-terminations",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contract/controller/MaintenanceContractController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/owner-statements",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/devops/controller/DevSchedulerController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/owner-users",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/owner/controller/OwnerController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/payment-schedule/{scheduleId}/mark-paid",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/payment/controller/RentPaymentController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/payment-schedule/{scheduleId}/proof/review",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/payment/controller/RentPaymentController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/payments",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/payment/controller/RentPaymentController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/payments",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/payment/controller/RentPaymentController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/payments/contract/{contractId}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/payment/controller/RentPaymentController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/payments/overdue",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/payment/controller/RentPaymentController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/payments/proofs/pending",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/payment/controller/RentPaymentController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/pending-approvals",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/controller/OwnerApprovalController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/pending-renewals",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/controller/OwnerApprovalController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/pending-terminations",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/controller/OwnerApprovalController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/presets",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/moduleconfig/controller/ModuleCatalogController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/properties",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contractor/controller/CompanyStaffController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/properties",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/ownerportal/controller/OwnerPortalController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/properties/{propertyId}/maintenance-contracts",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/contract/controller/MaintenanceContractController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/property/{propertyId}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/inventory/controller/InventoryController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/property/{propertyId}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/request/controller/MaintenanceRequestController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/property/{propertyId}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/moduleconfig/controller/PropertyModuleSettingController.java"
+    },
+    {
+      "method": "PUT",
+      "path": "/property/{propertyId}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/moduleconfig/controller/PropertyModuleSettingController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/property/{propertyId}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/unit/controller/UnitController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/ratings-details",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/dashboard/controller/DashboardController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/ratings-summary",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/dashboard/controller/DashboardController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/receipts",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/accountantportal/controller/AccountantPortalController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/receipts",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/tenantportal/controller/TenantPortalController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/receipts",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/tenantportal/controller/TenantPortalController.java"
+    },
+    {
+      "method": "PATCH",
+      "path": "/receipts/{id}/review",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/accountantportal/controller/AccountantPortalController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/recent-activity",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/dashboard/controller/DashboardController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/refresh",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/auth/controller/AuthController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/renewal-requests",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/accountantportal/controller/AccountantPortalController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/renewal-requests/{requestId}/process",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/accountantportal/controller/AccountantPortalController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/rent-due-reminders",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/devops/controller/DevSchedulerController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/rent-dunning-escalation",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/devops/controller/DevSchedulerController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/rent-overdue",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/devops/controller/DevSchedulerController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/reports/cashflow",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/finance/controller/FinanceController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/reports/owner-statements",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/finance/controller/FinanceController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/reports/pnl",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/finance/controller/FinanceController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/requests-by-category",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/dashboard/controller/DashboardController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/requests-by-status",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/dashboard/controller/DashboardController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/revenues",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/finance/controller/FinanceController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/revenues",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/finance/controller/FinanceController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/routing-info",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/request/controller/MaintenanceRequestController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/run-all",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/devops/controller/DevSchedulerController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/seed-budget",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/devops/controller/DevQaController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/sla-report",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/request/controller/MaintenanceRequestController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/statements",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/ownerportal/controller/OwnerPortalController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/stats",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/dashboard/controller/DashboardController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/stats/property/{propertyId}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/dashboard/controller/DashboardController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/tenant/{tenantId}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/contract/lease/controller/LeaseContractController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/tenant/{tenantId}",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/maintenance/request/controller/MaintenanceRequestController.java"
+    },
+    {
+      "method": "GET",
+      "path": "/transactions",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/inventory/controller/InventoryController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/transactions",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/inventory/controller/InventoryController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/units/{unitId}/unpublish-vacancy",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/devops/controller/DevQaController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/upload",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/files/controller/FileUploadController.java"
+    },
+    {
+      "method": "POST",
+      "path": "/vacancy-auto-publish",
+      "controller": "property-backend/src/main/java/com/propertymanagement/modules/devops/controller/DevSchedulerController.java"
+    }
+  ]
+}
