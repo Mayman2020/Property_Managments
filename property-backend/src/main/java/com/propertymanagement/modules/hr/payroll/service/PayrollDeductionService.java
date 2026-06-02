@@ -80,6 +80,45 @@ public class PayrollDeductionService {
     }
 
     @Transactional
+    public PayrollDeductionResponse update(Long id, PayrollDeductionRequest request) {
+        User actor = currentUser();
+        requireHr(actor);
+        PayrollDeduction deduction = repository.findById(id)
+                .orElseThrow(() -> AppException.notFound("Deduction not found: " + id));
+        if (deduction.getStatus() != PayrollDeductionStatus.DRAFT) {
+            throw AppException.badRequest("Only draft deductions can be edited");
+        }
+        Employee employee = employee(request.getEmployeeId());
+        assertPropertyAccess(employee, actor);
+        String reason = trim(request.getReason());
+        String payrollMonth = request.getPayrollMonth().trim();
+        if (repository.existsByEmployeeIdAndReasonIgnoreCaseAndPayrollMonthAndIdNot(employee.getId(), reason, payrollMonth, id)) {
+            throw AppException.conflict("Deduction already exists for this employee, reason, and payroll month");
+        }
+        deduction.setEmployeeId(employee.getId());
+        deduction.setAmount(request.getAmount());
+        deduction.setReason(reason);
+        deduction.setDeductionDate(request.getDeductionDate());
+        deduction.setPayrollMonth(payrollMonth);
+        PayrollDeduction saved = repository.save(deduction);
+        return toResponse(saved, employee);
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        User actor = currentUser();
+        requireHr(actor);
+        PayrollDeduction deduction = repository.findById(id)
+                .orElseThrow(() -> AppException.notFound("Deduction not found: " + id));
+        Employee employee = employee(deduction.getEmployeeId());
+        assertPropertyAccess(employee, actor);
+        if (deduction.getStatus() != PayrollDeductionStatus.DRAFT) {
+            throw AppException.badRequest("Only draft deductions can be deleted");
+        }
+        repository.delete(deduction);
+    }
+
+    @Transactional
     public PayrollDeductionResponse send(Long id) {
         User actor = currentUser();
         requireHr(actor);

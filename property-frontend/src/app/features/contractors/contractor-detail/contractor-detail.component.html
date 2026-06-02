@@ -165,7 +165,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let mc of contracts">
+            <tr *ngFor="let mc of pagedContracts">
               <td><strong>{{ mc.contractNumber || '-' }}</strong></td>
               <td>{{ propertyName(mc) }}</td>
               <td>{{ formatDate(mc.startDate) }}</td>
@@ -180,6 +180,12 @@
           </tbody>
         </table>
       </div>
+      <app-table-pager
+        [length]="contracts.length"
+        [pageSize]="pageSize"
+        [pageIndex]="contractsPageIndex"
+        (pageIndexChange)="contractsPageIndex = $event">
+      </app-table-pager>
     </div>
 
     <div class="empty-contracts" *ngIf="contracts.length === 0">
@@ -223,6 +229,12 @@
           </tbody>
         </table>
       </div>
+      <app-table-pager
+        [length]="staff.length"
+        [pageSize]="pageSize"
+        [pageIndex]="staffPageIndex"
+        (pageIndexChange)="staffPageIndex = $event">
+      </app-table-pager>
     </div>
 
     <div class="empty-contracts" *ngIf="staff.length === 0">

@@ -12,6 +12,7 @@ import { TranslateModule } from '@ngx-translate/core';
 
 import { MatDialog } from '@angular/material/dialog';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { EstateLovOption, EstateLovSelectComponent } from '../../../shared/components/estate-lov-select/estate-lov-select.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
 import { SearchDropdownComponent, SearchDropdownItem } from '../../../shared/components/search-dropdown/search-dropdown.component';
@@ -27,6 +28,8 @@ import { LeaseContract } from '../../../core/models/contract.model';
 
 import { MaintenanceRequestDialogComponent } from '../maintenance-request-dialog/maintenance-request-dialog.component';
 import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
+import { TableRowIndexPipe } from '../../../shared/pipes/table-row-index.pipe';
+import { ListLoadController } from '../../../shared/utils/list-load.util';
 
 export type RequestListContext = 'admin' | 'tenant' | 'officer';
 
@@ -39,14 +42,15 @@ const ACTIVE_STATUSES = new Set(['PENDING', 'ASSIGNED', 'SCHEDULED', 'IN_PROGRES
     NgFor, NgIf, DatePipe, FormsModule, RouterLink, TranslateModule,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule, MatTabsModule,
     PageHeaderComponent, EmptyStateComponent, TablePagerComponent, SearchDropdownComponent,
-    HasPermissionDirective
+    HasPermissionDirective,
+    TableRowIndexPipe, EstateLovSelectComponent
   ],
   templateUrl: './request-list.component.html',
   styleUrl: './request-list.component.scss'
 })
 export class RequestListComponent implements OnInit {
   requests: MaintenanceRequest[] = [];
-  loading = true;
+  listLoad = new ListLoadController();
   filterStatus = '';
   filterPriority = '';
   filterPropertyId: number | null = null;
@@ -82,6 +86,27 @@ export class RequestListComponent implements OnInit {
     { value: 'HIGH', labelKey: 'PRIORITY.HIGH' },
     { value: 'URGENT', labelKey: 'PRIORITY.URGENT' }
   ];
+
+  get propertyLovOptions(): EstateLovOption[] {
+    return this.properties.map((p) => ({
+      value: p.id,
+      label: this.propertyLovLabel(p)
+    }));
+  }
+
+  get statusLovOptions(): EstateLovOption[] {
+    return this.statuses.map((s) => ({
+      value: s.value,
+      label: this.i18n.instant(s.labelKey)
+    }));
+  }
+
+  get priorityLovOptions(): EstateLovOption[] {
+    return this.priorities.map((p) => ({
+      value: p.value,
+      label: this.i18n.instant(p.labelKey)
+    }));
+  }
 
   constructor(
     private readonly maintSvc: MaintenanceService,
@@ -149,7 +174,7 @@ export class RequestListComponent implements OnInit {
   }
 
   get pagedAdminRequests(): MaintenanceRequest[] {
-    return this.pageSlice(this.filteredAdminRequests, this.adminPageIndex);
+    return this.filterBySearch(this.filteredAdminRequests);
   }
 
   get pagedCurrentRequests(): MaintenanceRequest[] {
@@ -165,17 +190,17 @@ export class RequestListComponent implements OnInit {
   }
 
   load(): void {
-    this.loading = true;
+    this.listLoad.begin();
     this.missingTenantLink = false;
-    const params: Record<string, string | number | boolean> = { page: 0, size: 500 };
 
     if (this.listContext === 'tenant') {
+      const params: Record<string, string | number | boolean> = { page: 0, size: 100, sort: 'createdAt,desc' };
       const tenantId = this.auth.getCurrentUser()?.tenantId;
       if (tenantId == null) {
         this.requests = [];
         this.totalElements = 0;
         this.missingTenantLink = true;
-        this.loading = false;
+        this.listLoad.end();
         return;
       }
       forkJoin({
@@ -194,17 +219,17 @@ export class RequestListComponent implements OnInit {
           }
           this.totalElements = this.filteredRequests.length;
           this.resetPagerIndexes();
-          this.loading = false;
+          this.listLoad.end();
         },
-        error: () => { this.loading = false; }
+        error: () => { this.listLoad.end(); }
       });
       return;
     }
 
     if (this.listContext === 'officer') {
       const officerId = this.auth.getCurrentUser()?.id;
-      if (officerId == null) { this.loading = false; return; }
-      const mergedParams: Record<string, string | number | boolean> = { ...params, page: 0, size: 500 };
+      if (officerId == null) { this.listLoad.end(); return; }
+      const mergedParams: Record<string, string | number | boolean> = { page: 0, size: 100 };
       if (this.filterPropertyId != null) mergedParams['propertyId'] = this.filterPropertyId;
       forkJoin({
         mine: this.maintSvc.getByOfficer(officerId, mergedParams),
@@ -221,22 +246,34 @@ export class RequestListComponent implements OnInit {
           );
           this.totalElements = this.filteredRequests.length;
           this.resetPagerIndexes();
-          this.loading = false;
+          this.listLoad.end();
         },
-        error: () => { this.loading = false; }
+        error: () => { this.listLoad.end(); }
       });
       return;
     }
 
-    this.maintSvc.getRequests(params).subscribe({
+    const adminParams: Record<string, string | number | boolean> = {
+      page: this.adminPageIndex,
+      size: this.pageSize
+    };
+    if (this.filterStatus) adminParams['status'] = this.filterStatus;
+    if (this.filterPropertyId != null) adminParams['propertyId'] = this.filterPropertyId;
+
+    this.maintSvc.getRequests(adminParams).subscribe({
       next: (res) => {
-        this.requests = this.sortRequests(res.data?.content ?? []);
-        this.totalElements = this.filteredRequests.length;
+        this.requests = res.data?.content ?? [];
+        this.totalElements = res.data?.totalElements ?? this.requests.length;
         this.resetPagerIndexes();
-        this.loading = false;
+        this.listLoad.end();
       },
-      error: () => { this.loading = false; }
+      error: () => { this.listLoad.end(); }
     });
+  }
+
+  onAdminPageChange(index: number): void {
+    this.adminPageIndex = index;
+    this.load();
   }
 
   hasFiltersBar(): boolean {
@@ -256,12 +293,22 @@ export class RequestListComponent implements OnInit {
   }
 
   applyFilter(): void {
+    if (this.listContext === 'admin') {
+      this.adminPageIndex = 0;
+      this.load();
+      return;
+    }
     this.totalElements = this.filteredRequests.length;
     this.resetPagerIndexes();
   }
 
   onSearch(value: string): void {
     this.searchTerm = value;
+    if (this.listContext === 'admin') {
+      this.adminPageIndex = 0;
+      this.load();
+      return;
+    }
     this.totalElements = this.filteredRequests.length;
     this.resetPagerIndexes();
   }
@@ -520,7 +567,9 @@ export class RequestListComponent implements OnInit {
   slaDeadlineLabel(req: MaintenanceRequest): string {
     if (!req.slaDeadline) return '—';
     const d = new Date(req.slaDeadline);
-    return Number.isNaN(d.getTime()) ? req.slaDeadline : d.toLocaleString();
+    return Number.isNaN(d.getTime())
+      ? req.slaDeadline
+      : this.i18n.formatDateTime(d, { dateStyle: 'short', timeStyle: 'short' });
   }
 
   private localizedName(ar?: string | null, en?: string | null, fallback?: string | null): string {
@@ -535,5 +584,12 @@ export class RequestListComponent implements OnInit {
   private cleanText(value?: string | null): string {
     const text = value?.trim() ?? '';
     return text && !/^[?\s\uFFFD]+$/.test(text) ? text : '';
+  }
+
+  private propertyLovLabel(p: Property | CompanyProperty): string {
+    const name = this.i18n.currentLang === 'ar'
+      ? (p.propertyNameAr || p.propertyName)
+      : (p.propertyNameEn || p.propertyName);
+    return p.propertyCode ? `${p.propertyCode} — ${name}` : name;
   }
 }

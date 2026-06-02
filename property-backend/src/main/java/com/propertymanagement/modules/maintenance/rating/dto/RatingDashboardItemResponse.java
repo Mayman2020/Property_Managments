@@ -6,6 +6,8 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+import com.propertymanagement.modules.maintenance.request.entity.RequestStatus;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -26,8 +28,10 @@ public class RatingDashboardItemResponse {
     private String tenantName;
     private String tenantNameAr;
     private String tenantNameEn;
+    private Long tenantId;
+    private String tenantNationalId;
     private String categoryNameAr;
     private String categoryNameEn;
-    private String requestStatus;
+    private RequestStatus requestStatus;
     private Long contractorCompanyId;
 }

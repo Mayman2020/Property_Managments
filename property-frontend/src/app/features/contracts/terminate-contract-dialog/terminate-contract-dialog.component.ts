@@ -1,3 +1,4 @@
+import { DialogTitleCloseDirective } from './../../../shared/directives/dialog-title-close.directive';
 import { Component, Inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -36,8 +37,7 @@ function handoverFormValidator(group: AbstractControl): ValidationErrors | null 
   imports: [
     NgIf, ReactiveFormsModule, MatDialogModule, MatButtonModule,
     MatFormFieldModule, MatInputModule, MatDatepickerModule, MatNativeDateModule,
-    MatRadioModule, MatSlideToggleModule, MatProgressSpinnerModule, TranslateModule
-  ],
+    MatRadioModule, MatSlideToggleModule, MatProgressSpinnerModule, TranslateModule, DialogTitleCloseDirective],
   templateUrl: './terminate-contract-dialog.component.html',
   styleUrl: './terminate-contract-dialog.component.scss'
 })

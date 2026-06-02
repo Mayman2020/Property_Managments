@@ -37,10 +37,10 @@ export interface RoleCredential {
  * V151 pattern so we can re-use them without inventing new identities.
  */
 export const QA_CREDENTIALS: Record<RoleKey, RoleCredential> = {
-  SUPER_ADMIN: { role: 'SUPER_ADMIN', email: 'admin@propmgmt.com', password: '12345' },
-  GENERAL_MANAGER: { role: 'GENERAL_MANAGER', email: 'qa.gm@propmgmt.com', password: '12345' },
-  ACCOUNTANT: { role: 'ACCOUNTANT', email: 'qa.accountant@propmgmt.com', password: '12345' },
-  HR_OFFICER: { role: 'HR_OFFICER', email: 'qa.hr@propmgmt.com', password: '12345' },
+  SUPER_ADMIN: { role: 'SUPER_ADMIN', email: 'admin@propmgmt.com', password: '12345', available: true },
+  GENERAL_MANAGER: { role: 'GENERAL_MANAGER', email: 'qa.gm@propmgmt.com', password: '111111', available: true },
+  ACCOUNTANT: { role: 'ACCOUNTANT', email: 'qa.ac@propmgmt.com', password: '222222', available: true },
+  HR_OFFICER: { role: 'HR_OFFICER', email: 'qa.hr@propmgmt.com', password: '333333', available: true },
   MAINTENANCE_OFFICER_INTERNAL: {
     role: 'MAINTENANCE_OFFICER_INTERNAL',
     email: 'qa.officer.internal@propmgmt.com',
@@ -48,24 +48,28 @@ export const QA_CREDENTIALS: Record<RoleKey, RoleCredential> = {
   },
   MAINTENANCE_OFFICER_COMPANY: {
     role: 'MAINTENANCE_OFFICER_COMPANY',
-    email: 'qa.officer.company@propmgmt.com',
-    password: '12345'
+    email: 'qa.mo@propmgmt.com',
+    password: '666666',
+    available: true
   },
   MAINTENANCE_COMPANY: {
     role: 'MAINTENANCE_COMPANY',
-    email: 'qa.maint.company@propmgmt.com',
-    password: '12345'
+    email: 'qa.mc@propmgmt.com',
+    password: '666666',
+    available: true
   },
   PROPERTY_GUARD: {
     role: 'PROPERTY_GUARD',
     email: 'qa.guard@propmgmt.com',
-    password: '12345'
+    password: '111111',
+    available: true
   },
   PROCEDURES_CLERK: {
     role: 'PROCEDURES_CLERK',
     email: 'qa.clerk@propmgmt.com',
-    password: '12345'
+    password: '222222',
+    available: true
   },
-  OWNER: { role: 'OWNER', email: 'qa.owner@propmgmt.com', password: '12345' },
-  TENANT: { role: 'TENANT', email: 'qa.tenant2@propmgmt.com', password: '12345' }
+  OWNER: { role: 'OWNER', email: 'qa.owner.a@propmgmt.com', password: '444444', available: true },
+  TENANT: { role: 'TENANT', email: 'qa.tenant.a@propmgmt.com', password: '555555', available: true }
 };

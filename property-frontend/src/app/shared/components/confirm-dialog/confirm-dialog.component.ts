@@ -1,3 +1,4 @@
+import { DialogTitleCloseDirective } from './../../directives/dialog-title-close.directive';
 import { NgClass, NgIf } from '@angular/common';
 import { Component, Inject } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
@@ -20,7 +21,7 @@ export interface ConfirmDialogData {
 @Component({
   selector: 'app-confirm-dialog',
   standalone: true,
-  imports: [NgIf, NgClass, MatDialogModule, MatButtonModule, MatIconModule, TranslateModule],
+  imports: [NgIf, NgClass, MatDialogModule, MatButtonModule, MatIconModule, TranslateModule, DialogTitleCloseDirective],
   template: `
     <h2 mat-dialog-title>{{ data.title | translate }}</h2>
     <mat-dialog-content class="dialog-body confirm-body">

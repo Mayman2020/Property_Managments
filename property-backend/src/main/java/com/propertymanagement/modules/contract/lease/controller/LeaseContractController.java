@@ -15,6 +15,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -43,11 +44,10 @@ public class LeaseContractController {
     @RequiresPermission(module = "contracts", action = "view")
     public ResponseEntity<ApiResponse<Page<ContractResponse>>> getAll(
             @RequestParam(required = false) ContractStatus status,
-            @PageableDefault(size = 20) Pageable pageable) {
-        if (status != null) {
-            return ResponseEntity.ok(ApiResponse.ok(contractService.getByStatus(status, pageable)));
-        }
-        return ResponseEntity.ok(ApiResponse.ok(contractService.getAll(pageable)));
+            @RequestParam(required = false) String ownerApprovalStatus,
+            @RequestParam(required = false) String q,
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.ok(contractService.search(pageable, status, ownerApprovalStatus, q)));
     }
 
     @GetMapping("/{id}")

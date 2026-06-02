@@ -289,6 +289,11 @@ export class AuthService {
           { route: '/admin/profile', permission: 'profile', action: 'view' }
         ];
       case 'PROCEDURES_CLERK':
+        return [
+          { route: '/admin/hr/employees', permission: 'hr', action: 'view' },
+          { route: '/employee/notifications', permission: 'notifications', action: 'view' },
+          { route: '/employee/profile', permission: 'profile', action: 'view' }
+        ];
       case 'HR_OFFICER':
         return [
           { route: '/admin/home', permission: 'dashboard', action: 'view' },

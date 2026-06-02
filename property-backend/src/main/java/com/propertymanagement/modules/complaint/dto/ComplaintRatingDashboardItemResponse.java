@@ -28,4 +28,6 @@ public class ComplaintRatingDashboardItemResponse {
     private String tenantName;
     private String tenantNameAr;
     private String tenantNameEn;
+    private Long tenantId;
+    private String tenantNationalId;
 }

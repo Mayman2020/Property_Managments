@@ -12,19 +12,23 @@
     </button>
   </app-page-header>
 
-  <div class="loading-wrap" *ngIf="loading">
+  <div class="loading-wrap" *ngIf="listLoad.showInitialSpinner">
     <mat-spinner diameter="40"></mat-spinner>
   </div>
 
   <app-empty-state
-    *ngIf="!loading && filteredUsers.length === 0 && !hasFiltersBar()"
+    *ngIf="listLoad.showSurface && filteredUsers.length === 0 && !hasFiltersBar()"
     icon="manage_accounts"
     [title]="'USER_MGMT.EMPTY_TITLE' | translate"
     [message]="'USER_MGMT.EMPTY_MSG' | translate">
   </app-empty-state>
 
-  <section class="app-card" *ngIf="!loading && (filteredUsers.length > 0 || hasFiltersBar())">
-    <div class="search-bar-shell">
+  <section class="app-card directory-table-card app-list-surface"
+    [class.is-refreshing]="listLoad.refreshing"
+    *ngIf="listLoad.showSurface && (filteredUsers.length > 0 || hasFiltersBar())">
+    <div class="list-refresh-spinner" *ngIf="listLoad.refreshing"><mat-spinner diameter="32"></mat-spinner></div>
+    <div class="estate-table-toolbar directory-toolbar">
+      <div class="directory-toolbar-top table-list-toolbar">
       <app-filter-bar [filters]="pageFilters" [filterValues]="filterValues" (filtersChange)="onFilterBarChange($event)"></app-filter-bar>
       <button mat-icon-button class="clear-filters-btn" (click)="clearFiltersFromBar()" *ngIf="hasFiltersBar()" [matTooltip]="'ACTIONS.CLEAR_FILTERS' | translate">
         <mat-icon>filter_alt_off</mat-icon>
@@ -36,12 +40,14 @@
         [columns]="exportColumns"
         [rows]="filteredUsers">
       </app-table-export-toolbar>
+      </div>
     </div>
 
     <div class="app-table-wrap">
       <table class="app-data-table source-table">
         <thead>
           <tr>
+            <th class="table-index-col">#</th>
             <th>{{ 'USER_MGMT.USERNAME' | translate }}</th>
             <th class="center-col">{{ 'USER_MGMT.ROLE' | translate }}</th>
             <th class="center-col">{{ 'REQUEST_FORM.PROPERTY' | translate }}</th>
@@ -51,26 +57,19 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let user of pagedUsers">
+          <tr *ngFor="let user of pagedUsers; let i = index">
+            <td class="table-index-col">{{ i | tableRowIndex:pageIndex:pageSize }}</td>
             <td>
-              <div class="user-cell">
-                <div class="user-avatar">{{ userCode(user) }}</div>
-                <div class="user-info">
-                  <div class="user-name-row">
-                    <span class="user-name">{{ user.fullName }}</span>
-                    <span class="company-badge"
-                      *ngIf="(user.role === 'MAINTENANCE_OFFICER_COMPANY' || user.role === 'MAINTENANCE_COMPANY') && user.maintenanceCompanyName">
-                      <span class="material-icons company-arrow">chevron_right</span>
-                      {{ user.maintenanceCompanyName }}
-                    </span>
-                  </div>
-                  <div class="user-meta">
-                    <span *ngIf="user.fullNameAr">{{ user.fullNameAr }}</span>
-                    <span *ngIf="user.fullNameEn">{{ user.fullNameEn }}</span>
-                  </div>
-                  <div class="user-email">{{ user.email }}</div>
-                </div>
-              </div>
+              <app-table-entity-cell
+                [title]="user.fullName"
+                [subtitle]="userSubtitle(user)"
+                [initial]="userCode(user)">
+              </app-table-entity-cell>
+              <span class="company-badge company-badge--table"
+                *ngIf="(user.role === 'MAINTENANCE_OFFICER_COMPANY' || user.role === 'MAINTENANCE_COMPANY') && user.maintenanceCompanyName">
+                <span class="material-icons company-arrow">chevron_right</span>
+                {{ user.maintenanceCompanyName }}
+              </span>
             </td>
             <td class="center-col">
               <span class="role-badge">{{ roleLabel(user) }}</span>
@@ -105,11 +104,11 @@
             </td>
           </tr>
           <tr *ngIf="pagedUsers.length === 0">
-            <td colspan="6" class="empty-row">{{ 'COMMON.NO_DATA' | translate }}</td>
+            <td colspan="7" class="empty-row">{{ 'COMMON.NO_DATA' | translate }}</td>
           </tr>
         </tbody>
       </table>
     </div>
-    <app-table-pager [length]="filteredUsers.length" [pageSize]="pageSize" [pageIndex]="pageIndex" (pageIndexChange)="pageIndex = $event"></app-table-pager>
+    <app-table-pager [length]="totalElements" [pageSize]="pageSize" [pageIndex]="pageIndex" (pageIndexChange)="onPageChange($event)"></app-table-pager>
   </section>
 </div>

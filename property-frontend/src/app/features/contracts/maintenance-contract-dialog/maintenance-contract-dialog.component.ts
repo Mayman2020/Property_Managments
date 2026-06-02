@@ -1,3 +1,4 @@
+import { DialogTitleCloseDirective } from './../../../shared/directives/dialog-title-close.directive';
 ﻿import { Component, Inject, OnDestroy, OnInit, Optional } from '@angular/core';
 import { NgIf, NgFor, DecimalPipe } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -23,6 +24,7 @@ import { SnackService } from '../../../core/services/snack.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { LookupCacheService } from '../../../core/services/lookup-cache.service';
 import { LookupItem } from '../../../core/services/lookup.service';
+import { AuditTrailComponent } from '../../../shared/components/audit-trail/audit-trail.component';
 
 export interface MaintenanceContractDialogData {
   propertyId?: number;
@@ -39,8 +41,8 @@ export interface MaintenanceContractDialogData {
     MatButtonModule, MatIconModule, MatInputModule, MatSelectModule,
     MatDatepickerModule, MatNativeDateModule, MatFormFieldModule,
     MatProgressSpinnerModule, MatDialogModule,
-    TranslateModule, PageHeaderComponent, UploadZoneComponent
-  ],
+    TranslateModule, PageHeaderComponent, UploadZoneComponent,
+    AuditTrailComponent, DialogTitleCloseDirective],
   templateUrl: './maintenance-contract-dialog.component.html',
   styleUrl: './maintenance-contract-dialog.component.scss'
 })
@@ -54,6 +56,7 @@ export class MaintenanceContractDialogComponent implements OnInit, OnDestroy {
   contractorCompanies: ContractorCompany[] = [];
   currencies: LookupItem[] = [];
   attachmentUrls: string[] = [];
+  loadedContract: MaintenanceContractResponse | null = null;
 
   private allProps: Property[] = [];
   private allContracts: MaintenanceContractResponse[] = [];
@@ -220,6 +223,7 @@ export class MaintenanceContractDialogComponent implements OnInit, OnDestroy {
       next: (res) => {
         if (res.data) {
           const contract = res.data;
+          this.loadedContract = contract;
           this.form.patchValue({
             propertyId: contract.propertyId,
             contractorCompanyId: contract.contractorCompanyId,

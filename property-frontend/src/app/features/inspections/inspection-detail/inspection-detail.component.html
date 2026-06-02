@@ -42,7 +42,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let item of inspection.items">
+          <tr *ngFor="let item of pagedInspectionItems">
             <td>{{ item.area }}</td>
             <td>
               <select [ngModel]="item.condition" (ngModelChange)="updateItem(item.id, $event)"
@@ -58,6 +58,12 @@
           </tr>
         </tbody>
       </table>
+      <app-table-pager
+        [length]="inspection.items?.length ?? 0"
+        [pageSize]="pageSize"
+        [pageIndex]="itemsPageIndex"
+        (pageIndexChange)="itemsPageIndex = $event">
+      </app-table-pager>
     </section>
 
     <section class="app-card damage-summary" *ngIf="inspection.inspectionType === 'MOVE_OUT' && damagedItems.length">

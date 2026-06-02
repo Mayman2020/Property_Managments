@@ -1,8 +1,10 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { ApiService } from './api.service';
 import { AppConstants } from '../constants/app-constants';
-import { ApiResponse } from '../models/api-response.model';
+import { ApiResponse, PagedResponse } from '../models/api-response.model';
+import { withPageParams } from '../utils/pagination.util';
 
 export interface MaintenanceContractResponse {
   contractId: number;
@@ -63,8 +65,30 @@ export interface MaintenanceContractResponse {
 export class MaintenanceContractService {
   constructor(private readonly api: ApiService) {}
 
+  getAll(
+    page = 0,
+    size = 20,
+    status?: string,
+    ownerApprovalStatus?: string,
+    q?: string
+  ): Observable<ApiResponse<PagedResponse<MaintenanceContractResponse>>> {
+    return this.api.get<ApiResponse<PagedResponse<MaintenanceContractResponse>>>(
+      AppConstants.API.MAINTENANCE_CONTRACTS,
+      withPageParams(page, size, {
+        status: status || undefined,
+        ownerApprovalStatus: ownerApprovalStatus || undefined,
+        q: q?.trim() || undefined
+      })
+    );
+  }
+
   listAll(): Observable<ApiResponse<MaintenanceContractResponse[]>> {
-    return this.api.get<ApiResponse<MaintenanceContractResponse[]>>(AppConstants.API.MAINTENANCE_CONTRACTS);
+    return this.getAll(0, 500).pipe(
+      map((res) => ({
+        ...res,
+        data: res.data?.content ?? []
+      }))
+    );
   }
 
   create(payload: Record<string, unknown>): Observable<ApiResponse<MaintenanceContractResponse>> {

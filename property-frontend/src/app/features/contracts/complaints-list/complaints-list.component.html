@@ -12,37 +12,42 @@
     (backClick)="goBack()">
   </app-page-header>
 
-  <div class="estate-table-toolbar" *ngIf="!loading && (complaints.length > 0 || hasFiltersBar() || searchTerm)">
-    <div class="toolbar-row">
-      <div class="estate-search-inline">
-        <span class="material-icons">search</span>
-        <input [value]="searchTerm" (input)="onSearch($any($event.target).value)" [placeholder]="'ACTIONS.SEARCH' | translate">
-      </div>
-      <app-filter-bar [filters]="pageFilters" [filterValues]="filterValues" (filtersChange)="onFilterBarChange($event)"></app-filter-bar>
-      <button mat-icon-button class="clear-filters-btn" (click)="clearFiltersFromBar()" *ngIf="hasFiltersBar()" [matTooltip]="'ACTIONS.CLEAR_FILTERS' | translate">
-        <mat-icon>filter_alt_off</mat-icon>
-      </button>
-    </div>
-  </div>
 
-  <div *ngIf="loading" class="loading-wrap">
+  <div *ngIf="listLoad.showInitialSpinner" class="loading-wrap">
     <mat-spinner diameter="40"></mat-spinner>
   </div>
 
   <app-empty-state
-    *ngIf="!loading && complaints.length === 0 && !hasFiltersBar()"
+    *ngIf="listLoad.showSurface && complaints.length === 0 && !hasFiltersBar() && !searchTerm"
     icon="chat_bubble_outline"
     [title]="'CONTRACTS.COMPLAINTS_EMPTY_TITLE' | translate"
     [message]="'CONTRACTS.COMPLAINTS_EMPTY_MSG' | translate">
   </app-empty-state>
 
-  <section *ngIf="!loading && (complaints.length > 0 || hasFiltersBar())" class="app-card table-card">
+  <section *ngIf="listLoad.showSurface && (complaints.length > 0 || hasFiltersBar() || searchTerm)"
+    class="app-card directory-table-card table-card app-list-surface"
+    [class.is-refreshing]="listLoad.refreshing">
+    <div class="list-refresh-spinner" *ngIf="listLoad.refreshing"><mat-spinner diameter="32"></mat-spinner></div>
+    <div class="estate-table-toolbar directory-toolbar">
+      <div class="directory-toolbar-top table-list-toolbar">
+        <div class="directory-search">
+          <mat-icon>search</mat-icon>
+          <input [value]="searchTerm" (input)="onSearch($any($event.target).value)" [placeholder]="'ACTIONS.SEARCH' | translate">
+        </div>
+        <app-filter-bar [filters]="pageFilters" [filterValues]="filterValues" (filtersChange)="onFilterBarChange($event)"></app-filter-bar>
+        <button mat-icon-button class="clear-filters-btn" (click)="clearFiltersFromBar()" *ngIf="hasFiltersBar() || searchTerm" [matTooltip]="'ACTIONS.CLEAR_FILTERS' | translate">
+          <mat-icon>filter_alt_off</mat-icon>
+        </button>
+      </div>
+    </div>
     <div class="app-table-wrap">
       <table class="app-data-table source-table">
         <thead>
           <tr>
+            <th class="table-index-col">#</th>
             <th>{{ 'CONTRACTS.DATE' | translate }}</th>
             <th>{{ 'CONTRACTS.TENANT' | translate }}</th>
+            <th>{{ 'CONTRACTS.PROPERTY_UNIT' | translate }}</th>
             <th>{{ 'CONTRACTS.TITLE' | translate }}</th>
             <th>{{ 'CONTRACTS.TYPE' | translate }}</th>
             <th>{{ 'CONTRACTS.PRIORITY' | translate }}</th>
@@ -51,11 +56,14 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let c of filteredComplaints">
+          <tr *ngFor="let c of filteredComplaints; let i = index">
+            <td class="table-index-col">{{ i | tableRowIndex:pageIndex:pageSize }}</td>
             <td>{{ c.createdAt | date:'dd/MM/yyyy' }}</td>
             <td>
               <div class="row-main">{{ tenantDisplayName(c) }}</div>
-              <div class="row-sub" *ngIf="propertyDisplayName(c)">{{ propertyDisplayName(c) }}</div>
+            </td>
+            <td>
+              <div class="row-main property-unit-cell">{{ propertyUnitDisplay(c) }}</div>
             </td>
             <td class="col-title">{{ complaintDisplayTitle(c) }}</td>
             <td>{{ complaintTypeLabel(c.complaintType) }}</td>
@@ -70,8 +78,9 @@
               </span>
             </td>
             <td class="actions-col">
-              <button type="button" mat-stroked-button class="details-btn" (click)="openDetails(c)">
-                {{ 'CONTRACTS.DETAILS' | translate }}
+              <button type="button" class="app-icon-btn accent" (click)="openDetails(c)"
+                      [matTooltip]="'CONTRACTS.DETAILS' | translate">
+                <mat-icon>visibility</mat-icon>
               </button>
               <button type="button" class="app-icon-btn success"
                       *ngIf="canResolveComplaint() && c.status !== 'RESOLVED' && c.status !== 'CLOSED'"
@@ -79,12 +88,11 @@
                       [matTooltip]="'CONTRACTS.RESOLVE' | translate">
                 <mat-icon>check_circle_outline</mat-icon>
               </button>
-              <button type="button" class="app-icon-btn"
+              <button type="button" class="app-icon-btn danger"
                       *ngIf="!c.maintenanceRequestId && (c.status === 'OPEN' || c.status === 'IN_REVIEW')"
                       (click)="createMaintenanceRequest(c); $event.stopPropagation()"
                       [disabled]="creatingRequestId === c.id"
-                      [matTooltip]="'COMPLAINT.CREATE_MAINTENANCE' | translate"
-                      style="color: #c62828; border-color: rgba(229,115,115,0.4)">
+                      [matTooltip]="'COMPLAINT.CREATE_MAINTENANCE' | translate">
                 <mat-icon>build</mat-icon>
               </button>
               <span class="maintenance-linked-badge" *ngIf="c.maintenanceRequestId"
@@ -94,7 +102,7 @@
             </td>
           </tr>
           <tr *ngIf="complaints.length === 0">
-            <td colspan="7" class="empty-row">{{ 'COMMON.NO_DATA' | translate }}</td>
+            <td colspan="9" class="empty-row">{{ 'COMMON.NO_DATA' | translate }}</td>
           </tr>
         </tbody>
       </table>

@@ -1,0 +1,8 @@
+<div class="app-loading-shell" *ngIf="loading.isLoading$ | async" aria-live="polite" aria-busy="true">
+  <div class="app-loading-veil" aria-hidden="true"></div>
+  <div class="app-loading-bar" aria-hidden="true"></div>
+  <div class="app-loading-pill" role="status">
+    <span class="app-loading-ring" aria-hidden="true"></span>
+    <span class="app-loading-text">{{ 'COMMON.LOADING' | translate }}</span>
+  </div>
+</div>

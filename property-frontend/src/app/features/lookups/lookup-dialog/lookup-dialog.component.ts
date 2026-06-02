@@ -1,3 +1,4 @@
+import { DialogTitleCloseDirective } from './../../../shared/directives/dialog-title-close.directive';
 ﻿import { Component, Inject } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -29,8 +30,7 @@ export interface LookupDialogData {
     MatDialogModule, MatButtonModule,
     MatFormFieldModule, MatInputModule,
     MatProgressSpinnerModule, MatSelectModule,
-    TranslateModule
-  ],
+    TranslateModule, DialogTitleCloseDirective],
   template: `
     <h2 mat-dialog-title>
       {{ titleKey | translate }}

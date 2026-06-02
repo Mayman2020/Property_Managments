@@ -7,14 +7,14 @@
   </div>
 
   <div class="topbar-end">
-    <mat-form-field *ngIf="showPropertySelector()" appearance="outline" class="tb-property-scope-field">
-      <mat-label>{{ 'TOPBAR.PROPERTY_SCOPE' | translate }}</mat-label>
-      <mat-select [value]="selectedPropertyId" (selectionChange)="onPropertyScopeChange($event.value)">
-        <mat-option *ngFor="let p of propertyOptions" [value]="p.id">
-          {{ propertyLabel(p) }}
-        </mat-option>
-      </mat-select>
-    </mat-form-field>
+    <app-estate-lov-select
+      *ngIf="showPropertySelector()"
+      cssClass="estate-lov-select tb-property-scope-field"
+      [label]="'TOPBAR.PROPERTY_SCOPE'"
+      [options]="propertyLovOptions"
+      [(ngModel)]="selectedPropertyId"
+      (ngModelChange)="onPropertyScopeChange($event)">
+    </app-estate-lov-select>
 
     <button class="tb-action-btn" [matTooltip]="'TOPBAR.LANGUAGE' | translate" [matMenuTriggerFor]="langMenu">
       <img class="flag" [src]="activeLanguage.flagUrl" [attr.alt]="languageLabel(activeLanguage)">
@@ -42,31 +42,15 @@
       </button>
     </mat-menu>
 
-    <button class="tb-action-btn tb-notify-btn" [matMenuTriggerFor]="notifyMenu" [matTooltip]="'NOTIFICATIONS.TITLE' | translate">
+    <button
+      type="button"
+      class="tb-action-btn tb-notify-btn"
+      (click)="openNotificationsInbox()"
+      [matTooltip]="'NOTIFICATIONS.TITLE' | translate"
+      [attr.aria-label]="'NOTIFICATIONS.TITLE' | translate">
       <span class="material-icons">notifications</span>
       <span *ngIf="unreadCount > 0" class="tb-notify-count">{{ unreadCount }}</span>
     </button>
-    <mat-menu #notifyMenu="matMenu" class="tb-notify-menu">
-      <div class="tb-notify-header">
-        <strong>{{ 'NOTIFICATIONS.TITLE' | translate }}</strong>
-        <button class="tb-link-btn" (click)="markAllRead()">{{ 'NOTIFICATIONS.MARK_ALL_READ' | translate }}</button>
-      </div>
-      <mat-divider></mat-divider>
-      <div class="tb-notify-empty" *ngIf="notifications.length === 0">{{ 'NOTIFICATIONS.EMPTY' | translate }}</div>
-      <button mat-menu-item *ngFor="let n of notifications" (click)="markAsRead(n)" class="tb-notify-item" [class.unread]="!n.read">
-        <div class="tb-notify-item-content">
-          <div class="tb-notify-head">
-            <span class="material-icons tb-notify-type-icon">{{ notificationIcon(n) }}</span>
-            <div class="tb-notify-copy">
-              <div class="tb-notify-primary">{{ notificationDropdownTitle(n) }}</div>
-              <div class="tb-notify-hint">{{ notificationDropdownHint(n) }}</div>
-            </div>
-            <span class="tb-dot" *ngIf="!n.read"></span>
-          </div>
-          <div class="tb-notify-meta">{{ n.createdAt | date:'dd/MM/yyyy' }}</div>
-        </div>
-      </button>
-    </mat-menu>
 
     <button class="tb-user-btn" [matMenuTriggerFor]="userMenu">
       <div class="tb-avatar" *ngIf="!currentUser?.profileImageUrl">{{ currentUser?.initials || 'U' }}</div>

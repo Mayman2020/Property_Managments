@@ -1,3 +1,4 @@
+import { DialogTitleCloseDirective } from './../../../shared/directives/dialog-title-close.directive';
 ﻿import { Component, Inject, OnInit } from '@angular/core';
 import { NgClass, NgFor, NgIf } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
@@ -15,6 +16,7 @@ import { SnackService } from '../../../core/services/snack.service';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
 import { ExportColumn, TableExportToolbarComponent } from '../../../shared/components/table-export-toolbar/table-export-toolbar.component';
+import { TableRowIndexPipe } from '../../../shared/pipes/table-row-index.pipe';
 
 interface PermissionRoleConfig {
   key: UserRole;
@@ -56,8 +58,7 @@ interface PermissionRoleDialogData {
     MatButtonModule,
     MatDialogModule,
     MatIconModule,
-    MatSlideToggleModule
-  ],
+    MatSlideToggleModule, DialogTitleCloseDirective],
   template: `
     <h2 mat-dialog-title>
       <span class="material-icons">{{ data.role.icon }}</span>
@@ -286,7 +287,8 @@ export class PermissionRoleDialogComponent {
     MatProgressSpinnerModule,
     PageHeaderComponent,
     TablePagerComponent,
-    TableExportToolbarComponent
+    TableExportToolbarComponent,
+    TableRowIndexPipe
   ],
   template: `
     <div class="app-page permissions-page">
@@ -312,7 +314,7 @@ export class PermissionRoleDialogComponent {
           <table class="app-data-table permission-table">
             <thead>
               <tr>
-                <th>#</th>
+                <th class="table-index-col">#</th>
                 <th>{{ ('INLINE_TEXT.ROLE' | translate) }}</th>
                 <th>{{ ('INLINE_TEXT.ENABLED_MODULES' | translate) }}</th>
                 <th>{{ ('INLINE_TEXT.ENABLED_ACTIONS' | translate) }}</th>
@@ -321,7 +323,7 @@ export class PermissionRoleDialogComponent {
             </thead>
             <tbody>
               <tr *ngFor="let role of pagedRoles; let i = index" class="permission-row" (click)="openRole(role)">
-                <td>{{ rolePageIndex * rolePageSize + i + 1 }}</td>
+                <td class="table-index-col">{{ i | tableRowIndex:rolePageIndex:rolePageSize }}</td>
                 <td>
                   <div class="role-title-cell">
                     <span class="material-icons">{{ role.icon }}</span>

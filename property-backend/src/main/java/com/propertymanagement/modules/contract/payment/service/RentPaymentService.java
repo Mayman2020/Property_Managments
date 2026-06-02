@@ -411,7 +411,66 @@ public class RentPaymentService {
                 .reviewedByName(resolveUserName(s.getReviewedBy()))
                 .reviewedAt(s.getReviewedAt())
                 .rejectionReason(s.getRejectionReason())
+                .overdueReminderSentAt(s.getOverdueReminderSentAt())
+                .overdueReminderSnoozedUntil(s.getOverdueReminderSnoozedUntil())
                 .build();
+    }
+
+    @Transactional
+    public ScheduleItemResponse sendOverdueReminder(Long scheduleId, Long actorUserId) {
+        RentPaymentSchedule schedule = scheduleRepository.findById(scheduleId)
+                .orElseThrow(() -> com.propertymanagement.shared.exception.AppException.notFound("Payment schedule item not found: " + scheduleId));
+        if (schedule.getStatus() == PaymentScheduleStatus.PAID || schedule.getStatus() == PaymentScheduleStatus.WAIVED) {
+            throw com.propertymanagement.shared.exception.AppException.badRequest("This payment row is already closed");
+        }
+        if (!isOverdueUnpaid(schedule)) {
+            throw com.propertymanagement.shared.exception.AppException.badRequest("This payment is not overdue", "PAYMENT_NOT_OVERDUE");
+        }
+        LocalDateTime now = LocalDateTime.now();
+        if (schedule.getOverdueReminderSnoozedUntil() != null && schedule.getOverdueReminderSnoozedUntil().isAfter(now)) {
+            throw com.propertymanagement.shared.exception.AppException.badRequest(
+                    "Overdue reminder was sent recently; try again after the snooze period",
+                    "OVERDUE_REMINDER_SNOOZED");
+        }
+
+        LeaseContract contract = contractRepository.findById(schedule.getContractId())
+                .orElseThrow(() -> com.propertymanagement.shared.exception.AppException.notFound("Lease contract not found: " + schedule.getContractId()));
+        if (contract.getPropertyId() != null && !propertyScopeService.canAccessProperty(contract.getPropertyId())) {
+            throw com.propertymanagement.shared.exception.AppException.forbidden("You cannot send reminders for this property");
+        }
+
+        User actor = actorUserId != null
+                ? userRepository.findById(actorUserId).orElse(null)
+                : null;
+        Map<String, Object> vars = reminderPaymentVars(schedule, contract, actor);
+        Map<String, Object> nav = Map.of("contractId", contract.getId(), "scheduleId", schedule.getId());
+
+        tenantRepository.findById(contract.getTenantId()).map(Tenant::getUserId).filter(Objects::nonNull).ifPresent(userId ->
+                notificationService.createLocalized(
+                        List.of(userId),
+                        actorUserId,
+                        contract.getPropertyId(),
+                        null,
+                        NotificationType.RENT_OVERDUE,
+                        "NOTIFICATIONS.RENT_OVERDUE_REMINDER_TITLE",
+                        "NOTIFICATIONS.RENT_OVERDUE_REMINDER_BODY",
+                        vars,
+                        nav));
+
+        schedule.setOverdueReminderSentAt(now);
+        schedule.setOverdueReminderSnoozedUntil(now.plusHours(48));
+        RentPaymentSchedule saved = scheduleRepository.save(schedule);
+        return toScheduleResponse(saved);
+    }
+
+    private boolean isOverdueUnpaid(RentPaymentSchedule schedule) {
+        if (schedule.getStatus() == PaymentScheduleStatus.PAID || schedule.getStatus() == PaymentScheduleStatus.WAIVED) {
+            return false;
+        }
+        if (schedule.getStatus() == PaymentScheduleStatus.OVERDUE) {
+            return true;
+        }
+        return schedule.getDueDate() != null && schedule.getDueDate().isBefore(LocalDate.now());
     }
 
     private Long currentUserIdOrNull() {
@@ -624,6 +683,62 @@ public class RentPaymentService {
             vars.put("lateFee", "0");
         }
         return vars;
+    }
+
+    private Map<String, Object> reminderPaymentVars(RentPaymentSchedule schedule, LeaseContract contract, User actor) {
+        Map<String, Object> vars = paymentVars(schedule, contract, null, null);
+        String unitNumber = contract.getUnitId() != null
+                ? unitRepository.findById(contract.getUnitId()).map(u -> u.getUnitNumber()).orElse("-")
+                : "-";
+        String propertyNameAr = contract.getPropertyId() != null
+                ? propertyRepository.findById(contract.getPropertyId())
+                        .map(p -> firstNonBlank(p.getPropertyNameAr(), p.getPropertyName(), p.getPropertyNameEn()))
+                        .orElse("-")
+                : "-";
+        String propertyNameEn = contract.getPropertyId() != null
+                ? propertyRepository.findById(contract.getPropertyId())
+                        .map(p -> firstNonBlank(p.getPropertyNameEn(), p.getPropertyName(), p.getPropertyNameAr()))
+                        .orElse("-")
+                : "-";
+        vars.put("unitNumber", unitNumber);
+        vars.put("propertyNameAr", propertyNameAr);
+        vars.put("propertyNameEn", propertyNameEn);
+        vars.put("propertyName", propertyNameAr);
+        vars.put("rentMonthAr", formatRentMonth(schedule, true));
+        vars.put("rentMonthEn", formatRentMonth(schedule, false));
+        vars.put("rentMonth", formatRentMonth(schedule, true));
+        vars.put("senderName", actor != null ? firstNonBlank(actor.getFullName(), actor.getUsername(), "-") : "-");
+        vars.put("senderRoleAr", resolveSenderRoleLabel(actor, true));
+        vars.put("senderRoleEn", resolveSenderRoleLabel(actor, false));
+        vars.put("senderRole", resolveSenderRoleLabel(actor, true));
+        vars.put("amountDue", vars.get("amount"));
+        vars.put("daysOverdue", schedule.getDueDate() != null
+                ? String.valueOf(Math.max(0, ChronoUnit.DAYS.between(schedule.getDueDate(), LocalDate.now())))
+                : "0");
+        return vars;
+    }
+
+    private String formatRentMonth(RentPaymentSchedule schedule, boolean arabic) {
+        LocalDate ref = schedule.getPeriodFrom() != null ? schedule.getPeriodFrom()
+                : (schedule.getDueDate() != null ? schedule.getDueDate() : LocalDate.now());
+        java.util.Locale locale = arabic ? java.util.Locale.forLanguageTag("ar") : java.util.Locale.ENGLISH;
+        return ref.getMonth().getDisplayName(java.time.format.TextStyle.FULL, locale) + " " + ref.getYear();
+    }
+
+    private String resolveSenderRoleLabel(User actor, boolean arabic) {
+        if (actor == null) {
+            return arabic ? "الإدارة" : "Administration";
+        }
+        UserRole role = propertyScopeService.resolveEffectiveRole(actor);
+        if (role == null) {
+            return arabic ? "الإدارة" : "Administration";
+        }
+        return switch (role) {
+            case ACCOUNTANT -> arabic ? "المحاسب" : "Accountant";
+            case OWNER -> arabic ? "المالك" : "Owner";
+            case SUPER_ADMIN, GENERAL_MANAGER -> arabic ? "الإدارة" : "Administration";
+            default -> arabic ? "الموظف" : "Staff";
+        };
     }
 
     private void createRentRevenueIfMissing(RentPaymentSchedule schedule, RentPayment payment) {

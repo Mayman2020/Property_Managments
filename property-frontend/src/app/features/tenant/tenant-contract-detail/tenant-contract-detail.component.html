@@ -19,6 +19,23 @@
       </a>
     </app-page-header>
 
+    <div class="tenant-overdue-banner app-card" *ngIf="showTenantOverdueBanner() && primaryOverdueSchedule() as overdueRow">
+      <mat-icon>warning_amber</mat-icon>
+      <div class="tenant-overdue-body">
+        <strong>{{ 'TENANT_PORTAL.OVERDUE_NOTICE_TITLE' | translate }}</strong>
+        <p>{{ 'TENANT_PORTAL.OVERDUE_NOTICE_MSG' | translate:{
+          month: rentMonthLabel(overdueRow),
+          unit: contract.unitNumber || '-',
+          property: contract.propertyName || '-',
+          amount: (overdueRow.amount | number),
+          currency: contract.currency
+        } }}</p>
+      </div>
+      <button type="button" mat-stroked-button (click)="dismissTenantOverdueBanner()">
+        {{ 'CONTRACTS.DISMISS_OVERDUE_BANNER' | translate }}
+      </button>
+    </div>
+
     <div class="contract-hero-grid">
       <article class="contract-stat-card navy">
         <div class="csc-icon"><mat-icon>payments</mat-icon></div>

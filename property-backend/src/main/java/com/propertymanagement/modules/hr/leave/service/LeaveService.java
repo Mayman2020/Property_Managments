@@ -61,6 +61,14 @@ public class LeaveService {
         return queryRepository.findAllRows(pageable).map(this::toResponse);
     }
 
+    public LeaveRequestResponse getById(Long id) {
+        LeaveRequestEntity entity = find(id);
+        Employee employee = employeeRepository.findById(entity.getEmployeeId())
+                .orElseThrow(() -> AppException.notFound("Employee not found"));
+        assertUserCanAccessProperty(employee.getPropertyId(), currentUser());
+        return toResponse(entity);
+    }
+
     public List<EmployeeLeaveBalanceResponse> balancesForProperty(Long propertyId, Integer year) {
         User user = currentUser();
         Long targetPropertyId = propertyId != null ? propertyId : user.getPropertyId();
@@ -101,6 +109,47 @@ public class LeaveService {
         LeaveRequestEntity saved = repository.save(entity);
         notifyLeaveSubmitted(saved, employee);
         return toResponse(saved);
+    }
+
+    @Transactional
+    public LeaveRequestResponse update(Long id, CreateLeaveRequest request) {
+        LeaveRequestEntity entity = find(id);
+        if (!"PENDING".equalsIgnoreCase(entity.getStatus())) {
+            throw AppException.badRequest("Only pending leave requests can be updated");
+        }
+        Employee employee = employeeRepository.findById(request.getEmployeeId())
+                .orElseThrow(() -> AppException.badRequest("Employee not found: " + request.getEmployeeId()));
+        assertUserCanAccessProperty(employee.getPropertyId(), currentUser());
+        validateRange(request.getStartDate(), request.getEndDate());
+        if (repository.existsOverlappingActiveRequestExcluding(id, employee.getId(), request.getStartDate(), request.getEndDate())) {
+            throw AppException.badRequest("There is an overlapping leave request for this employee");
+        }
+        int requestedDays = (int) ChronoUnit.DAYS.between(request.getStartDate(), request.getEndDate()) + 1;
+        int year = request.getStartDate().getYear();
+        int usedDays = repository.sumApprovedDaysByEmployeeAndYear(employee.getId(), year);
+        if (usedDays + requestedDays > ANNUAL_ENTITLED_DAYS) {
+            throw AppException.badRequest("Insufficient annual leave balance");
+        }
+        entity.setEmployeeId(employee.getId());
+        entity.setLeaveTypeId(request.getLeaveTypeId());
+        entity.setStartDate(request.getStartDate());
+        entity.setEndDate(request.getEndDate());
+        entity.setDaysCount(requestedDays);
+        entity.setReason(trimToNull(request.getReason()));
+        entity.setAttachmentUrl(trimToNull(request.getAttachmentUrl()));
+        return toResponse(repository.save(entity));
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        LeaveRequestEntity entity = find(id);
+        if (!"PENDING".equalsIgnoreCase(entity.getStatus())) {
+            throw AppException.badRequest("Only pending leave requests can be deleted");
+        }
+        Employee employee = employeeRepository.findById(entity.getEmployeeId())
+                .orElseThrow(() -> AppException.notFound("Employee not found"));
+        assertUserCanAccessProperty(employee.getPropertyId(), currentUser());
+        repository.delete(entity);
     }
 
     @Transactional

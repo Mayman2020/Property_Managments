@@ -112,8 +112,8 @@ public class PropertyService {
                 .propertyCode(propertyCode)
                 .propertyType(request.getPropertyType())
                 .address(request.getAddress())
-                .city(request.getCity())
-                .country(request.getCountry())
+                .city(resolveCity(request.getCity()))
+                .country(resolveCountry(request.getCountry()))
                 .googleMapUrl(request.getGoogleMapUrl())
                 .totalFloors(request.getTotalFloors())
                 .totalUnits(request.getTotalUnits())
@@ -153,8 +153,8 @@ public class PropertyService {
         property.setPropertyNameEn(normalizedNameEn);
         property.setPropertyType(request.getPropertyType());
         property.setAddress(request.getAddress());
-        property.setCity(request.getCity());
-        property.setCountry(request.getCountry());
+        property.setCity(resolveCity(request.getCity()));
+        property.setCountry(resolveCountry(request.getCountry()));
         property.setGoogleMapUrl(request.getGoogleMapUrl());
         property.setTotalFloors(request.getTotalFloors());
         property.setTotalUnits(request.getTotalUnits());
@@ -414,6 +414,14 @@ public class PropertyService {
     private String resolvedCoverImage(PropertyRequest request) {
         List<String> imgs = normalizeCoverImages(request);
         return imgs.isEmpty() ? null : imgs.get(0);
+    }
+
+    private String resolveCity(String city) {
+        return firstNonBlank(trimToNull(city), "مسقط");
+    }
+
+    private String resolveCountry(String country) {
+        return firstNonBlank(trimToNull(country), "سلطنة عمان");
     }
 
     private String firstNonBlank(String... values) {

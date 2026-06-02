@@ -9,6 +9,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import { catchError, forkJoin, of } from 'rxjs';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { EstateLovOption, EstateLovSelectComponent } from '../../../shared/components/estate-lov-select/estate-lov-select.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import {
   ComplaintRatingDashboardItem,
@@ -17,8 +18,11 @@ import {
 } from '../../../core/services/dashboard.service';
 import { Property, PropertyService } from '../../../core/services/property.service';
 import { Unit, UnitService } from '../../../core/services/unit.service';
+import { Tenant, TenantService } from '../../../core/services/tenant.service';
+import { SnackService } from '../../../core/services/snack.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { LookupCacheService } from '../../../core/services/lookup-cache.service';
+import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
 
 interface PropertyFilterOption {
   id: number;
@@ -27,6 +31,12 @@ interface PropertyFilterOption {
 
 interface UnitFilterOption {
   id: number;
+  name: string;
+}
+
+interface TenantFilterOption {
+  id: number;
+  nationalId: string;
   name: string;
 }
 
@@ -53,6 +63,8 @@ interface UnifiedRatingItem {
   tenantName?: string;
   tenantNameAr?: string;
   tenantNameEn?: string;
+  tenantId?: number;
+  tenantNationalId?: string;
   categoryNameAr?: string;
   categoryNameEn?: string;
   requestStatus?: string;
@@ -64,37 +76,44 @@ interface UnifiedRatingItem {
   imports: [
     NgFor, NgIf, NgClass, DatePipe, DecimalPipe, FormsModule, TranslateModule,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule,
-    PageHeaderComponent, EmptyStateComponent
+    PageHeaderComponent, EmptyStateComponent, EstateLovSelectComponent, TablePagerComponent
   ],
   templateUrl: './ratings-dashboard.component.html',
   styleUrl: './ratings-dashboard.component.scss'
 })
 export class RatingsDashboardComponent implements OnInit {
   loading = true;
+  loadError = false;
 
   visitRatings: UnifiedRatingItem[] = [];
   complaintRatings: UnifiedRatingItem[] = [];
   filteredRatings: UnifiedRatingItem[] = [];
   propertyOptions: PropertyFilterOption[] = [];
   unitOptions: UnitFilterOption[] = [];
+  tenantOptions: TenantFilterOption[] = [];
   loadingUnits = false;
+  loadingTenants = false;
 
   activeTab: RatingTab = 'visits';
   selectedPropertyId: number | null = null;
   selectedUnitId: number | null = null;
+  selectedTenantId: number | null = null;
   selectedStars: number | null = null;
-  searchTerm = '';
   dateFromStr = '';
   dateToStr = '';
   selectedRating: UnifiedRatingItem | null = null;
+  pageIndex = 0;
 
   readonly stars = [4, 3, 2, 1];
+  readonly pageSize = 6;
 
   constructor(
     private readonly dashSvc: DashboardService,
     private readonly propertySvc: PropertyService,
     private readonly unitSvc: UnitService,
+    private readonly tenantSvc: TenantService,
     private readonly lookupCache: LookupCacheService,
+    private readonly snack: SnackService,
     readonly i18n: I18nService
   ) {}
 
@@ -104,10 +123,12 @@ export class RatingsDashboardComponent implements OnInit {
 
   load(): void {
     this.loading = true;
+    this.loadError = false;
     forkJoin({
-      visits: this.dashSvc.getRatingsDetails(),
-      complaints: this.dashSvc.getComplaintRatingsDetails(),
-      properties: this.propertySvc.getAll(0, 500),
+      visits: this.dashSvc.getRatingsDetails().pipe(catchError(() => of({ data: [] as RatingDashboardItem[] }))),
+      complaints: this.dashSvc.getComplaintRatingsDetails().pipe(catchError(() => of({ data: [] as ComplaintRatingDashboardItem[] }))),
+      properties: this.propertySvc.getAll(0, 500).pipe(catchError(() => of({ data: { content: [] as Property[] } }))),
+      tenants: this.tenantSvc.getAll(0, 500).pipe(catchError(() => of({ data: { content: [] as Tenant[] } }))),
       lookups: this.lookupCache.preload(
         'COMPLAINT_TYPE',
         'COMPLAINT_STATUS',
@@ -116,15 +137,18 @@ export class RatingsDashboardComponent implements OnInit {
         'UNIT_TYPE'
       ).pipe(catchError(() => of(undefined)))
     }).subscribe({
-      next: ({ visits, complaints, properties }) => {
+      next: ({ visits, complaints, properties, tenants }) => {
         this.visitRatings = (visits.data ?? []).map((item) => this.mapVisitRating(item));
         this.complaintRatings = (complaints.data ?? []).map((item) => this.mapComplaintRating(item));
         this.propertyOptions = this.buildPropertyOptions(properties.data?.content ?? []);
+        this.tenantOptions = this.buildTenantOptions(tenants.data?.content ?? []);
         this.applyFilters();
         this.loading = false;
       },
       error: () => {
+        this.loadError = true;
         this.loading = false;
+        this.snack.error(this.i18n.instant('RATINGS_DASHBOARD.LOAD_ERROR'));
       }
     });
   }
@@ -136,39 +160,25 @@ export class RatingsDashboardComponent implements OnInit {
   }
 
   applyFilters(): void {
-    const query = this.searchTerm.trim().toLowerCase();
     const fromDate = this.dateFromStr ? new Date(this.dateFromStr) : null;
     const toDate = this.dateToStr ? new Date(this.dateToStr + 'T23:59:59') : null;
 
     this.filteredRatings = this.activeSource.filter((item) => {
       if (this.selectedPropertyId && item.propertyId !== this.selectedPropertyId) return false;
       if (this.selectedUnitId && item.unitId !== this.selectedUnitId) return false;
+      if (this.selectedTenantId && item.tenantId !== this.selectedTenantId) return false;
       if (this.selectedStars && item.rating !== this.selectedStars) return false;
 
       const ratedAt = item.createdAt ? new Date(item.createdAt) : null;
       if (fromDate && ratedAt && ratedAt < fromDate) return false;
       if (toDate && ratedAt && ratedAt > toDate) return false;
 
-      if (!query) return true;
-      const haystack = [
-        item.number,
-        item.title,
-        this.complaintTypeLabel(item.type),
-        item.status,
-        item.priority,
-        item.propertyName,
-        item.propertyNameAr,
-        item.propertyNameEn,
-        item.unitNumber,
-        item.tenantName,
-        item.tenantNameAr,
-        item.tenantNameEn,
-        item.comment,
-        item.ratingKey
-      ].join(' ').toLowerCase();
-
-      return haystack.includes(query);
+      return true;
     });
+
+    if (this.pageIndex > 0 && this.pageIndex >= Math.ceil(this.filteredRatings.length / this.pageSize)) {
+      this.pageIndex = 0;
+    }
 
     if (this.selectedRating && !this.filteredRatings.some((item) => item.id === this.selectedRating?.id)) {
       this.selectedRating = null;
@@ -179,19 +189,41 @@ export class RatingsDashboardComponent implements OnInit {
     this.selectedRating = null;
     this.selectedPropertyId = null;
     this.selectedUnitId = null;
+    this.selectedTenantId = null;
     this.unitOptions = [];
     this.selectedStars = null;
-    this.searchTerm = '';
     this.dateFromStr = '';
     this.dateToStr = '';
+    this.pageIndex = 0;
+    this.reloadTenants();
     this.applyFilters();
+  }
+
+  goToPage(pageIndex: number): void {
+    this.pageIndex = pageIndex;
+    this.selectedRating = null;
   }
 
   onPropertyChange(propertyId: number | null): void {
     this.selectedPropertyId = propertyId;
     this.selectedUnitId = null;
+    this.selectedTenantId = null;
     this.unitOptions = [];
+    this.pageIndex = 0;
     if (propertyId) this.loadUnits(propertyId);
+    this.reloadTenants(propertyId ?? undefined);
+    this.applyFilters();
+  }
+
+  onTenantChange(tenantId: number | null): void {
+    this.selectedTenantId = tenantId;
+    this.pageIndex = 0;
+    this.applyFilters();
+  }
+
+  onUnitChange(unitId: number | null): void {
+    this.selectedUnitId = unitId;
+    this.pageIndex = 0;
     this.applyFilters();
   }
 
@@ -240,19 +272,32 @@ export class RatingsDashboardComponent implements OnInit {
     return this.filteredRatings.filter((r) => r.rating <= 2).length;
   }
 
-  get recentRatings(): UnifiedRatingItem[] {
-    return this.filteredRatings.slice(0, 20);
+  get pagedRatings(): UnifiedRatingItem[] {
+    const start = this.pageIndex * this.pageSize;
+    return this.filteredRatings.slice(start, start + this.pageSize);
   }
 
-  get searchPlaceholder(): string {
-    return this.i18n.instant('RATINGS_DASHBOARD.SEARCH_PLACEHOLDER');
+  get emptyMessageKey(): string {
+    return this.activeTab === 'complaints'
+      ? 'RATINGS_DASHBOARD.NO_COMPLAINT_RATINGS_MSG'
+      : 'RATINGS_DASHBOARD.NO_VISIT_RATINGS_MSG';
   }
 
   ratingLabel(item: UnifiedRatingItem): string {
     if (this.activeTab === 'complaints') {
       return this.complaintRatingLabel(item.ratingKey || '');
     }
-    return `${this.visitRatingScore(item.rating)} / 4`;
+    return this.visitRatingLabel(this.visitRatingScore(item.rating));
+  }
+
+  visitRatingLabel(score: number): string {
+    const map: Record<number, string> = {
+      4: this.i18n.instant('INLINE_TEXT.VERY_SATISFIED'),
+      3: this.i18n.instant('INLINE_TEXT.SATISFIED'),
+      2: this.i18n.instant('INLINE_TEXT.DISSATISFIED'),
+      1: this.i18n.instant('INLINE_TEXT.VERY_DISSATISFIED')
+    };
+    return map[score] ?? '-';
   }
 
   complaintRatingLabel(value: string): string {
@@ -352,6 +397,40 @@ export class RatingsDashboardComponent implements OnInit {
     return this.i18n.instant('INLINE_TEXT.VISIT_RATINGS');
   }
 
+  private reloadTenants(propertyId?: number): void {
+    this.loadingTenants = true;
+    this.tenantSvc.getAll(0, 500, undefined, propertyId).subscribe({
+      next: (res) => {
+        this.tenantOptions = this.buildTenantOptions(res.data?.content ?? []);
+        this.loadingTenants = false;
+      },
+      error: () => {
+        this.tenantOptions = [];
+        this.loadingTenants = false;
+      }
+    });
+  }
+
+  private buildTenantOptions(items: Tenant[]): TenantFilterOption[] {
+    return items
+      .map((t) => ({
+        id: t.id,
+        nationalId: (t.nationalId ?? '').trim(),
+        name: this.tenantOptionName(t)
+      }))
+      .filter((t) => t.nationalId || t.name)
+      .sort((a, b) => (a.nationalId || a.name).localeCompare(b.nationalId || b.name));
+  }
+
+  private tenantOptionName(t: Tenant): string {
+    const ar = (t.fullNameAr ?? '').trim();
+    const en = (t.fullNameEn ?? '').trim();
+    const fallback = (t.fullName ?? '').trim();
+    return this.i18n.currentLang === 'ar'
+      ? (ar || en || fallback || `#${t.id}`)
+      : (en || ar || fallback || `#${t.id}`);
+  }
+
   private loadUnits(propertyId: number): void {
     this.loadingUnits = true;
     this.unitSvc.getByProperty(propertyId, 0, 500).subscribe({
@@ -368,19 +447,52 @@ export class RatingsDashboardComponent implements OnInit {
     });
   }
 
+  get propertyLovOptions(): EstateLovOption[] {
+    return this.propertyOptions.map((p) => ({ value: p.id, label: p.name }));
+  }
+
+  get unitLovOptions(): EstateLovOption[] {
+    if (this.loadingUnits) {
+      return [{ value: null, label: this.i18n.instant('REQUEST_FORM.LOADING_UNITS') }];
+    }
+    if (this.unitOptions.length) {
+      return this.unitOptions.map((u) => ({ value: u.id, label: u.name }));
+    }
+    const map = new Map<number, string>();
+    for (const item of this.activeSource) {
+      if (item.unitId != null) {
+        map.set(item.unitId, item.unitNumber || `#${item.unitId}`);
+      }
+    }
+    return Array.from(map.entries())
+      .map(([id, label]) => ({ value: id, label }))
+      .sort((a, b) => String(a.label).localeCompare(String(b.label)));
+  }
+
+  get tenantLovOptions(): EstateLovOption[] {
+    if (this.loadingTenants) {
+      return [{ value: null, label: this.i18n.instant('COMMON.LOADING') }];
+    }
+    return this.tenantOptions.map((t) => ({
+      value: t.id,
+      label: t.nationalId ? `${t.nationalId} — ${t.name}` : t.name
+    }));
+  }
+
   private buildPropertyOptions(items: Property[]): PropertyFilterOption[] {
     return items
-      .map((p) => ({ id: p.id, name: this.propertyLabel(p) }))
+      .map((p) => ({ id: p.id, name: this.propertyLovLabel(p) }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }
 
-  private propertyLabel(p: Property): string {
+  private propertyLovLabel(p: Property): string {
     const ar = (p.propertyNameAr ?? '').trim();
     const en = (p.propertyNameEn ?? '').trim();
     const fallback = (p.propertyName ?? '').trim();
-    return this.i18n.currentLang === 'ar'
+    const name = this.i18n.currentLang === 'ar'
       ? (ar || en || fallback || `#${p.id}`)
       : (en || ar || fallback || `#${p.id}`);
+    return p.propertyCode ? `${p.propertyCode} — ${name}` : name;
   }
 
   private unitLabel(u: Unit): string {
@@ -407,6 +519,8 @@ export class RatingsDashboardComponent implements OnInit {
       tenantName: item.tenantName,
       tenantNameAr: item.tenantNameAr,
       tenantNameEn: item.tenantNameEn,
+      tenantId: item.tenantId,
+      tenantNationalId: item.tenantNationalId,
       categoryNameAr: item.categoryNameAr,
       categoryNameEn: item.categoryNameEn,
       requestStatus: item.requestStatus
@@ -433,7 +547,9 @@ export class RatingsDashboardComponent implements OnInit {
       unitNumber: item.unitNumber,
       tenantName: item.tenantName,
       tenantNameAr: item.tenantNameAr,
-      tenantNameEn: item.tenantNameEn
+      tenantNameEn: item.tenantNameEn,
+      tenantId: item.tenantId,
+      tenantNationalId: item.tenantNationalId
     };
   }
 

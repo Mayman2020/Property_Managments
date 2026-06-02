@@ -1,3 +1,4 @@
+import { DialogTitleCloseDirective } from './../../../shared/directives/dialog-title-close.directive';
 ﻿import { Component, Inject, OnInit } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -15,6 +16,7 @@ import { LookupItem } from '../../../core/services/lookup.service';
 import { LookupCacheService } from '../../../core/services/lookup-cache.service';
 import { SnackService } from '../../../core/services/snack.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
+import { AuditTrailComponent } from '../../../shared/components/audit-trail/audit-trail.component';
 
 export interface InventoryItemDialogData {
   item: InventoryItem | null;
@@ -28,8 +30,8 @@ export interface InventoryItemDialogData {
     NgIf, NgFor,
     ReactiveFormsModule, TranslateModule,
     MatDialogModule, MatButtonModule, MatFormFieldModule,
-    MatInputModule, MatProgressSpinnerModule, MatSelectModule
-  ],
+    MatInputModule, MatProgressSpinnerModule, MatSelectModule,
+    AuditTrailComponent, DialogTitleCloseDirective],
   template: `
     <h2 mat-dialog-title>
       {{ (data.item ? 'INVENTORY.EDIT_ITEM' : 'INVENTORY.ADD_ITEM') | translate }}
@@ -94,6 +96,10 @@ export interface InventoryItemDialogData {
           <input matInput formControlName="location" />
         </mat-form-field>
       </form>
+
+      <app-audit-trail *ngIf="data.item" class="full inv-audit"
+        [createdAt]="data.item.createdAt">
+      </app-audit-trail>
     </mat-dialog-content>
     <mat-dialog-actions align="end" class="dialog-actions">
       <button mat-stroked-button type="button" class="btn-dialog-cancel" (click)="ref.close(false)">
@@ -109,6 +115,7 @@ export interface InventoryItemDialogData {
     .dialog-body { min-width: min(520px, 92vw); padding-top: 8px; }
     .inv-dialog-form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .full { grid-column: 1 / -1; }
+    .inv-audit { margin-top: 14px; }
     input[readonly] { color: var(--text-secondary, #888); cursor: default; }
     @media (max-width: 560px) { .inv-dialog-form { grid-template-columns: 1fr; } }
   `]

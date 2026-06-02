@@ -5,12 +5,14 @@
     [subtitle]="'DASHBOARD.SUBTITLE' | translate"
     [breadcrumbs]="[{label:('NAV.DASHBOARD' | translate), route:'/admin/dashboard'}, {label:('NAV.REPORTS' | translate)}]">
 
-    <select [(ngModel)]="selectedPropertyId" (change)="onPropertyChange()" class="estate-property-select">
-      <option [ngValue]="null">{{ 'COMMON.ALL_PROPERTIES' | translate }}</option>
-      <option *ngFor="let p of properties" [ngValue]="p.id">
-        {{ isArabic ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName) }}
-      </option>
-    </select>
+    <app-estate-lov-select
+      [label]="'REQUEST_FORM.PROPERTY'"
+      [options]="propertyLovOptions"
+      [showAll]="true"
+      allLabelKey="COMMON.ALL_PROPERTIES"
+      [(ngModel)]="selectedPropertyId"
+      (ngModelChange)="onPropertyChange()">
+    </app-estate-lov-select>
 
   </app-page-header>
 
@@ -102,7 +104,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let row of rows">
+            <tr *ngFor="let row of pagedRows">
               <td><strong>{{ row.propertyName }}</strong></td>
               <td>{{ row.total }}</td>
               <td><span class="status-badge" data-status="PENDING">{{ row.pending }}</span></td>
@@ -120,6 +122,12 @@
           </tbody>
         </table>
       </div>
+      <app-table-pager
+        [length]="rows.length"
+        [pageSize]="pageSize"
+        [pageIndex]="pageIndex"
+        (pageIndexChange)="pageIndex = $event">
+      </app-table-pager>
     </article>
   </ng-container>
 </div>

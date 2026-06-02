@@ -1,3 +1,4 @@
+import { DialogTitleCloseDirective } from './../../../shared/directives/dialog-title-close.directive';
 import { AfterViewInit, ChangeDetectorRef, Component, Inject, OnInit, Optional } from '@angular/core';
 import { debounceTime, distinctUntilChanged, forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -76,8 +77,7 @@ import { ChangeDetectionStrategy } from '@angular/core';
     UploadZoneComponent,
     SearchableSelectComponent,
     MapPreviewComponent,
-    AuditTrailComponent
-  ],
+    AuditTrailComponent, DialogTitleCloseDirective],
   templateUrl: './property-form.component.html',
   styleUrl: './property-form.component.scss',
   providers: [DatePipe, DecimalPipe]

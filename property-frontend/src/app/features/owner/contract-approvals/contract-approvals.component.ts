@@ -1,6 +1,6 @@
 ﻿import { Component, OnInit } from '@angular/core';
 import { DatePipe, DecimalPipe, NgClass, NgFor, NgIf } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, ActivatedRoute } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
@@ -98,18 +98,35 @@ export class ContractApprovalsComponent implements OnInit {
     private readonly auth: AuthService,
     private readonly dialog: MatDialog,
     private readonly snack: SnackService,
+    private readonly route: ActivatedRoute,
     readonly i18n: I18nService
   ) {
     this.isOwner = this.auth.hasRole('OWNER');
   }
 
   ngOnInit(): void {
+    this.applyTabFromQuery();
     this.load();
     this.loadPendingTerminations();
     this.loadPendingRenewals();
     this.loadMaintenanceDrafts();
     this.loadMaintenancePendingTerminations();
     this.loadMaintenancePendingRenewals();
+  }
+
+  private applyTabFromQuery(): void {
+    const tab = (this.route.snapshot.queryParamMap.get('tab') ?? '').toLowerCase();
+    const tabIndex: Record<string, number> = {
+      drafts: 0,
+      terminations: 1,
+      renewals: 2,
+      'maintenance-drafts': 3,
+      'maintenance-terminations': 4,
+      'maintenance-renewals': 5
+    };
+    if (tab in tabIndex) {
+      this.selectedTab = tabIndex[tab];
+    }
   }
 
   private maybeSyncSelectedTab(): void {
@@ -130,9 +147,15 @@ export class ContractApprovalsComponent implements OnInit {
   load(): void {
     this.loading = true;
     if (this.isOwner) {
-      this.ownerPortal.getDraftContracts().subscribe({
-        next: (res) => {
-          this.contracts = Array.isArray(res.data) ? res.data : [];
+      forkJoin({
+        drafts: this.ownerPortal.getDraftContracts(),
+        pending: this.ownerPortal.getPendingApprovals()
+      }).subscribe({
+        next: ({ drafts, pending }) => {
+          const merged = [...(drafts.data ?? []), ...(pending.data ?? [])];
+          const byId = new Map<number, LeaseContract>();
+          merged.forEach((c) => byId.set(c.id, c));
+          this.contracts = Array.from(byId.values());
           this.loading = false;
           this.maybeSyncSelectedTab();
         },
@@ -267,7 +290,10 @@ export class ContractApprovalsComponent implements OnInit {
     ).subscribe((ok) => {
       if (!ok) return;
       this.activating[contract.id] = true;
-      this.contractSvc.activate(contract.id).subscribe({
+      const approve$ = this.isOwner && contract.status === 'PENDING_OWNER_APPROVAL'
+        ? this.ownerPortal.submitContractDecision(contract.id, { decision: 'APPROVED' })
+        : this.contractSvc.activate(contract.id);
+      approve$.subscribe({
         next: () => {
           this.activating[contract.id] = false;
           this.snack.success(this.i18n.instant('CONTRACTS.ACTIVATED_SUCCESS'));
@@ -746,22 +772,14 @@ export class ContractApprovalsComponent implements OnInit {
   }
 
   private formatDate(value: string | null | undefined): string {
-    if (!value) return '-';
-    return new Intl.DateTimeFormat(this.i18n.currentLang === 'ar' ? 'ar-OM' : 'en-GB').format(new Date(value));
+    return this.i18n.formatDateTime(value, { day: '2-digit', month: '2-digit', year: 'numeric' });
   }
 
   private formatDateTime(value: string | null | undefined): string {
-    if (!value) return '-';
-    return new Intl.DateTimeFormat(this.i18n.currentLang === 'ar' ? 'ar-OM' : 'en-GB', {
-      dateStyle: 'medium',
-      timeStyle: 'short'
-    }).format(new Date(value));
+    return this.i18n.formatDateTime(value, { dateStyle: 'medium', timeStyle: 'short' });
   }
 
   private formatNumber(value: number): string {
-    return new Intl.NumberFormat(this.i18n.currentLang === 'ar' ? 'ar-OM' : 'en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(value);
+    return this.i18n.formatNumber(value, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 }

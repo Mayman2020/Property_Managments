@@ -9,18 +9,25 @@
 }
 
 .search-bar-shell { display: flex; align-items: center; gap: 8px; padding: 16px; background: var(--surface); border-bottom: 1px solid var(--line); flex-wrap: nowrap; }
-.search-input-box { flex: 0 1 260px; min-width: 180px; display: flex; align-items: center; gap: 6px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 0 10px; height: 40px; transition: all 0.2s; }
 .search-input-box:focus-within { border-color: var(--navy-400); background: var(--surface); }
 .search-input-box mat-icon { color: var(--text-muted); font-size: 16px; width: 16px; height: 16px; }
 .search-input-box input { border: none; background: transparent; color: var(--text-main); width: 100%; outline: none; font-size: 0.82rem; }
 
 .units-page app-filter-bar { flex: 1 1 auto; min-width: 0; }
 ::ng-deep .units-page app-filter-bar .estate-filter-bar { flex-wrap: nowrap !important; align-items: center !important; gap: 8px !important; padding: 0 !important; width: 100%; }
-::ng-deep .units-page app-filter-bar .filter-field { flex: 0 1 auto; width: 140px; min-width: 0; margin-bottom: 0; }
-::ng-deep .units-page app-filter-bar .filter-field--filterUnitNumber { width: 160px; }
-::ng-deep .units-page app-filter-bar .filter-field--selectedPropertyId { width: 250px; }
-::ng-deep .units-page app-filter-bar .filter-field--filterFloor { width: 110px; }
-::ng-deep .units-page app-filter-bar .filter-field--filterUnitType { width: 145px; }
+::ng-deep .units-page app-filter-bar .filter-field,
+::ng-deep .units-page app-filter-bar .filter-lov { flex: 0 1 auto; width: 140px; min-width: 0; margin-bottom: 0; height: 40px; }
+::ng-deep .units-page app-filter-bar .filter-lov--filterUnitNumber { width: 160px; }
+::ng-deep .units-page app-filter-bar .filter-lov--filterUnitType { width: 145px; }
+::ng-deep .units-page app-filter-bar .filter-lov--filterStatus { width: 165px; }
+::ng-deep .units-page .units-property-filter {
+  flex: 0 1 250px;
+  width: 250px;
+  min-width: 180px;
+  max-width: 280px;
+  height: 40px;
+  margin-bottom: 0;
+}
 ::ng-deep .units-page app-filter-bar .filter-field--filterStatus { width: 165px; }
 ::ng-deep .units-page app-filter-bar .filter-field .mat-mdc-form-field-wrapper { padding-bottom: 0; }
 ::ng-deep .units-page app-filter-bar .filter-field .mat-mdc-text-field-wrapper { height: 40px !important; background: var(--surface-2) !important; border-radius: 6px; }

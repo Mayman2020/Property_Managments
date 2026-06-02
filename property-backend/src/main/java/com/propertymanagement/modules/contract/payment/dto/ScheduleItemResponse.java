@@ -48,4 +48,7 @@ public class ScheduleItemResponse {
     private Long propertyId;
     private String propertyNameAr;
     private String propertyNameEn;
+
+    private LocalDateTime overdueReminderSentAt;
+    private LocalDateTime overdueReminderSnoozedUntil;
 }

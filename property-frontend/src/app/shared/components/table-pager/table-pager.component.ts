@@ -6,7 +6,7 @@ import { NgFor, NgIf } from '@angular/common';
   standalone: true,
   imports: [NgFor, NgIf],
   template: `
-    <nav class="srs-pager-shell table-pager-shell" *ngIf="length > pageSize" aria-label="Table pagination">
+    <nav class="srs-pager-shell table-pager-shell" *ngIf="length > 0" aria-label="Table pagination">
       <div class="srs-pager__controls">
         <button type="button" class="srs-pager__nav" (click)="previousPage()" [disabled]="pageIndex === 0">
           <span class="material-icons">chevron_left</span>

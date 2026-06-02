@@ -10,9 +10,12 @@ import { MatDialog } from '@angular/material/dialog';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { EstateLovOption, EstateLovSelectComponent } from '../../../shared/components/estate-lov-select/estate-lov-select.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
 import { ExportColumn, TableExportToolbarComponent } from '../../../shared/components/table-export-toolbar/table-export-toolbar.component';
+import { TableEntityCellComponent } from '../../../shared/components/table-entity-cell/table-entity-cell.component';
+import { TableRowIndexPipe } from '../../../shared/pipes/table-row-index.pipe';
 import { Owner, OwnerService, ownerDisplayName } from '../../../core/services/owner.service';
 import { Property, PropertyService } from '../../../core/services/property.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -22,6 +25,7 @@ import { DeleteConfirmService } from '../../../core/services/delete-confirm.serv
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { OwnerDialogComponent, OwnerDialogData } from '../owner-dialog/owner-dialog.component';
 import { OwnerLinkUserDialogComponent, OwnerLinkUserDialogData } from '../owner-link-user-dialog/owner-link-user-dialog.component';
+import { ListLoadController } from '../../../shared/utils/list-load.util';
 
 @Component({
   selector: 'app-owners-management',
@@ -30,7 +34,8 @@ import { OwnerLinkUserDialogComponent, OwnerLinkUserDialogData } from '../owner-
     NgFor, NgIf, FormsModule,
     TranslateModule,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule,
-    PageHeaderComponent, EmptyStateComponent, TablePagerComponent, TableExportToolbarComponent
+    PageHeaderComponent, EmptyStateComponent, TablePagerComponent, TableExportToolbarComponent, TableEntityCellComponent, TableRowIndexPipe,
+    EstateLovSelectComponent
   ],
   template: `
     <div class="app-page">
@@ -49,32 +54,36 @@ import { OwnerLinkUserDialogComponent, OwnerLinkUserDialogData } from '../owner-
         </button>
       </app-page-header>
 
-      <div class="loading-wrap" *ngIf="loading">
+      <div class="loading-wrap" *ngIf="listLoad.showInitialSpinner">
         <mat-spinner diameter="40"></mat-spinner>
       </div>
 
       <app-empty-state
-        *ngIf="!loading && owners.length === 0 && !hasFiltersBar()"
+        *ngIf="listLoad.showSurface && owners.length === 0 && !hasFiltersBar()"
         icon="person_pin"
         [title]="'OWNERS.EMPTY_TITLE' | translate"
         [message]="'OWNERS.EMPTY_MSG' | translate">
       </app-empty-state>
 
-      <div class="app-card table-card directory-table-card" *ngIf="!loading && (owners.length > 0 || hasFiltersBar())">
+      <div class="app-card table-card directory-table-card app-list-surface"
+        [class.is-refreshing]="listLoad.refreshing"
+        *ngIf="listLoad.showSurface && (owners.length > 0 || hasFiltersBar())">
+        <div class="list-refresh-spinner" *ngIf="listLoad.refreshing"><mat-spinner diameter="32"></mat-spinner></div>
         <div class="estate-table-toolbar directory-toolbar">
-          <div class="directory-toolbar-top">
-            <div class="estate-search-inline">
-              <span class="material-icons">search</span>
+          <div class="directory-toolbar-top table-list-toolbar">
+            <div class="directory-search">
+              <mat-icon>search</mat-icon>
               <input [value]="searchTerm" (input)="onSearch($any($event.target).value)" [placeholder]="'ACTIONS.SEARCH' | translate">
             </div>
             <div class="finance-filter-strip" *ngIf="properties.length > 1">
-              <label>{{ 'REQUEST_FORM.PROPERTY' | translate }}</label>
-              <select [(ngModel)]="filterPropertyId" (change)="onPropertyChange()" class="estate-property-select">
-                <option [ngValue]="null">{{ 'COMMON.ALL' | translate }}</option>
-                <option *ngFor="let p of properties" [ngValue]="p.id">
-                  {{ i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName) }}
-                </option>
-              </select>
+              <app-estate-lov-select
+                [label]="'REQUEST_FORM.PROPERTY'"
+                [options]="propertyLovOptions"
+                [showAll]="true"
+                allLabelKey="COMMON.ALL"
+                [(ngModel)]="filterPropertyId"
+                (ngModelChange)="onPropertyChange()">
+              </app-estate-lov-select>
             </div>
             <button mat-icon-button class="clear-filters-btn" (click)="clearFiltersFromBar()" *ngIf="hasFiltersBar()" [matTooltip]="'ACTIONS.CLEAR_FILTERS' | translate">
               <mat-icon>filter_alt_off</mat-icon>
@@ -92,7 +101,7 @@ import { OwnerLinkUserDialogComponent, OwnerLinkUserDialogData } from '../owner-
           <table class="app-data-table">
             <thead>
               <tr>
-                <th>#</th>
+                <th class="table-index-col">#</th>
                 <th>{{ 'OWNERS.NAME_COL' | translate }}</th>
                 <th>{{ 'REQUEST_FORM.PROPERTY' | translate }}</th>
                 <th>{{ 'OWNERS.NATIONAL_ID' | translate }}</th>
@@ -103,16 +112,14 @@ import { OwnerLinkUserDialogComponent, OwnerLinkUserDialogData } from '../owner-
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let o of pagedOwners">
-                <td>{{ o.id }}</td>
+              <tr *ngFor="let o of pagedOwners; let i = index">
+                <td class="table-index-col">{{ i | tableRowIndex:pageIndex:pageSize }}</td>
                 <td>
-                  <div class="owner-name-cell">
-                    <img *ngIf="o.profileImageUrl" [src]="o.profileImageUrl" class="owner-avatar" alt="">
-                    <span class="avatar-placeholder" *ngIf="!o.profileImageUrl">
-                      {{ ownerLabel(o).charAt(0).toUpperCase() }}
-                    </span>
-                    <strong>{{ ownerLabel(o) }}</strong>
-                  </div>
+                  <app-table-entity-cell
+                    [title]="ownerLabel(o)"
+                    [imageUrl]="o.profileImageUrl"
+                    [initial]="ownerLabel(o).charAt(0).toUpperCase()">
+                  </app-table-entity-cell>
                 </td>
                 <td>
                   <span *ngFor="let p of (o.properties || []); let last = last" class="prop-chip">
@@ -157,10 +164,10 @@ import { OwnerLinkUserDialogComponent, OwnerLinkUserDialogData } from '../owner-
         </div>
 
         <app-table-pager
-          [length]="filteredOwners.length"
+          [length]="totalElements"
           [pageSize]="pageSize"
           [pageIndex]="pageIndex"
-          (pageIndexChange)="pageIndex = $event">
+          (pageIndexChange)="onPageChange($event)">
         </app-table-pager>
       </div>
     </div>
@@ -188,9 +195,17 @@ export class OwnersManagementComponent implements OnInit {
   properties: Property[] = [];
   filterPropertyId: number | null = null;
   searchTerm = '';
-  loading = true;
+  listLoad = new ListLoadController();
   readonly pageSize = 5;
   pageIndex = 0;
+  totalElements = 0;
+
+  get propertyLovOptions(): EstateLovOption[] {
+    return this.properties.map((p) => ({
+      value: p.id,
+      label: this.propertyLovLabel(p)
+    }));
+  }
 
   constructor(
     private readonly svc: OwnerService,
@@ -230,8 +245,7 @@ export class OwnersManagementComponent implements OnInit {
   }
 
   get pagedOwners(): Owner[] {
-    const start = this.pageIndex * this.pageSize;
-    return this.filteredOwners.slice(start, start + this.pageSize);
+    return this.filteredOwners;
   }
 
   get filteredOwners(): Owner[] {
@@ -262,15 +276,28 @@ export class OwnersManagementComponent implements OnInit {
   }
 
   private load(): void {
-    this.loading = true;
-    this.svc.getAll(0, 500, this.filterPropertyId).subscribe({
-      next: (res) => { this.owners = res.data?.content ?? []; this.loading = false; },
-      error: () => { this.owners = []; this.loading = false; }
+    this.listLoad.begin();
+    this.svc.getAll(this.pageIndex, this.pageSize, this.filterPropertyId).subscribe({
+      next: (res) => {
+        this.owners = res.data?.content ?? [];
+        this.totalElements = res.data?.totalElements ?? this.owners.length;
+        this.listLoad.end();
+      },
+      error: () => {
+        this.owners = [];
+        this.totalElements = 0;
+        this.listLoad.end();
+      }
     });
   }
 
+  onPageChange(index: number): void {
+    this.pageIndex = index;
+    this.load();
+  }
+
   private loadProperties(): void {
-    this.propertySvc.getAll(0, 500).subscribe({
+    this.propertySvc.getAll(0, 200).subscribe({
       next: (res) => {
         this.properties = res.data?.content ?? [];
         if (this.properties.length === 1) {
@@ -358,5 +385,12 @@ export class OwnersManagementComponent implements OnInit {
         error: (err: Error) => this.deleteConfirm.handleDeleteError(err, this.snack)
       });
     });
+  }
+
+  private propertyLovLabel(p: Property): string {
+    const name = this.i18n.currentLang === 'ar'
+      ? (p.propertyNameAr || p.propertyName)
+      : (p.propertyNameEn || p.propertyName);
+    return p.propertyCode ? `${p.propertyCode} — ${name}` : name;
   }
 }

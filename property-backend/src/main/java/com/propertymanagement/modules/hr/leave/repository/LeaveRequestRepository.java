@@ -32,4 +32,19 @@ public interface LeaveRequestRepository extends JpaRepository<LeaveRequestEntity
             @Param("employeeId") Long employeeId,
             @Param("startDate") java.time.LocalDate startDate,
             @Param("endDate") java.time.LocalDate endDate);
+
+    @Query(value = """
+            SELECT CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END
+            FROM leave_requests
+            WHERE employee_id = :employeeId
+              AND id <> :excludeId
+              AND status IN ('PENDING', 'APPROVED')
+              AND start_date <= :endDate
+              AND end_date >= :startDate
+            """, nativeQuery = true)
+    boolean existsOverlappingActiveRequestExcluding(
+            @Param("excludeId") Long excludeId,
+            @Param("employeeId") Long employeeId,
+            @Param("startDate") java.time.LocalDate startDate,
+            @Param("endDate") java.time.LocalDate endDate);
 }

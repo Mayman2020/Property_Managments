@@ -3,6 +3,7 @@ import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
 import { AppConstants } from '../constants/app-constants';
 import { ApiResponse, PagedResponse } from '../models/api-response.model';
+import { withPageParams } from '../utils/pagination.util';
 
 export interface Unit {
   id: number;
@@ -19,6 +20,8 @@ export interface Unit {
   rented: boolean;
   /** Draft / pending-owner lease on unit, no active lease. */
   reserved?: boolean;
+  /** Active vacancy listing published for this unit. */
+  vacancyPublished?: boolean;
   rentAmount?: number;
   currency?: string;
   notes?: string;
@@ -51,10 +54,32 @@ export interface UnitRequest {
 export class UnitService {
   constructor(private readonly api: ApiService) {}
 
-  getByProperty(propertyId: number, page = 0, size = 200, q?: string): Observable<ApiResponse<PagedResponse<Unit>>> {
-    const params: Record<string, string | number | boolean> = { page, size };
-    if (q && q.trim()) params['q'] = q.trim();
-    return this.api.get(AppConstants.API.UNITS_BY_PROPERTY(propertyId), params);
+  getByProperty(propertyId: number, page = 0, size = 20, q?: string): Observable<ApiResponse<PagedResponse<Unit>>> {
+    return this.api.get(AppConstants.API.UNITS_BY_PROPERTY(propertyId), withPageParams(page, size, {
+      q: q?.trim() || undefined
+    }));
+  }
+
+  getAll(
+    page = 0,
+    size = 20,
+    filters?: {
+      propertyId?: number | null;
+      q?: string;
+      floor?: number | null;
+      unitType?: string | null;
+      status?: string | null;
+      active?: boolean | null;
+    }
+  ): Observable<ApiResponse<PagedResponse<Unit>>> {
+    return this.api.get(AppConstants.API.UNITS, withPageParams(page, size, {
+      propertyId: filters?.propertyId ?? undefined,
+      q: filters?.q?.trim() || undefined,
+      floor: filters?.floor ?? undefined,
+      unitType: filters?.unitType ?? undefined,
+      status: filters?.status ?? undefined,
+      active: filters?.active ?? undefined
+    }));
   }
 
   create(payload: UnitRequest): Observable<ApiResponse<Unit>> {

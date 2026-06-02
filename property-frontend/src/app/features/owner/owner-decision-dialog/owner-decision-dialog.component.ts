@@ -1,3 +1,4 @@
+import { DialogTitleCloseDirective } from './../../../shared/directives/dialog-title-close.directive';
 import { Component, Inject } from '@angular/core';
 import { NgClass } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -17,8 +18,7 @@ import { OwnerApprovalDecision } from '../../../core/services/accountant-portal.
   imports: [
     NgClass, ReactiveFormsModule, TranslateModule,
     MatDialogModule, MatButtonModule, MatFormFieldModule,
-    MatInputModule, MatRadioModule
-  ],
+    MatInputModule, MatRadioModule, DialogTitleCloseDirective],
   template: `
     <h2 mat-dialog-title>{{ 'OWNER_PORTAL.CONTRACT_DECISION' | translate }}</h2>
     <mat-dialog-content [formGroup]="form" class="content">

@@ -10,51 +10,55 @@
     </button>
   </app-page-header>
 
-  <div class="loading-center" *ngIf="loading">
+  <div class="loading-center" *ngIf="listLoad.showInitialSpinner">
     <mat-spinner diameter="40"></mat-spinner>
   </div>
 
-  <div class="estate-table-toolbar inventory-toolbar" *ngIf="!loading && (items.length > 0 || searchTerm || filterPropertyId)">
-    <div class="inventory-toolbar-row">
-      <div class="estate-search-inline">
-        <span class="material-icons">search</span>
-        <input [value]="searchTerm" (input)="onSearch($any($event.target).value)" [placeholder]="'ACTIONS.SEARCH' | translate">
-      </div>
-      <div class="finance-filter-strip" *ngIf="properties.length > 0">
-        <label>{{ 'REQUEST_FORM.PROPERTY' | translate }}</label>
-        <select [(ngModel)]="filterPropertyId" (change)="onPropertyChange()" class="estate-property-select">
-          <option [ngValue]="null">{{ 'COMMON.ALL' | translate }}</option>
-          <option *ngFor="let p of properties" [ngValue]="p.id">
-            {{ isAr ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName) }}
-          </option>
-        </select>
-      </div>
-      <button mat-icon-button class="clear-filters-btn" (click)="clearFilters()" *ngIf="filterPropertyId" [matTooltip]="'ACTIONS.CLEAR_FILTERS' | translate">
-        <mat-icon>filter_alt_off</mat-icon>
-      </button>
-    </div>
-  </div>
-
   <app-empty-state
-    *ngIf="!loading && items.length === 0 && !searchTerm && !filterPropertyId"
+    *ngIf="listLoad.showSurface && items.length === 0 && !searchTerm && !filterPropertyId"
     icon="inventory_2"
     [title]="'INVENTORY.EMPTY_TITLE' | translate"
     [message]="'INVENTORY.EMPTY_MESSAGE' | translate">
   </app-empty-state>
 
-  <section class="app-card inventory-table-card" *ngIf="!loading && (items.length > 0 || searchTerm || filterPropertyId)">
-    <app-table-export-toolbar
-      permissionKey="inventory"
-      [title]="'INVENTORY.TITLE' | translate"
-      fileName="inventory"
-      [columns]="exportColumns"
-      [rows]="items">
-    </app-table-export-toolbar>
+  <section class="app-card directory-table-card inventory-table-card app-list-surface"
+    [class.is-refreshing]="listLoad.refreshing"
+    *ngIf="listLoad.showSurface && (items.length > 0 || searchTerm || filterPropertyId)">
+    <div class="list-refresh-spinner" *ngIf="listLoad.refreshing"><mat-spinner diameter="32"></mat-spinner></div>
+    <div class="estate-table-toolbar directory-toolbar">
+      <div class="directory-toolbar-top table-list-toolbar">
+        <div class="directory-search">
+          <mat-icon>search</mat-icon>
+          <input [value]="searchTerm" (input)="onSearch($any($event.target).value)" [placeholder]="'ACTIONS.SEARCH' | translate">
+        </div>
+        <div class="finance-filter-strip" *ngIf="properties.length > 0">
+          <app-estate-lov-select
+            [label]="'REQUEST_FORM.PROPERTY'"
+            [options]="propertyLovOptions"
+            [showAll]="true"
+            allLabelKey="COMMON.ALL"
+            [(ngModel)]="filterPropertyId"
+            (ngModelChange)="onPropertyChange()">
+          </app-estate-lov-select>
+        </div>
+        <button mat-icon-button class="clear-filters-btn" (click)="clearFilters()" *ngIf="filterPropertyId || searchTerm" [matTooltip]="'ACTIONS.CLEAR_FILTERS' | translate">
+          <mat-icon>filter_alt_off</mat-icon>
+        </button>
+        <app-table-export-toolbar
+          permissionKey="inventory"
+          [title]="'INVENTORY.TITLE' | translate"
+          fileName="inventory"
+          [columns]="exportColumns"
+          [rows]="items">
+        </app-table-export-toolbar>
+      </div>
+    </div>
 
     <div class="app-table-wrap" *ngIf="pagedItems.length; else filteredEmptyTpl">
       <table class="app-data-table source-table">
         <thead>
           <tr>
+            <th class="table-index-col">#</th>
             <th>{{ 'INVENTORY.ITEM_CODE' | translate }}</th>
             <th>{{ 'INVENTORY.ITEM_NAME' | translate }}</th>
             <th>{{ 'INVENTORY.CURRENT_QTY' | translate }}</th>
@@ -65,10 +69,14 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let item of pagedItems">
+          <tr *ngFor="let item of pagedItems; let i = index">
+            <td class="table-index-col">{{ i | tableRowIndex:pageIndex:pageSize }}</td>
             <td><span class="item-code">{{ item.itemCode }}</span></td>
             <td>
-              <div class="item-name-ar">{{ isAr ? item.itemNameAr : (item.itemNameEn || item.itemNameAr) }}</div>
+              <app-table-entity-cell
+                [title]="isAr ? item.itemNameAr : (item.itemNameEn || item.itemNameAr)"
+                [icon]="'inventory_2'">
+              </app-table-entity-cell>
             </td>
             <td><span class="qty-value" [class.low]="item.isLowStock">{{ item.quantity }} {{ item.unitOfMeasure || '' }}</span></td>
             <td><span class="item-min">{{ item.minQuantity }} {{ item.unitOfMeasure || '' }}</span></td>
@@ -109,6 +117,6 @@
       </app-empty-state>
     </ng-template>
 
-    <app-table-pager [length]="items.length" [pageSize]="pageSize" [pageIndex]="pageIndex" (pageIndexChange)="pageIndex = $event"></app-table-pager>
+    <app-table-pager [length]="totalElements" [pageSize]="pageSize" [pageIndex]="pageIndex" (pageIndexChange)="onPageChange($event)"></app-table-pager>
   </section>
 </div>

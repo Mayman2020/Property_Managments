@@ -51,7 +51,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let c of activeComplaints" (click)="openDetail(c)" class="clickable-row">
+                <tr *ngFor="let c of pagedActiveComplaints" (click)="openDetail(c)" class="clickable-row">
                   <td class="date-cell">{{ c.createdAt | date:'dd/MM/yyyy' }}</td>
                   <td class="title-cell">
                     <span class="req-title">{{ c.title }}</span>
@@ -73,6 +73,12 @@
               </tbody>
             </table>
           </div>
+          <app-table-pager
+            [length]="activeComplaints.length"
+            [pageSize]="pageSize"
+            [pageIndex]="activePageIndex"
+            (pageIndexChange)="activePageIndex = $event">
+          </app-table-pager>
         </div>
       </mat-tab>
 
@@ -102,7 +108,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let c of previousComplaints" (click)="openDetail(c)" class="clickable-row">
+                <tr *ngFor="let c of pagedPreviousComplaints" (click)="openDetail(c)" class="clickable-row">
                   <td class="date-cell">{{ c.createdAt | date:'dd/MM/yyyy' }}</td>
                   <td class="title-cell">
                     <span class="req-title">{{ c.title }}</span>
@@ -132,6 +138,12 @@
               </tbody>
             </table>
           </div>
+          <app-table-pager
+            [length]="previousComplaints.length"
+            [pageSize]="pageSize"
+            [pageIndex]="historyPageIndex"
+            (pageIndexChange)="historyPageIndex = $event">
+          </app-table-pager>
         </div>
       </mat-tab>
 

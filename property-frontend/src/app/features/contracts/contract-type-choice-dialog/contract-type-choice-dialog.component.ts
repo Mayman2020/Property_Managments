@@ -1,3 +1,4 @@
+import { DialogTitleCloseDirective } from './../../../shared/directives/dialog-title-close.directive';
 import { Component, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { NgIf } from '@angular/common';
@@ -18,8 +19,7 @@ export interface ContractTypeChoiceDialogData {
     TranslateModule,
     MatButtonModule,
     MatIconModule,
-    MatDialogModule
-  ],
+    MatDialogModule, DialogTitleCloseDirective],
   template: `
     <h2 mat-dialog-title class="dialog-title">
       <mat-icon class="dialog-title-icon">description</mat-icon>

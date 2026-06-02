@@ -1,3 +1,4 @@
+import { DialogTitleCloseDirective } from './../../../shared/directives/dialog-title-close.directive';
 ﻿import { Component, Inject, OnInit } from '@angular/core';
 import { NgClass, NgFor, NgIf } from '@angular/common';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
@@ -14,6 +15,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
 import { ExportColumn, TableExportToolbarComponent } from '../../../shared/components/table-export-toolbar/table-export-toolbar.component';
+import { TableRowIndexPipe } from '../../../shared/pipes/table-row-index.pipe';
 import {
   ModuleDefinitionDto,
   ModulePresetDto,
@@ -37,7 +39,7 @@ interface ModuleDetailsDialogData {
 @Component({
   selector: 'app-module-details-dialog',
   standalone: true,
-  imports: [NgFor, NgIf, MatButtonModule, MatDialogModule, MatIconModule, TranslateModule],
+  imports: [NgFor, NgIf, MatButtonModule, MatDialogModule, MatIconModule, TranslateModule, DialogTitleCloseDirective],
   template: `
     <h2 mat-dialog-title>
       <span class="material-icons">{{ data.module.icon || 'widgets' }}</span>
@@ -189,6 +191,7 @@ export class ModuleDetailsDialogComponent {
     PageHeaderComponent,
     TablePagerComponent,
     TableExportToolbarComponent,
+    TableRowIndexPipe,
     TranslateModule
   ],
   template: `
@@ -261,7 +264,7 @@ export class ModuleDetailsDialogComponent {
           <table class="app-data-table module-table">
             <thead>
               <tr>
-                <th>#</th>
+                <th class="table-index-col">#</th>
                 <th>{{ 'MODULES.MODULE' | translate }}</th>
                 <th>{{ 'MAINTENANCE.STATUS' | translate }}</th>
                 <th>{{ 'MODULES.DEPENDENCIES' | translate }}</th>
@@ -270,7 +273,7 @@ export class ModuleDetailsDialogComponent {
             </thead>
             <tbody>
               <tr *ngFor="let module of pagedModules; let i = index" class="module-row" (click)="openDetails(module)">
-                <td>{{ modulePageIndex * modulePageSize + i + 1 }}</td>
+                <td class="table-index-col">{{ i | tableRowIndex:modulePageIndex:modulePageSize }}</td>
                 <td>
                   <div class="module-title-cell">
                     <span class="material-icons">{{ module.icon || 'widgets' }}</span>

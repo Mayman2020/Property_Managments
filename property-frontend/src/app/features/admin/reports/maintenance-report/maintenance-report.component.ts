@@ -12,6 +12,7 @@ import { PropertyService, Property } from '../../../../core/services/property.se
 import { SnackService } from '../../../../core/services/snack.service';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { PageHeaderComponent } from '../../../../shared/components/page-header/page-header.component';
+import { EstateLovOption, EstateLovSelectComponent } from '../../../../shared/components/estate-lov-select/estate-lov-select.component';
 
 @Component({
   selector: 'app-maintenance-report',
@@ -19,7 +20,7 @@ import { PageHeaderComponent } from '../../../../shared/components/page-header/p
   imports: [
     NgIf, NgFor, NgClass, DatePipe, DecimalPipe, FormsModule,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule,
-    TranslateModule, PageHeaderComponent
+    TranslateModule, PageHeaderComponent, EstateLovSelectComponent
   ],
   template: `
     <app-page-header
@@ -29,13 +30,14 @@ import { PageHeaderComponent } from '../../../../shared/components/page-header/p
 
     <div class="page-body">
       <div class="finance-filter-strip">
-        <label>{{ 'INLINE_TEXT.PROPERTY' | translate }}</label>
-        <select [(ngModel)]="filterPropertyId" (change)="load()" class="estate-property-select">
-          <option [ngValue]="null">{{ 'INLINE_TEXT.ALL' | translate }}</option>
-          <option *ngFor="let p of properties" [ngValue]="p.id">
-            {{ i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName) }}
-          </option>
-        </select>
+        <app-estate-lov-select
+          [label]="'INLINE_TEXT.PROPERTY'"
+          [options]="propertyLovOptions"
+          [showAll]="true"
+          allLabelKey="INLINE_TEXT.ALL"
+          [(ngModel)]="filterPropertyId"
+          (ngModelChange)="load()">
+        </app-estate-lov-select>
         <button
           mat-icon-button
           type="button"
@@ -268,6 +270,13 @@ export class MaintenanceReportComponent implements OnInit {
   filterPropertyId: number | null = null;
   selectedCard: 'total' | 'open' | 'inProgress' | 'completed' | 'cancelled' | null = null;
 
+  get propertyLovOptions(): EstateLovOption[] {
+    return this.properties.map((p) => ({
+      value: p.id,
+      label: this.propertyLovLabel(p)
+    }));
+  }
+
   constructor(
     private readonly reportsService: ReportsService,
     private readonly propertySvc: PropertyService,
@@ -384,5 +393,12 @@ export class MaintenanceReportComponent implements OnInit {
       CANCELLED: '#9ca3af',
     };
     return map[status] ?? '#6b7280';
+  }
+
+  private propertyLovLabel(p: Property): string {
+    const name = this.i18n.currentLang === 'ar'
+      ? (p.propertyNameAr || p.propertyName)
+      : (p.propertyNameEn || p.propertyName);
+    return p.propertyCode ? `${p.propertyCode} — ${name}` : name;
   }
 }

@@ -203,6 +203,7 @@ public class RolePermissionService {
                 allow(permissions, "contracts", "enabled", "menu", "view", "create", "edit", "delete", "approve", "reject", "export");
                 allow(permissions, "finance", "enabled", "menu", "view", "create", "edit", "delete", "approve", "reject", "export");
                 allow(permissions, "hr", "enabled", "menu", "view", "create", "edit", "approve", "reject", "export");
+                allow(permissions, "owner_portal", "enabled", "menu", "view", "approve", "reject", "export");
                 allow(permissions, "vacancies", "enabled", "menu", "view", "create", "edit", "export");
                 allow(permissions, "notifications", "enabled", "menu", "view");
                 allow(permissions, "audit", "enabled", "menu", "view", "export");

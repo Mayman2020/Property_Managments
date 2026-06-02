@@ -1,110 +1,127 @@
-.dialog-host {
-  min-width: min(680px, 92vw);
+.payment-dialog-body {
+  padding-top: 4px;
 }
 
-/* ── Header ─────────────────────────────────────────────── */
-.dialog-header {
+.payment-dialog-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.full {
+  grid-column: 1 / -1;
+}
+
+.section-divider {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 0;
-  margin: 0;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0 2px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
-.dialog-header-text h2 {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 800;
-  color: var(--text-main, #0c1d33);
+.section-divider::before,
+.section-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
 }
 
-.dialog-subtitle {
-  margin: 3px 0 0;
-  font-size: 0.82rem;
-  color: #6d7c92;
+.dialog-title-sub {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  opacity: 0.85;
 }
 
-.close-btn {
-  flex: 0 0 auto;
-  margin-top: -4px;
+.invoice-summary-card {
+  background: var(--surface-2, #f5f7fa);
+  border: 1px solid var(--line, rgba(0, 0, 0, 0.1));
+  border-radius: 8px;
+  padding: 12px 14px;
 }
 
-/* ── Body form ──────────────────────────────────────────── */
-mat-dialog-content {
-  padding-top: 12px !important;
-}
-
-.dialog-form {
+.invoice-summary-header {
   display: flex;
-  flex-direction: column;
-  gap: 14px;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--navy-800, #1a2744);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 10px;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
 }
 
-/* ── Summary chips ──────────────────────────────────────── */
-.summary-row {
+.invoice-summary-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
 }
 
-.summary-chip {
-  border: 1px solid rgba(176, 138, 46, 0.22);
-  border-radius: 10px;
-  background: #fffdf8;
-  padding: 12px 14px;
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--line, rgba(0, 0, 0, 0.08));
+  border-radius: 8px;
+  background: var(--surface, #fff);
+
+  strong {
+    font-size: 0.95rem;
+    color: var(--navy-800, #1a2744);
+  }
+
+  &.accent strong {
+    color: var(--gold, #b8860b);
+  }
 }
 
-.chip-label {
-  display: block;
-  font-size: 0.78rem;
-  color: #6d7c92;
-  margin-bottom: 5px;
+.summary-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
-.chip-value {
-  display: block;
-  font-size: 1rem;
-  font-weight: 800;
-  color: #0c1d33;
-}
-
-.chip-value.accent {
-  color: #b08a2e;
-}
-
-/* ── Installment amount (installment mode) ──────────────── */
-.installment-amount-row {
+.installment-highlight {
   display: flex;
   align-items: center;
-  gap: 10px;
-  border: 1px solid rgba(176, 138, 46, 0.22);
-  border-radius: 10px;
-  background: #fffdf8;
-  padding: 14px;
-  color: #0c1d33;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line, rgba(0, 0, 0, 0.1));
+  border-radius: 8px;
+  background: var(--surface-2, #f5f7fa);
 
   mat-icon {
-    color: #b08a2e;
+    color: var(--navy-800, #1a2744);
   }
 
   strong {
-    font-size: 1.05rem;
-    font-weight: 800;
+    display: block;
+    font-size: 1rem;
+    color: var(--navy-800, #1a2744);
   }
 }
 
-/* ── Mode cards ─────────────────────────────────────────── */
-.mode-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
 .mode-card {
-  border: 1px solid rgba(176, 138, 46, 0.24);
-  border-radius: 10px;
-  background: #fffdf8;
+  border: 1px solid var(--line, rgba(0, 0, 0, 0.12));
+  border-radius: 8px;
+  background: var(--surface, #fff);
   color: inherit;
   font: inherit;
   text-align: start;
@@ -116,7 +133,7 @@ mat-dialog-content {
   transition: border-color 0.15s, box-shadow 0.15s;
 
   mat-icon {
-    color: #b08a2e;
+    color: var(--navy-800, #1a2744);
     font-size: 22px;
     width: 22px;
     height: 22px;
@@ -124,47 +141,44 @@ mat-dialog-content {
 }
 
 .mode-card.active {
-  border-color: #0c1d33;
-  box-shadow: inset 0 0 0 1px #0c1d33;
+  border-color: var(--navy-800, #1a2744);
+  box-shadow: inset 0 0 0 1px var(--navy-800, #1a2744);
+  background: var(--surface-2, #f5f7fa);
 }
 
 .mode-title {
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
 }
 
 .mode-hint {
-  font-size: 0.8rem;
-  color: #6d7c92;
+  font-size: 0.78rem;
+  color: var(--text-muted);
   line-height: 1.45;
 }
 
-/* ── Installment count field ────────────────────────────── */
-.count-field {
-  width: 180px;
-}
-
-/* ── Installments table ─────────────────────────────────── */
 .installments-table {
-  border: 1px solid rgba(176, 138, 46, 0.22);
-  border-radius: 10px;
-  background: #fffdf8;
-  padding: 14px;
+  border: 1px solid var(--line, rgba(0, 0, 0, 0.1));
+  border-radius: 8px;
+  background: var(--surface-2, #f5f7fa);
+  padding: 12px 14px;
 }
 
 .it-head {
   display: grid;
-  grid-template-columns: 40px 1fr 1.6fr;
+  grid-template-columns: 48px 1fr 1.4fr;
   gap: 10px;
   padding-bottom: 8px;
-  border-bottom: 1px solid rgba(176, 138, 46, 0.15);
-  font-size: 0.8rem;
-  color: #6d7c92;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
 }
 
 .it-row {
   display: grid;
-  grid-template-columns: 40px 1fr 1.6fr;
+  grid-template-columns: 48px 1fr 1.4fr;
   align-items: center;
   gap: 10px;
   padding: 10px 0;
@@ -172,7 +186,7 @@ mat-dialog-content {
 
 .it-num {
   font-size: 0.85rem;
-  color: #6d7c92;
+  color: var(--text-muted);
 }
 
 .it-amount {
@@ -182,61 +196,58 @@ mat-dialog-content {
 
 .date-fixed {
   font-size: 0.88rem;
-  color: #6d7c92;
+  color: var(--text-secondary);
 }
 
 .date-field {
   width: 100%;
-
-  ::ng-deep .mat-mdc-form-field-subscript-wrapper {
-    display: none;
-  }
-
-  ::ng-deep .mat-mdc-text-field-wrapper {
-    padding: 0 8px;
-  }
-
-  ::ng-deep .mat-mdc-form-field-infix {
-    padding: 6px 0;
-    min-height: unset;
-  }
 }
 
 .hint-text {
   margin: 8px 0 0;
   font-size: 0.78rem;
-  color: #6d7c92;
+  color: var(--text-muted);
 }
 
-/* ── Error ──────────────────────────────────────────────── */
+.media-block {
+  margin: 2px 0;
+}
+
 .error-text {
-  margin: -6px 0 0;
+  margin: 6px 0 0;
   color: #b42318;
   font-size: 0.8rem;
 }
 
-/* ── Full-width fields ──────────────────────────────────── */
-.full-width {
-  width: 100%;
+.dialog-actions-row {
+  padding: 16px 24px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  background: var(--surface-2);
 }
 
-/* ── Responsive ─────────────────────────────────────────── */
-@media (max-width: 560px) {
-  .dialog-host {
-    min-width: 0;
-  }
+.navy-btn {
+  background: var(--navy-800) !important;
+  color: white !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
 
-  .summary-row {
+@media (max-width: 640px) {
+  .payment-dialog-form {
     grid-template-columns: 1fr;
   }
 
-  .mode-grid {
+  .invoice-summary-grid {
     grid-template-columns: 1fr;
   }
 
   .it-head,
   .it-row {
-    grid-template-columns: 32px 1fr;
+    grid-template-columns: 40px 1fr;
   }
 
   .it-head span:last-child,

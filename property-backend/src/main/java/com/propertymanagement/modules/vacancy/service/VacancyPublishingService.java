@@ -66,6 +66,22 @@ public class VacancyPublishingService {
         return true;
     }
 
+  /** Removes published vacancy listings when a unit is no longer vacant. */
+    @Transactional
+    public void unpublishIfUnitOccupied(Long unitId) {
+        if (unitId == null) {
+            return;
+        }
+        vacancyRepository.findByUnitId(unitId).ifPresent(listing -> {
+            if (listing.isPublished()) {
+                listing.setPublished(false);
+                listing.setUpdatedAt(LocalDateTime.now());
+                vacancyRepository.save(listing);
+                log.info("Unpublished vacancy listing {} for occupied unit {}", listing.getId(), unitId);
+            }
+        });
+    }
+
     @Transactional
     public Map<String, Object> backfillAll() {
         List<Long> contractIds = vacancyRepository.findContractIdsNeedingVacancyPublish();

@@ -12,6 +12,7 @@ import { HrService, PayslipItem } from '../../../core/services/hr.service';
 import { SnackService } from '../../../core/services/snack.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { EstateLovOption, EstateLovSelectComponent } from '../../../shared/components/estate-lov-select/estate-lov-select.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 
 @Component({
@@ -22,7 +23,7 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state/empt
     FormsModule,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule,
     TranslateModule,
-    PageHeaderComponent, EmptyStateComponent
+    PageHeaderComponent, EmptyStateComponent, EstateLovSelectComponent
   ],
   template: `
     <app-page-header
@@ -37,12 +38,11 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state/empt
       </div>
 
       <div class="finance-filter-strip" *ngIf="!loading && allPayslips.length > 0">
-        <label>{{ 'MAINTENANCE.STATUS' | translate }}</label>
-        <select [(ngModel)]="filterStatus" class="estate-property-select">
-          <option value="all">{{ 'COMMON.ALL' | translate }}</option>
-          <option value="paid">{{ 'INLINE_TEXT.PAID_2' | translate }}</option>
-          <option value="pending">{{ 'INLINE_TEXT.PENDING' | translate }}</option>
-        </select>
+        <app-estate-lov-select
+          [label]="'MAINTENANCE.STATUS'"
+          [options]="statusLovOptions"
+          [(ngModel)]="filterStatus">
+        </app-estate-lov-select>
       </div>
 
       <app-empty-state
@@ -202,6 +202,14 @@ export class MyPayslipsComponent implements OnInit {
   allPayslips: PayslipItem[] = [];
   filterStatus = 'all';
   loading = true;
+
+  get statusLovOptions(): EstateLovOption[] {
+    return [
+      { value: 'all', label: this.i18n.instant('COMMON.ALL') },
+      { value: 'paid', label: this.i18n.instant('INLINE_TEXT.PAID_2') },
+      { value: 'pending', label: this.i18n.instant('INLINE_TEXT.PENDING') }
+    ];
+  }
 
   get filteredPayslips(): PayslipItem[] {
     if (this.filterStatus === 'paid') return this.allPayslips.filter((s) => s.paid);

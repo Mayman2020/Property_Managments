@@ -1,3 +1,4 @@
+import { DialogTitleCloseDirective } from './../../../shared/directives/dialog-title-close.directive';
 import { Component, Inject } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -33,8 +34,7 @@ export interface OfficerDialogData {
     MatInputModule,
     MatProgressSpinnerModule,
     MatSelectModule,
-    IdentityMediaFieldsComponent
-  ],
+    IdentityMediaFieldsComponent, DialogTitleCloseDirective],
   template: `
     <h2 mat-dialog-title class="dialog-title">
       <mat-icon class="dialog-title-icon">engineering</mat-icon>

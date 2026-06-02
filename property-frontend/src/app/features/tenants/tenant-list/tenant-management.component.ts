@@ -1,3 +1,4 @@
+import { DialogTitleCloseDirective } from './../../../shared/directives/dialog-title-close.directive';
 ﻿import { Component, Inject, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DatePipe, NgFor, NgIf, Location } from '@angular/common';
@@ -22,12 +23,15 @@ import { I18nService } from '../../../core/i18n/i18n.service';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
 import { ExportColumn, TableExportToolbarComponent } from '../../../shared/components/table-export-toolbar/table-export-toolbar.component';
+import { TableEntityCellComponent } from '../../../shared/components/table-entity-cell/table-entity-cell.component';
+import { TableRowIndexPipe } from '../../../shared/pipes/table-row-index.pipe';
 import { TenantDialogComponent } from '../tenant-dialog/tenant-dialog.component';
 import { TenantEditDialogComponent } from '../tenant-edit-dialog/tenant-edit-dialog.component';
 import { ContractDialogComponent } from '../../contracts/contract-dialog/contract-dialog.component';
 import { ContractService } from '../../../core/services/contract.service';
 import { LeaseContract } from '../../../core/models/contract.model';
 import { PermissionService } from '../../../core/services/permission.service';
+import { ListLoadController } from '../../../shared/utils/list-load.util';
 
 /** One logical person — may have multiple tenant records (entries) and multiple active contracts. */
 export interface TenantGroup {
@@ -42,7 +46,7 @@ export interface TenantGroup {
 @Component({
   selector: 'app-unit-picker-dialog',
   standalone: true,
-  imports: [NgFor, MatButtonModule, MatIconModule, MatDialogModule, TranslateModule],
+  imports: [NgFor, MatButtonModule, MatIconModule, MatDialogModule, TranslateModule, DialogTitleCloseDirective],
   template: `
     <h2 mat-dialog-title>{{ 'TENANTS.PICK_UNIT' | translate }}</h2>
     <mat-dialog-content>
@@ -153,18 +157,19 @@ export class TenantUnitsViewDialogComponent {
   imports: [
     NgFor, NgIf, DatePipe, FormsModule, TranslateModule,
     MatButtonModule, MatProgressSpinnerModule, MatIconModule, MatTooltipModule,
-    PageHeaderComponent, EmptyStateComponent, TablePagerComponent, FilterBarComponent, TableExportToolbarComponent
+    PageHeaderComponent, EmptyStateComponent, TablePagerComponent, FilterBarComponent, TableExportToolbarComponent, TableEntityCellComponent, TableRowIndexPipe
   ],
   templateUrl: './tenant-management.component.html',
   styleUrl: './tenant-management.component.scss'
 })
 export class TenantManagementComponent implements OnInit {
-  loading = true;
+  listLoad = new ListLoadController();
   readonly pageSize = 5;
   private static readonly MAX_VISIBLE_UNITS = 3;
   tenants: Tenant[] = [];
   filteredTenants: Tenant[] = [];
   groupedTenants: TenantGroup[] = [];
+  totalElements = 0;
   properties: Property[] = [];
   propertyById: Record<number, Property> = {};
   unitById: Record<number, Unit> = {};
@@ -238,15 +243,11 @@ export class TenantManagementComponent implements OnInit {
     }
   }
 
-  // ── Paging ──────────────────────────────────────────────────────────────────
+  // ── Paging (server-side) ────────────────────────────────────────────────────
 
-  get pagedTenants(): TenantGroup[] {
-    const start = this.pageIndex * this.pageSize;
-    return this.groupedTenants.slice(start, start + this.pageSize);
-  }
-
-  get totalPages(): number {
-    return Math.max(1, Math.ceil(this.groupedTenants.length / this.pageSize));
+  onPageChange(index: number): void {
+    this.pageIndex = index;
+    this.loadTenants();
   }
 
   get exportColumns(): ExportColumn<TenantGroup>[] {
@@ -360,12 +361,18 @@ export class TenantManagementComponent implements OnInit {
   }
 
   loadActiveContracts(): void {
-    this.contractSvc.getAll({ status: 'ACTIVE', size: 500 }).subscribe({
+    const tenantIds = new Set(this.tenants.map((t) => t.id));
+    if (!tenantIds.size) {
+      this.contractsByTenantId = {};
+      this.updateGroupContracts();
+      return;
+    }
+    this.contractSvc.getAll({ status: 'ACTIVE', page: 0, size: 100 }).subscribe({
       next: (res) => {
         const contracts: LeaseContract[] = res.data?.content ?? res.data ?? [];
         this.contractsByTenantId = {};
         for (const c of contracts) {
-          if (!c.tenantId) continue;
+          if (!c.tenantId || !tenantIds.has(c.tenantId)) continue;
           if (!this.contractsByTenantId[c.tenantId]) this.contractsByTenantId[c.tenantId] = [];
           this.contractsByTenantId[c.tenantId].push(c);
         }
@@ -411,13 +418,16 @@ export class TenantManagementComponent implements OnInit {
   }
 
   onFilterBarChange(values: any): void {
-    const prev = this.filterPropertyId;
+    const prevProperty = this.filterPropertyId;
     if (values?.filterPropertyId !== undefined) this.filterPropertyId = values.filterPropertyId;
     if (values?.filterPortal !== undefined) this.filterPortal = values.filterPortal;
     if (values?.filterActive !== undefined) this.filterActive = values.filterActive;
     this.pageIndex = 0;
-    if (prev !== this.filterPropertyId) this.loadTenants();
-    else this.applyFilters();
+    if (prevProperty !== this.filterPropertyId) {
+      this.loadTenants();
+      return;
+    }
+    this.applyFilters();
   }
 
   clearFiltersFromBar(): void {
@@ -443,7 +453,7 @@ export class TenantManagementComponent implements OnInit {
   onSearch(term: string): void {
     this.searchTerm = term;
     this.pageIndex = 0;
-    this.applyFilters();
+    this.loadTenants();
   }
 
   tenantDisplayName(t: Tenant): string {
@@ -522,9 +532,11 @@ export class TenantManagementComponent implements OnInit {
     this.recomputeGroups();
   }
 
-  changePage(step: number): void {
-    const next = this.pageIndex + step;
-    this.pageIndex = Math.max(0, Math.min(next, this.totalPages - 1));
+  private applyTenantResponse(res: { data?: { content?: Tenant[]; totalElements?: number } }): void {
+    this.tenants = res.data?.content ?? [];
+    this.totalElements = res.data?.totalElements ?? this.tenants.length;
+    this.applyFilters();
+    this.loadUnitsForCurrentTenants();
   }
 
   remove(t: Tenant): void {
@@ -558,43 +570,54 @@ export class TenantManagementComponent implements OnInit {
   }
 
   private loadData(): void {
-    this.loading = true;
-    this.propertySvc.getAll(0, 500).pipe(catchError(() => of({ data: { content: [] as Property[] } } as any)))
-      .subscribe((res: any) => {
-        this.properties = res.data?.content ?? [];
+    this.listLoad.begin();
+    forkJoin({
+      properties: this.propertySvc.getAll(0, 200).pipe(catchError(() => of({ data: { content: [] as Property[] } } as any))),
+      tenants: this.tenantSvc.getAll(this.pageIndex, this.pageSize, this.searchTerm, this.filterPropertyId ?? undefined)
+        .pipe(catchError(() => of({ data: { content: [] as Tenant[], totalElements: 0 } } as any)))
+    }).subscribe({
+      next: ({ properties, tenants }) => {
+        this.properties = properties.data?.content ?? [];
         this.propertyById = this.properties.reduce((acc: Record<number, Property>, p: Property) => { acc[p.id] = p; return acc; }, {} as Record<number, Property>);
         this.setupFilters();
-        this.loadAllUnits();
-        this.loadTenants();
-      });
-  }
-
-  loadTenants(): void {
-    this.tenantSvc.getAll(0, 500, '', this.filterPropertyId ?? undefined).subscribe({
-      next: (res) => {
-        this.tenants = res.data?.content ?? [];
-        this.applyFilters();
-        this.pageIndex = Math.min(this.pageIndex, this.totalPages - 1);
-        this.loading = false;
+        this.applyTenantResponse(tenants);
+        this.listLoad.end();
         this.loadActiveContracts();
       },
       error: () => {
-        this.loading = false;
+        this.listLoad.end();
         this.snack.error(this.i18n.instant('TENANTS.LOAD_ERROR'));
       }
     });
   }
 
-  private loadAllUnits(): void {
-    if (!this.properties.length) return;
+  loadTenants(): void {
+    this.listLoad.begin();
+    this.tenantSvc.getAll(this.pageIndex, this.pageSize, this.searchTerm, this.filterPropertyId ?? undefined).subscribe({
+      next: (res) => {
+        this.applyTenantResponse(res);
+        this.listLoad.end();
+        this.loadActiveContracts();
+      },
+      error: () => {
+        this.listLoad.end();
+        this.snack.error(this.i18n.instant('TENANTS.LOAD_ERROR'));
+      }
+    });
+  }
+
+  private loadUnitsForCurrentTenants(): void {
+    const propertyIds = [...new Set(this.tenants.map((t) => t.propertyId).filter((id): id is number => !!id))];
+    if (!propertyIds.length) return;
     forkJoin(
-      this.properties.map((p) => this.unitSvc.getByProperty(p.id, 0, 500).pipe(
+      propertyIds.map((propertyId) => this.unitSvc.getByProperty(propertyId, 0, 100).pipe(
         map((res) => res.data?.content ?? []),
         catchError(() => of([] as Unit[]))
       ))
     ).subscribe((chunks) => {
-      const all = chunks.flat();
-      this.unitById = all.reduce((acc, u) => { acc[u.id] = u; return acc; }, {} as Record<number, Unit>);
+      for (const unit of chunks.flat()) {
+        this.unitById[unit.id] = unit;
+      }
     });
   }
 }

@@ -12,6 +12,32 @@
     (backClick)="goBack()">
   </app-page-header>
 
+  <div class="overdue-alert-banner app-card" *ngIf="showOverdueBanner() && primaryOverdueSchedule() as overdueRow">
+    <div class="overdue-alert-icon"><mat-icon>warning_amber</mat-icon></div>
+    <div class="overdue-alert-body">
+      <strong>{{ 'CONTRACTS.OVERDUE_BANNER_TITLE' | translate }}</strong>
+      <p>{{ 'CONTRACTS.OVERDUE_BANNER_MSG' | translate:{
+        month: rentMonthLabel(overdueRow),
+        unit: contract.unitNumber || '-',
+        property: contract.propertyName || '-',
+        amount: (overdueRow.amount | number),
+        currency: contract.currency
+      } }}</p>
+    </div>
+    <div class="overdue-alert-actions">
+      <button type="button" mat-flat-button color="warn"
+              *ngIf="canSendOverdueReminder(overdueRow)"
+              [disabled]="reminderSendingId === overdueRow.id"
+              (click)="sendOverdueReminder(overdueRow)">
+        <mat-icon>notifications_active</mat-icon>
+        {{ 'CONTRACTS.SEND_OVERDUE_REMINDER' | translate }}
+      </button>
+      <button type="button" mat-stroked-button (click)="dismissOverdueBanner()">
+        {{ 'CONTRACTS.DISMISS_OVERDUE_BANNER' | translate }}
+      </button>
+    </div>
+  </div>
+
   <!-- Hero Stats Row -->
   <div class="contract-hero-grid">
     <article class="contract-stat-card navy">
@@ -538,7 +564,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let row of registrationLog()">
+            <tr *ngFor="let row of pagedRegistrationLog">
               <td>
                 <div class="staff-log-actor">
                   <span class="staff-log-avatar material-icons">person</span>
@@ -552,12 +578,18 @@
               <td><span class="status-badge log-action-chip" data-status="INFO">{{ row.action || '-' }}</span></td>
               <td><span class="log-detail">{{ row.detail || '-' }}</span></td>
             </tr>
-            <tr *ngIf="registrationLog().length === 0">
+            <tr *ngIf="pagedRegistrationLog.length === 0">
               <td colspan="4" class="empty-row">{{ 'COMMON.NO_DATA' | translate }}</td>
             </tr>
           </tbody>
         </table>
       </div>
+      <app-table-pager
+        [length]="registrationLog().length"
+        [pageSize]="schedulePageSize"
+        [pageIndex]="regLogPageIndex"
+        (pageIndexChange)="regLogPageIndex = $event">
+      </app-table-pager>
     </div>
 
     <!-- Staff activity log — Renewal -->
@@ -579,7 +611,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let row of renewalLog()">
+            <tr *ngFor="let row of pagedRenewalLog">
               <td>
                 <div class="staff-log-actor">
                   <span class="staff-log-avatar material-icons">person</span>
@@ -596,6 +628,12 @@
           </tbody>
         </table>
       </div>
+      <app-table-pager
+        [length]="renewalLog().length"
+        [pageSize]="schedulePageSize"
+        [pageIndex]="renewalLogPageIndex"
+        (pageIndexChange)="renewalLogPageIndex = $event">
+      </app-table-pager>
     </div>
 
     <!-- Staff activity log — Cancellation / Termination -->
@@ -617,7 +655,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let row of terminationLog()">
+            <tr *ngFor="let row of pagedTerminationLog">
               <td>
                 <div class="staff-log-actor">
                   <span class="staff-log-avatar material-icons">person</span>
@@ -634,6 +672,12 @@
           </tbody>
         </table>
       </div>
+      <app-table-pager
+        [length]="terminationLog().length"
+        [pageSize]="schedulePageSize"
+        [pageIndex]="termLogPageIndex"
+        (pageIndexChange)="termLogPageIndex = $event">
+      </app-table-pager>
     </div>
 
     <app-audit-trail
@@ -682,6 +726,14 @@
                   <span class="flag-visual" *ngIf="!hasProof(s)" [class.flag-visual--on]="isPaidLike(s)" [class.flag-visual--waived]="s.status === 'WAIVED'">
                     <mat-icon>{{ s.status === 'WAIVED' ? 'block' : 'flag' }}</mat-icon>
                   </span>
+                  <button type="button" mat-icon-button class="app-icon-btn warn"
+                          *ngIf="canSendOverdueReminder(s)"
+                          [disabled]="reminderSendingId === s.id"
+                          (click)="sendOverdueReminder(s)"
+                          [matTooltip]="'CONTRACTS.SEND_OVERDUE_REMINDER' | translate"
+                          [attr.aria-label]="'CONTRACTS.SEND_OVERDUE_REMINDER' | translate">
+                    <mat-icon>notifications_active</mat-icon>
+                  </button>
                   <button type="button" mat-icon-button class="app-icon-btn success"
                           *ngIf="canOpenMarkPaid(s)"
                           (click)="openMarkPaidDialog(s)"
@@ -758,47 +810,12 @@
           </tbody>
         </table>
       </div>
-      <div class="srs-pager-shell" *ngIf="schedule.length > schedulePageSize">
-        <div class="srs-pager__info">
-          {{ 'PROPERTY_LIST.PAGE_RANGE' | translate:{ start: schedulePageStart, end: schedulePageEnd, total: schedule.length } }}
-        </div>
-
-        <div class="srs-pager__controls">
-          <button type="button" class="srs-pager__nav" (click)="previousSchedulePage()" [disabled]="schedulePageIndex === 0">
-            <span class="material-icons">chevron_left</span>
-          </button>
-
-          <ng-container *ngFor="let item of schedulePageItems()">
-            <span *ngIf="item === 'ellipsis'" class="srs-pager__gap">...</span>
-            <button
-              *ngIf="item !== 'ellipsis'"
-              type="button"
-              class="srs-pager__page"
-              [class.srs-pager__page--active]="item === schedulePageIndex + 1"
-              (click)="goToSchedulePage(item)">
-              {{ item }}
-            </button>
-          </ng-container>
-
-          <button type="button" class="srs-pager__nav" (click)="nextSchedulePage()" [disabled]="schedulePageIndex + 1 >= scheduleTotalPages">
-            <span class="material-icons">chevron_right</span>
-          </button>
-        </div>
-
-        <div class="srs-pager__size">
-          <span class="srs-pager__size-label">{{ 'PROPERTY_LIST.RESULTS' | translate }}: {{ schedule.length }}</span>
-        </div>
-      </div>
-
-      <mat-paginator
-        class="property-paginator"
+      <app-table-pager
         [length]="schedule.length"
-        [pageIndex]="schedulePageIndex"
         [pageSize]="schedulePageSize"
-        [pageSizeOptions]="[schedulePageSize]"
-        [hidePageSize]="true"
-        (page)="onScheduleMatPage($event)">
-      </mat-paginator>
+        [pageIndex]="schedulePageIndex"
+        (pageIndexChange)="schedulePageIndex = $event">
+      </app-table-pager>
     </div>
     <ng-template #emptySchedule>
       <div class="empty-state app-card">
@@ -822,7 +839,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let c of complaints">
+            <tr *ngFor="let c of pagedComplaints">
               <td>{{ c.title }}</td>
               <td>{{ complaintTypeLabel(c.complaintType) }}</td>
               <td>
@@ -835,6 +852,12 @@
           </tbody>
         </table>
       </div>
+      <app-table-pager
+        [length]="complaints.length"
+        [pageSize]="schedulePageSize"
+        [pageIndex]="complaintsPageIndex"
+        (pageIndexChange)="complaintsPageIndex = $event">
+      </app-table-pager>
     </div>
     <ng-template #emptyComplaints>
       <div class="empty-state app-card">
@@ -877,7 +900,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let a of annexes">
+            <tr *ngFor="let a of pagedAnnexes">
               <td>{{ a.annexNumber || '—' }}</td>
               <td>{{ a.title }}</td>
               <td>{{ a.effectiveDate || '—' }}</td>
@@ -897,6 +920,12 @@
           </tbody>
         </table>
       </div>
+      <app-table-pager
+        [length]="annexes.length"
+        [pageSize]="schedulePageSize"
+        [pageIndex]="annexesPageIndex"
+        (pageIndexChange)="annexesPageIndex = $event">
+      </app-table-pager>
     </div>
     <ng-template #emptyAnnexes>
       <div class="empty-state app-card">
@@ -927,13 +956,20 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let insp of inspections">
+          <tr *ngFor="let insp of pagedInspections">
             <td>{{ (insp.inspectionType === 'MOVE_IN' ? 'INSPECTION.MOVE_IN' : 'INSPECTION.MOVE_OUT') | translate }}</td>
             <td>{{ ('INSPECTION.STATUS_' + insp.status) | translate }}</td>
             <td><button mat-button type="button" (click)="openInspection(insp.id)">{{ 'ACTIONS.VIEW' | translate }}</button></td>
           </tr>
         </tbody>
       </table>
+      <app-table-pager
+        *ngIf="!inspectionsLoading && inspections.length"
+        [length]="inspections.length"
+        [pageSize]="schedulePageSize"
+        [pageIndex]="inspectionsPageIndex"
+        (pageIndexChange)="inspectionsPageIndex = $event">
+      </app-table-pager>
       <p *ngIf="!inspectionsLoading && !inspections.length">{{ 'COMMON.NO_DATA' | translate }}</p>
     </div>
   </div>
@@ -985,7 +1021,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let f of fees">
+            <tr *ngFor="let f of pagedFees">
               <td>{{ f.feeType || '—' }}</td>
               <td>{{ f.description || '—' }}</td>
               <td><strong>{{ f.amount | number }} {{ contract.currency }}</strong></td>
@@ -1009,6 +1045,12 @@
           </tbody>
         </table>
       </div>
+      <app-table-pager
+        [length]="fees.length"
+        [pageSize]="schedulePageSize"
+        [pageIndex]="feesPageIndex"
+        (pageIndexChange)="feesPageIndex = $event">
+      </app-table-pager>
     </div>
     <ng-template #emptyFees>
       <div class="empty-state app-card">

@@ -84,6 +84,12 @@ public class VacancyService {
         }
         Unit unit = unitRepository.findById(request.getUnitId())
                 .orElseThrow(() -> AppException.notFound("Unit not found"));
+        if (unit.isRented() || unit.isReserved()) {
+            throw AppException.badRequest("Cannot publish vacancy for a rented or reserved unit");
+        }
+        if (!unit.isActive()) {
+            throw AppException.badRequest("Cannot publish vacancy for an inactive unit");
+        }
         Property property = propertyRepository.findById(request.getPropertyId())
                 .orElseThrow(() -> AppException.notFound("Property not found"));
         LocalDateTime now = LocalDateTime.now();
@@ -114,6 +120,23 @@ public class VacancyService {
         VacancyListingEntity saved = vacancyRepository.save(listing);
         notifyVacancyPublishedManual(saved, unit.getUnitNumber(), property.getPropertyName());
         return toListingDto(saved);
+    }
+
+    @Transactional
+    public VacancyListingResponseDTO unpublishListing(Long unitId) {
+        Unit unit = unitRepository.findById(unitId)
+                .orElseThrow(() -> AppException.notFound("Unit not found"));
+        if (unit.isRented() || unit.isReserved()) {
+            throw AppException.badRequest("Cannot unpublish vacancy for a rented or reserved unit");
+        }
+        VacancyListingEntity listing = vacancyRepository.findByUnitId(unitId)
+                .orElseThrow(() -> AppException.notFound("Vacancy listing not found"));
+        if (!listing.isPublished()) {
+            throw AppException.badRequest("Vacancy listing is not published");
+        }
+        listing.setPublished(false);
+        listing.setUpdatedAt(LocalDateTime.now());
+        return toListingDto(vacancyRepository.save(listing));
     }
 
     private VacancyListingResponseDTO toListingDto(VacancyListingEntity entity) {

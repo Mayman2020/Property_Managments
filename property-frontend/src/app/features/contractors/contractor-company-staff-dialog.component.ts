@@ -1,3 +1,4 @@
+import { DialogTitleCloseDirective } from './../../shared/directives/dialog-title-close.directive';
 import { Component, Inject, OnInit } from '@angular/core';
 import { NgClass, NgFor, NgIf } from '@angular/common';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -17,7 +18,7 @@ export interface ContractorCompanyStaffDialogData {
 @Component({
   selector: 'app-contractor-company-staff-dialog',
   standalone: true,
-  imports: [TranslateModule, NgIf, NgFor, NgClass, MatDialogModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule],
+  imports: [TranslateModule, NgIf, NgFor, NgClass, MatDialogModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule, DialogTitleCloseDirective],
   template: `
     <h2 mat-dialog-title class="dialog-title">
       <mat-icon class="dialog-title-icon">groups</mat-icon>

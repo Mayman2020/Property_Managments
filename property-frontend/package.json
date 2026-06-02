@@ -8,6 +8,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "e2e": "playwright test",
+    "e2e:qa": "playwright test --config=playwright.qa.config.ts",
     "e2e:install": "playwright install chromium"
   },
   "private": true,

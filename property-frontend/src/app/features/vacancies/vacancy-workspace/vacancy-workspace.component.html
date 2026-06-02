@@ -12,26 +12,24 @@
       <div class="estate-table-toolbar directory-toolbar" *ngIf="properties.length > 0 || owners.length > 0">
         <div class="directory-toolbar-top">
           <div class="finance-filter-strip">
-            <label *ngIf="properties.length > 0">{{ 'VACANCIES.PROPERTY' | translate }}</label>
-            <select *ngIf="properties.length > 0"
-                    [(ngModel)]="filterPropertyId"
-                    (change)="onPropertyFilterChange()"
-                    class="estate-property-select">
-              <option [ngValue]="null">{{ 'COMMON.ALL' | translate }}</option>
-              <option *ngFor="let p of properties" [ngValue]="p.id">
-                {{ isArabic ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName) }}
-              </option>
-            </select>
-            <label *ngIf="owners.length > 0">{{ 'VACANCIES.OWNER' | translate }}</label>
-            <select *ngIf="owners.length > 0"
-                    [(ngModel)]="filterOwnerId"
-                    (change)="onOwnerFilterChange()"
-                    class="estate-property-select">
-              <option [ngValue]="null">{{ 'COMMON.ALL' | translate }}</option>
-              <option *ngFor="let o of owners" [ngValue]="o.id">
-                {{ ownerOptionLabel(o) }}
-              </option>
-            </select>
+            <app-estate-lov-select
+              *ngIf="properties.length > 0"
+              [label]="'VACANCIES.PROPERTY'"
+              [options]="propertyLovOptions"
+              [showAll]="true"
+              allLabelKey="COMMON.ALL"
+              [(ngModel)]="filterPropertyId"
+              (ngModelChange)="onPropertyFilterChange()">
+            </app-estate-lov-select>
+            <app-estate-lov-select
+              *ngIf="owners.length > 0"
+              [label]="'VACANCIES.OWNER'"
+              [options]="ownerLovOptions"
+              [showAll]="true"
+              allLabelKey="COMMON.ALL"
+              [(ngModel)]="filterOwnerId"
+              (ngModelChange)="onOwnerFilterChange()">
+            </app-estate-lov-select>
           </div>
           <button mat-icon-button class="clear-filters-btn"
                   *ngIf="hasFilters()"

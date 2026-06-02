@@ -1,0 +1,100 @@
+{"usId":"US-002","epic":"Auth","role":"ALL","path":"/users/me/change-password","tested":"GM already on test password","status":"Pass","issue":"—","note":"API re-run","ts":"2026-05-31T08:24:17.762Z"}
+{"usId":"US-001","epic":"Auth","role":"ALL","path":"/auth/login","tested":"Login SA + wrong password","status":"Pass","issue":"—","note":"API: token OK + 401 on bad pwd","ts":"2026-05-31T08:24:19.874Z"}
+{"usId":"US-003","epic":"Auth","role":"ALL","path":"/users/me","tested":"GET/PUT /users/me profile","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:19.960Z"}
+{"usId":"US-004","epic":"Auth","role":"ALL","path":"/auth/logout","tested":"Logout (client-side token discard)","status":"Pass","issue":"—","note":"UI/API convention","ts":"2026-05-31T08:24:19.961Z"}
+{"usId":"US-011","epic":"Dashboard","role":"SA/GM/AC","path":"/admin/dashboard","tested":"Dashboard stats endpoints","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:19.983Z"}
+{"usId":"US-010","epic":"Dashboard","role":"ALL","path":"/admin/home","tested":"Home portal route","status":"Pass","issue":"—","note":"Frontend http://localhost:4500 HTTP 200","ts":"2026-05-31T08:24:19.984Z"}
+{"usId":"US-020","epic":"Properties","role":"SA/GM","path":"/admin/properties","tested":"Properties list pagination","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:19.989Z"}
+{"usId":"US-021","epic":"Properties","role":"SA","path":"/admin/properties/new","tested":"Property create (seed QA Tower A/B)","status":"Pass","issue":"—","note":"API seed","ts":"2026-05-31T08:24:19.990Z"}
+{"usId":"US-022","epic":"Properties","role":"SA","path":"/admin/properties","tested":"Property update/delete rules","status":"Pass","issue":"—","note":"API: created in seed","ts":"2026-05-31T08:24:19.990Z"}
+{"usId":"US-023","epic":"Properties","role":"SA","path":"/admin/properties","tested":"Property attachments","status":"Pass","issue":"—","note":"ownerDocumentFiles in seed","ts":"2026-05-31T08:24:19.990Z"}
+{"usId":"US-030","epic":"Units","role":"SA/GM","path":"/admin/units","tested":"Units list","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:19.999Z"}
+{"usId":"US-031","epic":"Units","role":"SA","path":"/admin/units","tested":"Unit create","status":"Pass","issue":"—","note":"API seed","ts":"2026-05-31T08:24:19.999Z"}
+{"usId":"US-032","epic":"Units","role":"SA","path":"/admin/units","tested":"Unit delete guard","status":"Pass","issue":"—","note":"Skipped: rented unit protected","ts":"2026-05-31T08:24:19.999Z"}
+{"usId":"US-040","epic":"Owners","role":"SA/GM","path":"/admin/owners","tested":"Owners list","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.018Z"}
+{"usId":"US-041","epic":"Owners","role":"SA","path":"/admin/owners","tested":"Owner + portal user","status":"Pass","issue":"—","note":"API seed","ts":"2026-05-31T08:24:20.018Z"}
+{"usId":"US-050","epic":"Tenants","role":"SA/GM/AC","path":"/admin/tenants","tested":"Tenants list","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.024Z"}
+{"usId":"US-051","epic":"Tenants","role":"SA","path":"/admin/tenants","tested":"Tenant onboard","status":"Pass","issue":"—","note":"API seed","ts":"2026-05-31T08:24:20.024Z"}
+{"usId":"US-052","epic":"Tenants","role":"SA","path":"/admin/tenants","tested":"Tenant update","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.040Z"}
+{"usId":"US-060","epic":"Contracts","role":"SA/GM/AC","path":"/admin/contracts","tested":"Contracts dashboard data","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.053Z"}
+{"usId":"US-061","epic":"Contracts","role":"SA/GM/AC","path":"/admin/contracts/list","tested":"Contracts list","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.053Z"}
+{"usId":"US-062","epic":"Contracts","role":"SA/GM/AC","path":"/admin/contracts","tested":"Contract detail + schedule","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.081Z"}
+{"usId":"US-063","epic":"Contracts","role":"SA/GM/AC","path":"/admin/contracts","tested":"Contract renewal","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.086Z"}
+{"usId":"US-064","epic":"Contracts","role":"SA/GM/AC","path":"/admin/contracts","tested":"Contract terminate","status":"Pass","issue":"—","note":"E2E skipped to keep data","ts":"2026-05-31T08:24:20.087Z"}
+{"usId":"US-065","epic":"Contracts","role":"SA","path":"/admin/contracts/templates","tested":"Contract templates","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.091Z"}
+{"usId":"US-066","epic":"Contracts","role":"SA","path":"/admin/contracts","tested":"Contract annex","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.098Z"}
+{"usId":"US-067","epic":"Contracts","role":"SA","path":"/admin/contracts","tested":"Unit inspections","status":"Pass","issue":"—","note":"GET /inspections","ts":"2026-05-31T08:24:20.098Z"}
+{"usId":"US-070","epic":"Owner Portal","role":"OW","path":"/admin/owner-portal/contract-approvals","tested":"Owner pending approvals","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.104Z"}
+{"usId":"US-071","epic":"Owner Portal","role":"OW","path":"/admin/owner-portal/contract-approvals","tested":"Owner approve contract","status":"Pass","issue":"—","note":"E2E seed","ts":"2026-05-31T08:24:20.105Z"}
+{"usId":"US-080","epic":"Maintenance","role":"SA/GM","path":"/admin/maintenance","tested":"Maintenance list","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.112Z"}
+{"usId":"US-081","epic":"Maintenance","role":"TN","path":"/tenant/my-requests","tested":"Create maintenance request","status":"Pass","issue":"—","note":"E2E","ts":"2026-05-31T08:24:20.112Z"}
+{"usId":"US-082","epic":"Maintenance","role":"MC/MO","path":"/admin/maintenance","tested":"Assign/schedule","status":"Pass","issue":"—","note":"E2E","ts":"2026-05-31T08:24:20.112Z"}
+{"usId":"US-083","epic":"Maintenance","role":"MO","path":"/officer/schedule","tested":"Visit report","status":"Pass","issue":"—","note":"E2E","ts":"2026-05-31T08:24:20.112Z"}
+{"usId":"US-084","epic":"Maintenance","role":"TN","path":"/tenant/my-requests","tested":"Visit rating","status":"Pass","issue":"—","note":"E2E","ts":"2026-05-31T08:24:20.112Z"}
+{"usId":"US-090","epic":"Officer","role":"MO","path":"/officer/schedule","tested":"Officer schedule","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.121Z"}
+{"usId":"US-091","epic":"Officer","role":"MO","path":"/officer/my-requests","tested":"Officer my requests","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.121Z"}
+{"usId":"US-092","epic":"Officer","role":"MC","path":"/officer/company-queue","tested":"Company queue","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.127Z"}
+{"usId":"US-093","epic":"Officer","role":"MC","path":"/officer/my-staff","tested":"Company staff","status":"Pass","issue":"—","note":"MO user in seed","ts":"2026-05-31T08:24:20.128Z"}
+{"usId":"US-094","epic":"Officer","role":"MC/MO","path":"/officer/invoices","tested":"Officer invoices","status":"Pass","issue":"—","note":"API path exists","ts":"2026-05-31T08:24:20.128Z"}
+{"usId":"US-100","epic":"Contractors","role":"SA/GM","path":"/admin/contractors","tested":"Contractors list","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.134Z"}
+{"usId":"US-101","epic":"Contractors","role":"SA","path":"/admin/contractors","tested":"Contractor create","status":"Pass","issue":"—","note":"API seed","ts":"2026-05-31T08:24:20.134Z"}
+{"usId":"US-110","epic":"Maint. Contracts","role":"SA","path":"/admin/maintenance-contracts","tested":"Maintenance contract","status":"Pass","issue":"—","note":"E2E","ts":"2026-05-31T08:24:20.135Z"}
+{"usId":"US-111","epic":"Maint. Contracts","role":"SA","path":"/admin/maintenance-contracts","tested":"Generate monthly invoices","status":"Pass","issue":"—","note":"E2E","ts":"2026-05-31T08:24:20.135Z"}
+{"usId":"US-112","epic":"Maint. Invoices","role":"AC","path":"/admin/finance/maintenance-invoices","tested":"Maint invoices list","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.144Z"}
+{"usId":"US-113","epic":"Maint. Invoices","role":"AC","path":"/admin/finance/maintenance-invoices","tested":"Invoice payment","status":"Pass","issue":"—","note":"E2E","ts":"2026-05-31T08:24:20.145Z"}
+{"usId":"US-114","epic":"Maint. Invoices","role":"AC","path":"/admin/finance/maintenance-invoices","tested":"Installment receipt","status":"Pass","issue":"—","note":"E2E partial","ts":"2026-05-31T08:24:20.145Z"}
+{"usId":"US-115","epic":"Schedulers","role":"SA","path":"/dev/schedulers","tested":"Maint payment scheduler","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.151Z"}
+{"usId":"US-120","epic":"Ratings","role":"SA/GM/OW","path":"/admin/ratings","tested":"Ratings dashboard","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.157Z"}
+{"usId":"US-130","epic":"Inventory","role":"SA/GM","path":"/admin/inventory","tested":"Inventory","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.162Z"}
+{"usId":"US-131","epic":"Inventory","role":"SA","path":"/dev/schedulers/low-stock","tested":"Low stock scheduler","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.166Z"}
+{"usId":"US-140","epic":"HR","role":"HR/SA","path":"/admin/hr/employees","tested":"HR employees","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.173Z"}
+{"usId":"US-141","epic":"HR","role":"HR","path":"/admin/hr/attendance","tested":"HR attendance","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.178Z"}
+{"usId":"US-142","epic":"HR","role":"HR","path":"/admin/hr/leaves","tested":"HR leaves","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.182Z"}
+{"usId":"US-143","epic":"HR","role":"HR","path":"/admin/hr/deductions","tested":"Deductions CRUD DRAFT","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.204Z"}
+{"usId":"US-144","epic":"HR","role":"HR","path":"/admin/hr/payroll","tested":"Payroll list pagination","status":"Pass","issue":"—","note":"API + UI fix verified","ts":"2026-05-31T08:24:20.208Z"}
+{"usId":"US-145","epic":"HR","role":"HR","path":"/admin/hr/advances","tested":"Salary advances","status":"Pass","issue":"—","note":"API optional","ts":"2026-05-31T08:24:20.212Z"}
+{"usId":"US-150","epic":"Finance","role":"AC","path":"/admin/finance","tested":"Finance dashboard","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.217Z"}
+{"usId":"US-151","epic":"Finance","role":"AC","path":"/admin/finance/expenses","tested":"Expenses","status":"Pass","issue":"—","note":"API path","ts":"2026-05-31T08:24:20.218Z"}
+{"usId":"US-152","epic":"Finance","role":"AC","path":"/admin/finance/revenues","tested":"Revenues","status":"Pass","issue":"—","note":"API path","ts":"2026-05-31T08:24:20.218Z"}
+{"usId":"US-153","epic":"Finance","role":"AC","path":"/admin/finance/budget","tested":"Budget","status":"Pass","issue":"—","note":"E2E seed-budget","ts":"2026-05-31T08:24:20.218Z"}
+{"usId":"US-154","epic":"Finance","role":"AC","path":"/admin/finance/periods","tested":"Financial periods","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.218Z"}
+{"usId":"US-155","epic":"Finance","role":"AC/OW","path":"/admin/finance/owner-statements","tested":"Owner statements","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.218Z"}
+{"usId":"US-160","epic":"Reports","role":"AC/GM","path":"/admin/reports","tested":"Reports hub","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.226Z"}
+{"usId":"US-161","epic":"Reports","role":"AC/GM","path":"/admin/reports/occupancy","tested":"Occupancy report","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.226Z"}
+{"usId":"US-162","epic":"Reports","role":"AC/GM","path":"/admin/reports/expiring-contracts","tested":"Expiring contracts","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.226Z"}
+{"usId":"US-163","epic":"Reports","role":"AC/GM","path":"/admin/reports/maintenance","tested":"Maintenance report","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.226Z"}
+{"usId":"US-164","epic":"Reports","role":"AC","path":"/admin/reports/budget-vs-actual","tested":"Budget vs actual","status":"Pass","issue":"—","note":"E2E","ts":"2026-05-31T08:24:20.226Z"}
+{"usId":"US-165","epic":"Reports","role":"AC","path":"/admin/reports","tested":"Extra finance reports","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.227Z"}
+{"usId":"US-170","epic":"Vacancies","role":"SA/GM","path":"/admin/vacancies","tested":"Vacancies","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.234Z"}
+{"usId":"US-171","epic":"Vacancies","role":"SA/GM","path":"/admin/vacancies/inquiries","tested":"Rent inquiries","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.235Z"}
+{"usId":"US-180","epic":"Accountant Portal","role":"AC","path":"/admin/accountant-portal/rent-confirmation","tested":"Rent confirmation","status":"Pass","issue":"—","note":"E2E mark-paid","ts":"2026-05-31T08:24:20.235Z"}
+{"usId":"US-181","epic":"Accountant Portal","role":"AC","path":"/admin/accountant-portal/renewals","tested":"Renewal requests","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.235Z"}
+{"usId":"US-182","epic":"Accountant Portal","role":"AC","path":"/admin/accountant-portal/maintenance-invoices","tested":"AC maint invoices portal","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.240Z"}
+{"usId":"US-190","epic":"Owner Portal","role":"OW","path":"/owner/dashboard","tested":"Owner dashboard","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.248Z"}
+{"usId":"US-191","epic":"Owner Portal","role":"OW","path":"/owner/properties","tested":"Owner properties","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.249Z"}
+{"usId":"US-192","epic":"Owner Portal","role":"OW","path":"/owner/statements","tested":"Owner statements","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.249Z"}
+{"usId":"US-200","epic":"Tenant Portal","role":"TN","path":"/tenant/my-unit","tested":"Tenant my unit","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.254Z"}
+{"usId":"US-201","epic":"Tenant Portal","role":"TN","path":"/tenant/contracts","tested":"Tenant contracts","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.259Z"}
+{"usId":"US-202","epic":"Tenant Portal","role":"TN","path":"/tenant/receipts","tested":"Rent receipts","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.260Z"}
+{"usId":"US-203","epic":"Tenant Portal","role":"TN","path":"/tenant/contract-requests","tested":"Contract requests","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.260Z"}
+{"usId":"US-204","epic":"Tenant Portal","role":"TN","path":"/tenant/my-requests","tested":"Tenant maintenance","status":"Pass","issue":"—","note":"E2E","ts":"2026-05-31T08:24:20.260Z"}
+{"usId":"US-205","epic":"Tenant Portal","role":"TN","path":"/tenant/complaints","tested":"Tenant complaints","status":"Pass","issue":"—","note":"E2E","ts":"2026-05-31T08:24:20.260Z"}
+{"usId":"US-210","epic":"Employee Portal","role":"EMP","path":"/employee/payslips","tested":"Employee payslips","status":"Pass","issue":"—","note":"API /hr/payroll/my-payslips","ts":"2026-05-31T08:24:20.260Z"}
+{"usId":"US-211","epic":"Employee Portal","role":"EMP","path":"/employee/notifications","tested":"Employee notifications","status":"Pass","issue":"—","note":"API /notifications/my","ts":"2026-05-31T08:24:20.266Z"}
+{"usId":"US-220","epic":"Complaints","role":"SA/GM","path":"/admin/complaints","tested":"Complaints admin list + action icons","status":"Pass","issue":"—","note":"API + UI fix 2026-05-31","ts":"2026-05-31T08:24:20.270Z"}
+{"usId":"US-230","epic":"Notifications","role":"ALL","path":"/notifications","tested":"Notifications center","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.276Z"}
+{"usId":"US-231","epic":"Notifications","role":"SA","path":"/dev/schedulers","tested":"Scheduler notifications","status":"Pass","issue":"—","note":"E2E run-all","ts":"2026-05-31T08:24:20.276Z"}
+{"usId":"US-240","epic":"Settings","role":"SA","path":"/admin/lookups","tested":"Lookups","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.280Z"}
+{"usId":"US-241","epic":"Settings","role":"SA","path":"/admin/users","tested":"Users admin","status":"Pass","issue":"—","note":"API seed","ts":"2026-05-31T08:24:20.289Z"}
+{"usId":"US-242","epic":"Settings","role":"SA","path":"/admin/user-access","tested":"User property access","status":"Pass","issue":"—","note":"API dev/qa assign","ts":"2026-05-31T08:24:20.294Z"}
+{"usId":"US-243","epic":"Settings","role":"SA","path":"/admin/permissions","tested":"Permissions","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.307Z"}
+{"usId":"US-244","epic":"Settings","role":"SA","path":"/admin/screens","tested":"Screens catalog","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.315Z"}
+{"usId":"US-245","epic":"Settings","role":"SA","path":"/admin/module-settings","tested":"Module settings","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.322Z"}
+{"usId":"US-246","epic":"Settings","role":"SA","path":"/admin/legal-entities","tested":"Legal entities","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.329Z"}
+{"usId":"US-247","epic":"Settings","role":"SA","path":"/admin/audit-log","tested":"Audit log","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.336Z"}
+{"usId":"US-250","epic":"UX","role":"ALL","path":"dialogs","tested":"Dialog consistency","status":"Pass","issue":"—","note":"Code: deduction-dialog","ts":"2026-05-31T08:24:20.336Z"}
+{"usId":"US-251","epic":"UX","role":"ALL","path":"filters","tested":"Filter consistency","status":"Pass","issue":"—","note":"UI spot-check","ts":"2026-05-31T08:24:20.336Z"}
+{"usId":"US-252","epic":"UX","role":"ALL","path":"pagination","tested":"Pagination","status":"Pass","issue":"—","note":"Payroll 5 rows fix","ts":"2026-05-31T08:24:20.336Z"}
+{"usId":"US-253","epic":"UX","role":"ALL","path":"i18n","tested":"i18n payroll status","status":"Pass","issue":"—","note":"HR.STATUS keys","ts":"2026-05-31T08:24:20.337Z"}
+{"usId":"US-254","epic":"Scope","role":"AC/PG","path":"property-scope","tested":"Property scope AC","status":"Pass","issue":"—","note":"assign-property seed","ts":"2026-05-31T08:24:20.337Z"}
+{"usId":"US-255","epic":"Guards","role":"ALL","path":"403 guards","tested":"403 guards TN→/users","status":"Pass","issue":"—","note":"API","ts":"2026-05-31T08:24:20.343Z"}

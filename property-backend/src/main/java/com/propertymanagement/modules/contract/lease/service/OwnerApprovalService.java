@@ -36,9 +36,21 @@ public class OwnerApprovalService {
     private final UserRepository userRepository;
 
     public List<ContractResponse> getPendingApprovals(Long ownerId) {
-        List<LeaseContract> contracts = (ownerId != null)
-                ? contractRepository.findByOwnerIdAndStatusOrderByCreatedAtDesc(ownerId, ContractStatus.PENDING_OWNER_APPROVAL)
-                : contractRepository.findByStatusOrderByCreatedAtDesc(ContractStatus.PENDING_OWNER_APPROVAL);
+        Set<Long> ownerScope = ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner();
+        List<LeaseContract> contracts;
+        if (ownerScope != null) {
+            if (ownerScope.isEmpty()) {
+                return List.of();
+            }
+            contracts = contractRepository.findByStatusAndPropertyIdInOrderByCreatedAtDesc(
+                    ContractStatus.PENDING_OWNER_APPROVAL, ownerScope);
+        } else if (ownerId != null) {
+            contracts = contractRepository.findByOwnerIdAndStatusOrderByCreatedAtDesc(
+                    ownerId, ContractStatus.PENDING_OWNER_APPROVAL);
+        } else {
+            contracts = contractRepository.findByStatusOrderByCreatedAtDesc(
+                    ContractStatus.PENDING_OWNER_APPROVAL);
+        }
         return contracts.stream().map(contractService::toResponse).toList();
     }
 

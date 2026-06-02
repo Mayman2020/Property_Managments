@@ -61,43 +61,46 @@
             </button>
           </div>
 
-          <div class="estate-search-inline ratings-search">
-            <span class="material-icons">search</span>
-            <input [value]="searchTerm" (input)="searchTerm = $any($event.target).value; applyFilters()" [placeholder]="searchPlaceholder">
-          </div>
-
           <button mat-icon-button class="clear-filters-btn" type="button" (click)="resetFilters()" [matTooltip]="'ACTIONS.CLEAR_FILTERS' | translate">
             <mat-icon>filter_alt_off</mat-icon>
           </button>
         </div>
 
         <div class="finance-filter-strip ratings-filter-strip">
-          <label>{{ 'REQUEST_FORM.PROPERTY' | translate }}</label>
-          <select [(ngModel)]="selectedPropertyId" (change)="onPropertyChange(selectedPropertyId)" class="estate-property-select">
-            <option [ngValue]="null">{{ 'ACTIONS.VIEW_ALL' | translate }}</option>
-            <option *ngFor="let p of propertyOptions" [ngValue]="p.id">{{ p.name }}</option>
-          </select>
+          <app-estate-lov-select
+            [label]="'REQUEST_FORM.PROPERTY'"
+            [options]="propertyLovOptions"
+            [showAll]="true"
+            [(ngModel)]="selectedPropertyId"
+            (ngModelChange)="onPropertyChange($event)">
+          </app-estate-lov-select>
 
-          <ng-container *ngIf="selectedPropertyId">
-            <label>{{ 'REQUEST_FORM.UNIT' | translate }}</label>
-            <select [(ngModel)]="selectedUnitId" (change)="applyFilters()" class="estate-property-select" [disabled]="loadingUnits">
-              <option [ngValue]="null">
-                {{ loadingUnits ? ('REQUEST_FORM.LOADING_UNITS' | translate) : ('ACTIONS.VIEW_ALL' | translate) }}
-              </option>
-              <option *ngFor="let u of unitOptions" [ngValue]="u.id">{{ u.name }}</option>
-            </select>
-          </ng-container>
+          <app-estate-lov-select
+            [label]="'REQUEST_FORM.UNIT'"
+            [options]="unitLovOptions"
+            [showAll]="true"
+            [(ngModel)]="selectedUnitId"
+            (ngModelChange)="onUnitChange($event)">
+          </app-estate-lov-select>
+
+          <app-estate-lov-select
+            [label]="'RATINGS_DASHBOARD.FILTER_TENANT_NATIONAL_ID'"
+            [options]="tenantLovOptions"
+            [showAll]="true"
+            [(ngModel)]="selectedTenantId"
+            (ngModelChange)="onTenantChange($event)">
+          </app-estate-lov-select>
 
           <label>{{ 'RATINGS_DASHBOARD.DATE_FROM' | translate }}</label>
-          <input type="date" [(ngModel)]="dateFromStr" (change)="applyFilters()" class="estate-property-select date-input">
+          <input type="date" [(ngModel)]="dateFromStr" (change)="pageIndex = 0; applyFilters()" class="estate-property-select date-input">
 
           <label>{{ 'RATINGS_DASHBOARD.DATE_TO' | translate }}</label>
-          <input type="date" [(ngModel)]="dateToStr" (change)="applyFilters()" class="estate-property-select date-input">
+          <input type="date" [(ngModel)]="dateToStr" (change)="pageIndex = 0; applyFilters()" class="estate-property-select date-input">
         </div>
 
         <div class="contracts-filter-tray">
           <div class="estate-filter-row">
-            <button type="button" class="estate-filter-btn fs-all" [class.active]="selectedStars === null" (click)="selectedStars = null; applyFilters()">
+            <button type="button" class="estate-filter-btn fs-all" [class.active]="selectedStars === null" (click)="selectedStars = null; pageIndex = 0; applyFilters()">
               {{ 'COMMON.ALL' | translate }}
             </button>
             <button
@@ -109,7 +112,7 @@
               [class.fs-renewed]="star === 3"
               [class.fs-terminated]="star === 2"
               [class.fs-expired]="star === 1"
-              (click)="selectedStars = star; applyFilters()">
+              (click)="selectedStars = star; pageIndex = 0; applyFilters()">
               {{ star }} / 4
             </button>
           </div>
@@ -133,7 +136,7 @@
 
         <div class="rating-list-panel" *ngIf="!selectedRating; else ratingDetails">
           <div class="rating-card-grid">
-            <article class="rating-card" *ngFor="let item of recentRatings; trackBy: trackByRatingId">
+            <article class="rating-card" *ngFor="let item of pagedRatings; trackBy: trackByRatingId">
               <div class="rating-card-head">
                 <span class="mono-cell">{{ item.number || item.sourceId }}</span>
                 <span class="rating-chip" [ngClass]="'rating-' + item.rating">
@@ -172,6 +175,13 @@
               </div>
             </article>
           </div>
+
+          <app-table-pager
+            [length]="totalRatings"
+            [pageSize]="pageSize"
+            [pageIndex]="pageIndex"
+            (pageIndexChange)="goToPage($event)">
+          </app-table-pager>
         </div>
 
         <ng-template #ratingDetails>
@@ -235,7 +245,7 @@
         *ngIf="totalRatings === 0"
         icon="star_border"
         [title]="'RATINGS_DASHBOARD.NO_RATINGS_TITLE' | translate"
-        [message]="'RATINGS_DASHBOARD.NO_RATINGS_MSG' | translate">
+        [message]="emptyMessageKey | translate">
       </app-empty-state>
     </section>
   </ng-container>

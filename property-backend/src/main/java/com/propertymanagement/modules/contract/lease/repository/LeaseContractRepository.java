@@ -29,6 +29,38 @@ public interface LeaseContractRepository extends JpaRepository<LeaseContract, Lo
 
     Page<LeaseContract> findByStatusAndPropertyIdIn(ContractStatus status, Collection<Long> propertyIds, Pageable pageable);
 
+    @Query("""
+            SELECT c FROM LeaseContract c
+            WHERE (:status IS NULL OR c.status = :status)
+              AND (:ownerApprovalStatus IS NULL OR :ownerApprovalStatus = '' OR c.ownerApprovalStatus = :ownerApprovalStatus)
+              AND (
+                :q IS NULL OR :q = '' OR
+                LOWER(COALESCE(c.contractNumber, '')) LIKE LOWER(CONCAT('%', :q, '%'))
+              )
+            """)
+    Page<LeaseContract> search(
+            @Param("status") ContractStatus status,
+            @Param("ownerApprovalStatus") String ownerApprovalStatus,
+            @Param("q") String q,
+            Pageable pageable);
+
+    @Query("""
+            SELECT c FROM LeaseContract c
+            WHERE c.propertyId IN :propertyIds
+              AND (:status IS NULL OR c.status = :status)
+              AND (:ownerApprovalStatus IS NULL OR :ownerApprovalStatus = '' OR c.ownerApprovalStatus = :ownerApprovalStatus)
+              AND (
+                :q IS NULL OR :q = '' OR
+                LOWER(COALESCE(c.contractNumber, '')) LIKE LOWER(CONCAT('%', :q, '%'))
+              )
+            """)
+    Page<LeaseContract> searchInPropertyIds(
+            @Param("propertyIds") Collection<Long> propertyIds,
+            @Param("status") ContractStatus status,
+            @Param("ownerApprovalStatus") String ownerApprovalStatus,
+            @Param("q") String q,
+            Pageable pageable);
+
     List<LeaseContract> findByTenantId(Long tenantId);
 
     List<LeaseContract> findByTenantIdOrderByCreatedAtDesc(Long tenantId);

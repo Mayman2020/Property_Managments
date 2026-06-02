@@ -208,8 +208,8 @@ export const ADMIN_ROUTES: Routes = [
           },
           {
             path: 'attendance',
-            data: { section: 'attendance' },
-            loadComponent: () => import('../hr/hr-workspace/hr-workspace.component').then((m) => m.HrWorkspaceComponent)
+            redirectTo: 'employees',
+            pathMatch: 'full'
           },
           {
             path: 'deductions',
@@ -287,8 +287,13 @@ export const ADMIN_ROUTES: Routes = [
         children: [
           {
             path: 'list',
-            data: { section: 'list' },
-            loadComponent: () => import('../vacancies/vacancy-workspace/vacancy-workspace.component').then((m) => m.VacancyWorkspaceComponent)
+            redirectTo: '/admin/units',
+            pathMatch: 'full'
+          },
+          {
+            path: '',
+            redirectTo: '/admin/units',
+            pathMatch: 'full'
           },
           {
             path: ':id/inquiries',
@@ -331,7 +336,8 @@ export const ADMIN_ROUTES: Routes = [
           },
           {
             path: 'renewal-requests',
-            loadComponent: () => import('../accountant/renewal-requests/renewal-requests.component').then((m) => m.RenewalRequestsComponent)
+            redirectTo: '/admin/owner-portal/contract-approvals?tab=renewals',
+            pathMatch: 'full'
           },
           {
             path: 'maintenance-invoices',
@@ -342,7 +348,7 @@ export const ADMIN_ROUTES: Routes = [
       // Owner Approval Portal
       {
         path: 'owner-portal/contract-approvals',
-        canActivate: [moduleGuard, roleGuard(['OWNER', 'SUPER_ADMIN', 'GENERAL_MANAGER'])],
+        canActivate: [moduleGuard, roleGuard(['OWNER', 'SUPER_ADMIN', 'GENERAL_MANAGER', 'ACCOUNTANT'])],
         data: { module: 'owner_portal' },
         loadComponent: () => import('../owner/contract-approvals/contract-approvals.component').then((m) => m.ContractApprovalsComponent)
       },

@@ -107,25 +107,36 @@ public class LeaseContractService {
     private final UnitInspectionService unitInspectionService;
 
     public Page<ContractResponse> getAll(Pageable pageable) {
-        Set<Long> scope = propertyScopeService.propertyIdsOrNullIfUnrestricted();
-        if (scope != null) {
-            if (scope.isEmpty()) {
-                return Page.empty(pageable);
-            }
-            return contractRepository.findByPropertyIdIn(scope, pageable).map(this::toResponse);
-        }
-        return contractRepository.findAll(pageable).map(this::toResponse);
+        return search(pageable, null, null, null);
     }
 
     public Page<ContractResponse> getByStatus(ContractStatus status, Pageable pageable) {
+        return search(pageable, status, null, null);
+    }
+
+    public Page<ContractResponse> search(
+            Pageable pageable, ContractStatus status, String ownerApprovalStatus, String q) {
+        String trimmedOwner = trimToNull(ownerApprovalStatus);
+        String trimmedQ = trimToNull(q);
         Set<Long> scope = propertyScopeService.propertyIdsOrNullIfUnrestricted();
+        Page<LeaseContract> page;
         if (scope != null) {
             if (scope.isEmpty()) {
                 return Page.empty(pageable);
             }
-            return contractRepository.findByStatusAndPropertyIdIn(status, scope, pageable).map(this::toResponse);
+            page = contractRepository.searchInPropertyIds(scope, status, trimmedOwner, trimmedQ, pageable);
+        } else {
+            page = contractRepository.search(status, trimmedOwner, trimmedQ, pageable);
         }
-        return contractRepository.findByStatus(status, pageable).map(this::toResponse);
+        return page.map(this::toResponse);
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     public ContractResponse getById(Long id) {
@@ -447,6 +458,9 @@ public class LeaseContractService {
             u.setRented(live > 0);
             u.setReserved(pendingReserve > 0 && live == 0);
             unitRepository.save(u);
+            if (u.isRented() || u.isReserved()) {
+                vacancyPublishingService.unpublishIfUnitOccupied(unitId);
+            }
         });
     }
 

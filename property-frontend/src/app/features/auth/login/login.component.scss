@@ -264,6 +264,30 @@
   opacity: 0.72;
 }
 
+.login-submit.is-loading {
+  gap: 8px;
+}
+
+.login-btn-loader {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--navy-900) 18%, transparent);
+  border-top-color: var(--navy-900);
+  animation: login-spin 0.65s linear infinite;
+  flex-shrink: 0;
+}
+
+.login-btn-loading-label {
+  font-size: 14px;
+}
+
+@keyframes login-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (max-width: 980px) {
   .estate-login {
     grid-template-columns: 1fr;

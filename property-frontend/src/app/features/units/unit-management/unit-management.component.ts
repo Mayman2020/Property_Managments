@@ -12,8 +12,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
-import { forkJoin, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { forkJoin } from 'rxjs';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
@@ -31,10 +30,14 @@ import { LeaseContract } from '../../../core/models/contract.model';
 import { ContractDialogComponent } from '../../contracts/contract-dialog/contract-dialog.component';
 import { UnitDialogComponent } from '../unit-dialog/unit-dialog.component';
 import { FilterBarComponent, FilterSpec } from '../../../shared/components/filter-bar/filter-bar.component';
+import { SearchableSelectComponent } from '../../../shared/components/searchable-select/searchable-select.component';
+import { TableEntityCellComponent } from '../../../shared/components/table-entity-cell/table-entity-cell.component';
+import { TableRowIndexPipe } from '../../../shared/pipes/table-row-index.pipe';
 import { LookupCacheService } from '../../../core/services/lookup-cache.service';
 import { LookupItem } from '../../../core/services/lookup.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { VacancyService } from '../../../core/services/vacancy.service';
+import { ListLoadController } from '../../../shared/utils/list-load.util';
 
 @Component({
   selector: 'app-unit-management',
@@ -60,6 +63,9 @@ import { VacancyService } from '../../../core/services/vacancy.service';
     TablePagerComponent,
     TableExportToolbarComponent,
     FilterBarComponent,
+    SearchableSelectComponent,
+    TableEntityCellComponent,
+    TableRowIndexPipe,
     ContractDialogComponent
   ],
   templateUrl: './unit-management.component.html',
@@ -68,12 +74,12 @@ import { VacancyService } from '../../../core/services/vacancy.service';
 export class UnitManagementComponent implements OnInit {
   @ViewChild(FilterBarComponent) private readonly filterBar?: FilterBarComponent;
 
-  loading = true;
+  listLoad = new ListLoadController();
   readonly pageSize = 5;
 
   properties: Property[] = [];
-  allUnits: Unit[] = [];
-  filteredUnits: Unit[] = [];
+  units: Unit[] = [];
+  totalElements = 0;
   tenantByUnitId: Record<number, string> = {};
   contractByUnitId: Record<number, LeaseContract> = {};
   userById: Record<number, string> = {};
@@ -84,17 +90,16 @@ export class UnitManagementComponent implements OnInit {
   pageIndex = 0;
 
   filterUnitNumber = '';
-  filterFloor: number | null = null;
   filterUnitType: string | null = null;
   filterStatus: string | null = null;
-  filterActive: boolean | null = null;
   unitFilters: FilterSpec[] = [];
+  private propertySearchTimer?: ReturnType<typeof setTimeout>;
   unitTypes: LookupItem[] = [];
 
   readonly statusOptions = [
     { value: 'rented', labelKey: 'UNITS.RENTED' },
     { value: 'reserved', labelKey: 'UNITS.RESERVED' },
-    { value: 'vacant', labelKey: 'DASHBOARD.VACANT_UNITS' }
+    { value: 'vacant', labelKey: 'UNITS.VACANT' }
   ];
 
   constructor(
@@ -130,7 +135,11 @@ export class UnitManagementComponent implements OnInit {
   }
 
   canPublishVacancy(unit: Unit): boolean {
-    return !unit.rented && !unit.reserved && this.permissions.can('vacancies', 'create');
+    return !unit.rented && !unit.reserved && !unit.vacancyPublished && this.permissions.can('vacancies', 'create');
+  }
+
+  canUnpublishVacancy(unit: Unit): boolean {
+    return !unit.rented && !unit.reserved && !!unit.vacancyPublished && this.permissions.can('vacancies', 'create');
   }
 
   publishVacancy(unit: Unit): void {
@@ -142,8 +151,24 @@ export class UnitManagementComponent implements OnInit {
       currency: unit.currency
     }).subscribe({
       next: () => {
+        unit.vacancyPublished = true;
         this.publishVacancyLoadingId = null;
         this.snack.success('VACANCY.AUTO_PUBLISHED');
+      },
+      error: (err) => {
+        this.publishVacancyLoadingId = null;
+        this.snack.error((err as Error)?.message || 'COMMON.ERROR');
+      }
+    });
+  }
+
+  unpublishVacancy(unit: Unit): void {
+    this.publishVacancyLoadingId = unit.id;
+    this.vacancySvc.unpublishListing(unit.id).subscribe({
+      next: () => {
+        unit.vacancyPublished = false;
+        this.publishVacancyLoadingId = null;
+        this.snack.success('VACANCY.UNPUBLISHED');
       },
       error: (err) => {
         this.publishVacancyLoadingId = null;
@@ -162,7 +187,7 @@ export class UnitManagementComponent implements OnInit {
     }
     this.loadUsers();
     this.loadLookupFilters();
-    this.loadPropertiesAndUnits();
+    this.loadProperties();
     this.setupFilters();
   }
 
@@ -177,22 +202,8 @@ export class UnitManagementComponent implements OnInit {
   }
 
   private setupFilters(): void {
-    const filters: FilterSpec[] = [
-      { key: 'filterUnitNumber', label: 'UNITS.UNIT_NUMBER', type: 'text' }
-    ];
-    if (this.properties.length > 0) {
-      filters.push({
-        key: 'selectedPropertyId',
-        label: 'REQUEST_FORM.PROPERTY',
-        type: 'select',
-        options: this.properties.map((p) => ({
-          value: p.id,
-          label: this.getPropertyLabel(p)
-        }))
-      });
-    }
-    filters.push(
-      { key: 'filterFloor', label: 'UNITS.FLOOR', type: 'number' },
+    this.unitFilters = [
+      { key: 'filterUnitNumber', label: 'UNITS.UNIT_NUMBER', type: 'text' },
       {
         key: 'filterUnitType',
         label: 'UNITS.UNIT_TYPE',
@@ -210,65 +221,43 @@ export class UnitManagementComponent implements OnInit {
           value: status.value,
           label: this.i18n.instant(status.labelKey)
         }))
-      },
-      {
-        key: 'filterActive',
-        label: 'COMMON.ACTIVE',
-        type: 'select',
-        options: [
-          { value: 'true',  label: this.i18n.instant('COMMON.ACTIVE') },
-          { value: 'false', label: this.i18n.instant('COMMON.INACTIVE') }
-        ]
-      },
-    );
-    this.unitFilters = filters;
+      }
+    ];
   }
 
   onFilterBarChange(values: any): void {
     if (values?.filterUnitNumber !== undefined) this.filterUnitNumber = values.filterUnitNumber ?? '';
-    if (values?.selectedPropertyId !== undefined) this.selectedPropertyId = this.toNumberOrNull(values.selectedPropertyId);
-    if (values?.filterFloor !== undefined) this.filterFloor = this.toNumberOrNull(values.filterFloor);
     if (values?.filterUnitType !== undefined) this.filterUnitType = values.filterUnitType ?? null;
     if (values?.filterStatus !== undefined) this.filterStatus = values.filterStatus ?? null;
-    if (values?.filterActive !== undefined) {
-      const v = values.filterActive;
-      this.filterActive = v === 'true' ? true : v === 'false' ? false : null;
-    }
     this.pageIndex = 0;
-    this.applyFilters();
+    this.loadUnits();
   }
 
   clearFiltersFromBar(): void {
     this.filterBar?.clear();
     this.filterUnitNumber = '';
     this.selectedPropertyId = null;
-    this.filterFloor = null;
     this.filterUnitType = null;
     this.filterStatus = null;
-    this.filterActive = null;
     this.pageIndex = 0;
-    this.applyFilters();
+    this.loadPropertyOptions();
+    this.loadUnits();
   }
 
   hasFiltersBar(): boolean {
     return !!(
       this.filterUnitNumber ||
-      (this.properties.length > 0 && this.selectedPropertyId) ||
-      this.filterFloor !== null ||
+      this.selectedPropertyId ||
       this.filterUnitType ||
-      this.filterStatus ||
-      this.filterActive !== null
+      this.filterStatus
     );
   }
 
   get filterValues(): Record<string, unknown> {
     return {
       filterUnitNumber: this.filterUnitNumber,
-      selectedPropertyId: this.selectedPropertyId,
-      filterFloor: this.filterFloor,
       filterUnitType: this.filterUnitType,
-      filterStatus: this.filterStatus,
-      filterActive: this.filterActive === null ? null : String(this.filterActive)
+      filterStatus: this.filterStatus
     };
   }
 
@@ -280,30 +269,39 @@ export class UnitManagementComponent implements OnInit {
 
   onPropertyFilterChange(): void {
     this.pageIndex = 0;
-    this.applyFilters();
+    this.loadUnits();
+  }
+
+  onPropertySearchQuery(q: string): void {
+    if (this.propertySearchTimer) clearTimeout(this.propertySearchTimer);
+    this.propertySearchTimer = setTimeout(() => this.loadPropertyOptions(q), 300);
   }
 
   onSearch(term: string): void {
     this.searchTerm = term;
     this.pageIndex = 0;
-    this.applyFilters();
+    this.loadUnits();
   }
 
   applyFiltersManual(): void {
     this.pageIndex = 0;
-    this.applyFilters();
+    this.loadUnits();
   }
 
   clearFilters(): void {
     this.selectedPropertyId = null;
     this.searchTerm = '';
     this.filterUnitNumber = '';
-    this.filterFloor = null;
     this.filterUnitType = null;
     this.filterStatus = null;
-    this.filterActive = null;
     this.pageIndex = 0;
-    this.applyFilters();
+    this.loadPropertyOptions();
+    this.loadUnits();
+  }
+
+  onPageChange(index: number): void {
+    this.pageIndex = index;
+    this.loadUnits();
   }
 
   openAddDialog(): void {
@@ -314,7 +312,7 @@ export class UnitManagementComponent implements OnInit {
       panelClass: 'app-dialog-panel',
       disableClose: true
     }).afterClosed().subscribe((ok) => {
-      if (ok) this.loadAllUnits();
+      if (ok) this.loadUnits();
     });
   }
 
@@ -342,14 +340,14 @@ export class UnitManagementComponent implements OnInit {
       panelClass: 'app-dialog-panel',
       disableClose: true
     }).afterClosed().subscribe((ok) => {
-      if (ok) this.loadAllUnits();
+      if (ok) this.loadUnits();
     });
   }
 
   unitStatusLabelKey(unit: Unit): string {
     if (unit.rented) return 'UNITS.RENTED';
     if (unit.reserved) return 'UNITS.RESERVED';
-    return 'DASHBOARD.VACANT_UNITS';
+    return 'UNITS.VACANT';
   }
 
   unitStatusChipClass(unit: Unit): string {
@@ -368,7 +366,7 @@ export class UnitManagementComponent implements OnInit {
       this.unitSvc.delete(unit.id).subscribe({
         next: () => {
           this.snack.success(this.i18n.instant('UNITS.DELETE_SUCCESS'));
-          this.loadAllUnits();
+          this.loadUnits();
         },
         error: (err: Error) => this.deleteConfirm.handleDeleteError(err, this.snack)
       });
@@ -384,7 +382,7 @@ export class UnitManagementComponent implements OnInit {
       disableClose: true,
       data: { propertyId: unit.propertyId, unitId: unit.id }
     }).afterClosed().subscribe((ok) => {
-      if (ok) this.loadAllUnits();
+      if (ok) this.loadUnits();
     });
   }
 
@@ -397,7 +395,7 @@ export class UnitManagementComponent implements OnInit {
           unit.rented = synced.rented;
           unit.reserved = !!synced.reserved;
         }
-        this.loadAllUnits();
+        this.loadUnits();
       },
       error: (err: Error) => this.snack.error(err.message || this.i18n.instant('UNITS.SAVE_ERROR'))
     });
@@ -459,12 +457,7 @@ export class UnitManagementComponent implements OnInit {
   }
 
   get pagedUnits(): Unit[] {
-    const start = this.pageIndex * this.pageSize;
-    return this.filteredUnits.slice(start, start + this.pageSize);
-  }
-
-  get totalPages(): number {
-    return Math.max(1, Math.ceil(this.filteredUnits.length / this.pageSize));
+    return this.units;
   }
 
   get exportColumns(): ExportColumn<Unit>[] {
@@ -483,8 +476,9 @@ export class UnitManagementComponent implements OnInit {
   }
 
   changePage(step: number): void {
+    const totalPages = Math.max(1, Math.ceil(this.totalElements / this.pageSize));
     const next = this.pageIndex + step;
-    this.pageIndex = Math.max(0, Math.min(next, this.totalPages - 1));
+    this.onPageChange(Math.max(0, Math.min(next, totalPages - 1)));
   }
 
   private loadUsers(): void {
@@ -499,94 +493,83 @@ export class UnitManagementComponent implements OnInit {
     });
   }
 
-  private loadPropertiesAndUnits(): void {
-    this.loading = true;
-    this.propertySvc.getAll(0, 500).subscribe({
-      next: (res) => {
-        this.properties = res.data?.content ?? [];
-        this.propertyById = this.properties.reduce((acc, property) => {
-          acc[property.id] = property;
-          return acc;
-        }, {} as Record<number, Property>);
-
-        this.setupFilters();
-
-        if (!this.properties.some((property) => property.id === this.selectedPropertyId)) {
-          this.selectedPropertyId = null;
-        }
-
-        this.loadAllUnits();
-      },
-      error: () => {
-        this.loading = false;
-        this.snack.error(this.i18n.instant('UNITS.LOAD_ERROR'));
-      }
-    });
-  }
-
-  private loadAllUnits(): void {
-    if (this.properties.length === 0) {
-      this.allUnits = [];
-      this.filteredUnits = [];
-      this.loading = false;
+  private loadProperties(): void {
+    if (this.selectedPropertyId) {
+      forkJoin({
+        list: this.propertySvc.getAll(0, 50),
+        selected: this.propertySvc.getById(this.selectedPropertyId)
+      }).subscribe({
+        next: ({ list, selected }) => {
+          const content = list.data?.content ?? [];
+          const picked = selected.data;
+          if (picked) {
+            this.propertyById[picked.id] = picked;
+          }
+          this.properties = picked && !content.some((p) => p.id === picked.id)
+            ? [picked, ...content]
+            : content;
+          for (const property of this.properties) {
+            this.propertyById[property.id] = property;
+          }
+          this.loadUnits();
+        },
+        error: () => this.loadPropertyOptions(undefined, true)
+      });
       return;
     }
+    this.loadPropertyOptions(undefined, true);
+  }
 
-    this.loading = true;
-    const requests = this.properties.map((property) =>
-      this.unitSvc.getByProperty(property.id, 0, 500).pipe(
-        map((res) => res.data?.content ?? []),
-        catchError(() => of([] as Unit[]))
-      )
-    );
-
-    forkJoin(requests).subscribe({
-      next: (chunks) => {
-        this.allUnits = chunks.flat().sort((a, b) => {
-          if (a.propertyId !== b.propertyId) return a.propertyId - b.propertyId;
-          return (a.unitNumber || '').localeCompare(b.unitNumber || '');
-        });
-
-        this.applyFilters();
-        this.loadRenterNames();
-        this.loadContractsForUnitBadges();
-        this.loading = false;
+  /** Loads property dropdown options (server LIKE via `q`) without reloading units unless requested. */
+  private loadPropertyOptions(q?: string, loadUnitsAfter = false): void {
+    this.propertySvc.getAll(0, 50, q?.trim() || undefined).subscribe({
+      next: (res) => {
+        this.properties = this.ensureSelectedPropertyInList(res.data?.content ?? []);
+        for (const property of this.properties) {
+          this.propertyById[property.id] = property;
+        }
+        if (loadUnitsAfter) {
+          this.loadUnits();
+        }
       },
       error: () => {
-        this.loading = false;
-        this.snack.error(this.i18n.instant('UNITS.LOAD_ERROR'));
+        if (loadUnitsAfter) {
+          this.properties = [];
+          this.loadUnits();
+        }
       }
     });
   }
 
-  private applyFilters(): void {
-    const query = this.searchTerm.trim().toLowerCase();
-    this.filteredUnits = this.allUnits.filter((unit) => {
-      if (this.selectedPropertyId && unit.propertyId !== this.selectedPropertyId) return false;
+  private ensureSelectedPropertyInList(list: Property[]): Property[] {
+    if (!this.selectedPropertyId || list.some((p) => p.id === this.selectedPropertyId)) {
+      return list;
+    }
+    const selected = this.propertyById[this.selectedPropertyId];
+    return selected ? [selected, ...list] : list;
+  }
 
-      if (this.filterUnitNumber && !(unit.unitNumber || '').toLowerCase().includes(this.filterUnitNumber.toLowerCase())) return false;
-      if (this.filterFloor !== null && (unit.floorNumber ?? unit.floorId) !== this.filterFloor) return false;
-      if (this.filterUnitType && unit.unitType !== this.filterUnitType) return false;
-      if (this.filterStatus) {
-        if (this.filterStatus === 'rented' && !unit.rented) return false;
-        if (this.filterStatus === 'reserved' && !unit.reserved) return false;
-        if (this.filterStatus === 'vacant' && (unit.rented || !!unit.reserved)) return false;
+  private loadUnits(): void {
+    this.listLoad.begin();
+    const q = (this.filterUnitNumber.trim() || this.searchTerm.trim()) || undefined;
+    this.unitSvc.getAll(this.pageIndex, this.pageSize, {
+      propertyId: this.selectedPropertyId,
+      q,
+      unitType: this.filterUnitType,
+      status: this.filterStatus
+    }).subscribe({
+      next: (res) => {
+        this.units = res.data?.content ?? [];
+        this.totalElements = res.data?.totalElements ?? this.units.length;
+        this.loadRenterNames();
+        this.loadContractsForUnitBadges();
+        this.listLoad.end();
+      },
+      error: () => {
+        this.listLoad.end();
+        this.snack.error(this.i18n.instant('UNITS.LOAD_ERROR'));
       }
-      if (this.filterActive !== null && unit.active !== this.filterActive) return false;
-
-      if (!query) return true;
-
-      const propertyName = this.propertyName(unit).toLowerCase();
-      const unitNumber = (unit.unitNumber || '').toLowerCase();
-      const unitType = (unit.unitType || '').toLowerCase();
-      const floor =
-        unit.floorNumber != null || unit.floorId != null ? String(unit.floorNumber ?? unit.floorId) : '';
-      const tenantQ = this.tenantName(unit).toLowerCase();
-
-      return unitNumber.includes(query) || propertyName.includes(query) || unitType.includes(query) || floor.includes(query)
-        || (tenantQ !== '—' && tenantQ.includes(query));
     });
-    this.pageIndex = Math.min(this.pageIndex, this.totalPages - 1);
   }
 
   toggleUnitActive(unit: Unit): void {
@@ -597,7 +580,7 @@ export class UnitManagementComponent implements OnInit {
         } else {
           unit.active = !unit.active;
         }
-        this.applyFilters();
+        this.loadUnits();
       },
       error: () => this.snack.error(this.i18n.instant('COMMON.ERROR'))
     });
@@ -619,20 +602,23 @@ export class UnitManagementComponent implements OnInit {
   }
 
   private loadContractsForUnitBadges(): void {
+    const unitIds = new Set(this.units.map((unit) => unit.id));
+    if (unitIds.size === 0) {
+      this.contractByUnitId = {};
+      return;
+    }
     forkJoin({
-      active: this.contractSvc.getAll({ status: 'ACTIVE', size: 500 }),
-      draft: this.contractSvc.getAll({ status: 'DRAFT', size: 500 }),
-      pending: this.contractSvc.getAll({ status: 'PENDING_OWNER_APPROVAL', size: 500 })
+      active: this.contractSvc.getAll({ status: 'ACTIVE', page: 0, size: 200 }),
+      draft: this.contractSvc.getAll({ status: 'DRAFT', page: 0, size: 200 }),
+      pending: this.contractSvc.getAll({ status: 'PENDING_OWNER_APPROVAL', page: 0, size: 200 })
     }).subscribe({
       next: ({ active, draft, pending }) => {
         const rows: LeaseContract[] = [
           ...(active?.data?.content ?? active?.data ?? []),
           ...(draft?.data?.content ?? draft?.data ?? []),
           ...(pending?.data?.content ?? pending?.data ?? [])
-        ];
+        ].filter((c) => c.unitId && unitIds.has(c.unitId));
         this.contractByUnitId = this.mergeContractsByUnit(rows);
-        // Search/filter can match `tenantName` from contract when profile is tied to another unit.
-        this.applyFilters();
       }
     });
   }
@@ -653,7 +639,7 @@ export class UnitManagementComponent implements OnInit {
 
   private loadRenterNames(): void {
     this.tenantByUnitId = {};
-    this.allUnits
+    this.units
       .filter((unit) => unit.rented || !!unit.reserved)
       .forEach((unit) => {
         this.tenantSvc.getByUnitId(unit.id).subscribe({

@@ -1,3 +1,4 @@
+import { DialogTitleCloseDirective } from './../../../shared/directives/dialog-title-close.directive';
 import { Component, Inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -22,8 +23,7 @@ export interface CancelDraftContractDialogData {
   standalone: true,
   imports: [
     NgIf, ReactiveFormsModule, MatDialogModule, MatButtonModule,
-    MatFormFieldModule, MatInputModule, MatProgressSpinnerModule, MatIconModule, TranslateModule
-  ],
+    MatFormFieldModule, MatInputModule, MatProgressSpinnerModule, MatIconModule, TranslateModule, DialogTitleCloseDirective],
   template: `
     <h2 mat-dialog-title>{{ 'CONTRACTS.CANCEL_DRAFT_TITLE' | translate }}</h2>
     <mat-dialog-content class="dialog-body confirm-body">

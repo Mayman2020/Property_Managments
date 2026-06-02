@@ -3,6 +3,7 @@ import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
 import { AppConstants } from '../constants/app-constants';
 import { ApiResponse, PagedResponse } from '../models/api-response.model';
+import { withPageParams } from '../utils/pagination.util';
 
 export interface InventoryItem {
   id: number;
@@ -38,9 +39,7 @@ export class InventoryService {
 
   getItems(propertyId?: number, page = 0, size = 20, q?: string): Observable<ApiResponse<PagedResponse<InventoryItem>>> {
     const url = propertyId ? AppConstants.API.INVENTORY_BY_PROPERTY(propertyId) : AppConstants.API.INVENTORY;
-    const params: Record<string, string | number | boolean> = { page, size };
-    if (q && q.trim()) params['q'] = q.trim();
-    return this.api.get(url, params);
+    return this.api.get(url, withPageParams(page, size, { q: q?.trim() || undefined }));
   }
 
   getLowStock(): Observable<ApiResponse<InventoryItem[]>> {

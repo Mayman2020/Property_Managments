@@ -12,6 +12,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,7 +31,7 @@ public class InventoryController {
     @GetMapping
     public ResponseEntity<ApiResponse<Page<InventoryItemResponseDTO>>> getAll(
             @RequestParam(required = false) String q,
-            @PageableDefault(size = 20) Pageable pageable) {
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.ok(inventoryService.getAll(pageable, q)));
     }
 
@@ -38,7 +39,7 @@ public class InventoryController {
     public ResponseEntity<ApiResponse<Page<InventoryItemResponseDTO>>> getByProperty(
             @PathVariable Long propertyId,
             @RequestParam(required = false) String q,
-            @PageableDefault(size = 20) Pageable pageable) {
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.ok(inventoryService.getByProperty(propertyId, pageable, q)));
     }
 
@@ -83,7 +84,7 @@ public class InventoryController {
     @GetMapping("/transactions")
     public ResponseEntity<ApiResponse<Page<InventoryTransactionResponseDTO>>> getTransactions(
             @RequestParam(required = false) Long itemId,
-            @PageableDefault(size = 20) Pageable pageable) {
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.ok(inventoryService.getTransactions(itemId, pageable)));
     }
 

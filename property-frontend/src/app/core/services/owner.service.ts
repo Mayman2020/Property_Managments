@@ -3,6 +3,7 @@ import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
 import { AppConstants } from '../constants/app-constants';
 import { ApiResponse, PagedResponse } from '../models/api-response.model';
+import { withPageParams } from '../utils/pagination.util';
 import { User } from '../models/user.model';
 
 export interface OwnerPropertySummary {
@@ -70,9 +71,9 @@ export class OwnerService {
   constructor(private readonly api: ApiService) {}
 
   getAll(page = 0, size = 20, propertyId?: number | null): Observable<ApiResponse<PagedResponse<Owner>>> {
-    const params: Record<string, string | number> = { page, size };
-    if (propertyId != null) params['propertyId'] = propertyId;
-    return this.api.get<ApiResponse<PagedResponse<Owner>>>(AppConstants.API.OWNERS, params);
+    return this.api.get<ApiResponse<PagedResponse<Owner>>>(AppConstants.API.OWNERS, withPageParams(page, size, {
+      propertyId: propertyId != null ? propertyId : undefined
+    }));
   }
 
   getById(id: number): Observable<ApiResponse<Owner>> {

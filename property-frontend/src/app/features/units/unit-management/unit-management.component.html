@@ -12,25 +12,41 @@
     </button>
   </app-page-header>
 
-  <div class="loading-wrap" *ngIf="loading">
+  <div class="loading-wrap" *ngIf="listLoad.showInitialSpinner">
     <mat-spinner diameter="52"></mat-spinner>
   </div>
 
   <!-- Empty state: no data and no active search/filter -->
   <app-empty-state
-    *ngIf="!loading && filteredUnits.length === 0 && !searchTerm && !hasFiltersBar()"
+    *ngIf="listLoad.showSurface && totalElements === 0 && !searchTerm && !hasFiltersBar()"
     icon="door_front"
     [title]="'UNITS.EMPTY_TITLE' | translate"
     [message]="'UNITS.EMPTY_MESSAGE' | translate">
   </app-empty-state>
 
   <!-- Table: show when data exists OR search/filter is active -->
-  <section class="app-card" *ngIf="!loading && (filteredUnits.length > 0 || searchTerm || hasFiltersBar())">
-    <div class="search-bar-shell">
-      <div class="search-input-box">
+  <section class="app-card directory-table-card app-list-surface"
+    [class.is-refreshing]="listLoad.refreshing"
+    *ngIf="listLoad.showSurface && (totalElements > 0 || searchTerm || hasFiltersBar())">
+    <div class="list-refresh-spinner" *ngIf="listLoad.refreshing"><mat-spinner diameter="32"></mat-spinner></div>
+    <div class="estate-table-toolbar directory-toolbar">
+      <div class="directory-toolbar-top table-list-toolbar">
+      <div class="directory-search">
         <mat-icon>search</mat-icon>
         <input [value]="searchTerm" (input)="onSearch($any($event.target).value)" [placeholder]="'ACTIONS.SEARCH' | translate">
       </div>
+
+      <app-searchable-select
+        class="units-property-filter"
+        [label]="'PROPERTY_FORM.PROPERTY_CODE'"
+        [items]="properties"
+        variant="toolbar"
+        [serverSide]="true"
+        appearance="outline"
+        [(ngModel)]="selectedPropertyId"
+        (ngModelChange)="onPropertyFilterChange()"
+        (searchTextChange)="onPropertySearchQuery($event)">
+      </app-searchable-select>
 
       <app-filter-bar
         [filters]="unitFilters"
@@ -45,14 +61,16 @@
         [title]="'NAV.UNITS' | translate"
         fileName="units"
         [columns]="exportColumns"
-        [rows]="filteredUnits">
+        [rows]="units">
       </app-table-export-toolbar>
+      </div>
     </div>
 
     <div class="app-table-wrap" *ngIf="pagedUnits.length > 0">
       <table class="app-data-table source-table">
         <thead>
           <tr>
+            <th class="table-index-col">#</th>
             <th>{{ 'UNITS.UNIT_NUMBER' | translate }}</th>
             <th>{{ 'REQUEST_FORM.PROPERTY' | translate }}</th>
             <th class="center-col">{{ 'UNITS.FLOOR' | translate }}</th>
@@ -64,12 +82,13 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let unit of pagedUnits">
+          <tr *ngFor="let unit of pagedUnits; let i = index">
+            <td class="table-index-col">{{ i | tableRowIndex:pageIndex:pageSize }}</td>
             <td>
-              <div class="unit-code-cell">
-                <mat-icon class="unit-icon">door_front</mat-icon>
-                <span class="unit-number">{{ unit.unitNumber }}</span>
-              </div>
+              <app-table-entity-cell
+                [title]="unit.unitNumber"
+                [icon]="'door_front'">
+              </app-table-entity-cell>
             </td>
             <td>
               <div class="property-cell">
@@ -126,7 +145,12 @@
                 <button *ngIf="canPublishVacancy(unit)" class="app-icon-btn success" type="button"
                         [disabled]="publishVacancyLoadingId === unit.id"
                         (click)="publishVacancy(unit)" [matTooltip]="'VACANCY.PUBLISH_BUTTON' | translate">
-                  <mat-icon>meeting_room</mat-icon>
+                  <mat-icon>campaign</mat-icon>
+                </button>
+                <button *ngIf="canUnpublishVacancy(unit)" class="app-icon-btn warn" type="button"
+                        [disabled]="publishVacancyLoadingId === unit.id"
+                        (click)="unpublishVacancy(unit)" [matTooltip]="'VACANCY.UNPUBLISH_BUTTON' | translate">
+                  <mat-icon>visibility_off</mat-icon>
                 </button>
                 <button *ngIf="canEditUnit() && !unit.rented && !unit.reserved" class="app-icon-btn success" type="button"
                         (click)="openAssignTenant(unit)" [matTooltip]="'TENANTS.ASSIGN_UNIT' | translate">
@@ -142,6 +166,6 @@
       </table>
     </div>
     <app-empty-state *ngIf="pagedUnits.length === 0" icon="filter_alt" [message]="'COMMON.NO_DATA' | translate"></app-empty-state>
-    <app-table-pager [length]="filteredUnits.length" [pageSize]="pageSize" [pageIndex]="pageIndex" (pageIndexChange)="pageIndex = $event"></app-table-pager>
+    <app-table-pager [length]="totalElements" [pageSize]="pageSize" [pageIndex]="pageIndex" (pageIndexChange)="onPageChange($event)"></app-table-pager>
   </section>
 </div>

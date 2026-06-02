@@ -1,3 +1,4 @@
+import { DialogTitleCloseDirective } from './../../../shared/directives/dialog-title-close.directive';
 import { Component, OnInit } from '@angular/core';
 import { Location, NgIf, NgFor, NgTemplateOutlet } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -30,8 +31,7 @@ import { I18nService } from '../../../core/i18n/i18n.service';
     MatInputModule, MatSelectModule,
     MatDatepickerModule, MatNativeDateModule,
     MatProgressSpinnerModule, MatDialogModule,
-    TranslateModule, PageHeaderComponent
-  ],
+    TranslateModule, PageHeaderComponent, DialogTitleCloseDirective],
   templateUrl: './record-payment-form.component.html',
   styleUrl: './record-payment-form.component.scss'
 })

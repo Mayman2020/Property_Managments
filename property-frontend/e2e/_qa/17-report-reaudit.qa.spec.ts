@@ -47,6 +47,7 @@ interface StaleRow {
 function loadStaleIter1Rows(): StaleRow[] {
   const file = path.resolve(process.cwd(), '..', 'docs', 'stabilization', 'qa-results', 'iteration-01.jsonl');
   const out: StaleRow[] = [];
+  if (!fs.existsSync(file)) return out;
   for (const line of fs.readFileSync(file, 'utf8').split(/\r?\n/)) {
     if (!line.trim()) continue;
     const r = JSON.parse(line) as StaleRow;

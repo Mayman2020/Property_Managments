@@ -1,3 +1,4 @@
+import { DialogTitleCloseDirective } from './../../../shared/directives/dialog-title-close.directive';
 import { Component } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -21,8 +22,7 @@ import { I18nService } from '../../../core/i18n/i18n.service';
   imports: [
     NgFor, NgIf, ReactiveFormsModule, TranslateModule,
     MatDialogModule, MatButtonModule, MatFormFieldModule, MatInputModule,
-    MatSelectModule, UploadZoneComponent
-  ],
+    MatSelectModule, UploadZoneComponent, DialogTitleCloseDirective],
   templateUrl: './staff-upload-receipt-dialog.component.html',
   styleUrl: './staff-upload-receipt-dialog.component.scss'
 })

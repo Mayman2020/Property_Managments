@@ -20,7 +20,10 @@ public class BudgetVsActualResponse {
     public static class CategoryRow {
         private Long budgetId;
         private Long propertyId;
+        private String propertyName;
         private String categoryName;
+        private String categoryNameAr;
+        private String categoryNameEn;
         private BigDecimal budgetedAmount;
         private BigDecimal actualAmount;
         private BigDecimal variance;

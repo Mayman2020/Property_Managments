@@ -3,7 +3,7 @@ package com.propertymanagement.modules.reports.service;
 import com.propertymanagement.modules.contract.lease.entity.ContractStatus;
 import com.propertymanagement.modules.contract.lease.entity.LeaseContract;
 import com.propertymanagement.modules.contract.lease.repository.LeaseContractRepository;
-import com.propertymanagement.modules.finance.budget.repository.BudgetQueryRepository;
+import com.propertymanagement.modules.finance.budget.service.BudgetAnalyticsService;
 import com.propertymanagement.modules.finance.expense.repository.ExpenseRepository;
 import com.propertymanagement.modules.maintenance.request.entity.MaintenanceRequest;
 import com.propertymanagement.modules.maintenance.request.entity.RequestStatus;
@@ -40,7 +40,7 @@ public class ReportsService {
     private final PropertyRepository propertyRepo;
     private final TenantRepository tenantRepo;
     private final MaintenanceRequestRepository maintenanceRepo;
-    private final BudgetQueryRepository budgetRepo;
+    private final BudgetAnalyticsService budgetAnalyticsService;
     private final ExpenseRepository expenseRepo;
     private final OwnerPropertyAccessService ownerPropertyAccessService;
 
@@ -256,58 +256,7 @@ public class ReportsService {
     // ─── Budget vs Actual ────────────────────────────────────────────────────
 
     public BudgetVsActualResponse getBudgetVsActual(Long propertyId, Integer year) {
-        List<BudgetQueryRepository.BudgetRow> budgetRows = propertyId != null
-                ? budgetRepo.findAllRowsByProperty(propertyId)
-                : budgetRepo.findAllRows();
-
-        Set<Long> scope = resolvePropertyScope();
-        if (scope != null) {
-            budgetRows = budgetRows.stream()
-                    .filter(r -> scope.contains(r.getPropertyId()))
-                    .toList();
-        }
-
-        BigDecimal totalBudgeted = BigDecimal.ZERO;
-        BigDecimal totalActual = BigDecimal.ZERO;
-        List<BudgetVsActualResponse.CategoryRow> rows = new ArrayList<>();
-
-        for (BudgetQueryRepository.BudgetRow row : budgetRows) {
-            BigDecimal budgeted = row.getBudgetedAmount() != null ? row.getBudgetedAmount() : BigDecimal.ZERO;
-            // Actual expenses for same property would need a category-scoped query;
-            // using zero as placeholder until category_id link is wired in BudgetEntity.
-            BigDecimal actual = BigDecimal.ZERO;
-            BigDecimal variance = budgeted.subtract(actual);
-            double utilization = budgeted.compareTo(BigDecimal.ZERO) > 0
-                    ? actual.divide(budgeted, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)).doubleValue()
-                    : 0.0;
-
-            rows.add(BudgetVsActualResponse.CategoryRow.builder()
-                    .budgetId(row.getId())
-                    .propertyId(row.getPropertyId())
-                    .categoryName(row.getCategoryName())
-                    .budgetedAmount(budgeted)
-                    .actualAmount(actual)
-                    .variance(variance)
-                    .utilizationPercent(round(utilization))
-                    .overBudget(actual.compareTo(budgeted) > 0)
-                    .build());
-
-            totalBudgeted = totalBudgeted.add(budgeted);
-            totalActual = totalActual.add(actual);
-        }
-
-        BigDecimal totalVariance = totalBudgeted.subtract(totalActual);
-        double globalUtil = totalBudgeted.compareTo(BigDecimal.ZERO) > 0
-                ? totalActual.divide(totalBudgeted, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)).doubleValue()
-                : 0.0;
-
-        return BudgetVsActualResponse.builder()
-                .totalBudgeted(totalBudgeted)
-                .totalActual(totalActual)
-                .totalVariance(totalVariance)
-                .utilizationPercent(round(globalUtil))
-                .rows(rows)
-                .build();
+        return budgetAnalyticsService.buildBudgetVsActual(propertyId, year, resolvePropertyScope());
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────

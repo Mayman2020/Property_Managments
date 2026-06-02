@@ -3,6 +3,17 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { QA_CREDENTIALS, RoleKey } from './credentials';
 
+export function passwordForEmail(email: string): string {
+  const normalized = email.trim().toLowerCase();
+  for (const cred of Object.values(QA_CREDENTIALS)) {
+    if (cred.email.toLowerCase() === normalized) return cred.password;
+  }
+  if (normalized.includes('qa.tenant')) return QA_CREDENTIALS.TENANT.password;
+  if (normalized.includes('qa.owner')) return QA_CREDENTIALS.OWNER.password;
+  if (normalized.includes('qa.mc@') || normalized.includes('qa.mo@')) return QA_CREDENTIALS.MAINTENANCE_COMPANY.password;
+  return '12345';
+}
+
 const WEB = process.env['E2E_WEB_URL'] ?? 'http://localhost:4500';
 
 function resolveApiUrl(): string {
@@ -96,8 +107,9 @@ function buildApi(request: APIRequestContext): QaApi {
     return { status: res.status(), body: parsed };
   }
 
-  async function login(email: string, password = '12345'): Promise<string> {
-    const r = await req<LoginResponse>('POST', '/auth/login', { email, password });
+  async function login(email: string, password?: string): Promise<string> {
+    const pwd = password ?? passwordForEmail(email);
+    const r = await req<LoginResponse>('POST', '/auth/login', { email, password: pwd });
     const token = r?.data?.accessToken;
     if (!token) throw new Error(`login(${email}) returned no token: ${JSON.stringify(r)}`);
     state.token = token;
@@ -136,10 +148,11 @@ function buildApi(request: APIRequestContext): QaApi {
  * UI login. Mirrors the real form interaction so we exercise route guards and
  * any forced-password-change flow. Returns the URL the app landed on.
  */
-export async function uiLogin(page: Page, email: string, password = '12345'): Promise<string> {
+export async function uiLogin(page: Page, email: string, password?: string): Promise<string> {
+  const pwd = password ?? passwordForEmail(email);
   await page.goto(`${WEB}/auth/login`);
   await page.locator('input[type="email"]').fill(email);
-  await page.locator('input[type="password"]').fill(password);
+  await page.locator('input[type="password"]').fill(pwd);
   await page.getByRole('button', { name: /enter|دخول|login/i }).click();
   // Wait for the SPA to navigate off /auth/login.
   await page.waitForURL((u) => !/\/auth\/login(\?|$|\/)/.test(u.pathname), { timeout: 20000 });

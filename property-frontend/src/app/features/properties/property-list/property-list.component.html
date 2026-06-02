@@ -108,6 +108,7 @@
       <table class="app-data-table property-table">
         <thead>
           <tr>
+            <th class="table-index-col">#</th>
             <th>{{ 'PROPERTY_FORM.PROPERTY_CODE' | translate }}</th>
             <th>{{ 'PROPERTY_FORM.PROPERTY_NAME' | translate }}</th>
             <th>{{ 'PROPERTY_FORM.CITY' | translate }}</th>
@@ -119,23 +120,20 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let property of filteredProperties">
+          <tr *ngFor="let property of filteredProperties; let i = index">
+            <td class="table-index-col">{{ i | tableRowIndex:page:pageSize }}</td>
             <td>
               <div class="property-code">{{ property.propertyCode || '-' }}</div>
             </td>
             <td>
-              <div class="property-primary-cell">
-                <div class="property-avatar" [class.has-image]="!!property.coverImageUrl">
-                  <img *ngIf="property.coverImageUrl" [src]="property.coverImageUrl" [alt]="propertyName(property)">
-                  <span class="material-icons" *ngIf="!property.coverImageUrl">apartment</span>
-                </div>
-                <div class="property-copy">
-                  <strong>{{ propertyName(property) }}</strong>
-                  <span>{{ property.address || '-' }}</span>
-                </div>
-              </div>
+              <app-table-entity-cell
+                [title]="propertyName(property)"
+                [subtitle]="property.address || '-'"
+                [imageUrl]="property.coverImageUrl"
+                [icon]="'apartment'">
+              </app-table-entity-cell>
             </td>
-            <td>{{ property.city || '-' }}</td>
+            <td>{{ cityLabel(property) }}</td>
             <td>
               <span class="status-badge" [attr.data-status]="property.propertyType === 'RESIDENTIAL' ? 'INFO' : property.propertyType === 'COMMERCIAL' ? 'HIGH' : 'NORMAL'">
                 {{ typeLabel(property.propertyType) }}

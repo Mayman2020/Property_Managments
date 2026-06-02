@@ -13,6 +13,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,6 +38,12 @@ public class VacancyController {
         Long actorId = user != null ? user.getId() : null;
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.ok(service.createListing(request, actorId)));
+    }
+
+    @PatchMapping("/by-unit/{unitId}/unpublish")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
+    public ResponseEntity<ApiResponse<VacancyListingResponseDTO>> unpublish(@PathVariable Long unitId) {
+        return ResponseEntity.ok(ApiResponse.ok(service.unpublishListing(unitId)));
     }
 
     @GetMapping("/by-unit/{unitId}")

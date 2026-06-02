@@ -11,6 +11,10 @@ import com.propertymanagement.modules.permission.annotation.RequiresPermission;
 import com.propertymanagement.shared.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -27,12 +31,13 @@ public class ContractorCompanyController {
 
     @GetMapping
     @RequiresPermission(module = "contractors", action = "view")
-    public ResponseEntity<ApiResponse<List<ContractorCompanyResponseDTO>>> list(
+    public ResponseEntity<ApiResponse<Page<ContractorCompanyResponseDTO>>> list(
             @RequestParam(required = false) String q,
             @RequestParam(required = false) Long propertyId,
-            @RequestParam(required = false, defaultValue = "false") boolean all) {
-        List<ContractorCompanyResponseDTO> data = all ? service.listAll(q, propertyId) : service.listActive(q, propertyId);
-        return ResponseEntity.ok(ApiResponse.ok(data));
+            @RequestParam(required = false) Boolean active,
+            @RequestParam(required = false, defaultValue = "false") boolean all,
+            @PageableDefault(size = 20, sort = "name", direction = Sort.Direction.ASC) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.ok(service.getAll(pageable, q, propertyId, active, all)));
     }
 
     @GetMapping("/{id}")

@@ -143,8 +143,8 @@ function resolveFallbackRoute(auth: AuthService, permissions: PermissionService)
   }
   if (roles.includes('PROCEDURES_CLERK')) {
     blocks.push([
-      { route: '/admin/home', permission: 'dashboard', action: 'view' },
       { route: '/admin/hr/employees', permission: 'hr', action: 'view' },
+      { route: '/employee/notifications', permission: 'notifications', action: 'view' },
       { route: '/admin/profile', permission: 'profile', action: 'view' }
     ]);
   }
@@ -152,7 +152,6 @@ function resolveFallbackRoute(auth: AuthService, permissions: PermissionService)
     blocks.push([
       { route: '/admin/home', permission: 'dashboard', action: 'view' },
       { route: '/admin/hr/employees', permission: 'hr', action: 'view' },
-      { route: '/admin/hr/attendance', permission: 'hr', action: 'view' },
       { route: '/admin/profile', permission: 'profile', action: 'view' }
     ]);
   }

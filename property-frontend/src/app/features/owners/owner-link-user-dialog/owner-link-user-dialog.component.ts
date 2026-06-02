@@ -1,3 +1,4 @@
+import { DialogTitleCloseDirective } from './../../../shared/directives/dialog-title-close.directive';
 ﻿import { Component, Inject, OnInit } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -26,8 +27,7 @@ export interface OwnerLinkUserDialogData {
     NgIf, NgFor, ReactiveFormsModule,
     MatDialogModule, MatIconModule, MatButtonModule,
     MatFormFieldModule, MatSelectModule, MatCheckboxModule,
-    MatProgressSpinnerModule, TranslateModule
-  ],
+    MatProgressSpinnerModule, TranslateModule, DialogTitleCloseDirective],
   template: `
     <h2 mat-dialog-title class="dialog-title">
       <mat-icon class="dialog-title-icon">link</mat-icon>

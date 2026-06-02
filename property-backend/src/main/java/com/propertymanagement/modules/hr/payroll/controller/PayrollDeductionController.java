@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,7 +27,7 @@ public class PayrollDeductionController {
     @RequiresPermission(module = "hr", action = "view")
     public ResponseEntity<ApiResponse<Page<PayrollDeductionResponse>>> list(
             @RequestParam(required = false) Long employeeId,
-            @PageableDefault(size = 20) Pageable pageable) {
+            @PageableDefault(size = 5, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.ok(service.list(pageable, employeeId)));
     }
 
@@ -34,6 +35,21 @@ public class PayrollDeductionController {
     @RequiresPermission(module = "hr", action = "create")
     public ResponseEntity<ApiResponse<PayrollDeductionResponse>> create(@Valid @RequestBody PayrollDeductionRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(service.create(request)));
+    }
+
+    @PutMapping("/{id}")
+    @RequiresPermission(module = "hr", action = "edit")
+    public ResponseEntity<ApiResponse<PayrollDeductionResponse>> update(
+            @PathVariable Long id,
+            @Valid @RequestBody PayrollDeductionRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(service.update(id, request)));
+    }
+
+    @DeleteMapping("/{id}")
+    @RequiresPermission(module = "hr", action = "delete")
+    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
+        service.delete(id);
+        return ResponseEntity.ok(ApiResponse.ok(null));
     }
 
     @PostMapping("/{id}/send")

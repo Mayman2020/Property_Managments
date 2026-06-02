@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
 import { AppConstants } from '../constants/app-constants';
+import { DEFAULT_LIST_SORT } from '../utils/pagination.util';
 
 @Injectable({ providedIn: 'root' })
 export class ComplaintService {
@@ -9,7 +10,7 @@ export class ComplaintService {
   constructor(private api: ApiService) {}
 
   getAll(params?: Record<string, string | number | boolean>): Observable<any> {
-    return this.api.get<any>(AppConstants.API.COMPLAINTS, params);
+    return this.api.get<any>(AppConstants.API.COMPLAINTS, { sort: DEFAULT_LIST_SORT, ...params });
   }
 
   getMy(): Observable<any> {

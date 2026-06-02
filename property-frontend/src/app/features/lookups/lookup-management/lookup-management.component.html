@@ -42,7 +42,7 @@
             <table class="app-data-table">
               <thead>
                 <tr>
-                  <th>#</th>
+                  <th class="table-index-col">#</th>
                   <th>{{ 'COMMON.NAME' | translate }}</th>
                   <th>{{ 'LOOKUPS.CODE' | translate }}</th>
                   <th>{{ 'COMMON.ACTIVE' | translate }}</th>
@@ -51,7 +51,7 @@
               </thead>
               <tbody>
                 <tr *ngFor="let gov of pagedGovernorates; let i = index">
-                  <td>{{ governoratesPageIndex * pageSize + i + 1 }}</td>
+                  <td class="table-index-col">{{ i | tableRowIndex:governoratesPageIndex:pageSize }}</td>
                   <td>{{ nameOf(gov) }}</td>
                   <td>{{ gov.code }}</td>
                   <td>
@@ -116,7 +116,7 @@
             <table class="app-data-table">
               <thead>
                 <tr>
-                  <th>#</th>
+                  <th class="table-index-col">#</th>
                   <th>{{ 'LOOKUPS.COUNTRY' | translate }}</th>
                   <th>{{ 'COMMON.NAME' | translate }}</th>
                   <th>{{ 'LOOKUPS.CODE' | translate }}</th>
@@ -126,7 +126,7 @@
               </thead>
               <tbody>
                 <tr *ngFor="let city of pagedCities; let i = index">
-                  <td>{{ citiesPageIndex * pageSize + i + 1 }}</td>
+                  <td class="table-index-col">{{ i | tableRowIndex:citiesPageIndex:pageSize }}</td>
                   <td>{{ cityGovernorateName(city) }}</td>
                   <td>{{ nameOf(city) }}</td>
                   <td>{{ city.code }}</td>
@@ -214,7 +214,7 @@
         <table class="app-data-table">
           <thead>
             <tr>
-              <th>#</th>
+              <th class="table-index-col">#</th>
               <th>{{ 'COMMON.NAME' | translate }}</th>
               <th>{{ 'LOOKUPS.CODE' | translate }}</th>
               <th>{{ 'COMMON.STATUS' | translate }}</th>
@@ -223,7 +223,7 @@
           </thead>
           <tbody>
             <tr *ngFor="let item of pagedListItems(list); let i = index">
-              <td>{{ list.pageIndex * pageSize + i + 1 }}</td>
+              <td class="table-index-col">{{ i | tableRowIndex:list.pageIndex:pageSize }}</td>
               <td>{{ nameOf(item) }}</td>
               <td><code class="code-tag">{{ item.code }}</code></td>
               <td>

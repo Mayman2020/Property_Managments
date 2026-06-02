@@ -31,4 +31,10 @@ export class NotificationService {
   setUnreadCount(count: number): void {
     this.unreadCountSubject.next(Math.max(0, count));
   }
+
+  decrementUnread(): void {
+    const current = this.unreadCountSubject.value;
+    if (current == null) return;
+    this.setUnreadCount(Math.max(0, current - 1));
+  }
 }

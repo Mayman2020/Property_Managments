@@ -80,18 +80,22 @@
             <mat-error *ngIf="form.get('address')?.invalid">{{ 'COMMON.REQUIRED' | translate }}</mat-error>
           </mat-form-field>
 
-          <mat-form-field appearance="outline">
-            <mat-label>{{ 'PROPERTY_FORM.COUNTRY' | translate }}</mat-label>
-            <input matInput formControlName="country" readonly>
-          </mat-form-field>
+          <div class="city-country-row full-col">
+            <div class="location-field country-field">
+              <label class="location-field-label">{{ 'PROPERTY_FORM.COUNTRY' | translate }}</label>
+              <div class="location-field-control location-field-control--readonly">
+                <input type="text" class="location-field-input" formControlName="country" readonly tabindex="-1">
+              </div>
+            </div>
 
-          <app-searchable-select
-            formControlName="cityId"
-            [items]="cities"
-            [label]="'PROPERTY_FORM.CITY'"
-            [placeholder]="'PROPERTY_FORM.SELECT_CITY'"
-            [required]="true">
-          </app-searchable-select>
+            <app-searchable-select
+              formControlName="cityId"
+              [items]="cities"
+              [label]="'PROPERTY_FORM.CITY'"
+              [placeholder]="'PROPERTY_FORM.SELECT_CITY'"
+              [required]="true">
+            </app-searchable-select>
+          </div>
 
           <div class="map-picker-row full-col">
             <mat-form-field appearance="outline" class="map-url-field">
@@ -513,12 +517,12 @@
               <span>{{ propertyRecord.address || '-' }}</span>
             </div>
             <div class="detail-item">
-              <label>{{ 'PROPERTY_FORM.CITY' | translate }}</label>
-              <span>{{ cityName }}</span>
-            </div>
-            <div class="detail-item">
               <label>{{ 'PROPERTY_FORM.COUNTRY' | translate }}</label>
               <span>{{ countryName }}</span>
+            </div>
+            <div class="detail-item">
+              <label>{{ 'PROPERTY_FORM.CITY' | translate }}</label>
+              <span>{{ cityName }}</span>
             </div>
             <div class="detail-item full" *ngIf="propertyRecord.googleMapUrl">
               <label>{{ 'PROPERTY_FORM.MAP_LOCATION' | translate }}</label>

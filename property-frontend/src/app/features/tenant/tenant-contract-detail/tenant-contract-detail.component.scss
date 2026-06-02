@@ -3,6 +3,37 @@
   gap: 24px;
 }
 
+.tenant-overdue-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 18px;
+  border: 1px solid #ef9a9a;
+  background: #fff5f5;
+
+  mat-icon {
+    color: #c62828;
+    flex-shrink: 0;
+  }
+}
+
+.tenant-overdue-body {
+  flex: 1;
+  min-width: 0;
+
+  strong {
+    display: block;
+    color: #b71c1c;
+    margin-bottom: 4px;
+  }
+
+  p {
+    margin: 0;
+    color: var(--text-muted, #5c5348);
+    line-height: 1.5;
+  }
+}
+
 .loading-wrap,
 .error-state {
   display: flex;

@@ -1,3 +1,4 @@
+import { DialogTitleCloseDirective } from './../../../shared/directives/dialog-title-close.directive';
 ﻿import { Component, Inject } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -18,6 +19,7 @@ import { Property } from '../../../core/services/property.service';
 import { SnackService } from '../../../core/services/snack.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { IdentityMediaFieldsComponent } from '../../../shared/components/identity-media-fields/identity-media-fields.component';
+import { AuditTrailComponent } from '../../../shared/components/audit-trail/audit-trail.component';
 
 export interface EmployeeDialogData {
   properties: Property[];
@@ -49,8 +51,8 @@ function parseYmd(value?: string | null): Date | null {
     MatProgressSpinnerModule,
     MatSelectModule,
     MatIconModule,
-    IdentityMediaFieldsComponent
-  ],
+    IdentityMediaFieldsComponent,
+    AuditTrailComponent, DialogTitleCloseDirective],
   template: `
     <h2 mat-dialog-title class="dialog-title">
       <mat-icon class="dialog-title-icon">badge</mat-icon>
@@ -143,6 +145,11 @@ function parseYmd(value?: string | null): Date | null {
           <mat-hint>{{ 'HR.PORTAL_ROLE_HINT' | translate }}</mat-hint>
         </mat-form-field>
       </form>
+
+      <app-audit-trail *ngIf="data.employee" class="full employee-audit"
+        [createdAt]="data.employee.createdAt"
+        [updatedAt]="data.employee.updatedAt">
+      </app-audit-trail>
     </mat-dialog-content>
     <mat-dialog-actions align="end" class="dialog-actions">
       <button mat-stroked-button type="button" class="btn-dialog-cancel" (click)="ref.close(false)">
@@ -171,6 +178,7 @@ function parseYmd(value?: string | null): Date | null {
       justify-content: flex-end;
     }
     .btn-dialog-confirm { background: var(--navy-800) !important; color: #fff !important; }
+    .employee-audit { margin-top: 14px; }
     .media-readonly { pointer-events: none; opacity: 0.92; }
     @media (max-width: 600px) { .employee-dialog-form { grid-template-columns: 1fr; } }
   `]

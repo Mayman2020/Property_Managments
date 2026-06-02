@@ -1,11 +1,13 @@
 [CmdletBinding()]
 param(
     [string]$Profile = "",
-    [switch]$SkipBuild
+    [switch]$SkipBuild,
+    [int]$Port = 0
 )
 
 $ErrorActionPreference = 'Stop'
 $DefaultPort = 8080
+$PreferredDevPort = 8081
 $PortRangeEnd = 8090
 $ExpectedProcess = "java"
 $ContextPath = "/api/v1"
@@ -147,37 +149,69 @@ try {
     }
 } catch { }
 
-Write-Step "Checking port $DefaultPort..." "Cyan"
-$SelectedPort = $DefaultPort
-$portState = Get-ProcessOnPort -Port $DefaultPort
-if ($portState) {
-    $portProc = $portState.Process
-    if ($portProc -and ($portProc.ProcessName -like "*$ExpectedProcess*")) {
-        if (-not (Stop-ProcessOnPort -Port $DefaultPort -ExpectedName $ExpectedProcess)) {
-            exit 1
-        }
-    } else {
-        Write-Warn "Port $DefaultPort is used by $($portProc.ProcessName) (PID $($portProc.Id))."
-        $fallbackPort = Find-FreePort -StartPort ($DefaultPort + 1) -EndPort $PortRangeEnd
-        if (-not $fallbackPort) {
-            Write-Err "No free backend port found in range $($DefaultPort + 1)-$PortRangeEnd."
-            exit 1
-        }
-        $SelectedPort = $fallbackPort
-        Write-Warn "Switching backend to port $SelectedPort."
+function Resolve-BackendPort {
+    param([int]$RequestedPort)
+    if ($RequestedPort -gt 0) {
+        return $RequestedPort
     }
-} else {
-    Write-Info "Port $DefaultPort is free."
+    # This machine often has Oracle TNS on 8080; prefer 8081 when 8080 is not Java.
+    $defaultState = Get-ProcessOnPort -Port $DefaultPort
+    if ($defaultState -and ($defaultState.Process.ProcessName -notlike "*$ExpectedProcess*")) {
+        $preferredState = Get-ProcessOnPort -Port $PreferredDevPort
+        if (-not $preferredState) {
+            return $PreferredDevPort
+        }
+        if ($preferredState.Process.ProcessName -like "*$ExpectedProcess*") {
+            return $PreferredDevPort
+        }
+    }
+    return $DefaultPort
 }
 
+function Prepare-PortForBackend {
+    param([int]$Port)
+    $found = Get-ProcessOnPort -Port $Port
+    if (-not $found) {
+        Write-Info "Port $Port is free."
+        return $true
+    }
+    $proc = $found.Process
+    if ($proc.ProcessName -like "*$ExpectedProcess*") {
+        return (Stop-ProcessOnPort -Port $Port -ExpectedName $ExpectedProcess)
+    }
+    Write-Warn "Port $Port is used by $($proc.ProcessName) (PID $($proc.Id)), not $ExpectedProcess."
+    return $false
+}
+
+Write-Step "Resolving backend port..." "Cyan"
+$SelectedPort = Resolve-BackendPort -RequestedPort $Port
+if (-not (Prepare-PortForBackend -Port $SelectedPort)) {
+    $fallbackPort = Find-FreePort -StartPort $PreferredDevPort -EndPort $PortRangeEnd
+    if (-not $fallbackPort) {
+        $fallbackPort = Find-FreePort -StartPort ($DefaultPort + 1) -EndPort $PortRangeEnd
+    }
+    if (-not $fallbackPort) {
+        Write-Err "No free backend port found in range $PreferredDevPort-$PortRangeEnd."
+        exit 1
+    }
+    $SelectedPort = $fallbackPort
+    Write-Warn "Switching backend to port $SelectedPort."
+    if (-not (Prepare-PortForBackend -Port $SelectedPort)) {
+        Write-Err "Could not free port $SelectedPort for the backend."
+        exit 1
+    }
+}
+Write-Success "Using port $SelectedPort"
+
 if (-not $SkipBuild) {
-    Write-Step "Maven build started..." "Cyan"
-    & $MvnwPath clean install -U
+    Write-Step "Maven compile (tests skipped)..." "Cyan"
+    & $MvnwPath compile -DskipTests
     if ($LASTEXITCODE -ne 0) {
-        Write-Err "Maven build FAILED."
+        Write-Err "Maven compile FAILED."
         exit $LASTEXITCODE
     }
-    Write-Success "Maven build finished successfully."
+    Write-Success "Maven compile finished successfully."
+    Write-Info "  Tip: use -SkipBuild to start faster when code did not change."
 } else {
     Write-Info "Skipping build (-SkipBuild)."
 }

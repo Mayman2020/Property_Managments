@@ -71,4 +71,8 @@ export class VacancyService {
   createListing(body: CreateVacancyPayload): Observable<ApiResponse<VacancyItem>> {
     return this.api.post(AppConstants.API.VACANCIES, body);
   }
+
+  unpublishListing(unitId: number): Observable<ApiResponse<VacancyItem>> {
+    return this.api.patch(AppConstants.API.VACANCY_UNPUBLISH(unitId), {});
+  }
 }

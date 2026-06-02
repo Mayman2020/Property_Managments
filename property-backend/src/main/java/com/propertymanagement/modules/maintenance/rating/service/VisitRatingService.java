@@ -6,7 +6,6 @@ import com.propertymanagement.modules.maintenance.request.entity.RequestStatus;
 import com.propertymanagement.modules.notification.service.NotificationService;
 import com.propertymanagement.modules.notification.entity.NotificationType;
 import com.propertymanagement.modules.property.service.PropertyOwnerPortalRecipientService;
-import com.propertymanagement.modules.tenant.repository.TenantRepository;
 import com.propertymanagement.modules.user.entity.User;
 import com.propertymanagement.modules.user.repository.UserRepository;
 import com.propertymanagement.modules.user.entity.UserRole;
@@ -23,13 +22,13 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import com.propertymanagement.modules.maintenance.rating.entity.VisitRating;
 import com.propertymanagement.modules.maintenance.rating.repository.VisitRatingRepository;
 import com.propertymanagement.modules.maintenance.rating.dto.VisitRatingRequest;
 import com.propertymanagement.modules.maintenance.rating.dto.VisitRatingResponse;
 import com.propertymanagement.modules.maintenance.rating.dto.RatingDashboardItemResponse;
 import com.propertymanagement.modules.maintenance.rating.dto.RatingsSummaryResponse;
-import com.propertymanagement.modules.tenant.entity.Tenant;
 
 @Service
 @RequiredArgsConstructor
@@ -39,7 +38,6 @@ public class VisitRatingService {
     private final MaintenanceRequestRepository requestRepository;
     private final NotificationService notificationService;
     private final UserRepository userRepository;
-    private final TenantRepository tenantRepository;
     private final PropertyOwnerPortalRecipientService propertyOwnerPortalRecipientService;
 
     @Transactional
@@ -54,7 +52,6 @@ public class VisitRatingService {
             throw AppException.conflict("Rating already submitted for request: " + requestId);
         }
 
-        Long tenantUserId = currentUserId();
         Long tenantId = request.getTenantId();
 
         VisitRating rating = VisitRating.builder()
@@ -118,19 +115,27 @@ public class VisitRatingService {
         List<Long> recipients = new ArrayList<>();
         if (request.getPropertyId() != null) {
             recipients.addAll(propertyOwnerPortalRecipientService.portalRecipientUserIds(request.getPropertyId()));
-            recipients.addAll(propertyAccountantIds(request.getPropertyId()));
-        }
-        if (request.getContractorCompanyId() != null && request.getPropertyId() != null) {
-            recipients.addAll(contractorStaffIds(request.getContractorCompanyId(), request.getPropertyId()));
+            recipients.addAll(adminAndAccountantIds(request.getPropertyId()));
         }
         recipients = recipients.stream().distinct().collect(Collectors.toList());
         if (recipients.isEmpty()) return;
         notificationService.createForRecipients(
                 recipients, currentUserId(), request.getPropertyId(), request.getId(),
                 NotificationType.REQUEST_RATED,
-                "Tenant submitted a rating",
-                "Request " + request.getRequestNumber() + " was rated: " + scaleLabel + ". Comment: " + comment
+                "تقييم زيارة صيانة",
+                "قام المستأجر بتقييم طلب " + request.getRequestNumber() + ": " + scaleLabel + ". ملاحظة: " + comment
         );
+    }
+
+    private List<Long> adminAndAccountantIds(Long propertyId) {
+        List<User> superAdmins = userRepository.findByRoleAndActiveTrue(UserRole.SUPER_ADMIN);
+        List<User> managers = userRepository.findByRoleAndActiveTrue(UserRole.GENERAL_MANAGER);
+        List<User> accountants = userRepository.findByPropertyIdAndRoleAndActiveTrue(propertyId, UserRole.ACCOUNTANT);
+        return Stream.of(superAdmins, managers, accountants)
+                .flatMap(List::stream)
+                .map(User::getId)
+                .distinct()
+                .collect(Collectors.toList());
     }
 
     private Long currentUserId() {
@@ -151,23 +156,6 @@ public class VisitRatingService {
                 .comment(r.getComment())
                 .createdAt(r.getCreatedAt())
                 .build();
-    }
-
-    private List<Long> propertyAccountantIds(Long propertyId) {
-        List<Long> ids = new ArrayList<>(userRepository.findByRoleAndActiveTrue(UserRole.ACCOUNTANT)
-                .stream()
-                .filter(u -> u.getPropertyId() == null || u.getPropertyId().equals(propertyId))
-                .map(User::getId)
-                .toList());
-        ids.addAll(userRepository.findByRoleAndActiveTrue(UserRole.SUPER_ADMIN)
-                .stream().map(User::getId).toList());
-        return ids.stream().distinct().toList();
-    }
-
-    private List<Long> contractorStaffIds(Long companyId, Long propertyId) {
-        return userRepository.findActiveContractorStaffForProperty(propertyId, companyId).stream()
-                .map(User::getId)
-                .toList();
     }
 
     private String ratingScaleLabel(Short rating) {

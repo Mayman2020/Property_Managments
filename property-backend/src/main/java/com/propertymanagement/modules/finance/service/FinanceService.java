@@ -1,7 +1,7 @@
 package com.propertymanagement.modules.finance.service;
 
-import com.propertymanagement.modules.finance.budget.repository.BudgetQueryRepository;
 import com.propertymanagement.modules.finance.budget.dto.BudgetResponse;
+import com.propertymanagement.modules.finance.budget.service.BudgetAnalyticsService;
 import com.propertymanagement.modules.finance.dto.FinanceDashboardResponse;
 import com.propertymanagement.modules.finance.dto.FinancialReportRowResponse;
 import com.propertymanagement.modules.finance.expense.entity.Expense;
@@ -48,7 +48,7 @@ public class FinanceService {
     private final ExpenseWriterRepository expenseWriterRepository;
     private final OtherRevenueRepository revenueRepository;
     private final OtherRevenueWriterRepository revenueWriterRepository;
-    private final BudgetQueryRepository budgetRepository;
+    private final BudgetAnalyticsService budgetAnalyticsService;
     private final OwnerStatementRepository ownerStatementRepository;
     private final OwnerRepository ownerRepository;
     private final PropertyRepository propertyRepository;
@@ -111,23 +111,7 @@ public class FinanceService {
         }
 
         BigDecimal expenses = n(row[1]);
-        List<BudgetQueryRepository.BudgetRow> budgetRows;
-        if (propertyId != null) {
-            budgetRows = budgetRepository.findAllRowsByProperty(propertyId);
-        } else if (ownerScope != null) {
-            budgetRows = budgetRepository.findAllRows().stream()
-                    .filter(r -> r.getPropertyId() != null && ownerScope.contains(r.getPropertyId()))
-                    .toList();
-        } else {
-            budgetRows = budgetRepository.findAllRows();
-        }
-        BigDecimal budgetTotal = budgetRows.stream()
-                .map(BudgetQueryRepository.BudgetRow::getBudgetedAmount)
-                .map(this::n)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal budgetPct = budgetTotal.signum() == 0
-                ? BigDecimal.ZERO
-                : expenses.multiply(BigDecimal.valueOf(100)).divide(budgetTotal, 2, java.math.RoundingMode.HALF_UP);
+        BigDecimal budgetPct = budgetAnalyticsService.computeUtilizationPct(propertyId, ownerScope);
 
         return FinanceDashboardResponse.builder()
                 .thisMonthCollected(n(row[0]))
@@ -193,7 +177,7 @@ public class FinanceService {
                 .build();
     }
 
-    public List<BudgetResponse> getBudgets(Long propertyId) {
+    public List<BudgetResponse> getBudgets(Long propertyId, Integer year, String lang) {
         Set<Long> ownerScope = ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner();
         if (ownerScope != null) {
             if (ownerScope.isEmpty()) {
@@ -201,29 +185,9 @@ public class FinanceService {
             }
             if (propertyId != null) {
                 ownerPropertyAccessService.assertOwnerCanAccessProperty(propertyId);
-                return budgetRepository.findAllRowsByProperty(propertyId).stream()
-                        .map(this::toBudgetResponse)
-                        .toList();
             }
-            return budgetRepository.findAllRows().stream()
-                    .filter(r -> r.getPropertyId() != null && ownerScope.contains(r.getPropertyId()))
-                    .map(this::toBudgetResponse)
-                    .toList();
         }
-        return (propertyId == null
-                ? budgetRepository.findAllRows()
-                : budgetRepository.findAllRowsByProperty(propertyId)).stream()
-                .map(this::toBudgetResponse)
-                .toList();
-    }
-
-    private BudgetResponse toBudgetResponse(BudgetQueryRepository.BudgetRow row) {
-        return BudgetResponse.builder()
-                .id(row.getId())
-                .propertyId(row.getPropertyId())
-                .categoryName(row.getCategoryName())
-                .budgetedAmount(row.getBudgetedAmount())
-                .build();
+        return budgetAnalyticsService.buildBudgetViews(propertyId, year, lang, ownerScope);
     }
 
     public List<FinancialReportRowResponse> getPnlReport(Long propertyId, Integer yearFrom, Integer yearTo) {
@@ -445,47 +409,39 @@ public class FinanceService {
             return;
         }
         LocalDate expenseDate = expense.getExpenseDate() != null ? expense.getExpenseDate() : LocalDate.now();
-        LocalDate monthStart = expenseDate.withDayOfMonth(1);
-        LocalDate monthEnd = monthStart.plusMonths(1).minusDays(1);
-        BigDecimal spent = expenseWriterRepository.sumAmountByPropertyCategoryBetween(
-                expense.getPropertyId(), expense.getCategoryId(), monthStart, monthEnd);
-        budgetRepository.findAllRowsByProperty(expense.getPropertyId()).stream()
-                .filter(row -> row.getCategoryId() != null && row.getCategoryId().equals(expense.getCategoryId()))
-                .findFirst()
-                .ifPresent(row -> {
-                    BigDecimal budgeted = row.getBudgetedAmount() != null ? row.getBudgetedAmount() : BigDecimal.ZERO;
-                    if (budgeted.signum() > 0 && spent.compareTo(budgeted) > 0) {
-                        List<Long> recipients = financeAlertRecipients(expense.getPropertyId());
-                        if (!recipients.isEmpty()) {
-                            Map<String, Object> nav = new LinkedHashMap<>();
-                            nav.put("expenseId", expense.getId());
-                            nav.put("propertyId", expense.getPropertyId());
-                            notificationService.createForRecipients(
-                                    recipients,
-                                    null,
-                                    expense.getPropertyId(),
-                                    null,
-                                    NotificationType.BUDGET_THRESHOLD_EXCEEDED,
-                                    "تجاوز الميزانية",
-                                    "المصروفات (" + spent + ") تجاوزت الميزانية (" + budgeted + ") للفئة "
-                                            + row.getCategoryName(),
-                                    nav);
-                            Map<String, Object> vars = new LinkedHashMap<>();
-                            vars.put("spent", spent);
-                            vars.put("budgeted", budgeted);
-                            vars.put("categoryName", row.getCategoryName());
-                            notificationService.createLocalized(
-                                    recipients,
-                                    null,
-                                    expense.getPropertyId(),
-                                    expense.getId(),
-                                    NotificationType.FINANCE_ALERT,
-                                    "NOTIFICATIONS.FINANCE_ALERT_TITLE",
-                                    "NOTIFICATIONS.FINANCE_ALERT_BODY",
-                                    vars,
-                                    nav);
-                        }
+        budgetAnalyticsService.findOverBudgetAlert(expense.getPropertyId(), expense.getCategoryId(), expenseDate)
+                .ifPresent(alert -> {
+                    List<Long> recipients = financeAlertRecipients(expense.getPropertyId());
+                    if (recipients.isEmpty()) {
+                        return;
                     }
+                    Map<String, Object> nav = new LinkedHashMap<>();
+                    nav.put("expenseId", expense.getId());
+                    nav.put("propertyId", expense.getPropertyId());
+                    notificationService.createForRecipients(
+                            recipients,
+                            null,
+                            expense.getPropertyId(),
+                            null,
+                            NotificationType.BUDGET_THRESHOLD_EXCEEDED,
+                            "تجاوز الميزانية",
+                            "المصروفات (" + alert.actual() + ") تجاوزت الميزانية (" + alert.budgeted() + ") للفئة "
+                                    + alert.categoryLabel(),
+                            nav);
+                    Map<String, Object> vars = new LinkedHashMap<>();
+                    vars.put("spent", alert.actual());
+                    vars.put("budgeted", alert.budgeted());
+                    vars.put("categoryName", alert.categoryLabel());
+                    notificationService.createLocalized(
+                            recipients,
+                            null,
+                            expense.getPropertyId(),
+                            expense.getId(),
+                            NotificationType.FINANCE_ALERT,
+                            "NOTIFICATIONS.FINANCE_ALERT_TITLE",
+                            "NOTIFICATIONS.FINANCE_ALERT_BODY",
+                            vars,
+                            nav);
                 });
     }
 

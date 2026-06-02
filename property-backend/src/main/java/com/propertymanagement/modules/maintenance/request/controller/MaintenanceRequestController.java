@@ -14,6 +14,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -54,7 +55,7 @@ public class MaintenanceRequestController {
             @RequestParam(required = false) RequestStatus status,
             @RequestParam(required = false) RequestPriority priority,
             @RequestParam(required = false) Long propertyId,
-            @PageableDefault(size = 20) Pageable pageable) {
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.ok(requestService.getAll(status, priority, propertyId, pageable)));
     }
 
@@ -63,7 +64,7 @@ public class MaintenanceRequestController {
     public ResponseEntity<ApiResponse<Page<MaintenanceRequestResponse>>> getByProperty(
             @PathVariable Long propertyId,
             @RequestParam(required = false) RequestStatus status,
-            @PageableDefault(size = 10) Pageable pageable) {
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         if (status != null) {
             return ResponseEntity.ok(ApiResponse.ok(requestService.getByStatus(status, pageable)));
         }
@@ -75,7 +76,7 @@ public class MaintenanceRequestController {
     @RequiresPermission(module = "my_requests", action = "view")
     public ResponseEntity<ApiResponse<Page<MaintenanceRequestResponse>>> getByTenant(
             @PathVariable Long tenantId,
-            @PageableDefault(size = 10) Pageable pageable) {
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.ok(requestService.getByTenantSecured(tenantId, pageable)));
     }
 
@@ -90,7 +91,7 @@ public class MaintenanceRequestController {
     public ResponseEntity<ApiResponse<Page<MaintenanceRequestResponse>>> getByOfficer(
             @PathVariable Long officerId,
             @RequestParam(required = false) Long propertyId,
-            @PageableDefault(size = 10) Pageable pageable) {
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.ok(requestService.getByOfficerSecured(officerId, propertyId, pageable)));
     }
 
@@ -98,7 +99,7 @@ public class MaintenanceRequestController {
     @RequiresPermission(module = "schedule", action = "view")
     public ResponseEntity<ApiResponse<Page<MaintenanceRequestResponse>>> getCompanyQueue(
             @RequestParam(required = false) Long propertyId,
-            @PageableDefault(size = 20) Pageable pageable) {
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.ok(requestService.getCompanyQueueForCurrentOfficer(propertyId, pageable)));
     }
 

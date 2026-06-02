@@ -8,7 +8,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { I18nService } from '../../../core/i18n/i18n.service';
-import { OwnerPropertyBrief, User } from '../../../core/models/user.model';
+import { OwnerPropertyBrief, User, UserRole } from '../../../core/models/user.model';
 import { Property, PropertyService } from '../../../core/services/property.service';
 import { ContractorCompany, ContractorCompanyService } from '../../../core/services/contractor-company.service';
 import { DeleteConfirmService } from '../../../core/services/delete-confirm.service';
@@ -20,7 +20,10 @@ import { TablePagerComponent } from '../../../shared/components/table-pager/tabl
 import { ExportColumn, TableExportToolbarComponent } from '../../../shared/components/table-export-toolbar/table-export-toolbar.component';
 import { FilterBarComponent, FilterSpec } from '../../../shared/components/filter-bar/filter-bar.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
+import { TableEntityCellComponent } from '../../../shared/components/table-entity-cell/table-entity-cell.component';
+import { TableRowIndexPipe } from '../../../shared/pipes/table-row-index.pipe';
 import { UserDialogComponent, UserDialogData } from '../user-dialog/user-dialog.component';
+import { ListLoadController } from '../../../shared/utils/list-load.util';
 
 @Component({
   selector: 'app-user-management',
@@ -39,7 +42,9 @@ import { UserDialogComponent, UserDialogData } from '../user-dialog/user-dialog.
     TablePagerComponent,
     TableExportToolbarComponent,
     FilterBarComponent,
-    EmptyStateComponent
+    EmptyStateComponent,
+    TableEntityCellComponent,
+    TableRowIndexPipe
   ],
   templateUrl: './user-management.component.html',
   styleUrl: './user-management.component.scss'
@@ -54,11 +59,12 @@ export class UserManagementComponent implements OnInit {
   filterStatus: boolean | null = null;
   pageFilters: FilterSpec[] = [];
 
-  loading = true;
+  listLoad = new ListLoadController();
   togglingIds = new Set<number>();
 
   readonly pageSize = 5;
   pageIndex = 0;
+  totalElements = 0;
 
   constructor(
     private readonly dialog: MatDialog,
@@ -124,11 +130,16 @@ export class UserManagementComponent implements OnInit {
   }
 
   onFilterBarChange(values: any): void {
+    const needReload =
+      values?.searchTerm !== undefined || values?.filterRole !== undefined;
     if (values?.searchTerm !== undefined) this.searchTerm = values.searchTerm ?? '';
     if (values?.filterPropertyId !== undefined) this.filterPropertyId = values.filterPropertyId;
     if (values?.filterRole !== undefined) this.filterRole = values.filterRole;
     if (values?.filterStatus !== undefined) this.filterStatus = values.filterStatus;
     this.pageIndex = 0;
+    if (needReload) {
+      this.loadUsers();
+    }
   }
 
   clearFiltersFromBar(): void {
@@ -137,6 +148,7 @@ export class UserManagementComponent implements OnInit {
     this.filterRole = null;
     this.filterStatus = null;
     this.pageIndex = 0;
+    this.loadUsers();
   }
 
   hasFiltersBar(): boolean {
@@ -173,12 +185,12 @@ export class UserManagementComponent implements OnInit {
   }
 
   get pagedUsers(): User[] {
-    const start = this.pageIndex * this.pageSize;
-    return this.filteredUsers.slice(start, start + this.pageSize);
+    return this.filteredUsers;
   }
 
-  get totalPages(): number {
-    return Math.max(1, Math.ceil(this.filteredUsers.length / this.pageSize));
+  onPageChange(index: number): void {
+    this.pageIndex = index;
+    this.loadUsers();
   }
 
   get exportColumns(): ExportColumn<User>[] {
@@ -192,7 +204,7 @@ export class UserManagementComponent implements OnInit {
   }
 
   changePage(step: number): void {
-    this.pageIndex = Math.max(0, Math.min(this.pageIndex + step, this.totalPages - 1));
+    this.onPageChange(Math.max(0, this.pageIndex + step));
   }
 
   loadData(): void {
@@ -214,14 +226,15 @@ export class UserManagementComponent implements OnInit {
   }
 
   private loadUsers(): void {
-    this.loading = true;
-    this.userService.getAll(0, 200).subscribe({
+    this.listLoad.begin();
+    this.userService.getAll(this.pageIndex, this.pageSize, this.searchTerm, (this.filterRole as UserRole | null) ?? undefined).subscribe({
       next: res => {
         this.users = res.data?.content ?? [];
-        this.loading = false;
+        this.totalElements = res.data?.totalElements ?? this.users.length;
+        this.listLoad.end();
       },
       error: () => {
-        this.loading = false;
+        this.listLoad.end();
         this.snack.error(this.i18n.instant('USER_MGMT.LOAD_ERROR'));
       }
     });
@@ -310,6 +323,10 @@ export class UserManagementComponent implements OnInit {
     return `U-${user.id}`;
   }
 
+  userSubtitle(user: User): string {
+    const parts = [user.email, user.fullNameAr, user.fullNameEn].filter((v) => !!v && String(v).trim());
+    return parts.join(' · ');
+  }
 
   private formatDate(value: string): string {
     const date = new Date(value);

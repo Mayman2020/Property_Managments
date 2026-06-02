@@ -15,6 +15,8 @@ import com.propertymanagement.shared.exception.AppException;
 import com.propertymanagement.shared.i18n.LocalizedNameResolver;
 import com.propertymanagement.shared.security.PropertyScopeService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -80,6 +82,39 @@ public class ContractorCompanyService {
             return repository.searchAllInPropertyId(trimmed, propertyId).stream().map(this::toResponse).toList();
         }
         return repository.searchAll(trimmed).stream().map(this::toResponse).toList();
+    }
+
+    public Page<ContractorCompanyResponseDTO> getAll(
+            Pageable pageable, String q, Long propertyId, Boolean active, boolean all) {
+        String trimmed = trimToNull(q);
+        Set<Long> scope = propertyScopeService.propertyIdsOrNullIfUnrestricted();
+        Page<ContractorCompanyEntity> page;
+        if (scope != null) {
+            if (scope.isEmpty()) {
+                return Page.empty(pageable);
+            }
+            if (propertyId != null) {
+                if (!scope.contains(propertyId)) {
+                    return Page.empty(pageable);
+                }
+                page = all
+                        ? repository.searchAllInPropertyIdPaged(trimmed, propertyId, active, pageable)
+                        : repository.searchActiveInPropertyIdPaged(trimmed, propertyId, active, pageable);
+            } else {
+                page = all
+                        ? repository.searchAllInPropertyIdsPaged(trimmed, scope, active, pageable)
+                        : repository.searchActiveInPropertyIdsPaged(trimmed, scope, active, pageable);
+            }
+        } else if (propertyId != null) {
+            page = all
+                    ? repository.searchAllInPropertyIdPaged(trimmed, propertyId, active, pageable)
+                    : repository.searchActiveInPropertyIdPaged(trimmed, propertyId, active, pageable);
+        } else {
+            page = all
+                    ? repository.searchAllPaged(trimmed, active, pageable)
+                    : repository.searchActivePaged(trimmed, active, pageable);
+        }
+        return page.map(this::toResponse);
     }
 
     public ContractorCompanyResponseDTO get(Long id) {

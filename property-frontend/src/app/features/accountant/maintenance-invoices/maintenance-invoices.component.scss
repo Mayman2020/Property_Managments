@@ -14,6 +14,14 @@
   label { color: var(--text-muted); font-weight: 700; }
 }
 
+.filter-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-inline-start: auto;
+  flex-wrap: wrap;
+}
+
 .tab-bar {
   display: flex;
   gap: 4px;
@@ -75,6 +83,10 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
   gap: 20px;
+}
+
+.contracts-grid--wide {
+  grid-template-columns: repeat(auto-fill, minmax(580px, 1fr));
 }
 
 .contract-card {
@@ -229,22 +241,70 @@
   border: 1px solid #e5d6b6;
   border-radius: 8px;
   background: #fffaf1;
-  overflow: hidden;
+  overflow-x: auto;
+}
+
+.payment-schedule-head,
+.payment-row {
+  display: grid;
+  grid-template-columns: 52px minmax(120px, 1.1fr) minmax(108px, 1fr) minmax(96px, auto) minmax(132px, auto);
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  min-width: 520px;
+}
+
+.payment-schedule-head {
+  background: #f5edd8;
+  border-bottom: 1px solid #eadcaf;
+  color: #8a6a2a;
+  font-size: 11px;
+  font-weight: 800;
 }
 
 .payment-row {
-  display: grid;
-  grid-template-columns: 48px minmax(90px, 1fr) minmax(100px, 1fr) auto auto;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
   border-bottom: 1px solid #eadcaf;
   color: #10253a;
   font-size: 13px;
 
   &:last-child { border-bottom: 0; }
+}
 
-  button { justify-self: end; }
+.payment-no {
+  font-weight: 800;
+  color: #8a6a2a;
+}
+
+.payment-amount {
+  white-space: nowrap;
+}
+
+.payment-date {
+  white-space: nowrap;
+}
+
+.payment-status {
+  justify-self: start;
+}
+
+.payment-action {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.payment-action-btn {
+  white-space: nowrap;
+  font-size: 12px;
+  line-height: 1.2;
+  padding: 0 10px;
+  min-height: 34px;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    margin-inline-end: 4px;
+  }
 }
 
 .activate-btn {
@@ -255,8 +315,15 @@
   gap: 6px;
 }
 
-@media (max-width: 520px) {
-  .contracts-grid { grid-template-columns: 1fr; }
+@media (max-width: 720px) {
+  .contracts-grid,
+  .contracts-grid--wide { grid-template-columns: 1fr; }
   .property-stats { grid-template-columns: 1fr; }
-  .payment-row { grid-template-columns: 1fr; }
+  .payment-schedule-head { display: none; }
+  .payment-schedule-head,
+  .payment-row {
+    grid-template-columns: 1fr;
+    min-width: 0;
+  }
+  .payment-action { justify-content: flex-start; }
 }

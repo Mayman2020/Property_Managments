@@ -12,6 +12,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { EstateLovOption, EstateLovSelectComponent } from '../../../shared/components/estate-lov-select/estate-lov-select.component';
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
 import { MaintenanceInvoiceService, MaintenanceInvoice, MaintenanceInvoiceFilterOption } from '../../../core/services/maintenance-invoice.service';
 import { MaintenanceContractInvoiceService, MaintenanceContractInvoiceResponse } from '../../../core/services/maintenance-contract-invoice.service';
@@ -37,7 +38,8 @@ import { catchError } from 'rxjs/operators';
     MatDialogModule, MatTooltipModule,
     PageHeaderComponent,
     TablePagerComponent,
-    MaintenanceInvoicePaymentDialogComponent
+    MaintenanceInvoicePaymentDialogComponent,
+    EstateLovSelectComponent
   ],
   templateUrl: './maintenance-invoices.component.html',
   styleUrl: './maintenance-invoices.component.scss'
@@ -47,7 +49,7 @@ export class MaintenanceInvoicesComponent implements OnInit {
   contractInvoices: MaintenanceContractInvoiceResponse[] = [];
   loading = true;
   activeTab: 'contractor' | 'contract' = 'contractor';
-  readonly pageSize = 5;
+  readonly pageSize = 6;
   invoicePage = 0;
   contractPage = 0;
 
@@ -86,14 +88,23 @@ export class MaintenanceInvoicesComponent implements OnInit {
     this.load();
   }
 
-  onPropertyChange(propertyId: number | null): void {
+  onPropertyChange(propertyId: number | null | unknown): void {
+    const id = propertyId == null ? null : Number(propertyId);
     this.filterForm.patchValue({ companyId: null });
     this.companies = [];
-    if (propertyId == null) return;
-    this.svc.getFilterOptions(propertyId).subscribe({
+    if (id == null || !Number.isFinite(id)) return;
+    this.svc.getFilterOptions(id).subscribe({
       next: res => { this.companies = res.data?.companies ?? []; },
       error: () => { this.companies = []; }
     });
+  }
+
+  resetFilters(): void {
+    this.filterForm.reset({ year: null, month: null, propertyId: null, companyId: null });
+    this.companies = [];
+    this.invoicePage = 0;
+    this.contractPage = 0;
+    this.load();
   }
 
   private loadFilterOptions(): void {
@@ -107,6 +118,22 @@ export class MaintenanceInvoicesComponent implements OnInit {
     return this.i18n.currentLang === 'ar'
       ? (p.nameAr || p.nameEn || p.name || String(p.id))
       : (p.nameEn || p.nameAr || p.name || String(p.id));
+  }
+
+  get propertyLovOptions(): EstateLovOption[] {
+    return this.properties.map((p) => ({ value: p.id, label: this.propertyLabel(p) }));
+  }
+
+  get companyLovOptions(): EstateLovOption[] {
+    return this.companies.map((c) => ({ value: c.id, label: this.companyLabel(c) }));
+  }
+
+  get yearLovOptions(): EstateLovOption[] {
+    return this.years.map((y) => ({ value: y, label: String(y) }));
+  }
+
+  get monthLovOptions(): EstateLovOption[] {
+    return this.months.map((m) => ({ value: m, label: this.monthLabel(m) }));
   }
 
   companyLabel(c: MaintenanceInvoiceFilterOption): string {
@@ -134,6 +161,9 @@ export class MaintenanceInvoicesComponent implements OnInit {
       this.invoicePage = 0;
       this.contractPage = 0;
       this.loading = false;
+    }, () => {
+      this.loading = false;
+      this.snack.error(this.i18n.instant('COMMON.ERROR'));
     });
   }
 
@@ -165,14 +195,29 @@ export class MaintenanceInvoicesComponent implements OnInit {
     });
   }
 
-  displayNote(note: string | null | undefined): string {
+  resolveNoteKey(note: string | null | undefined): string {
     const value = (note ?? '').trim();
     if (!value) return '';
-    if (value === 'Awaiting accountant payment confirmation' ||
-        value === 'MAINTENANCE_INVOICES.AWAITING_ACCOUNTANT_PAYMENT_CONFIRMATION') {
-      return this.i18n.instant('MAINTENANCE_INVOICES.AWAITING_ACCOUNTANT_PAYMENT_CONFIRMATION');
+    const firstLine = value.split('\n')[0].trim();
+    if (firstLine === 'Awaiting accountant payment confirmation' ||
+        firstLine === 'MAINTENANCE_INVOICES.AWAITING_ACCOUNTANT_PAYMENT_CONFIRMATION') {
+      return 'MAINTENANCE_INVOICES.AWAITING_ACCOUNTANT_PAYMENT_CONFIRMATION';
+    }
+    if (/^MAINTENANCE_INVOICES\.[A-Z0-9_]+$/.test(firstLine)) {
+      return firstLine;
     }
     return value;
+  }
+
+  noteExtraLines(note: string | null | undefined): string {
+    const value = (note ?? '').trim();
+    const lines = value.split('\n').map((l) => l.trim()).filter(Boolean);
+    if (lines.length <= 1) return '';
+    const key = this.resolveNoteKey(note);
+    if (key.startsWith('MAINTENANCE_INVOICES.') && lines[0] === key) {
+      return lines.slice(1).join('\n');
+    }
+    return '';
   }
 
   openReview(inv: MaintenanceInvoice): void {
@@ -214,9 +259,11 @@ export class MaintenanceInvoicesComponent implements OnInit {
     this.dialog.open<MaintenanceInvoicePaymentDialogComponent, MaintenanceInvoicePaymentDialogData, MaintenanceInvoicePaymentDialogResult | null>(
       MaintenanceInvoicePaymentDialogComponent,
       {
-        width: '760px',
+        width: '720px',
         maxWidth: '96vw',
+        maxHeight: '95vh',
         panelClass: 'app-dialog-panel',
+        disableClose: true,
         data
       }
     ).afterClosed().subscribe((result) => {
@@ -238,9 +285,11 @@ export class MaintenanceInvoicesComponent implements OnInit {
     this.dialog.open<MaintenanceInvoicePaymentDialogComponent, MaintenanceInvoicePaymentDialogData, MaintenanceInvoicePaymentDialogResult | null>(
       MaintenanceInvoicePaymentDialogComponent,
       {
-        width: '640px',
+        width: '720px',
         maxWidth: '96vw',
+        maxHeight: '95vh',
         panelClass: 'app-dialog-panel',
+        disableClose: true,
         data
       }
     ).afterClosed().subscribe((result) => {

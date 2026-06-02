@@ -8,6 +8,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { PageHeaderComponent, BreadcrumbItem } from '../../../shared/components/page-header/page-header.component';
+import { EstateLovOption, EstateLovSelectComponent } from '../../../shared/components/estate-lov-select/estate-lov-select.component';
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
 import { VacancyInquiryItem, VacancyItem, VacancyService } from '../../../core/services/vacancy.service';
 import { Property, PropertyService } from '../../../core/services/property.service';
@@ -21,7 +22,7 @@ import { SnackService } from '../../../core/services/snack.service';
   imports: [
     NgIf, NgFor, FormsModule, TranslateModule,
     MatIconModule, MatButtonModule, MatTooltipModule,
-    PageHeaderComponent, TablePagerComponent
+    PageHeaderComponent, TablePagerComponent, EstateLovSelectComponent
   ],
   templateUrl: './vacancy-workspace.component.html',
   styleUrl: './vacancy-workspace.component.scss'
@@ -39,6 +40,20 @@ export class VacancyWorkspaceComponent implements OnInit {
   filterOwnerId: number | null = null;
   readonly pageSize = 6;
   pageIndex = 0;
+
+  get propertyLovOptions(): EstateLovOption[] {
+    return this.properties.map((p) => ({
+      value: p.id,
+      label: this.propertyLovLabel(p)
+    }));
+  }
+
+  get ownerLovOptions(): EstateLovOption[] {
+    return this.owners.map((o) => ({
+      value: o.id,
+      label: this.ownerOptionLabel(o)
+    }));
+  }
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -67,7 +82,7 @@ export class VacancyWorkspaceComponent implements OnInit {
   get breadcrumbs(): BreadcrumbItem[] {
     return [
       { label: this.translate.instant('NAV.DASHBOARD'), route: '/admin/dashboard' },
-      { label: this.translate.instant('NAV.VACANCIES'), route: '/admin/vacancies/list' },
+      { label: this.translate.instant('NAV.UNITS'), route: '/admin/units' },
       { label: this.title }
     ];
   }
@@ -139,6 +154,11 @@ export class VacancyWorkspaceComponent implements OnInit {
 
   ownerOptionLabel(o: Owner): string {
     return ownerDisplayName(o, this.i18n.currentLang);
+  }
+
+  private propertyLovLabel(p: Property): string {
+    const name = this.isArabic ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName);
+    return p.propertyCode ? `${p.propertyCode} — ${name}` : name;
   }
 
   reloadInquiries(): void {

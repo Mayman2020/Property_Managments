@@ -1,3 +1,4 @@
+import { DialogTitleCloseDirective } from './../../../shared/directives/dialog-title-close.directive';
 import { Component, Inject, OnInit } from '@angular/core';
 import { NgFor } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -26,8 +27,7 @@ export interface PaymentProofDialogData {
   imports: [
     NgFor, ReactiveFormsModule, TranslateModule,
     MatDialogModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatIconModule,
-    UploadZoneComponent
-  ],
+    UploadZoneComponent, DialogTitleCloseDirective],
   template: `
     <h2 mat-dialog-title>{{ 'TENANT_PORTAL.PAYMENT_PROOF' | translate }}</h2>
     <mat-dialog-content [formGroup]="form">

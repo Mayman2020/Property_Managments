@@ -1,3 +1,4 @@
+import { DialogTitleCloseDirective } from './../../../shared/directives/dialog-title-close.directive';
 ﻿import { Component, Inject, OnInit } from '@angular/core';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -43,8 +44,7 @@ export interface ContractDialogData {
     MatFormFieldModule, MatIconModule, MatInputModule,
     MatDatepickerModule, MatNativeDateModule,
     MatProgressSpinnerModule, MatSelectModule,
-    SearchableSelectComponent
-  ],
+    SearchableSelectComponent, DialogTitleCloseDirective],
   template: `
     <h2 mat-dialog-title class="dialog-title">
       <mat-icon class="dialog-title-icon">description</mat-icon>

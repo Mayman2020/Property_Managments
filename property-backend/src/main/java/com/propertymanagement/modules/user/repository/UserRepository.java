@@ -85,4 +85,16 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findActiveContractorStaffForProperty(
             @Param("propertyId") Long propertyId,
             @Param("companyId") Long companyId);
+
+    @Query("""
+            SELECT u FROM User u
+            WHERE u.active = true
+              AND u.contractorCompanyId = :companyId
+              AND (
+                    u.role = com.propertymanagement.modules.user.entity.UserRole.MAINTENANCE_COMPANY
+                    OR (u.role = com.propertymanagement.modules.user.entity.UserRole.MAINTENANCE_OFFICER_COMPANY
+                        AND u.maintenanceOfficerType = com.propertymanagement.modules.user.entity.MaintenanceOfficerType.CONTRACTOR_COMPANY)
+              )
+            """)
+    List<User> findActiveContractorStaffByCompanyId(@Param("companyId") Long companyId);
 }

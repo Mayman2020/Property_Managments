@@ -5,6 +5,7 @@ import { ActivatedRoute } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { EstateLovOption, EstateLovSelectComponent } from '../../../shared/components/estate-lov-select/estate-lov-select.component';
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
 import { ExportColumn, TableExportToolbarComponent } from '../../../shared/components/table-export-toolbar/table-export-toolbar.component';
 import { FinancialReportRow, FinanceExportType, FinanceService } from '../../../core/services/finance.service';
@@ -14,7 +15,7 @@ import { I18nService } from '../../../core/i18n/i18n.service';
 @Component({
   selector: 'app-finance-reports',
   standalone: true,
-  imports: [NgIf, NgFor, DecimalPipe, FormsModule, MatButtonModule, TranslateModule, PageHeaderComponent, TablePagerComponent, TableExportToolbarComponent],
+  imports: [NgIf, NgFor, DecimalPipe, FormsModule, MatButtonModule, TranslateModule, PageHeaderComponent, TablePagerComponent, TableExportToolbarComponent, EstateLovSelectComponent],
   template: `
     <div class="app-page">
       <app-page-header
@@ -22,19 +23,31 @@ import { I18nService } from '../../../core/i18n/i18n.service';
         [title]="title"
         [subtitle]="'FINANCE.REPORTS_SUBTITLE' | translate">
 
-        <select [(ngModel)]="selectedPropertyId" (change)="onFilterChange()" class="estate-property-select">
-          <option [ngValue]="null">{{ 'COMMON.ALL_PROPERTIES' | translate }}</option>
-          <option *ngFor="let p of properties" [ngValue]="p.id">
-            {{ i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName) }}
-          </option>
-        </select>
+        <app-estate-lov-select
+          [label]="'REQUEST_FORM.PROPERTY'"
+          [options]="propertyLovOptions"
+          [showAll]="true"
+          allLabelKey="COMMON.ALL_PROPERTIES"
+          [(ngModel)]="selectedPropertyId"
+          (ngModelChange)="onFilterChange()">
+        </app-estate-lov-select>
 
-        <select *ngIf="report === 'pnl'" [(ngModel)]="yearFrom" (change)="onFilterChange()" class="estate-property-select compact-select">
-          <option *ngFor="let year of years" [ngValue]="year">{{ 'FINANCE.FROM_LABEL' | translate }} {{ year }}</option>
-        </select>
-        <select *ngIf="report === 'pnl'" [(ngModel)]="yearTo" (change)="onFilterChange()" class="estate-property-select compact-select">
-          <option *ngFor="let year of years" [ngValue]="year">{{ 'FINANCE.TO_LABEL' | translate }} {{ year }}</option>
-        </select>
+        <app-estate-lov-select
+          *ngIf="report === 'pnl'"
+          cssClass="estate-property-select compact-select"
+          [label]="'FINANCE.FROM_LABEL'"
+          [options]="yearFromLovOptions"
+          [(ngModel)]="yearFrom"
+          (ngModelChange)="onFilterChange()">
+        </app-estate-lov-select>
+        <app-estate-lov-select
+          *ngIf="report === 'pnl'"
+          cssClass="estate-property-select compact-select"
+          [label]="'FINANCE.TO_LABEL'"
+          [options]="yearToLovOptions"
+          [(ngModel)]="yearTo"
+          (ngModelChange)="onFilterChange()">
+        </app-estate-lov-select>
 
         <app-table-export-toolbar
           permissionKey="finance"
@@ -51,13 +64,11 @@ import { I18nService } from '../../../core/i18n/i18n.service';
           <input type="date" [(ngModel)]="exportFrom">
           <label>{{ 'FINANCE.EXPORT_TO' | translate }}</label>
           <input type="date" [(ngModel)]="exportTo">
-          <label>{{ 'FINANCE.EXPORT_TYPE' | translate }}</label>
-          <select [(ngModel)]="exportType" class="estate-property-select">
-            <option value="ALL">{{ 'FINANCE.EXPORT_TYPE_ALL' | translate }}</option>
-            <option value="RENT_INCOME">{{ 'FINANCE.EXPORT_TYPE_RENT' | translate }}</option>
-            <option value="EXPENSES">{{ 'FINANCE.EXPORT_TYPE_EXPENSES' | translate }}</option>
-            <option value="PAYROLL">{{ 'FINANCE.EXPORT_TYPE_PAYROLL' | translate }}</option>
-          </select>
+          <app-estate-lov-select
+            [label]="'FINANCE.EXPORT_TYPE'"
+            [options]="exportTypeLovOptions"
+            [(ngModel)]="exportType">
+          </app-estate-lov-select>
           <button mat-flat-button color="primary" [disabled]="exportLoading || !exportFrom || !exportTo" (click)="downloadServerCsv()">
             {{ 'FINANCE.EXPORT_DOWNLOAD' | translate }}
           </button>
@@ -141,6 +152,32 @@ export class FinanceReportsComponent implements OnInit {
   exportTo = '';
   exportType: FinanceExportType = 'ALL';
   exportLoading = false;
+
+  get propertyLovOptions(): EstateLovOption[] {
+    return this.properties.map((p) => ({
+      value: p.id,
+      label: this.propertyLovLabel(p)
+    }));
+  }
+
+  get yearFromLovOptions(): EstateLovOption[] {
+    const prefix = this.translate.instant('FINANCE.FROM_LABEL');
+    return this.years.map((year) => ({ value: year, label: `${prefix} ${year}` }));
+  }
+
+  get yearToLovOptions(): EstateLovOption[] {
+    const prefix = this.translate.instant('FINANCE.TO_LABEL');
+    return this.years.map((year) => ({ value: year, label: `${prefix} ${year}` }));
+  }
+
+  get exportTypeLovOptions(): EstateLovOption[] {
+    return [
+      { value: 'ALL', label: this.translate.instant('FINANCE.EXPORT_TYPE_ALL') },
+      { value: 'RENT_INCOME', label: this.translate.instant('FINANCE.EXPORT_TYPE_RENT') },
+      { value: 'EXPENSES', label: this.translate.instant('FINANCE.EXPORT_TYPE_EXPENSES') },
+      { value: 'PAYROLL', label: this.translate.instant('FINANCE.EXPORT_TYPE_PAYROLL') }
+    ];
+  }
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -264,6 +301,13 @@ export class FinanceReportsComponent implements OnInit {
       },
       error: () => { this.exportLoading = false; }
     });
+  }
+
+  private propertyLovLabel(p: Property): string {
+    const name = this.i18n.currentLang === 'ar'
+      ? (p.propertyNameAr || p.propertyName)
+      : (p.propertyNameEn || p.propertyName);
+    return p.propertyCode ? `${p.propertyCode} — ${name}` : name;
   }
 
 }

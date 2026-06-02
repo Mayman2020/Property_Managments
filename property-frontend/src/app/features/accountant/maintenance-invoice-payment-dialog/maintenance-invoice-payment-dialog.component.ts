@@ -1,4 +1,5 @@
-﻿import { DatePipe, DecimalPipe, NgClass, NgFor, NgIf } from '@angular/common';
+import { DialogTitleCloseDirective } from './../../../shared/directives/dialog-title-close.directive';
+﻿import { DatePipe, DecimalPipe, NgFor, NgIf } from '@angular/common';
 import { Component, Inject, OnInit } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -36,7 +37,6 @@ export type MaintenanceInvoicePaymentDialogResult =
   imports: [
     NgIf,
     NgFor,
-    NgClass,
     DatePipe,
     DecimalPipe,
     ReactiveFormsModule,
@@ -50,8 +50,7 @@ export type MaintenanceInvoicePaymentDialogResult =
     MatIconModule,
     MatProgressSpinnerModule,
     MatSelectModule,
-    UploadZoneComponent
-  ],
+    UploadZoneComponent, DialogTitleCloseDirective],
   templateUrl: './maintenance-invoice-payment-dialog.component.html',
   styleUrl: './maintenance-invoice-payment-dialog.component.scss'
 })

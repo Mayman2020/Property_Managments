@@ -1,3 +1,4 @@
+import { DialogTitleCloseDirective } from './../../shared/directives/dialog-title-close.directive';
 import { Component, Inject } from '@angular/core';
 import { NgIf } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -13,6 +14,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import { LegalEntity, LegalEntityRequest, LegalEntityService } from '../../core/services/legal-entity.service';
 import { SnackService } from '../../core/services/snack.service';
 import { I18nService } from '../../core/i18n/i18n.service';
+import { AuditTrailComponent } from '../../shared/components/audit-trail/audit-trail.component';
 
 export interface LegalEntityDialogData {
   entity: LegalEntity | null;
@@ -31,8 +33,8 @@ export interface LegalEntityDialogData {
     MatInputModule,
     MatIconModule,
     MatProgressSpinnerModule,
-    TranslateModule
-  ],
+    TranslateModule,
+    AuditTrailComponent, DialogTitleCloseDirective],
   template: `
     <h2 mat-dialog-title class="dialog-title">
       <mat-icon class="dialog-title-icon">domain</mat-icon>
@@ -84,6 +86,11 @@ export interface LegalEntityDialogData {
           {{ 'COMMON.ACTIVE' | translate }}
         </mat-checkbox>
       </form>
+
+      <app-audit-trail *ngIf="data.entity" class="full legal-entity-audit"
+        [createdAt]="data.entity.createdAt"
+        [updatedAt]="data.entity.updatedAt">
+      </app-audit-trail>
     </mat-dialog-content>
 
     <div mat-dialog-actions align="end" class="dialog-actions-row">
@@ -122,6 +129,7 @@ export interface LegalEntityDialogData {
     .full { grid-column: 1 / -1; }
 
     .checkbox-field { margin: 4px 0 2px; }
+    .legal-entity-audit { margin-top: 14px; }
 
     .dialog-actions-row {
       padding: 16px 24px;

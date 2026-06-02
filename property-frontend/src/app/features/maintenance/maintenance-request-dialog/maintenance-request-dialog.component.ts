@@ -1,3 +1,4 @@
+import { DialogTitleCloseDirective } from './../../../shared/directives/dialog-title-close.directive';
 ﻿import { Component, Inject, OnDestroy, OnInit } from '@angular/core';
 import { AbstractControl, FormBuilder, FormGroup, ValidationErrors, Validators, ReactiveFormsModule } from '@angular/forms';
 import { NgFor, NgIf } from '@angular/common';
@@ -26,8 +27,7 @@ export interface MaintenanceRequestDialogData {
   imports: [
     NgFor, NgIf, ReactiveFormsModule, TranslateModule,
     MatDialogModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule,
-    UploadZoneComponent
-  ],
+    UploadZoneComponent, DialogTitleCloseDirective],
   template: `
     <h2 mat-dialog-title class="dialog-title">
       <mat-icon class="dialog-title-icon">add_circle</mat-icon>

@@ -1,3 +1,4 @@
+import { DialogTitleCloseDirective } from './../../../shared/directives/dialog-title-close.directive';
 import { Component, Inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -16,8 +17,7 @@ export interface OwnerDraftRejectDialogData {
   standalone: true,
   imports: [
     ReactiveFormsModule, TranslateModule,
-    MatDialogModule, MatButtonModule, MatFormFieldModule, MatInputModule
-  ],
+    MatDialogModule, MatButtonModule, MatFormFieldModule, MatInputModule, DialogTitleCloseDirective],
   template: `
     <h2 mat-dialog-title>{{ 'OWNER_PORTAL.REJECT_DRAFT_TITLE' | translate }}</h2>
     <mat-dialog-content>

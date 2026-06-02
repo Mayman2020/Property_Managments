@@ -28,6 +28,8 @@ import com.propertymanagement.shared.exception.AppException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -72,6 +74,32 @@ public class MaintenanceContractService {
                 .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
                 .map(this::toResponse)
                 .collect(Collectors.toList());
+    }
+
+    public Page<MaintenanceContractResponse> getAll(
+            Pageable pageable, String status, String ownerApprovalStatus, String q) {
+        String trimmedStatus = trimToNull(status);
+        String trimmedOwner = trimToNull(ownerApprovalStatus);
+        String trimmedQ = trimToNull(q);
+        var scope = ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner();
+        Page<MaintenanceContract> page;
+        if (scope != null) {
+            if (scope.isEmpty()) {
+                return Page.empty(pageable);
+            }
+            page = contractRepo.searchInPropertyIds(scope, trimmedStatus, trimmedOwner, trimmedQ, pageable);
+        } else {
+            page = contractRepo.search(trimmedStatus, trimmedOwner, trimmedQ, pageable);
+        }
+        return page.map(this::toResponse);
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     public List<MaintenanceContractResponse> listVisibleForCurrentUser() {

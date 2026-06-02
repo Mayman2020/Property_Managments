@@ -59,17 +59,14 @@
 .actions-col {
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 6px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
 }
 
-.details-btn {
-  min-height: 34px;
-  line-height: 32px;
-  padding: 0 12px;
-  border-radius: 8px;
-  font-size: 0.82rem;
-  font-weight: 600;
+.app-icon-btn.danger {
+  color: #c62828;
+  border-color: rgba(229, 115, 115, 0.4);
 }
 
 .status-chip {

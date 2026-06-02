@@ -93,7 +93,7 @@
             </div>
           </div>
         </div>
-        <app-table-pager *ngIf="contracts.length > pageSize" [length]="contracts.length" [pageSize]="pageSize" [pageIndex]="contractsPage" (pageIndexChange)="contractsPage = $event"></app-table-pager>
+        <app-table-pager [length]="contracts.length" [pageSize]="pageSize" [pageIndex]="contractsPage" (pageIndexChange)="contractsPage = $event"></app-table-pager>
       </div>
     </mat-tab>
 
@@ -167,7 +167,7 @@
             </div>
           </div>
         </div>
-        <app-table-pager *ngIf="pendingTerminations.length > pageSize" [length]="pendingTerminations.length" [pageSize]="pageSize" [pageIndex]="terminationsPage" (pageIndexChange)="terminationsPage = $event"></app-table-pager>
+        <app-table-pager [length]="pendingTerminations.length" [pageSize]="pageSize" [pageIndex]="terminationsPage" (pageIndexChange)="terminationsPage = $event"></app-table-pager>
       </div>
     </mat-tab>
 
@@ -237,7 +237,7 @@
             </div>
           </div>
         </div>
-        <app-table-pager *ngIf="pendingRenewals.length > pageSize" [length]="pendingRenewals.length" [pageSize]="pageSize" [pageIndex]="renewalsPage" (pageIndexChange)="renewalsPage = $event"></app-table-pager>
+        <app-table-pager [length]="pendingRenewals.length" [pageSize]="pageSize" [pageIndex]="renewalsPage" (pageIndexChange)="renewalsPage = $event"></app-table-pager>
       </div>
     </mat-tab>
 
@@ -310,7 +310,7 @@
             </div>
           </div>
         </div>
-        <app-table-pager *ngIf="maintenanceDrafts.length > pageSize" [length]="maintenanceDrafts.length" [pageSize]="pageSize" [pageIndex]="maintenanceDraftsPage" (pageIndexChange)="maintenanceDraftsPage = $event"></app-table-pager>
+        <app-table-pager [length]="maintenanceDrafts.length" [pageSize]="pageSize" [pageIndex]="maintenanceDraftsPage" (pageIndexChange)="maintenanceDraftsPage = $event"></app-table-pager>
       </div>
     </mat-tab>
 
@@ -378,7 +378,7 @@
             </div>
           </div>
         </div>
-        <app-table-pager *ngIf="maintenancePendingTerminations.length > pageSize" [length]="maintenancePendingTerminations.length" [pageSize]="pageSize" [pageIndex]="maintenanceTerminationsPage" (pageIndexChange)="maintenanceTerminationsPage = $event"></app-table-pager>
+        <app-table-pager [length]="maintenancePendingTerminations.length" [pageSize]="pageSize" [pageIndex]="maintenanceTerminationsPage" (pageIndexChange)="maintenanceTerminationsPage = $event"></app-table-pager>
       </div>
     </mat-tab>
 
@@ -454,7 +454,7 @@
             </div>
           </div>
         </div>
-        <app-table-pager *ngIf="maintenancePendingRenewals.length > pageSize" [length]="maintenancePendingRenewals.length" [pageSize]="pageSize" [pageIndex]="maintenanceRenewalsPage" (pageIndexChange)="maintenanceRenewalsPage = $event"></app-table-pager>
+        <app-table-pager [length]="maintenancePendingRenewals.length" [pageSize]="pageSize" [pageIndex]="maintenanceRenewalsPage" (pageIndexChange)="maintenanceRenewalsPage = $event"></app-table-pager>
       </div>
     </mat-tab>
 

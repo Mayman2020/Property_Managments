@@ -9,8 +9,9 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
-import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
-import { DashboardService, DashboardStats, RecentActivityItem } from '../../../core/services/dashboard.service';
+import { EstateLovOption, EstateLovSelectComponent } from '../../../shared/components/estate-lov-select/estate-lov-select.component';
+import { TableRowIndexPipe } from '../../../shared/pipes/table-row-index.pipe';
+import { DashboardService, DashboardStats } from '../../../core/services/dashboard.service';
 import { MaintenanceService, MaintenanceRequest } from '../../../core/services/maintenance.service';
 import { InventoryService, InventoryItem } from '../../../core/services/inventory.service';
 import { PropertyService, Property } from '../../../core/services/property.service';
@@ -18,12 +19,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { FinanceDashboardDto, FinanceService } from '../../../core/services/finance.service';
-
-interface StatusTile {
-  status: string;
-  label: string;
-  value: number;
-}
+import { ListLoadController } from '../../../shared/utils/list-load.util';
 
 @Component({
   selector: 'app-dashboard',
@@ -40,7 +36,8 @@ interface StatusTile {
     MatIconModule,
     MatProgressSpinnerModule,
     PageHeaderComponent,
-    TablePagerComponent
+    TableRowIndexPipe,
+    EstateLovSelectComponent
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
@@ -50,13 +47,10 @@ export class DashboardComponent implements OnInit {
   recentRequests: MaintenanceRequest[] = [];
   lowStockItems: InventoryItem[] = [];
   trendValues: number[] = [];
-  loading = true;
+  listLoad = new ListLoadController();
   properties: Property[] = [];
   selectedPropertyId: number | null = null;
   financeStats: FinanceDashboardDto | null = null;
-  recentActivity: RecentActivityItem[] = [];
-  readonly activityPageSize = 5;
-  activityPageIndex = 0;
   trendLabels: string[] = [];
 
   constructor(
@@ -85,15 +79,23 @@ export class DashboardComponent implements OnInit {
     this.loadData();
   }
 
-  getPropertyLabel(property: Property): string {
+  get propertyLovOptions(): EstateLovOption[] {
+    return this.properties.map((p) => ({
+      value: p.id,
+      label: this.propertyLovLabel(p)
+    }));
+  }
+
+  private propertyLovLabel(property: Property): string {
     const name = this.i18n.currentLang === 'ar'
       ? (property.propertyNameAr || property.propertyName)
       : (property.propertyNameEn || property.propertyName);
-    return name || this.i18n.instant('COMMON.UNKNOWN');
+    const display = name || this.i18n.instant('COMMON.UNKNOWN');
+    return property.propertyCode ? `${property.propertyCode} — ${display}` : display;
   }
 
   loadData(): void {
-    this.loading = true;
+    this.listLoad.begin();
     const maintenanceEnabled = this.permissions.can('maintenance', 'view');
     const inventoryEnabled = this.permissions.can('inventory', 'view');
     const pid = this.selectedPropertyId;
@@ -113,8 +115,6 @@ export class DashboardComponent implements OnInit {
       ? this.financeSvc.getDashboard(pid ?? undefined).pipe(catchError(() => of({ data: null })))
       : of({ data: null });
 
-    const activityObs$ = this.dashSvc.getRecentActivity(12, pid ?? undefined).pipe(catchError(() => of({ data: [] })));
-
     forkJoin({
       stats: statsObs$,
       requests: maintenanceEnabled
@@ -124,13 +124,10 @@ export class DashboardComponent implements OnInit {
       trend: maintenanceEnabled
         ? this.dashSvc.getMonthlyTrend(pid ?? undefined).pipe(catchError(() => of({ data: [] })))
         : of({ data: [] }),
-      finance: financeObs$,
-      activity: activityObs$
-    }).subscribe(({ stats, requests, stock, trend, finance, activity }) => {
+      finance: financeObs$
+    }).subscribe(({ stats, requests, stock, trend, finance }) => {
       this.stats = stats.data ?? null;
       this.financeStats = finance.data ?? null;
-      this.recentActivity = activity.data ?? [];
-      this.activityPageIndex = 0;
       this.recentRequests = requests.data?.content ?? [];
       this.lowStockItems = ((stock.data as { content?: InventoryItem[] })?.content ?? []).slice(0, 5);
       const trendPoints = trend.data ?? [];
@@ -142,7 +139,7 @@ export class DashboardComponent implements OnInit {
         this.trendLabels = [];
       }
 
-      this.loading = false;
+      this.listLoad.end();
     });
   }
 
@@ -164,10 +161,6 @@ export class DashboardComponent implements OnInit {
 
   get vacantLabel(): string {
     return this.i18n.instant('DASHBOARD.VACANT');
-  }
-
-  get requestsStatusLabel(): string {
-    return this.i18n.instant('DASHBOARD.REQUESTS_BY_STATUS');
   }
 
   get lowStockLabel(): string {
@@ -193,11 +186,7 @@ export class DashboardComponent implements OnInit {
   }
 
   formatCurrency(amount: number): string {
-    return new Intl.NumberFormat(this.i18n.currentLang === 'ar' ? 'ar-SA' : 'en-US', {
-      style: 'currency',
-      currency: 'SAR',
-      maximumFractionDigits: 0
-    }).format(amount ?? 0);
+    return this.i18n.formatCurrency(amount, 'SAR', { maximumFractionDigits: 0 });
   }
 
   get donutCircumference(): number {
@@ -217,16 +206,6 @@ export class DashboardComponent implements OnInit {
     return `${line} L 716 180 L 4 180 Z`;
   }
 
-  get statusTiles(): StatusTile[] {
-    const byStatus = this.stats?.requestsByStatus ?? {};
-    return [
-      { status: 'PENDING', label: this.statusLabel('PENDING'), value: byStatus['PENDING'] ?? this.stats?.pendingRequests ?? 0 },
-      { status: 'IN_PROGRESS', label: this.statusLabel('IN_PROGRESS'), value: byStatus['IN_PROGRESS'] ?? this.stats?.inProgressRequests ?? 0 },
-      { status: 'COMPLETED', label: this.statusLabel('COMPLETED'), value: byStatus['COMPLETED'] ?? this.stats?.completedThisMonth ?? 0 },
-      { status: 'NEEDS_REVISIT', label: this.statusLabel('NEEDS_REVISIT'), value: byStatus['NEEDS_REVISIT'] ?? this.stats?.lowStockItems ?? 0 }
-    ];
-  }
-
   stockLevel(item: InventoryItem): number {
     if (item.minQuantity <= 0) return 100;
     return Math.min(100, Math.round((item.quantity / item.minQuantity) * 100));
@@ -242,17 +221,6 @@ export class DashboardComponent implements OnInit {
 
   priorityLabel(priority: string): string {
     return this.i18n.instant(`PRIORITY.${priority}`);
-  }
-
-  activityLabel(item: RecentActivityItem): string {
-    const key = `DASHBOARD.ACTIVITY_${item.category}`;
-    const translated = this.i18n.instant(key);
-    return translated !== key ? translated : item.category;
-  }
-
-  get pagedRecentActivity(): RecentActivityItem[] {
-    const start = this.activityPageIndex * this.activityPageSize;
-    return this.recentActivity.slice(start, start + this.activityPageSize);
   }
 
   openMaintenanceContractDialog(): void {

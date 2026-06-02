@@ -1,4 +1,5 @@
-import { DatePipe, NgClass, NgFor, NgIf } from '@angular/common';
+import { DialogTitleCloseDirective } from './../../../shared/directives/dialog-title-close.directive';
+import { DatePipe, NgFor, NgIf } from '@angular/common';
 import { Component, Inject, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -14,6 +15,7 @@ import { ComplaintDetail } from '../../../core/models/contract.model';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { LookupCacheService } from '../../../core/services/lookup-cache.service';
 import { PermissionService } from '../../../core/services/permission.service';
+import { AuditTrailComponent } from '../../../shared/components/audit-trail/audit-trail.component';
 
 export interface ComplaintDetailDialogData {
   complaintId: number;
@@ -23,10 +25,10 @@ export interface ComplaintDetailDialogData {
   selector: 'app-complaint-detail-dialog',
   standalone: true,
   imports: [
-    NgIf, NgFor, NgClass, DatePipe, RouterLink,
+    NgIf, NgFor, DatePipe, RouterLink,
     MatButtonModule, MatDialogModule, MatIconModule,
-    MatProgressSpinnerModule, MatTooltipModule, TranslateModule
-  ],
+    MatProgressSpinnerModule, MatTooltipModule, TranslateModule,
+    AuditTrailComponent, DialogTitleCloseDirective],
   templateUrl: './complaint-detail-dialog.component.html',
   styleUrl: './complaint-detail-dialog.component.scss'
 })
@@ -144,13 +146,20 @@ export class ComplaintDetailDialogComponent implements OnInit {
     return translated !== key ? translated : code;
   }
 
-  getPriorityClass(code?: string | null): string {
-    const m: Record<string, string> = { URGENT: 'chip-danger', HIGH: 'chip-warn', NORMAL: 'chip-info', LOW: 'chip-default' };
-    return m[code ?? ''] ?? 'chip-default';
+  priorityBadgeStatus(code?: string | null): string {
+    const normalized = (code ?? 'NORMAL').toUpperCase();
+    if (normalized === 'LOW') return 'LOW';
+    if (normalized === 'HIGH') return 'HIGH';
+    if (normalized === 'URGENT') return 'URGENT';
+    return 'NORMAL';
   }
 
-  getStatusClass(code?: string | null): string {
-    const m: Record<string, string> = { OPEN: 'chip-warn', IN_REVIEW: 'chip-info', RESOLVED: 'chip-success', CLOSED: 'chip-default' };
-    return m[code ?? ''] ?? 'chip-default';
+  complaintBadgeStatus(code?: string | null): string {
+    const normalized = (code ?? 'OPEN').toUpperCase();
+    if (normalized === 'OPEN') return 'PENDING';
+    if (normalized === 'IN_REVIEW') return 'IN_PROGRESS';
+    if (normalized === 'RESOLVED') return 'COMPLETED';
+    if (normalized === 'CLOSED') return 'CANCELLED';
+    return normalized;
   }
 }

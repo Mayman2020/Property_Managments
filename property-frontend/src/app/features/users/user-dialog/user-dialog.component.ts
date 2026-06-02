@@ -1,5 +1,6 @@
+import { DialogTitleCloseDirective } from './../../../shared/directives/dialog-title-close.directive';
 ﻿import { Component, Inject, OnInit } from '@angular/core';
-import { DatePipe, NgFor, NgIf } from '@angular/common';
+import { NgFor, NgIf } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
@@ -19,6 +20,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { SearchableSelectComponent } from '../../../shared/components/searchable-select/searchable-select.component';
 import { IdentityMediaFieldsComponent } from '../../../shared/components/identity-media-fields/identity-media-fields.component';
+import { AuditTrailComponent } from '../../../shared/components/audit-trail/audit-trail.component';
 
 export interface UserDialogData {
   user: User | null;
@@ -30,15 +32,15 @@ export interface UserDialogData {
   selector: 'app-user-dialog',
   standalone: true,
   imports: [
-    NgIf, NgFor, DatePipe, ReactiveFormsModule,
+    NgIf, NgFor, ReactiveFormsModule,
     MatDialogModule,
     MatIconModule,
     MatButtonModule,
     MatFormFieldModule, MatInputModule,
     MatProgressSpinnerModule, MatSelectModule, SearchableSelectComponent,
     TranslateModule,
-    IdentityMediaFieldsComponent
-  ],
+    IdentityMediaFieldsComponent,
+    AuditTrailComponent, DialogTitleCloseDirective],
   template: `
     <h2 mat-dialog-title class="dialog-title">
       <mat-icon class="dialog-title-icon">{{ data.user ? 'person' : 'person_add' }}</mat-icon>
@@ -178,14 +180,14 @@ export interface UserDialogData {
         </app-searchable-select>
       </form>
 
-      <!-- Audit info (edit mode only) -->
-      <div class="audit-footer" *ngIf="data.user">
-        <mat-icon>history</mat-icon>
-        <span>{{ 'AUDIT.CREATED_AT' | translate }}: <strong>{{ data.user.createdAt | date:'dd/MM/yyyy HH:mm' }}</strong></span>
-        <span *ngIf="data.user.updatedAt"> · {{ 'AUDIT.UPDATED_AT' | translate }}: <strong>{{ data.user.updatedAt | date:'dd/MM/yyyy HH:mm' }}</strong></span>
-        <span *ngIf="data.user.createdByName"> · {{ 'AUDIT.CREATED_BY' | translate }}: <strong>{{ data.user.createdByName }}</strong></span>
-        <span *ngIf="data.user.modifiedByName"> · {{ 'AUDIT.MODIFIED_BY' | translate }}: <strong>{{ data.user.modifiedByName }}</strong></span>
-      </div>
+      <app-audit-trail *ngIf="data.user" class="full"
+        [createdAt]="data.user.createdAt"
+        [updatedAt]="data.user.updatedAt"
+        [createdBy]="data.user.createdBy"
+        [createdByName]="data.user.createdByName"
+        [modifiedBy]="data.user.modifiedBy"
+        [modifiedByName]="data.user.modifiedByName">
+      </app-audit-trail>
     </mat-dialog-content>
     <div mat-dialog-actions align="end" class="dialog-actions-row">
       <button mat-stroked-button type="button" (click)="ref.close(false)">{{ 'ACTIONS.CANCEL' | translate }}</button>
@@ -225,14 +227,6 @@ export interface UserDialogData {
       opacity: 0.72;
       margin-bottom: 4px;
     }
-    .audit-footer {
-      display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px;
-      margin-top: 16px; padding: 10px 12px;
-      background: rgba(19, 78, 74, 0.05); border-radius: 8px;
-      font-size: 0.8rem; color: var(--text-muted);
-    }
-    .audit-footer mat-icon { font-size: 15px; width: 15px; height: 15px; vertical-align: middle; opacity: 0.6; }
-    .audit-footer strong { color: var(--text-main); }
     @media (max-width: 640px) { .user-dialog-form { grid-template-columns: 1fr; } }
   `]
 })

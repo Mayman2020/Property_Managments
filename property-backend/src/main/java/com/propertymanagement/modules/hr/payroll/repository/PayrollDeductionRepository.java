@@ -12,6 +12,8 @@ import java.util.List;
 public interface PayrollDeductionRepository extends JpaRepository<PayrollDeduction, Long> {
     boolean existsByEmployeeIdAndReasonIgnoreCaseAndPayrollMonth(Long employeeId, String reason, String payrollMonth);
 
+    boolean existsByEmployeeIdAndReasonIgnoreCaseAndPayrollMonthAndIdNot(Long employeeId, String reason, String payrollMonth, Long id);
+
     List<PayrollDeduction> findByEmployeeIdAndPayrollMonthAndStatus(Long employeeId, String payrollMonth, PayrollDeductionStatus status);
 
     Page<PayrollDeduction> findByEmployeeIdInOrderByCreatedAtDesc(Collection<Long> employeeIds, Pageable pageable);

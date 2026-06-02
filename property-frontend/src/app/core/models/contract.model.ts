@@ -156,6 +156,9 @@ export interface RentPaymentSchedule {
   propertyId?: number;
   propertyNameAr?: string;
   propertyNameEn?: string;
+  unitNumber?: string;
+  overdueReminderSentAt?: string;
+  overdueReminderSnoozedUntil?: string;
 }
 
 export interface RentPayment {

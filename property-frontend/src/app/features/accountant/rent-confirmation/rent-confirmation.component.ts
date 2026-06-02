@@ -12,6 +12,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { EstateLovOption, EstateLovSelectComponent } from '../../../shared/components/estate-lov-select/estate-lov-select.component';
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
 import { PaymentService } from '../../../core/services/payment.service';
 import { PropertyService, Property } from '../../../core/services/property.service';
@@ -29,7 +30,7 @@ import { RentPaymentSchedule } from '../../../core/models/contract.model';
     NgFor, NgIf, NgClass, DatePipe, DecimalPipe, ReactiveFormsModule,
     TranslateModule, MatButtonModule, MatFormFieldModule, MatInputModule,
     MatSelectModule, MatIconModule, MatProgressSpinnerModule, MatDialogModule,
-    MatTooltipModule, PageHeaderComponent, TablePagerComponent
+    MatTooltipModule, PageHeaderComponent, TablePagerComponent, EstateLovSelectComponent
   ],
   templateUrl: './rent-confirmation.component.html',
   styleUrl: './rent-confirmation.component.scss'
@@ -97,9 +98,22 @@ export class RentConfirmationComponent implements OnInit {
   }
 
   propertyLabel(p: Property): string {
-    return this.i18n.currentLang === 'ar'
+    const name = this.i18n.currentLang === 'ar'
       ? (p.propertyNameAr || p.propertyName)
       : (p.propertyNameEn || p.propertyName);
+    return p.propertyCode ? `${p.propertyCode} — ${name}` : name;
+  }
+
+  get propertyLovOptions(): EstateLovOption[] {
+    return this.properties.map((p) => ({ value: p.id, label: this.propertyLabel(p) }));
+  }
+
+  get yearLovOptions(): EstateLovOption[] {
+    return this.years.map((y) => ({ value: y, label: String(y) }));
+  }
+
+  get monthLovOptions(): EstateLovOption[] {
+    return this.months.map((m) => ({ value: m, label: this.monthLabel(m) }));
   }
 
   load(): void {

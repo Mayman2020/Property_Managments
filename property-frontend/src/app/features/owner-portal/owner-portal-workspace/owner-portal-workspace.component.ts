@@ -7,11 +7,13 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { OwnerDashboardDto, OwnerPortalService, OwnerPropertyItem, OwnerStatementItem } from '../../../core/services/owner-portal.service';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
+import { DEFAULT_TABLE_PAGE_SIZE, paginatedSlice } from '../../../core/utils/pagination.util';
 
 @Component({
   selector: 'app-owner-portal-workspace',
   standalone: true,
-  imports: [NgIf, NgFor, DecimalPipe, TranslateModule, PageHeaderComponent, MatButtonModule, MatIconModule, MatTooltipModule],
+  imports: [NgIf, NgFor, DecimalPipe, TranslateModule, PageHeaderComponent, MatButtonModule, MatIconModule, MatTooltipModule, TablePagerComponent],
   template: `
     <div class="app-page">
       <app-page-header
@@ -60,7 +62,7 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let item of statements">
+              <tr *ngFor="let item of pagedStatements">
                 <td>{{ item.propertyName || '-' }}</td>
                 <td>{{ item.statementMonth }}/{{ item.statementYear }}</td>
                 <td>{{ item.totalRevenue | number:'1.0-2' }}</td>
@@ -70,6 +72,12 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
             </tbody>
           </table>
         </div>
+        <app-table-pager
+          [length]="statements.length"
+          [pageSize]="pageSize"
+          [pageIndex]="statementsPageIndex"
+          (pageIndexChange)="statementsPageIndex = $event">
+        </app-table-pager>
       </div>
 
       <div class="app-card" *ngIf="section === 'properties'">
@@ -85,7 +93,7 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let item of properties">
+              <tr *ngFor="let item of pagedProperties">
                 <td>{{ item.propertyName }}</td>
                 <td>{{ item.propertyCode || '-' }}</td>
                 <td>{{ item.totalUnits || 0 }}</td>
@@ -99,6 +107,12 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
             </tbody>
           </table>
         </div>
+        <app-table-pager
+          [length]="properties.length"
+          [pageSize]="pageSize"
+          [pageIndex]="propertiesPageIndex"
+          (pageIndexChange)="propertiesPageIndex = $event">
+        </app-table-pager>
       </div>
 
       <ng-template #emptyTpl>
@@ -117,6 +131,17 @@ export class OwnerPortalWorkspaceComponent implements OnInit {
   statements: OwnerStatementItem[] = [];
   properties: OwnerPropertyItem[] = [];
   selectedPropertyId: number | null = null;
+  readonly pageSize = DEFAULT_TABLE_PAGE_SIZE;
+  statementsPageIndex = 0;
+  propertiesPageIndex = 0;
+
+  get pagedStatements(): OwnerStatementItem[] {
+    return paginatedSlice(this.statements, this.statementsPageIndex, this.pageSize);
+  }
+
+  get pagedProperties(): OwnerPropertyItem[] {
+    return paginatedSlice(this.properties, this.propertiesPageIndex, this.pageSize);
+  }
 
   constructor(
     private readonly route: ActivatedRoute,

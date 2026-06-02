@@ -162,7 +162,7 @@ function expectedDeepLink(type: string, n: NotifRow): string | null {
   ) {
     return '/admin/owner-portal/contract-approvals';
   }
-  if (n.requestId && n.requestId > 0 && type.startsWith('REQUEST_')) return '/admin/maintenance/';
+  if (n.requestId && n.requestId > 0 && (type.startsWith('REQUEST_') || type === 'MAINTENANCE_UPDATE' || type === 'MAINTENANCE_REQUEST_OVERDUE')) return '/admin/maintenance/';
   if (type === 'VACANCY_PUBLISHED') {
     const listingId = Number(p['listingId']);
     return Number.isFinite(listingId) && listingId > 0

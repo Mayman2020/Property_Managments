@@ -11,6 +11,7 @@ import { PropertyService, Property } from '../../../../core/services/property.se
 import { SnackService } from '../../../../core/services/snack.service';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { PageHeaderComponent } from '../../../../shared/components/page-header/page-header.component';
+import { EstateLovOption, EstateLovSelectComponent } from '../../../../shared/components/estate-lov-select/estate-lov-select.component';
 import { EmptyStateComponent } from '../../../../shared/components/empty-state/empty-state.component';
 import { TablePagerComponent } from '../../../../shared/components/table-pager/table-pager.component';
 import { ExportColumn, TableExportToolbarComponent } from '../../../../shared/components/table-export-toolbar/table-export-toolbar.component';
@@ -22,7 +23,7 @@ import { ExportColumn, TableExportToolbarComponent } from '../../../../shared/co
     NgIf, NgFor, NgClass, DatePipe, DecimalPipe, FormsModule,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule,
     TranslateModule,
-    PageHeaderComponent, EmptyStateComponent, TablePagerComponent, TableExportToolbarComponent
+    PageHeaderComponent, EmptyStateComponent, TablePagerComponent, TableExportToolbarComponent, EstateLovSelectComponent
   ],
   template: `
     <div class="app-page">
@@ -60,21 +61,22 @@ import { ExportColumn, TableExportToolbarComponent } from '../../../../shared/co
         <div class="estate-table-toolbar directory-toolbar">
           <div class="directory-toolbar-top">
             <div class="finance-filter-strip">
-              <label>{{ ('INLINE_TEXT.EXPIRING_WITHIN' | translate) }}</label>
-              <select [(ngModel)]="daysAhead" (change)="onFiltersChange()" class="estate-property-select">
-                <option [ngValue]="30">30 {{ ('INLINE_TEXT.DAYS' | translate) }}</option>
-                <option [ngValue]="60">60 {{ ('INLINE_TEXT.DAYS' | translate) }}</option>
-                <option [ngValue]="90">90 {{ ('INLINE_TEXT.DAYS' | translate) }}</option>
-                <option [ngValue]="180">180 {{ ('INLINE_TEXT.DAYS' | translate) }}</option>
-              </select>
+              <app-estate-lov-select
+                [label]="'INLINE_TEXT.EXPIRING_WITHIN'"
+                [options]="daysAheadLovOptions"
+                [(ngModel)]="daysAhead"
+                (ngModelChange)="onFiltersChange()">
+              </app-estate-lov-select>
 
-              <label *ngIf="properties.length">{{ ('INLINE_TEXT.PROPERTY' | translate) }}</label>
-              <select *ngIf="properties.length" [(ngModel)]="filterPropertyId" (change)="onFiltersChange()" class="estate-property-select">
-                <option [ngValue]="null">{{ ('INLINE_TEXT.ALL' | translate) }}</option>
-                <option *ngFor="let p of properties" [ngValue]="p.id">
-                  {{ i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName) }}
-                </option>
-              </select>
+              <app-estate-lov-select
+                *ngIf="properties.length"
+                [label]="'INLINE_TEXT.PROPERTY'"
+                [options]="propertyLovOptions"
+                [showAll]="true"
+                allLabelKey="INLINE_TEXT.ALL"
+                [(ngModel)]="filterPropertyId"
+                (ngModelChange)="onFiltersChange()">
+              </app-estate-lov-select>
             </div>
 
             <app-table-export-toolbar
@@ -166,6 +168,21 @@ export class ContractExpiryReportComponent implements OnInit {
   readonly pageSize = 5;
   pageIndex = 0;
 
+  get daysAheadLovOptions(): EstateLovOption[] {
+    const daysLabel = this.i18n.instant('INLINE_TEXT.DAYS');
+    return [30, 60, 90, 180].map((d) => ({
+      value: d,
+      label: `${d} ${daysLabel}`
+    }));
+  }
+
+  get propertyLovOptions(): EstateLovOption[] {
+    return this.properties.map((p) => ({
+      value: p.id,
+      label: this.propertyLovLabel(p)
+    }));
+  }
+
   get urgentCount(): number {
     return this.rows.filter(r => r.daysRemaining <= 30).length;
   }
@@ -228,5 +245,12 @@ export class ContractExpiryReportComponent implements OnInit {
     a.download = 'contract-expiry-report.csv';
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  private propertyLovLabel(p: Property): string {
+    const name = this.i18n.currentLang === 'ar'
+      ? (p.propertyNameAr || p.propertyName)
+      : (p.propertyNameEn || p.propertyName);
+    return p.propertyCode ? `${p.propertyCode} — ${name}` : name;
   }
 }

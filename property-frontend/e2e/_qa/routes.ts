@@ -78,7 +78,7 @@ export const ROUTES: RouteSpec[] = [
   { module: 'owner_portal', path: '/admin/owner-portal/properties', allow: ['SUPER_ADMIN', 'OWNER'] },
   { module: 'owner_portal', path: '/admin/owner-portal/contract-approvals', allow: ['SUPER_ADMIN', 'OWNER'] },
   { module: 'accountant_portal', path: '/admin/accountant-portal/rent-confirmation', allow: ACCT },
-  { module: 'accountant_portal', path: '/admin/accountant-portal/renewal-requests', allow: ACCT },
+  { module: 'accountant_portal', path: '/admin/owner-portal/contract-approvals?tab=renewals', allow: ACCT },
   { module: 'accountant_portal', path: '/admin/accountant-portal/maintenance-invoices', allow: ACCT },
 
   // Contracts

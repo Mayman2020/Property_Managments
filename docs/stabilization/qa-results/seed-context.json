@@ -1,0 +1,76 @@
+{
+  "propA": 1,
+  "propB": 2,
+  "contractA": 2,
+  "contractB": 2,
+  "companyA": 1,
+  "employeeId": 7,
+  "unitsA": [
+    4,
+    3,
+    2,
+    1
+  ],
+  "credentials": {
+    "SA": {
+      "email": "admin@propmgmt.com",
+      "password": "12345",
+      "role": "SUPER_ADMIN"
+    },
+    "GM": {
+      "email": "qa.gm@propmgmt.com",
+      "password": "111111",
+      "role": "GENERAL_MANAGER"
+    },
+    "AC": {
+      "email": "qa.ac@propmgmt.com",
+      "password": "222222",
+      "role": "ACCOUNTANT"
+    },
+    "HR": {
+      "email": "qa.hr@propmgmt.com",
+      "password": "333333",
+      "role": "HR_OFFICER"
+    },
+    "OWA": {
+      "email": "qa.owner.a@propmgmt.com",
+      "password": "444444",
+      "role": "OWNER"
+    },
+    "OWB": {
+      "email": "qa.owner.b@propmgmt.com",
+      "password": "444444",
+      "role": "OWNER"
+    },
+    "TNA": {
+      "email": "qa.tenant.a@propmgmt.com",
+      "password": "555555",
+      "role": "TENANT"
+    },
+    "TNB": {
+      "email": "qa.tenant.b@propmgmt.com",
+      "password": "555555",
+      "role": "TENANT"
+    },
+    "MC": {
+      "email": "qa.mc@propmgmt.com",
+      "password": "666666",
+      "role": "MAINTENANCE_COMPANY"
+    },
+    "MO": {
+      "email": "qa.mo@propmgmt.com",
+      "password": "666666",
+      "role": "MAINTENANCE_OFFICER_COMPANY"
+    },
+    "PG": {
+      "email": "qa.guard@propmgmt.com",
+      "password": "111111",
+      "role": "PROPERTY_GUARD"
+    },
+    "PC": {
+      "email": "qa.clerk@propmgmt.com",
+      "password": "222222",
+      "role": "PROCEDURES_CLERK"
+    }
+  }
+}

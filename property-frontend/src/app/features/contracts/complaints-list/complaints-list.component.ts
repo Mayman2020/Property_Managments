@@ -10,12 +10,14 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { TranslateModule } from '@ngx-translate/core';
 import { Location } from '@angular/common';
+import { ActivatedRoute } from '@angular/router';
 import { catchError, of } from 'rxjs';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
 import { FilterBarComponent, FilterSpec } from '../../../shared/components/filter-bar/filter-bar.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
+import { TableRowIndexPipe } from '../../../shared/pipes/table-row-index.pipe';
 import { ComplaintService } from '../../../core/services/complaint.service';
 import { TenantComplaint } from '../../../core/models/contract.model';
 import { PropertyService, Property } from '../../../core/services/property.service';
@@ -24,6 +26,8 @@ import { LookupItem, LookupType } from '../../../core/services/lookup.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { ComplaintDetailDialogComponent } from '../complaint-detail-dialog/complaint-detail-dialog.component';
+import { ListLoadController } from '../../../shared/utils/list-load.util';
+import { SnackService } from '../../../core/services/snack.service';
 
 @Component({
   selector: 'app-complaints-list',
@@ -32,13 +36,14 @@ import { ComplaintDetailDialogComponent } from '../complaint-detail-dialog/compl
     NgIf, NgFor, DatePipe, NgClass, FormsModule,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule, MatDialogModule,
     TranslateModule, PageHeaderComponent, TablePagerComponent, FilterBarComponent,
-    EmptyStateComponent
+    EmptyStateComponent,
+    TableRowIndexPipe
   ],
   templateUrl: './complaints-list.component.html',
   styleUrl: './complaints-list.component.scss'
 })
 export class ComplaintsListComponent implements OnInit {
-  loading = true;
+  listLoad = new ListLoadController();
   complaints: TenantComplaint[] = [];
   totalElements = 0;
   creatingRequestId: number | null = null;
@@ -51,15 +56,18 @@ export class ComplaintsListComponent implements OnInit {
   properties: Property[] = [];
   loadingProperties = false;
   pageFilters: FilterSpec[] = [];
+  private pendingComplaintId: number | null = null;
 
   constructor(
     private readonly complaintSvc: ComplaintService,
     private readonly propertySvc: PropertyService,
     private readonly location: Location,
+    private readonly route: ActivatedRoute,
     private readonly dialog: MatDialog,
     readonly lookupCache: LookupCacheService,
     readonly i18n: I18nService,
-    private readonly permissions: PermissionService
+    private readonly permissions: PermissionService,
+    private readonly snack: SnackService
   ) {}
 
   canResolveComplaint(): boolean {
@@ -69,6 +77,11 @@ export class ComplaintsListComponent implements OnInit {
   goBack(): void { this.location.back(); }
 
   ngOnInit(): void {
+    this.route.queryParamMap.subscribe((params) => {
+      const id = Number(params.get('complaintId'));
+      this.pendingComplaintId = Number.isFinite(id) && id > 0 ? id : null;
+      this.tryOpenPendingComplaint();
+    });
     this.loadProperties();
     this.lookupCache.preload('COMPLAINT_STATUS', 'COMPLAINT_PRIORITY', 'COMPLAINT_TYPE').subscribe(() => {
       this.setupFilters();
@@ -81,7 +94,7 @@ export class ComplaintsListComponent implements OnInit {
   }
 
   load(): void {
-    this.loading = true;
+    this.listLoad.begin();
     const params: Record<string, string | number> = { page: this.pageIndex, size: this.pageSize };
     if (this.filterStatus) params['status'] = this.filterStatus;
     if (this.filterPropertyId) params['propertyId'] = this.filterPropertyId;
@@ -91,8 +104,29 @@ export class ComplaintsListComponent implements OnInit {
         const d = res.data;
         this.complaints = d.content ?? d ?? [];
         this.totalElements = d.totalElements ?? this.complaints.length;
+      } else {
+        this.snack.error(this.i18n.instant('COMMON.ERROR'));
       }
-      this.loading = false;
+      this.listLoad.end();
+      this.tryOpenPendingComplaint();
+    });
+  }
+
+  private tryOpenPendingComplaint(): void {
+    if (this.pendingComplaintId == null || this.listLoad.loading) return;
+    const onPage = this.complaints.find((c) => c.id === this.pendingComplaintId);
+    if (onPage) {
+      this.openDetails(onPage);
+      this.pendingComplaintId = null;
+      return;
+    }
+    const id = this.pendingComplaintId;
+    this.complaintSvc.getById(id).pipe(catchError(() => of(null))).subscribe((res) => {
+      const complaint = res?.data ?? res;
+      if (complaint?.id) {
+        this.openDetails(complaint as TenantComplaint);
+      }
+      this.pendingComplaintId = null;
     });
   }
 
@@ -163,6 +197,7 @@ export class ComplaintsListComponent implements OnInit {
         c.propertyNameEn,
         c.unitNumber,
         this.tenantDisplayName(c),
+        this.propertyUnitDisplay(c),
         this.complaintDisplayTitle(c),
         this.lookupLabel('COMPLAINT_TYPE', c.complaintType),
         this.lookupLabel('COMPLAINT_STATUS', c.status),
@@ -233,6 +268,15 @@ export class ComplaintsListComponent implements OnInit {
       ? (c.propertyNameAr || c.propertyNameEn || c.propertyName)
       : (c.propertyNameEn || c.propertyNameAr || c.propertyName);
     return name || '';
+  }
+
+  propertyUnitDisplay(c: TenantComplaint): string {
+    const property = this.propertyDisplayName(c);
+    const unit = (c.unitNumber || '').trim();
+    if (property && unit) return `${property} — ${unit}`;
+    if (property) return property;
+    if (unit) return unit;
+    return '—';
   }
 
   complaintDisplayTitle(c: TenantComplaint): string {

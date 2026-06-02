@@ -1,3 +1,4 @@
+import { DialogTitleCloseDirective } from './../../../shared/directives/dialog-title-close.directive';
 import { Component, Inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NgFor, NgIf } from '@angular/common';
@@ -26,8 +27,7 @@ export interface OwnerRenewalDecisionDialogResult {
   standalone: true,
   imports: [
     NgIf, NgFor, ReactiveFormsModule, TranslateModule,
-    MatDialogModule, MatButtonModule, MatFormFieldModule, MatInputModule
-  ],
+    MatDialogModule, MatButtonModule, MatFormFieldModule, MatInputModule, DialogTitleCloseDirective],
   template: `
     <div class="dialog-shell">
       <h2 mat-dialog-title>

@@ -34,7 +34,9 @@ public interface ComplaintRatingRepository extends JpaRepository<ComplaintRating
                 u.unitNumber,
                 t.fullName,
                 t.fullNameAr,
-                t.fullNameEn
+                t.fullNameEn,
+                t.id,
+                t.nationalId
             )
             FROM ComplaintRating r
             JOIN TenantComplaint c ON c.id = r.complaintId
@@ -64,7 +66,9 @@ public interface ComplaintRatingRepository extends JpaRepository<ComplaintRating
                 u.unitNumber,
                 t.fullName,
                 t.fullNameAr,
-                t.fullNameEn
+                t.fullNameEn,
+                t.id,
+                t.nationalId
             )
             FROM ComplaintRating r
             JOIN TenantComplaint c ON c.id = r.complaintId
@@ -82,9 +86,38 @@ public interface ComplaintRatingRepository extends JpaRepository<ComplaintRating
                 WHEN 'SATISFIED' THEN 3
                 WHEN 'DISSATISFIED' THEN 2
                 WHEN 'VERY_DISSATISFIED' THEN 1
+                WHEN 'EXCELLENT' THEN 4
+                WHEN 'VERY_GOOD' THEN 4
+                WHEN 'GOOD' THEN 3
+                WHEN 'FAIR' THEN 2
+                WHEN 'POOR' THEN 1
                 ELSE 0
             END)
             FROM ComplaintRating r
             """)
     Double getAverageRatingScore();
+
+    @Query("""
+            SELECT COUNT(r) FROM ComplaintRating r
+            WHERE r.rating IN ('VERY_SATISFIED', 'EXCELLENT', 'VERY_GOOD')
+            """)
+    long countVerySatisfied();
+
+    @Query("""
+            SELECT COUNT(r) FROM ComplaintRating r
+            WHERE r.rating IN ('SATISFIED', 'GOOD')
+            """)
+    long countSatisfied();
+
+    @Query("""
+            SELECT COUNT(r) FROM ComplaintRating r
+            WHERE r.rating IN ('DISSATISFIED', 'FAIR')
+            """)
+    long countDissatisfied();
+
+    @Query("""
+            SELECT COUNT(r) FROM ComplaintRating r
+            WHERE r.rating IN ('VERY_DISSATISFIED', 'POOR')
+            """)
+    long countVeryDissatisfied();
 }

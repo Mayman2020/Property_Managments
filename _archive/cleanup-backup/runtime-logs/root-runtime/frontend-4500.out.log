@@ -1,0 +1,53 @@
+[22:00:08] Detected Node.js v22.16.0. Recommended runtime for Angular 17 is Node 18 or 20.
+[22:00:08] Continuing with Node.js v22.16.0, but if Vite errors continue install/use Node 20 (recommended).
+[22:00:08] Using Node.js v22.16.0
+[22:00:11] Port 4500 is free.
+[22:00:12] Backend API target: http://localhost:8082/api/v1
+[22:00:12] Runtime frontend config: D:\Apps Work\My Apps\Property_Managments\property-frontend\src\assets\runtime-config.js
+[22:00:12] Starting frontend (ng serve)...
+[22:00:12]   URL: http://localhost:4500
+[22:00:12]   Stop with Ctrl+C
+
+Initial chunk files | Names                       |  Raw size
+chunk-7JVI2TJH.js   | -                           | 942.54 kB | 
+chunk-EAKUCR36.js   | -                           | 363.48 kB | 
+chunk-X6SHESMP.js   | -                           | 213.11 kB | 
+chunk-3OABQEJE.js   | -                           | 185.92 kB | 
+chunk-DNO4NGMG.js   | -                           | 183.63 kB | 
+styles.css          | styles                      | 149.99 kB | 
+polyfills.js        | polyfills                   |  88.09 kB | 
+chunk-5AFFJBBF.js   | -                           |  81.61 kB | 
+chunk-BWTGV5TZ.js   | -                           |  36.70 kB | 
+main.js             | main                        |  26.13 kB | 
+chunk-CKLZLMHW.js   | -                           |  13.00 kB | 
+chunk-P5WZJUDQ.js   | -                           |  13.00 kB | 
+chunk-VCJGNTFT.js   | -                           |  10.33 kB | 
+chunk-7EZ2A74K.js   | -                           |   4.86 kB | 
+chunk-ASLTLD6L.js   | -                           |   3.11 kB | 
+
+                    | Initial total               |   2.26 MB
+
+Lazy chunk files    | Names                       |  Raw size
+chunk-MVPNQ4ZS.js   | xlsx                        | 856.67 kB | 
+chunk-W56PDJIE.js   | jspdf-es-min                | 651.35 kB | 
+chunk-6YQ25ILW.js   | html2canvas                 | 390.88 kB | 
+chunk-6THPQKXM.js   | index-es                    | 362.99 kB | 
+chunk-P4XTAC4E.js   | property-list-component     | 283.94 kB | 
+chunk-KNE4FAVK.js   | -                           | 253.80 kB | 
+chunk-WNG5RGY7.js   | -                           | 229.75 kB | 
+chunk-CVBJMQS6.js   | -                           | 202.93 kB | 
+chunk-TXPI5IFB.js   | contract-detail-component   | 187.67 kB | 
+chunk-UAF6E2JZ.js   | -                           | 169.45 kB | 
+chunk-YJT3JYVD.js   | -                           | 159.03 kB | 
+chunk-2KOQB2F6.js   | -                           | 150.86 kB | 
+chunk-XSCCSPCR.js   | browser                     | 143.48 kB | 
+chunk-6JAQU4AX.js   | -                           | 131.22 kB | 
+chunk-LI3B4KR3.js   | lookup-management-component | 121.61 kB | 
+...and 111 more lazy chunks files. Use "--verbose" to show all the files.
+
+Application bundle generation complete. [36.215 seconds]
+
+Watch mode enabled. Watching for file changes...
+  ➜  Local:   http://localhost:4500/
+
+[22:02:22] Frontend exited with failure (exit code -1).

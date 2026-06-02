@@ -52,8 +52,17 @@ export interface FinancialReportRow {
 export interface BudgetItem {
   id: number;
   propertyId?: number;
+  propertyName?: string;
+  categoryId?: number;
   categoryName?: string;
+  categoryNameAr?: string;
+  categoryNameEn?: string;
+  periodName?: string;
   budgetedAmount: number;
+  actualAmount?: number;
+  variance?: number;
+  utilizationPercent?: number;
+  overBudget?: boolean;
 }
 
 export type FinanceExportType = 'RENT_INCOME' | 'EXPENSES' | 'PAYROLL' | 'ALL';
@@ -85,8 +94,11 @@ export class FinanceService {
     return this.api.get(AppConstants.API.FINANCE_REVENUES, params);
   }
 
-  getBudgets(propertyId?: number): Observable<ApiResponse<BudgetItem[]>> {
-    return this.api.get(AppConstants.API.FINANCE_BUDGETS, propertyId ? { propertyId } : {});
+  getBudgets(propertyId?: number, year?: number): Observable<ApiResponse<BudgetItem[]>> {
+    const params: Record<string, number> = {};
+    if (propertyId) params['propertyId'] = propertyId;
+    if (year) params['year'] = year;
+    return this.api.get(AppConstants.API.FINANCE_BUDGETS, params);
   }
 
   getPnl(propertyId?: number, yearFrom?: number, yearTo?: number): Observable<ApiResponse<FinancialReportRow[]>> {

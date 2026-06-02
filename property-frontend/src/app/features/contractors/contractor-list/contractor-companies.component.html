@@ -12,36 +12,42 @@
     </button>
   </app-page-header>
 
-  <div class="loading-center" *ngIf="loading"><mat-spinner diameter="40"></mat-spinner></div>
+  <div class="loading-center" *ngIf="listLoad.showInitialSpinner"><mat-spinner diameter="40"></mat-spinner></div>
 
   <app-empty-state
-    *ngIf="!loading && companies.length === 0 && !hasFiltersBar()"
+    *ngIf="listLoad.showSurface && companies.length === 0 && !hasFiltersBar()"
     icon="engineering"
     [title]="'CONTRACTORS.EMPTY_TITLE' | translate"
     [message]="'CONTRACTORS.EMPTY_MSG' | translate">
   </app-empty-state>
 
-  <div class="app-card table-card directory-table-card" *ngIf="!loading && (companies.length > 0 || hasFiltersBar())">
+  <div class="app-card table-card directory-table-card app-list-surface"
+    [class.is-refreshing]="listLoad.refreshing"
+    *ngIf="listLoad.showSurface && (companies.length > 0 || hasFiltersBar())">
+    <div class="list-refresh-spinner" *ngIf="listLoad.refreshing"><mat-spinner diameter="32"></mat-spinner></div>
     <div class="estate-table-toolbar directory-toolbar">
-      <div class="directory-toolbar-top">
+      <div class="directory-toolbar-top table-list-toolbar">
         <div class="directory-search">
           <mat-icon>search</mat-icon>
           <input [value]="searchTerm" (input)="onSearch($any($event.target).value)" [placeholder]="'ACTIONS.SEARCH' | translate">
         </div>
         <div class="finance-filter-strip" *ngIf="properties.length > 0">
-          <label>{{ 'REQUEST_FORM.PROPERTY' | translate }}</label>
-          <select [(ngModel)]="filterPropertyId" (change)="onPropertyChange()" class="estate-property-select">
-            <option [ngValue]="null">{{ 'COMMON.ALL' | translate }}</option>
-            <option *ngFor="let p of properties" [ngValue]="p.id">
-              {{ i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName) }}
-            </option>
-          </select>
-          <label>{{ 'COMMON.STATUS' | translate }}</label>
-          <select [(ngModel)]="filterActive" (change)="onStatusChange()" class="estate-property-select">
-            <option [ngValue]="null">{{ 'COMMON.ALL' | translate }}</option>
-            <option [ngValue]="true">{{ 'COMMON.ACTIVE' | translate }}</option>
-            <option [ngValue]="false">{{ 'COMMON.INACTIVE' | translate }}</option>
-          </select>
+          <app-estate-lov-select
+            [label]="'REQUEST_FORM.PROPERTY'"
+            [options]="propertyLovOptions"
+            [showAll]="true"
+            allLabelKey="COMMON.ALL"
+            [(ngModel)]="filterPropertyId"
+            (ngModelChange)="onPropertyChange()">
+          </app-estate-lov-select>
+          <app-estate-lov-select
+            [label]="'COMMON.STATUS'"
+            [options]="activeStatusLovOptions"
+            [showAll]="true"
+            allLabelKey="COMMON.ALL"
+            [(ngModel)]="filterActive"
+            (ngModelChange)="onStatusChange()">
+          </app-estate-lov-select>
         </div>
         <button mat-icon-button class="clear-filters-btn" (click)="clearFiltersFromBar()" *ngIf="hasFiltersBar()" [matTooltip]="'ACTIONS.CLEAR_FILTERS' | translate">
           <mat-icon>filter_alt_off</mat-icon>
@@ -51,7 +57,7 @@
           [title]="'CONTRACTORS.TITLE' | translate"
           fileName="contractors"
           [columns]="exportColumns"
-          [rows]="filteredCompanies">
+          [rows]="companies">
         </app-table-export-toolbar>
       </div>
     </div>
@@ -59,7 +65,7 @@
       <table class="app-data-table">
         <thead>
           <tr>
-            <th>#</th>
+            <th class="table-index-col">#</th>
             <th>{{ 'CONTRACTORS.NAME' | translate }}</th>
             <th>{{ 'CONTRACTORS.CONTRACT_START' | translate }}</th>
             <th>{{ 'CONTRACTORS.CONTRACT_END' | translate }}</th>
@@ -70,16 +76,15 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let c of pagedCompanies">
-            <td>{{ c.id }}</td>
+          <tr *ngFor="let c of pagedCompanies; let i = index">
+            <td class="table-index-col">{{ i | tableRowIndex:pageIndex:pageSize }}</td>
             <td>
-              <div class="company-name-cell">
-                <img *ngIf="c.profileImageUrl" [src]="c.profileImageUrl" class="company-avatar" alt="">
-                <span class="avatar-placeholder" *ngIf="!c.profileImageUrl">
-                  {{ companyName(c).charAt(0).toUpperCase() }}
-                </span>
-                <strong>{{ companyName(c) }}</strong>
-              </div>
+              <app-table-entity-cell
+                [title]="companyName(c)"
+                [subtitle]="companySubtitle(c)"
+                [imageUrl]="c.profileImageUrl"
+                [initial]="companyName(c).charAt(0).toUpperCase()">
+              </app-table-entity-cell>
             </td>
             <td>{{ formatDate(c.latestContractStart || c.contractStart) }}</td>
             <td>{{ formatDate(c.latestContractEnd || c.contractEnd) }}</td>
@@ -111,12 +116,12 @@
               </div>
             </td>
           </tr>
-          <tr *ngIf="filteredCompanies.length === 0">
+          <tr *ngIf="companies.length === 0">
             <td colspan="8" class="empty-row">{{ 'COMMON.NO_DATA' | translate }}</td>
           </tr>
         </tbody>
       </table>
     </div>
-    <app-table-pager [length]="filteredCompanies.length" [pageSize]="pageSize" [pageIndex]="pageIndex" (pageIndexChange)="pageIndex = $event"></app-table-pager>
+    <app-table-pager [length]="totalElements" [pageSize]="pageSize" [pageIndex]="pageIndex" (pageIndexChange)="onPageChange($event)"></app-table-pager>
   </div>
 </div>

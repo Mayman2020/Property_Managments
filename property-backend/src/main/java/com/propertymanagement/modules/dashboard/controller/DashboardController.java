@@ -80,10 +80,10 @@ public class DashboardController {
         return ResponseEntity.ok(ApiResponse.ok(ComplaintRatingsSummaryResponse.builder()
                 .averageRating(complaintRatingRepository.getAverageRatingScore() == null ? 0.0 : complaintRatingRepository.getAverageRatingScore())
                 .totalRatings(complaintRatingRepository.count())
-                .veryDissatisfied(complaintRatingRepository.countByRating("VERY_DISSATISFIED"))
-                .dissatisfied(complaintRatingRepository.countByRating("DISSATISFIED"))
-                .satisfied(complaintRatingRepository.countByRating("SATISFIED"))
-                .verySatisfied(complaintRatingRepository.countByRating("VERY_SATISFIED"))
+                .veryDissatisfied(complaintRatingRepository.countVeryDissatisfied())
+                .dissatisfied(complaintRatingRepository.countDissatisfied())
+                .satisfied(complaintRatingRepository.countSatisfied())
+                .verySatisfied(complaintRatingRepository.countVerySatisfied())
                 .build()));
     }
 

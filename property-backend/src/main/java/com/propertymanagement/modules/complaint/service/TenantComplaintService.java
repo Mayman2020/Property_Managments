@@ -35,6 +35,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -173,7 +174,7 @@ public class TenantComplaintService {
             attachmentRepository.saveAll(attachments);
         }
 
-        notifyAdminAudience(saved.getPropertyId(),
+        notifyAdminAudience(saved.getPropertyId(), saved.getId(),
                 NotificationType.COMPLAINT_SUBMITTED,
                 "NOTIFICATIONS.COMPLAINT_SUBMITTED_TITLE",
                 "NOTIFICATIONS.COMPLAINT_SUBMITTED_BODY",
@@ -251,10 +252,11 @@ public class TenantComplaintService {
                 .map(t -> t.getUserId()).orElse(null);
         if (tenantUserId != null) {
             notificationService.createForRecipients(
-                    List.of(tenantUserId), null, complaint.getPropertyId(), null,
+                    List.of(tenantUserId), null, complaint.getPropertyId(), id,
                     NotificationType.COMPLAINT_REPLY_RECEIVED,
                     "رد على شكواك",
-                    "تم الرد على شكواك: " + complaint.getTitle());
+                    "تم الرد على شكواك: " + complaint.getTitle(),
+                    Map.of("complaintId", id));
         }
         return saved;
     }
@@ -281,7 +283,7 @@ public class TenantComplaintService {
         TenantComplaint saved = complaintRepository.save(complaint);
 
         if (me.getRole() == UserRole.TENANT) {
-            notifyAdminAudience(saved.getPropertyId(),
+            notifyAdminAudience(saved.getPropertyId(), saved.getId(),
                     NotificationType.COMPLAINT_CLOSED,
                     "NOTIFICATIONS.COMPLAINT_CLOSED_TITLE",
                     "NOTIFICATIONS.COMPLAINT_CLOSED_BODY",
@@ -291,10 +293,11 @@ public class TenantComplaintService {
                     .map(t -> t.getUserId()).orElse(null);
             if (tenantUserId != null) {
                 notificationService.createForRecipients(
-                        List.of(tenantUserId), null, saved.getPropertyId(), null,
+                        List.of(tenantUserId), null, saved.getPropertyId(), saved.getId(),
                         NotificationType.COMPLAINT_CLOSED,
                         "تم إغلاق شكواك",
-                        "تم إغلاق شكواك: " + saved.getTitle());
+                        "تم إغلاق شكواك: " + saved.getTitle(),
+                        Map.of("complaintId", saved.getId()));
             }
         }
         return saved;
@@ -332,10 +335,11 @@ public class TenantComplaintService {
         ).flatMap(List::stream).distinct().collect(Collectors.toList());
 
         notificationService.createForRecipients(
-                recipients, null, complaint.getPropertyId(), null,
+                recipients, null, complaint.getPropertyId(), id,
                 NotificationType.COMPLAINT_RATED,
                 "تقييم شكوى",
-                "تم تقييم الشكوى: " + complaint.getTitle());
+                "تم تقييم الشكوى: " + complaint.getTitle(),
+                Map.of("complaintId", id));
         return saved;
     }
 
@@ -558,7 +562,7 @@ public class TenantComplaintService {
                 .collect(Collectors.toList());
     }
 
-    private void notifyAdminAudience(Long propertyId, NotificationType type,
+    private void notifyAdminAudience(Long propertyId, Long complaintId, NotificationType type,
                                      String titleKey, String bodyKey,
                                      Map<String, Object> vars) {
         List<Long> ownerIds = propertyOwnerPortalRecipientService.portalRecipientUserIds(propertyId);
@@ -566,9 +570,13 @@ public class TenantComplaintService {
         List<Long> recipients = Stream.of(ownerIds, adminIds)
                 .flatMap(List::stream).distinct().collect(Collectors.toList());
         if (recipients.isEmpty()) return;
+        Map<String, Object> hints = new LinkedHashMap<>();
+        if (complaintId != null) {
+            hints.put("complaintId", complaintId);
+        }
         notificationService.createLocalized(
-                recipients, null, propertyId, null,
-                type, titleKey, bodyKey, vars, null);
+                recipients, null, propertyId, complaintId,
+                type, titleKey, bodyKey, vars, hints.isEmpty() ? null : hints);
     }
 
 }

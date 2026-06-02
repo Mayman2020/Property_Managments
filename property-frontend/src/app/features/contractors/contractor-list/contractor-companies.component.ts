@@ -10,8 +10,11 @@ import { TranslateModule } from '@ngx-translate/core';
 import { MatDialog } from '@angular/material/dialog';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { EstateLovOption, EstateLovSelectComponent } from '../../../shared/components/estate-lov-select/estate-lov-select.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
+import { TableEntityCellComponent } from '../../../shared/components/table-entity-cell/table-entity-cell.component';
+import { TableRowIndexPipe } from '../../../shared/pipes/table-row-index.pipe';
 import { ExportColumn, TableExportToolbarComponent } from '../../../shared/components/table-export-toolbar/table-export-toolbar.component';
 import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
 import { ContractorCompany, ContractorCompanyService } from '../../../core/services/contractor-company.service';
@@ -27,6 +30,7 @@ import {
 } from '../contractor-company-dialog/contractor-company-dialog.component';
 import { MaintenanceContractDialogComponent } from '../../contracts/maintenance-contract-dialog/maintenance-contract-dialog.component';
 import { ContractorCompanyStaffDialogComponent } from '../contractor-company-staff-dialog.component';
+import { ListLoadController } from '../../../shared/utils/list-load.util';
 
 @Component({
   selector: 'app-contractor-companies',
@@ -45,21 +49,38 @@ import { ContractorCompanyStaffDialogComponent } from '../contractor-company-sta
     EmptyStateComponent,
     TablePagerComponent,
     TableExportToolbarComponent,
-    HasPermissionDirective
+    TableEntityCellComponent,
+    TableRowIndexPipe,
+    HasPermissionDirective,
+    EstateLovSelectComponent
   ],
   templateUrl: './contractor-companies.component.html',
   styleUrl: './contractor-companies.component.scss'
 })
 export class ContractorCompaniesComponent implements OnInit {
   companies: ContractorCompany[] = [];
-  filteredCompanies: ContractorCompany[] = [];
   properties: Property[] = [];
   readonly pageSize = 5;
   pageIndex = 0;
-  loading = true;
+  totalElements = 0;
+  listLoad = new ListLoadController();
   searchTerm = '';
   filterActive: boolean | null = null;
   filterPropertyId: number | null = null;
+
+  get propertyLovOptions(): EstateLovOption[] {
+    return this.properties.map((p) => ({
+      value: p.id,
+      label: this.propertyLovLabel(p)
+    }));
+  }
+
+  get activeStatusLovOptions(): EstateLovOption[] {
+    return [
+      { value: true, label: this.i18n.instant('COMMON.ACTIVE') },
+      { value: false, label: this.i18n.instant('COMMON.INACTIVE') }
+    ];
+  }
 
   constructor(
     private readonly svc: ContractorCompanyService,
@@ -104,12 +125,12 @@ export class ContractorCompaniesComponent implements OnInit {
   onSearch(term: string): void {
     this.searchTerm = term;
     this.pageIndex = 0;
-    this.applyFilters();
+    this.load();
   }
 
   onStatusChange(): void {
     this.pageIndex = 0;
-    this.applyFilters();
+    this.load();
   }
 
   clearFiltersFromBar(): void {
@@ -124,31 +145,24 @@ export class ContractorCompaniesComponent implements OnInit {
     return !!(this.searchTerm || this.filterActive !== null || (this.properties.length > 0 && this.filterPropertyId !== null));
   }
 
-  private applyFilters(): void {
-    const q = this.searchTerm.trim().toLowerCase();
-    this.filteredCompanies = this.companies.filter(c => {
-      if (this.filterActive !== null && c.active !== this.filterActive) return false;
-      if (q) {
-        const name = this.companyName(c).toLowerCase();
-        return name.includes(q) || (c.email ?? '').toLowerCase().includes(q) || (c.phone ?? '').toLowerCase().includes(q);
+  private load(): void {
+    this.listLoad.begin();
+    const q = this.searchTerm.trim() || undefined;
+    this.svc.listPaged(this.pageIndex, this.pageSize, q, this.filterPropertyId, this.filterActive, true).subscribe({
+      next: (res) => {
+        this.companies = res.data?.content ?? [];
+        this.totalElements = res.data?.totalElements ?? this.companies.length;
+        this.listLoad.end();
+      },
+      error: () => {
+        this.listLoad.end();
       }
-      return true;
     });
   }
 
-  load(): void {
-    this.loading = true;
-    this.svc.list(true, undefined, this.filterPropertyId).subscribe({
-      next: (res) => {
-        this.companies = res.data ?? [];
-        this.applyFilters();
-        this.pageIndex = 0;
-        this.loading = false;
-      },
-      error: () => {
-        this.loading = false;
-      }
-    });
+  onPageChange(index: number): void {
+    this.pageIndex = index;
+    this.load();
   }
 
   private loadProperties(): void {
@@ -243,20 +257,23 @@ export class ContractorCompaniesComponent implements OnInit {
   }
 
   get pagedCompanies(): ContractorCompany[] {
-    const start = this.pageIndex * this.pageSize;
-    return this.filteredCompanies.slice(start, start + this.pageSize);
-  }
-
-  get totalPages(): number {
-    return Math.max(1, Math.ceil(this.filteredCompanies.length / this.pageSize));
+    return this.companies;
   }
 
   changePage(step: number): void {
-    this.pageIndex = Math.max(0, Math.min(this.pageIndex + step, this.totalPages - 1));
+    const totalPages = Math.max(1, Math.ceil(this.totalElements / this.pageSize));
+    const next = this.pageIndex + step;
+    this.onPageChange(Math.max(0, Math.min(next, totalPages - 1)));
   }
 
   companyName(company: ContractorCompany): string {
     return (this.isArabic ? company.nameAr : company.nameEn) || company.name || '-';
+  }
+
+  companySubtitle(company: ContractorCompany): string | undefined {
+    const primary = this.companyName(company);
+    const secondary = (this.isArabic ? company.nameEn : company.nameAr)?.trim();
+    return secondary && secondary !== primary ? secondary : undefined;
   }
 
   companyStatusKey(company: ContractorCompany): string {
@@ -297,5 +314,12 @@ export class ContractorCompaniesComponent implements OnInit {
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
     return `${day}/${month}/${date.getFullYear()}`;
+  }
+
+  private propertyLovLabel(p: Property): string {
+    const name = this.i18n.currentLang === 'ar'
+      ? (p.propertyNameAr || p.propertyName)
+      : (p.propertyNameEn || p.propertyName);
+    return p.propertyCode ? `${p.propertyCode} — ${name}` : name;
   }
 }

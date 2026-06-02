@@ -1,3 +1,4 @@
+import { DialogTitleCloseDirective } from './../../../shared/directives/dialog-title-close.directive';
 import { Component, Inject } from '@angular/core';
 import { NgIf } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -21,8 +22,7 @@ export interface ProcessRenewalDialogData {
   imports: [
     NgIf, ReactiveFormsModule, TranslateModule,
     MatDialogModule, MatButtonModule, MatFormFieldModule,
-    MatInputModule, MatDatepickerModule, MatNativeDateModule
-  ],
+    MatInputModule, MatDatepickerModule, MatNativeDateModule, DialogTitleCloseDirective],
   templateUrl: './process-renewal-dialog.component.html'
 })
 export class ProcessRenewalDialogComponent {

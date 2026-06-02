@@ -7,12 +7,16 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatTabsModule } from '@angular/material/tabs';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { BreadcrumbItem, PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { EstateLovOption, EstateLovSelectComponent } from '../../../shared/components/estate-lov-select/estate-lov-select.component';
 import { FilterBarComponent, FilterSpec } from '../../../shared/components/filter-bar/filter-bar.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
 import { ExportColumn, TableExportToolbarComponent } from '../../../shared/components/table-export-toolbar/table-export-toolbar.component';
+import { TableEntityCellComponent } from '../../../shared/components/table-entity-cell/table-entity-cell.component';
+import { TableRowIndexPipe } from '../../../shared/pipes/table-row-index.pipe';
 import {
   EmployeeItem,
   HrService,
@@ -31,9 +35,11 @@ import { DeleteConfirmService } from '../../../core/services/delete-confirm.serv
 import { SnackService } from '../../../core/services/snack.service';
 import { EmployeeDialogComponent } from '../employee-dialog/employee-dialog.component';
 import { LeaveRequestDialogComponent } from '../leave-request-dialog/leave-request-dialog.component';
+import { DeductionDialogComponent } from '../deduction-dialog/deduction-dialog.component';
 import { ContractorCompanyService, AllCompanyOfficer } from '../../../core/services/contractor-company.service';
 import { LookupCacheService } from '../../../core/services/lookup-cache.service';
 import { forkJoin, catchError, of } from 'rxjs';
+import { ListLoadController } from '../../../shared/utils/list-load.util';
 
 @Component({
   selector: 'app-hr-workspace',
@@ -47,23 +53,26 @@ import { forkJoin, catchError, of } from 'rxjs';
     MatIconModule,
     MatProgressSpinnerModule,
     MatTooltipModule,
+    MatTabsModule,
     TranslateModule,
     PageHeaderComponent,
     FilterBarComponent,
     EmptyStateComponent,
     TablePagerComponent,
-    TableExportToolbarComponent
+    TableExportToolbarComponent,
+    TableEntityCellComponent,
+    TableRowIndexPipe,
+    EstateLovSelectComponent
   ],
   template: `
     <div class="app-page">
       <app-page-header
-        [title]="title"
-        [subtitle]="'HR.SUBTITLE' | translate"
-        [breadcrumbs]="[
-          { label: ('NAV.DASHBOARD' | translate), route: '/admin/dashboard' },
-          { label: title }
-        ]">
-        <button mat-flat-button class="navy-btn" type="button" *ngIf="section === 'employees-list' && canAddEmployee()" (click)="openAddEmployee()">
+        [title]="pageTitle"
+        [subtitle]="pageSubtitle"
+        [showBack]="section === 'payroll-detail'"
+        (backClick)="goBackToPayrollList()"
+        [breadcrumbs]="pageBreadcrumbs">
+        <button mat-flat-button class="navy-btn" type="button" *ngIf="section === 'employees-list' && employeeTabIndex === 0 && canAddEmployee()" (click)="openAddEmployee()">
           <mat-icon>add</mat-icon>
           {{ 'HR.ADD_EMPLOYEE' | translate }}
         </button>
@@ -82,22 +91,26 @@ import { forkJoin, catchError, of } from 'rxjs';
       </app-page-header>
 
       <div class="finance-filter-strip" *ngIf="section === 'payroll-list' && properties.length > 0">
-        <label>{{ 'REQUEST_FORM.PROPERTY' | translate }}</label>
-        <select [(ngModel)]="filterPropertyId" (change)="onFilterBarChange({filterPropertyId: filterPropertyId})" class="estate-property-select">
-          <option [ngValue]="null">{{ 'COMMON.ALL_PROPERTIES' | translate }}</option>
-          <option *ngFor="let p of properties" [ngValue]="p.id">
-            {{ i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName) }}
-          </option>
-        </select>
+        <app-estate-lov-select
+          [label]="'REQUEST_FORM.PROPERTY'"
+          [options]="propertyLovOptions"
+          [showAll]="true"
+          allLabelKey="COMMON.ALL_PROPERTIES"
+          [(ngModel)]="filterPropertyId"
+          (ngModelChange)="onFilterBarChange({filterPropertyId: filterPropertyId})">
+        </app-estate-lov-select>
       </div>
 
-      <div class="loading-center" *ngIf="loading && (section === 'employees-list' || section === 'employee-detail')">
+      <div class="loading-center" *ngIf="listLoad.showInitialSpinner && (section === 'employees-list' || section === 'employee-detail')">
         <mat-spinner diameter="40"></mat-spinner>
       </div>
 
-      <div class="app-card table-card directory-table-card" *ngIf="!loading && (section === 'employees-list' || section === 'employee-detail')">
+      <div class="app-card table-card directory-table-card employees-tabs-card app-list-surface"
+        [class.is-refreshing]="listLoad.refreshing"
+        *ngIf="listLoad.showSurface && (section === 'employees-list' || section === 'employee-detail')">
+        <div class="list-refresh-spinner" *ngIf="listLoad.refreshing"><mat-spinner diameter="32"></mat-spinner></div>
         <div class="estate-table-toolbar directory-toolbar">
-          <div class="directory-toolbar-top">
+          <div class="directory-toolbar-top table-list-toolbar">
             <div class="directory-search">
               <mat-icon>search</mat-icon>
               <input [value]="searchTerm" (input)="onSearch($any($event.target).value)" [placeholder]="'ACTIONS.SEARCH' | translate">
@@ -107,6 +120,7 @@ import { forkJoin, catchError, of } from 'rxjs';
               <mat-icon>filter_alt_off</mat-icon>
             </button>
             <app-table-export-toolbar
+              *ngIf="employeeTabIndex === 0"
               permissionKey="hr"
               [title]="'HR.EMPLOYEES_TITLE' | translate"
               fileName="employees"
@@ -115,10 +129,22 @@ import { forkJoin, catchError, of } from 'rxjs';
             </app-table-export-toolbar>
           </div>
         </div>
+
+        <mat-tab-group
+          class="employees-scope-tabs"
+          animationDuration="0ms"
+          [selectedIndex]="employeeTabIndex"
+          (selectedIndexChange)="onEmployeeTabChange($event)">
+          <mat-tab [label]="'HR.TAB_EMPLOYEES' | translate"></mat-tab>
+          <mat-tab [label]="'HR.TAB_MAINTENANCE_COMPANY_STAFF' | translate"></mat-tab>
+        </mat-tab-group>
+
+        <ng-container *ngIf="employeeTabIndex === 0">
         <div class="app-table-wrap" *ngIf="employees.length > 0 || hasFiltersBar(); else emptyEmployeesTpl">
           <table class="app-data-table">
             <thead>
               <tr>
+                <th class="table-index-col">#</th>
                 <th>{{ 'HR.CODE_COL' | translate }}</th>
                 <th>{{ 'HR.EMPLOYEE_COL' | translate }}</th>
                 <th>{{ 'HR.JOB_TITLE_COL' | translate }}</th>
@@ -126,29 +152,26 @@ import { forkJoin, catchError, of } from 'rxjs';
                 <th>{{ 'HR.SALARY_COL' | translate }}</th>
                 <th>{{ 'HR.LEAVE_USED_COL' | translate }}</th>
                 <th>{{ 'HR.LEAVE_REMAINING_COL' | translate }}</th>
-                <th>{{ 'HR.EMAIL_COL' | translate }}</th>
                 <th>{{ 'HR.STATUS_COL' | translate }}</th>
                 <th>{{ 'REQUEST_LIST.ACTIONS' | translate }}</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let item of pagedEmployees">
-                <td>#{{ item.id }}</td>
+              <tr *ngFor="let item of pagedEmployees; let i = index">
+                <td class="table-index-col">{{ i | tableRowIndex:pageIndex:pageSize }}</td>
+                <td>{{ item.employeeCode || '—' }}</td>
                 <td>
-                  <div class="employee-name-cell">
-                    <img *ngIf="item.profileImageUrl" [src]="item.profileImageUrl" class="employee-avatar" alt="">
-                    <span class="avatar-placeholder" *ngIf="!item.profileImageUrl">
-                      {{ employeeName(item).charAt(0).toUpperCase() }}
-                    </span>
-                    <strong>{{ employeeName(item) }}</strong>
-                  </div>
+                  <app-table-entity-cell
+                    [title]="employeeName(item)"
+                    [imageUrl]="item.profileImageUrl"
+                    [initial]="employeeName(item).charAt(0).toUpperCase()">
+                  </app-table-entity-cell>
                 </td>
                 <td>{{ employeeJobTitle(item) }}</td>
                 <td>{{ item.hireDate || '-' }}</td>
                 <td>{{ item.basicSalary || '-' }}</td>
                 <td>{{ leaveUsedDays(item.id) }}</td>
                 <td>{{ leaveRemainingDays(item.id) }}</td>
-                <td>{{ item.email || '--' }}</td>
                 <td>
                   <span class="badge" [class.badge-success]="employeeActive(item)" [class.badge-muted]="!employeeActive(item)">
                     <mat-icon>{{ employeeActive(item) ? 'check_circle' : 'cancel' }}</mat-icon>
@@ -175,11 +198,11 @@ import { forkJoin, catchError, of } from 'rxjs';
         </div>
 
         <app-table-pager
-          *ngIf="filteredEmployees.length > 0"
-          [length]="filteredEmployees.length"
+          *ngIf="employeesTotal > 0"
+          [length]="employeesTotal"
           [pageSize]="pageSize"
           [pageIndex]="pageIndex"
-          (pageIndexChange)="pageIndex = $event">
+          (pageIndexChange)="onEmployeePageChange($event)">
         </app-table-pager>
 
         <ng-template #emptyEmployeesTpl>
@@ -189,61 +212,66 @@ import { forkJoin, catchError, of } from 'rxjs';
             [message]="'HR.NO_DATA_DESC' | translate">
           </app-empty-state>
         </ng-template>
-      </div>
+        </ng-container>
 
-      <!-- Company Officers Section -->
-      <div class="app-card table-card directory-table-card" *ngIf="!loading && (section === 'employees-list' || section === 'employee-detail') && filteredOfficers.length > 0">
-        <div class="estate-table-toolbar directory-toolbar">
-          <div class="directory-toolbar-top">
-            <div class="section-label">
-              <mat-icon>engineering</mat-icon>
-              <span>{{ 'HR.COMPANY_OFFICERS_SECTION' | translate }}</span>
-              <span class="count-chip">{{ filteredOfficers.length }}</span>
-            </div>
-          </div>
-        </div>
-        <div class="app-table-wrap">
-          <table class="app-data-table">
-            <thead>
-              <tr>
-                <th>{{ 'HR.EMPLOYEE_COL' | translate }}</th>
-                <th>{{ 'CONTRACTORS.NAME' | translate }}</th>
-                <th>{{ 'REQUEST_FORM.PROPERTY' | translate }}</th>
-                <th>{{ 'HR.EMAIL_COL' | translate }}</th>
-                <th>{{ 'HR.STATUS_COL' | translate }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let o of filteredOfficers">
-                <td>
-                  <div class="employee-name-cell">
-                    <img *ngIf="o.profileImageUrl" [src]="o.profileImageUrl" class="employee-avatar" alt="">
-                    <span class="avatar-placeholder" *ngIf="!o.profileImageUrl">
-                      {{ officerName(o).charAt(0).toUpperCase() }}
+        <ng-container *ngIf="employeeTabIndex === 1">
+          <div class="app-table-wrap" *ngIf="filteredOfficers.length > 0; else emptyOfficersTpl">
+            <table class="app-data-table">
+              <thead>
+                <tr>
+                  <th>{{ 'HR.EMPLOYEE_COL' | translate }}</th>
+                  <th>{{ 'CONTRACTORS.NAME' | translate }}</th>
+                  <th>{{ 'REQUEST_FORM.PROPERTY' | translate }}</th>
+                  <th>{{ 'HR.STATUS_COL' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let o of pagedOfficers">
+                  <td>
+                    <div class="employee-name-cell">
+                      <img *ngIf="o.profileImageUrl" [src]="o.profileImageUrl" class="employee-avatar" alt="">
+                      <span class="avatar-placeholder" *ngIf="!o.profileImageUrl">
+                        {{ officerName(o).charAt(0).toUpperCase() }}
+                      </span>
+                      <strong>{{ officerName(o) }}</strong>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="company-tag">{{ officerCompanyName(o) }}</span>
+                  </td>
+                  <td>{{ officerPropertyName(o) }}</td>
+                  <td>
+                    <span class="badge" [class.badge-success]="o.active" [class.badge-muted]="!o.active">
+                      <mat-icon>{{ o.active ? 'check_circle' : 'cancel' }}</mat-icon>
+                      {{ (o.active ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') | translate }}
                     </span>
-                    <strong>{{ officerName(o) }}</strong>
-                  </div>
-                </td>
-                <td>
-                  <span class="company-tag">{{ officerCompanyName(o) }}</span>
-                </td>
-                <td>{{ officerPropertyName(o) }}</td>
-                <td>{{ o.email || '--' }}</td>
-                <td>
-                  <span class="badge" [class.badge-success]="o.active" [class.badge-muted]="!o.active">
-                    <mat-icon>{{ o.active ? 'check_circle' : 'cancel' }}</mat-icon>
-                    {{ (o.active ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') | translate }}
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <app-table-pager
+            *ngIf="filteredOfficers.length > 0"
+            [length]="filteredOfficers.length"
+            [pageSize]="pageSize"
+            [pageIndex]="officerPageIndex"
+            (pageIndexChange)="officerPageIndex = $event">
+          </app-table-pager>
+
+          <ng-template #emptyOfficersTpl>
+            <app-empty-state
+              icon="engineering"
+              [title]="'HR.NO_MAINTENANCE_COMPANY_STAFF' | translate"
+              [message]="'HR.NO_MAINTENANCE_COMPANY_STAFF_DESC' | translate">
+            </app-empty-state>
+          </ng-template>
+        </ng-container>
       </div>
 
       <div class="app-card table-card directory-table-card" *ngIf="section === 'leaves'">
         <div class="estate-table-toolbar directory-toolbar">
-          <div class="directory-toolbar-top">
+          <div class="directory-toolbar-top table-list-toolbar">
             <div class="section-label">
               <mat-icon>event_available</mat-icon>
               <span>{{ 'HR.LEAVES_TITLE' | translate }}</span>
@@ -278,8 +306,14 @@ import { forkJoin, catchError, of } from 'rxjs';
                 <td>{{ item.startDate | date:'dd/MM/yyyy' }}</td>
                 <td>{{ item.endDate | date:'dd/MM/yyyy' }}</td>
                 <td>{{ item.daysCount }}</td>
-                <td><span class="status-badge" [attr.data-status]="item.status || 'PENDING'">{{ leaveStatusLabel(item.status) }}</span></td>
+                <td><span class="status-badge" [attr.data-status]="(item.status || 'PENDING').toUpperCase()">{{ leaveStatusLabel(item.status) }}</span></td>
                 <td class="actions-cell">
+                  <button class="app-icon-btn accent" type="button" (click)="openLeaveDetails(item)" [matTooltip]="'ACTIONS.VIEW' | translate">
+                    <mat-icon>visibility</mat-icon>
+                  </button>
+                  <button class="app-icon-btn info" type="button" *ngIf="canEditLeave(item)" (click)="openLeaveEdit(item)" [matTooltip]="'ACTIONS.EDIT' | translate">
+                    <mat-icon>edit</mat-icon>
+                  </button>
                   <button class="app-icon-btn primary-tint" type="button" *ngIf="item.status === 'PENDING' && canApproveLeave()" (click)="approveLeave(item.id)" [matTooltip]="'ACTIONS.APPROVE' | translate">
                     <mat-icon>check</mat-icon>
                   </button>
@@ -305,30 +339,41 @@ import { forkJoin, catchError, of } from 'rxjs';
           <table class="app-data-table">
             <thead>
               <tr>
+                <th class="table-index-col">#</th>
                 <th>{{ 'HR.PERIOD_COL' | translate }}</th>
                 <th>{{ 'HR.BASE_TOTAL_COL' | translate }}</th>
                 <th>{{ 'HR.DEDUCTIONS_COL' | translate }}</th>
                 <th>{{ 'HR.NET_COL' | translate }}</th>
                 <th>{{ 'HR.STATUS_COL' | translate }}</th>
-                <th>{{ 'HR.DETAIL_COL' | translate }}</th>
+                <th class="center-col">{{ 'HR.DETAIL_COL' | translate }}</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let run of payrollRuns">
+              <tr *ngFor="let run of pagedPayrollRuns; let i = index">
+                <td class="table-index-col">{{ i | tableRowIndex:payrollPageIndex:pageSize }}</td>
                 <td>{{ run.payPeriodMonth }}/{{ run.payPeriodYear }}</td>
                 <td>{{ run.totalBasic || 0 }}</td>
                 <td>{{ run.totalDeductions || 0 }}</td>
                 <td>{{ run.totalNet || 0 }}</td>
-                <td><span class="status-badge" [attr.data-status]="run.status || 'SUBMITTED'">{{ payrollStatusLabel(run.status) }}</span></td>
-                <td class="actions-cell">
-                  <button class="app-icon-btn view" type="button" (click)="openPayroll(run.id)" [matTooltip]="'COMMON.VIEW' | translate">
-                    <mat-icon>visibility</mat-icon>
-                  </button>
+                <td><span class="status-badge" [attr.data-status]="(run.status || 'SUBMITTED').toUpperCase()">{{ payrollStatusLabel(run.status) }}</span></td>
+                <td class="center-col">
+                  <div class="table-actions">
+                    <button class="app-icon-btn accent" type="button" (click)="openPayroll(run.id)" [matTooltip]="'ACTIONS.VIEW' | translate" [attr.aria-label]="'ACTIONS.VIEW' | translate">
+                      <mat-icon>visibility</mat-icon>
+                    </button>
+                  </div>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
+        <app-table-pager
+          *ngIf="payrollRuns.length > 0"
+          [length]="payrollRuns.length"
+          [pageSize]="pageSize"
+          [pageIndex]="payrollPageIndex"
+          (pageIndexChange)="payrollPageIndex = $event">
+        </app-table-pager>
       </div>
 
       <div class="app-card table-card" *ngIf="section === 'deductions'">
@@ -336,6 +381,7 @@ import { forkJoin, catchError, of } from 'rxjs';
           <table class="app-data-table">
             <thead>
               <tr>
+                <th class="table-index-col">#</th>
                 <th>{{ 'HR.EMPLOYEE_COL' | translate }}</th>
                 <th>{{ 'HR.DEDUCTION_AMOUNT' | translate }}</th>
                 <th>{{ 'HR.DEDUCTION_REASON' | translate }}</th>
@@ -345,13 +391,23 @@ import { forkJoin, catchError, of } from 'rxjs';
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let item of deductions">
+              <tr *ngFor="let item of deductions; let i = index">
+                <td class="table-index-col">{{ i | tableRowIndex:deductionsPageIndex:pageSize }}</td>
                 <td>{{ item.employeeName || ('#' + item.employeeId) }}</td>
                 <td>{{ item.amount || 0 }}</td>
                 <td>{{ item.reason }}</td>
                 <td>{{ item.payrollMonth }}</td>
                 <td><span class="status-badge" [attr.data-status]="item.status">{{ deductionStatusLabel(item.status) }}</span></td>
                 <td class="actions-cell">
+                  <button class="app-icon-btn accent" type="button" (click)="openViewDeduction(item)" [matTooltip]="'ACTIONS.VIEW' | translate">
+                    <mat-icon>visibility</mat-icon>
+                  </button>
+                  <button class="app-icon-btn" type="button" *ngIf="item.status === 'DRAFT' && canEditDeduction()" (click)="openEditDeduction(item)" [matTooltip]="'ACTIONS.EDIT' | translate">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button class="app-icon-btn danger" type="button" *ngIf="item.status === 'DRAFT' && canDeleteDeduction()" (click)="removeDeduction(item)" [matTooltip]="'ACTIONS.DELETE' | translate">
+                    <mat-icon>delete</mat-icon>
+                  </button>
                   <button class="app-icon-btn primary-tint" type="button" *ngIf="item.status === 'DRAFT' && canSendDeduction()" (click)="sendDeduction(item.id)" [matTooltip]="'HR.SEND_TO_ACCOUNTANT' | translate">
                     <mat-icon>send</mat-icon>
                   </button>
@@ -366,6 +422,13 @@ import { forkJoin, catchError, of } from 'rxjs';
             </tbody>
           </table>
         </div>
+        <app-table-pager
+          *ngIf="deductionsTotal > 0"
+          [length]="deductionsTotal"
+          [pageSize]="pageSize"
+          [pageIndex]="deductionsPageIndex"
+          (pageIndexChange)="onDeductionsPageChange($event)">
+        </app-table-pager>
         <ng-template #emptyDeductionsTpl>
           <div *ngIf="!loading" class="app-empty-state">
             <span class="material-icons empty-icon">payments</span>
@@ -375,41 +438,117 @@ import { forkJoin, catchError, of } from 'rxjs';
         </ng-template>
       </div>
 
-      <div class="app-card" *ngIf="section === 'payroll-detail' && payrollDetail">
-        <div class="payroll-summary">
-          <div><strong>{{ 'HR.PERIOD_COL' | translate }}</strong><span>{{ payrollDetail.payPeriodMonth }}/{{ payrollDetail.payPeriodYear }}</span></div>
-          <div><strong>{{ 'HR.NET_COL' | translate }}</strong><span>{{ payrollDetail.totalNet || 0 }}</span></div>
-          <div><strong>{{ 'HR.STATUS_COL' | translate }}</strong><span class="status-badge" [attr.data-status]="payrollDetail.status || 'SUBMITTED'">{{ payrollStatusLabel(payrollDetail.status) }}</span></div>
-          <button mat-flat-button *ngIf="canMarkPayrollPaid(payrollDetail)" (click)="markPayrollPaid(payrollDetail.id)">{{ 'HR.MARK_PAID' | translate }}</button>
+      <ng-container *ngIf="section === 'payroll-detail'">
+        <div class="loading-center" *ngIf="payrollDetailLoading">
+          <mat-spinner diameter="40"></mat-spinner>
         </div>
 
-        <div class="app-table-wrap" *ngIf="payrollDetail.payslips?.length; else emptyTpl">
-          <table class="app-data-table">
-            <thead>
-              <tr>
-                <th>{{ 'HR.EMPLOYEE_COL' | translate }}</th>
-                <th>{{ 'HR.BASIC_LABEL' | translate }}</th>
-                <th>{{ 'HR.ALLOWANCES_LABEL' | translate }}</th>
-                <th>{{ 'HR.BONUSES_LABEL' | translate }}</th>
-                <th>{{ 'HR.DEDUCTIONS_COL' | translate }}</th>
-                <th>{{ 'HR.NET_COL' | translate }}</th>
-                <th>{{ 'HR.PAID_COL' | translate }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let slip of payrollDetail.payslips">
-                <td>{{ slip.employeeName || ('#' + slip.employeeId) }}</td>
-                <td>{{ slip.basicSalary || 0 }}</td>
-                <td>{{ allowancesTotal(slip) }}</td>
-                <td>{{ slip.bonusAmount || 0 }}</td>
-                <td>{{ slip.totalDeductions || 0 }}</td>
-                <td>{{ slip.netSalary || 0 }}</td>
-                <td>{{ slip.paid ? ('HR.YES' | translate) : ('HR.NO' | translate) }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+        <ng-container *ngIf="!payrollDetailLoading && payrollDetail">
+          <div class="payroll-hero-grid">
+            <article class="payroll-stat-card navy">
+              <div class="psc-icon"><mat-icon>calendar_month</mat-icon></div>
+              <div class="psc-body">
+                <div class="psc-label">{{ 'HR.PERIOD_COL' | translate }}</div>
+                <div class="psc-value">{{ payrollDetail.payPeriodMonth }}/{{ payrollDetail.payPeriodYear }}</div>
+                <div class="psc-foot" *ngIf="payrollDetail.payDate">{{ payrollDetail.payDate | date:'dd/MM/yyyy' }}</div>
+              </div>
+            </article>
+            <article class="payroll-stat-card gold">
+              <div class="psc-icon"><mat-icon>payments</mat-icon></div>
+              <div class="psc-body">
+                <div class="psc-label">{{ 'HR.BASE_TOTAL_COL' | translate }}</div>
+                <div class="psc-value">{{ payrollDetail.totalBasic || 0 }}</div>
+              </div>
+            </article>
+            <article class="payroll-stat-card danger">
+              <div class="psc-icon"><mat-icon>remove_circle_outline</mat-icon></div>
+              <div class="psc-body">
+                <div class="psc-label">{{ 'HR.DEDUCTIONS_COL' | translate }}</div>
+                <div class="psc-value">{{ payrollDetail.totalDeductions || 0 }}</div>
+              </div>
+            </article>
+            <article class="payroll-stat-card teal">
+              <div class="psc-icon"><mat-icon>account_balance_wallet</mat-icon></div>
+              <div class="psc-body">
+                <div class="psc-label">{{ 'HR.NET_COL' | translate }}</div>
+                <div class="psc-value">{{ payrollDetail.totalNet || 0 }}</div>
+              </div>
+            </article>
+          </div>
+
+          <div class="payroll-action-bar app-card">
+            <span class="status-badge" [attr.data-status]="(payrollDetail.status || 'SUBMITTED').toUpperCase()">{{ payrollStatusLabel(payrollDetail.status) }}</span>
+            <div class="pab-divider"></div>
+            <div class="pab-meta">
+              <span class="pab-meta-item" *ngIf="payrollDetail.payslips?.length">
+                <mat-icon>groups</mat-icon>
+                {{ payrollDetail.payslips.length }} {{ 'HR.EMPLOYEE_COL' | translate }}
+              </span>
+              <span class="pab-meta-item" *ngIf="payrollDetail.totalAllowances">
+                <mat-icon>add_circle_outline</mat-icon>
+                {{ 'HR.ALLOWANCES_LABEL' | translate }}: {{ payrollDetail.totalAllowances || 0 }}
+              </span>
+              <span class="pab-meta-item" *ngIf="payrollDetail.totalBonuses">
+                <mat-icon>star</mat-icon>
+                {{ 'HR.BONUSES_LABEL' | translate }}: {{ payrollDetail.totalBonuses || 0 }}
+              </span>
+            </div>
+            <div class="pab-spacer"></div>
+            <div class="pab-actions">
+              <button mat-flat-button class="navy-btn" type="button" *ngIf="canMarkPayrollPaid(payrollDetail)" (click)="markPayrollPaid(payrollDetail.id)">
+                <mat-icon>check_circle</mat-icon>
+                {{ 'HR.MARK_PAID' | translate }}
+              </button>
+            </div>
+          </div>
+
+          <div class="payroll-payslips-card info-section app-card" *ngIf="payrollDetail.payslips?.length; else emptyPayrollSlipsTpl">
+            <div class="app-card-header">
+              <span class="app-card-title">
+                <mat-icon class="section-icon">receipt_long</mat-icon>
+                {{ 'HR.PAYSLIPS_SECTION' | translate }}
+                <span class="count-chip">{{ payrollDetail.payslips.length }}</span>
+              </span>
+            </div>
+            <div class="app-table-wrap">
+              <table class="app-data-table">
+                <thead>
+                  <tr>
+                    <th>{{ 'HR.EMPLOYEE_COL' | translate }}</th>
+                    <th>{{ 'HR.BASIC_LABEL' | translate }}</th>
+                    <th>{{ 'HR.ALLOWANCES_LABEL' | translate }}</th>
+                    <th>{{ 'HR.BONUSES_LABEL' | translate }}</th>
+                    <th>{{ 'HR.DEDUCTIONS_COL' | translate }}</th>
+                    <th>{{ 'HR.NET_COL' | translate }}</th>
+                    <th class="center-col">{{ 'HR.PAID_COL' | translate }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let slip of payrollDetail.payslips">
+                    <td>{{ slip.employeeName || ('#' + slip.employeeId) }}</td>
+                    <td>{{ slip.basicSalary || 0 }}</td>
+                    <td>{{ allowancesTotal(slip) }}</td>
+                    <td>{{ slip.bonusAmount || 0 }}</td>
+                    <td>{{ slip.totalDeductions || 0 }}</td>
+                    <td><strong>{{ slip.netSalary || 0 }}</strong></td>
+                    <td class="center-col">
+                      <span class="badge" [class.badge-success]="slip.paid" [class.badge-muted]="!slip.paid">
+                        {{ slip.paid ? ('HR.YES' | translate) : ('HR.NO' | translate) }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <ng-template #emptyPayrollSlipsTpl>
+            <div class="app-empty-state app-card">
+              <span class="material-icons empty-icon">receipt_long</span>
+              <h4>{{ 'HR.NO_PAYSLIPS' | translate }}</h4>
+            </div>
+          </ng-template>
+        </ng-container>
+      </ng-container>
 
       <ng-template #emptyTpl>
         <div class="app-empty-state">
@@ -485,42 +624,125 @@ import { forkJoin, catchError, of } from 'rxjs';
     .employee-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 1px solid var(--line); flex-shrink: 0; }
     .avatar-placeholder { width: 36px; height: 36px; border-radius: 50%; background: var(--navy-800); color: white; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 700; flex-shrink: 0; }
     .table-card { padding: 0; overflow: hidden; }
-    .payroll-summary {
+    .center-col { text-align: center; }
+    .payroll-hero-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .payroll-stat-card {
       display: flex;
       align-items: center;
       gap: 16px;
-      flex-wrap: wrap;
-      margin-bottom: 16px;
+      background: var(--surface);
+      border: 1px solid var(--card-border, var(--line));
+      border-radius: var(--r, 12px);
+      padding: 20px;
+      box-shadow: var(--shadow-card, 0 1px 3px rgba(0,0,0,.06));
     }
-    .payroll-summary div {
+    .payroll-stat-card .psc-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
       display: grid;
-      gap: 4px;
-      min-width: 140px;
+      place-items: center;
+      background: var(--paper-2);
+      flex-shrink: 0;
     }
-    .payroll-summary span {
+    .payroll-stat-card .psc-icon mat-icon { font-size: 22px; width: 22px; height: 22px; }
+    .payroll-stat-card.navy .psc-icon { background: var(--navy-900); color: var(--brass-400); }
+    .payroll-stat-card.gold .psc-icon { background: var(--amber-50); color: var(--amber-700); }
+    .payroll-stat-card.teal .psc-icon { background: var(--teal-bg, #e0f2f1); color: var(--teal, #0d9488); }
+    .payroll-stat-card.danger .psc-icon { background: var(--bad-bg); color: var(--bad); }
+    .payroll-stat-card .psc-body { min-width: 0; flex: 1; }
+    .payroll-stat-card .psc-label {
+      font-size: 10.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--ink-500, var(--text-muted));
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .payroll-stat-card .psc-value {
+      font-family: var(--font-display);
+      font-size: 28px;
+      line-height: 1.1;
+      color: var(--text-main);
+      font-feature-settings: 'tnum';
+    }
+    .payroll-stat-card .psc-foot { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .payroll-action-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 20px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .payroll-action-bar .pab-divider { width: 1px; height: 28px; background: var(--line); flex-shrink: 0; }
+    .payroll-action-bar .pab-meta { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .payroll-action-bar .pab-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 13px;
       color: var(--text-muted);
+    }
+    .payroll-action-bar .pab-meta-item mat-icon { font-size: 16px; width: 16px; height: 16px; }
+    .payroll-action-bar .pab-spacer { flex: 1; }
+    .payroll-action-bar .pab-actions { display: flex; align-items: center; gap: 8px; }
+    .payroll-payslips-card .app-card-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .payroll-payslips-card .section-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+      color: var(--ink-500, var(--text-muted));
     }
     .section-label { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--navy-800); font-size: 0.95rem; }
     .section-label mat-icon { color: var(--navy-600); font-size: 20px; width: 20px; height: 20px; }
     .count-chip { background: var(--navy-100); color: var(--navy-800); border-radius: 12px; padding: 2px 8px; font-size: 0.78rem; font-weight: 700; }
     .company-tag { background: #e8f5e9; color: #2e7d32; border-radius: 12px; padding: 2px 8px; font-size: 0.8rem; font-weight: 600; white-space: nowrap; }
+    .employees-scope-tabs { margin: 0 16px 8px; }
+    .employees-scope-tabs ::ng-deep .mat-mdc-tab-body-wrapper { padding-top: 8px; }
     @media (max-width: 1000px) {
+      .payroll-hero-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
     @media (max-width: 800px) {
+      .payroll-hero-grid { grid-template-columns: 1fr; }
     }
   `]
 })
 export class HrWorkspaceComponent implements OnInit {
   section = 'employees-list';
+  employeeTabIndex = 0;
   employees: EmployeeItem[] = [];
   companyOfficers: AllCompanyOfficer[] = [];
   loading = true;
+  listLoad = new ListLoadController();
   readonly pageSize = 5;
   pageIndex = 0;
+  officerPageIndex = 0;
+  deductionsPageIndex = 0;
+  employeesTotal = 0;
+  deductionsTotal = 0;
   leavePageIndex = 0;
+  payrollPageIndex = 0;
   properties: Property[] = [];
   filterPropertyId: number | null = null;
   filterStatus: string | null = null;
+
+  get propertyLovOptions(): EstateLovOption[] {
+    return this.properties.map((p) => ({
+      value: p.id,
+      label: this.propertyLovLabel(p)
+    }));
+  }
+
   currentFilterValues: Record<string, unknown> = { filterPropertyId: null, filterStatus: null };
   searchTerm = '';
   pageFilters: FilterSpec[] = [];
@@ -528,6 +750,7 @@ export class HrWorkspaceComponent implements OnInit {
   leaveBalanceByEmployeeId = new Map<number, LeaveBalanceItem>();
   payrollRuns: PayrollRunItem[] = [];
   payrollDetail: PayrollRunDetail | null = null;
+  payrollDetailLoading = false;
   deductions: PayrollDeductionItem[] = [];
   attendanceRecords: import('../../../core/services/hr.service').AttendanceItem[] = [];
   attendancePage = 0;
@@ -557,13 +780,39 @@ export class HrWorkspaceComponent implements OnInit {
   }
 
   get pagedEmployees(): EmployeeItem[] {
-    const start = this.pageIndex * this.pageSize;
-    return this.filteredEmployees.slice(start, start + this.pageSize);
+    return this.filteredEmployees;
+  }
+
+  onEmployeePageChange(index: number): void {
+    this.pageIndex = index;
+    this.loadEmployees();
+  }
+
+  onDeductionsPageChange(index: number): void {
+    this.deductionsPageIndex = index;
+    this.loadDeductions();
+  }
+
+  onEmployeeTabChange(index: number): void {
+    this.employeeTabIndex = index;
+    if (index === 1) {
+      this.officerPageIndex = 0;
+    }
+  }
+
+  get pagedOfficers(): AllCompanyOfficer[] {
+    const start = this.officerPageIndex * this.pageSize;
+    return this.filteredOfficers.slice(start, start + this.pageSize);
   }
 
   get pagedLeaveRequests(): LeaveRequestItem[] {
     const start = this.leavePageIndex * this.pageSize;
     return this.leaveRequests.slice(start, start + this.pageSize);
+  }
+
+  get pagedPayrollRuns(): PayrollRunItem[] {
+    const start = this.payrollPageIndex * this.pageSize;
+    return this.payrollRuns.slice(start, start + this.pageSize);
   }
 
   get filteredEmployees(): EmployeeItem[] {
@@ -578,7 +827,6 @@ export class HrWorkspaceComponent implements OnInit {
       { header: this.i18n.instant('HR.JOB_TITLE_COL'), value: (row) => this.employeeJobTitle(row) },
       { header: this.i18n.instant('HR.HIRE_DATE_COL'), value: (row) => row.hireDate || '-' },
       { header: this.i18n.instant('HR.SALARY_COL'), value: (row) => row.basicSalary ?? '-' },
-      { header: this.i18n.instant('HR.EMAIL_COL'), value: (row) => row.email || '-' },
       { header: this.i18n.instant('HR.STATUS_COL'), value: (row) => this.i18n.instant(this.employeeActive(row) ? 'COMMON.ACTIVE' : 'COMMON.INACTIVE') }
     ];
   }
@@ -608,6 +856,33 @@ export class HrWorkspaceComponent implements OnInit {
     return this.translate.instant(map[this.section] ?? 'HR.EMPLOYEES_TITLE');
   }
 
+  get pageTitle(): string {
+    if (this.section === 'payroll-detail' && this.payrollDetail) {
+      return `${this.payrollDetail.payPeriodMonth}/${this.payrollDetail.payPeriodYear}`;
+    }
+    return this.title;
+  }
+
+  get pageSubtitle(): string {
+    if (this.section === 'payroll-detail') {
+      return this.translate.instant('HR.PAYROLL_DETAIL_TITLE');
+    }
+    return this.translate.instant('HR.SUBTITLE');
+  }
+
+  get pageBreadcrumbs(): BreadcrumbItem[] {
+    const crumbs: BreadcrumbItem[] = [
+      { label: this.translate.instant('NAV.DASHBOARD'), route: '/admin/dashboard' }
+    ];
+    if (this.section === 'payroll-detail') {
+      crumbs.push({ label: this.translate.instant('HR.PAYROLL_LIST_TITLE'), route: '/admin/hr/payroll' });
+      crumbs.push({ label: this.pageTitle });
+    } else {
+      crumbs.push({ label: this.title });
+    }
+    return crumbs;
+  }
+
   canApproveLeave(): boolean {
     return !this.auth.hasRole('ACCOUNTANT');
   }
@@ -619,12 +894,40 @@ export class HrWorkspaceComponent implements OnInit {
   openAddLeaveRequest(): void {
     this.dialog.open(LeaveRequestDialogComponent, {
       data: { employees: this.employees },
-      width: '500px',
+      width: '560px',
+      maxWidth: '94vw',
       panelClass: 'app-dialog-panel',
       disableClose: true
     }).afterClosed().subscribe((ok) => {
       if (ok) this.reloadLeaves();
     });
+  }
+
+  openLeaveDetails(item: LeaveRequestItem): void {
+    this.dialog.open(LeaveRequestDialogComponent, {
+      data: { employees: this.employees, leave: item, readOnly: true },
+      width: '560px',
+      maxWidth: '94vw',
+      panelClass: 'app-dialog-panel'
+    }).afterClosed().subscribe((ok) => {
+      if (ok) this.reloadLeaves();
+    });
+  }
+
+  openLeaveEdit(item: LeaveRequestItem): void {
+    this.dialog.open(LeaveRequestDialogComponent, {
+      data: { employees: this.employees, leave: item, readOnly: false },
+      width: '560px',
+      maxWidth: '94vw',
+      panelClass: 'app-dialog-panel',
+      disableClose: true
+    }).afterClosed().subscribe((ok) => {
+      if (ok) this.reloadLeaves();
+    });
+  }
+
+  canEditLeave(item: LeaveRequestItem): boolean {
+    return (item.status ?? 'PENDING') === 'PENDING' && this.permissions.can('hr', 'edit');
   }
 
   canAddEmployee(): boolean {
@@ -694,6 +997,10 @@ export class HrWorkspaceComponent implements OnInit {
     }
     if (this.section === 'deductions') {
       this.loadDeductions();
+      this.service.getEmployees({ page: 0, size: 200 }).subscribe({
+        next: (res) => { this.employees = res.data?.content ?? []; },
+        error: () => {}
+      });
     }
     if (this.section === 'payroll-detail') {
       this.loadPayrollDetail(Number(this.route.snapshot.paramMap.get('id')));
@@ -779,15 +1086,17 @@ export class HrWorkspaceComponent implements OnInit {
   }
 
   onFilterBarChange(values: any): void {
+    const prevProperty = this.filterPropertyId;
     if (values?.filterPropertyId !== undefined) {
       this.filterPropertyId = values.filterPropertyId;
     }
     if (values?.filterStatus !== undefined) this.filterStatus = values.filterStatus;
     this.syncFilterValues();
     this.pageIndex = 0;
+    this.officerPageIndex = 0;
     if (this.section === 'payroll-list') {
       this.loadPayrollRuns();
-    } else {
+    } else if (prevProperty !== this.filterPropertyId) {
       this.loadEmployees();
     }
   }
@@ -795,6 +1104,8 @@ export class HrWorkspaceComponent implements OnInit {
   onSearch(term: string): void {
     this.searchTerm = term;
     this.pageIndex = 0;
+    this.officerPageIndex = 0;
+    this.loadEmployees();
   }
 
   clearFiltersFromBar(): void {
@@ -803,6 +1114,7 @@ export class HrWorkspaceComponent implements OnInit {
     this.filterStatus = null;
     this.syncFilterValues();
     this.pageIndex = 0;
+    this.officerPageIndex = 0;
     this.loadEmployees();
   }
 
@@ -823,47 +1135,63 @@ export class HrWorkspaceComponent implements OnInit {
   }
 
   private loadEmployees(): void {
-    this.loading = true;
-    const params: Record<string, string | number> = { page: 0, size: 200 };
+    this.listLoad.begin();
+    const params: Record<string, string | number> = {
+      page: this.pageIndex,
+      size: this.pageSize
+    };
     if (this.filterPropertyId) {
       params['propertyId'] = this.filterPropertyId;
     }
+    const q = this.searchTerm.trim();
+    if (q) params['q'] = q;
     forkJoin({
-      employees: this.service.getEmployees(params).pipe(catchError(() => of({ data: { content: [] as EmployeeItem[] } }))),
+      employees: this.service.getEmployees(params).pipe(catchError(() => of({ data: { content: [] as EmployeeItem[], totalElements: 0 } }))),
       officers: this.contractorSvc.getAllOfficers().pipe(catchError(() => of({ data: [] as AllCompanyOfficer[] })))
-    }).subscribe(({ employees, officers }) => {
-      this.employees = employees.data?.content ?? [];
-      this.companyOfficers = officers.data ?? [];
-      if (this.filterPropertyId) {
-        this.companyOfficers = this.companyOfficers.filter(o => o.propertyId === this.filterPropertyId);
-      }
-      this.pageIndex = 0;
-      this.loading = false;
-      this.loadLeaveBalances();
+    }).subscribe({
+      next: ({ employees, officers }) => {
+        this.employees = employees.data?.content ?? [];
+        this.employeesTotal = employees.data?.totalElements ?? this.employees.length;
+        this.companyOfficers = officers.data ?? [];
+        if (this.filterPropertyId) {
+          this.companyOfficers = this.companyOfficers.filter(o => o.propertyId === this.filterPropertyId);
+        }
+        this.listLoad.end();
+        this.loadLeaveBalances();
+      },
+      error: () => this.listLoad.end()
     });
   }
 
   private loadPayrollRuns(): void {
-    this.service.getPayrollRuns({ page: 0, size: 100 }).subscribe({
+    this.service.getPayrollRuns({ page: 0, size: 500 }).subscribe({
       next: (res) => {
         const all = res.data?.content ?? [];
         this.payrollRuns = this.filterPropertyId
           ? all.filter((run) => run.propertyId === this.filterPropertyId)
           : all;
+        this.payrollPageIndex = 0;
       },
-      error: () => { this.payrollRuns = []; }
+      error: () => { this.payrollRuns = []; this.payrollPageIndex = 0; }
     });
   }
 
   private loadDeductions(): void {
     this.loading = true;
-    this.service.getDeductions({ page: 0, size: 100 }).subscribe({
+    this.service.getDeductions({ page: this.deductionsPageIndex, size: this.pageSize }).subscribe({
       next: (res) => {
         this.deductions = res.data?.content ?? [];
+        this.deductionsTotal = res.data?.totalElements ?? this.deductions.length;
+        if (this.deductionsPageIndex > 0 && this.deductions.length === 0 && this.deductionsTotal > 0) {
+          this.deductionsPageIndex = 0;
+          this.loadDeductions();
+          return;
+        }
         this.loading = false;
       },
       error: () => {
         this.deductions = [];
+        this.deductionsTotal = 0;
         this.loading = false;
       }
     });
@@ -872,12 +1200,24 @@ export class HrWorkspaceComponent implements OnInit {
   private loadPayrollDetail(id: number): void {
     if (!id) {
       this.payrollDetail = null;
+      this.payrollDetailLoading = false;
       return;
     }
+    this.payrollDetailLoading = true;
     this.service.getPayrollRun(id).subscribe({
-      next: (res) => { this.payrollDetail = res.data ?? null; },
-      error: () => { this.payrollDetail = null; }
+      next: (res) => {
+        this.payrollDetail = res.data ?? null;
+        this.payrollDetailLoading = false;
+      },
+      error: () => {
+        this.payrollDetail = null;
+        this.payrollDetailLoading = false;
+      }
     });
+  }
+
+  goBackToPayrollList(): void {
+    void this.router.navigate(['/admin/hr/payroll']);
   }
 
   openPayroll(id: number): void {
@@ -912,23 +1252,54 @@ export class HrWorkspaceComponent implements OnInit {
     });
   }
 
+  canEditDeduction(): boolean {
+    return this.permissions.can('hr', 'edit');
+  }
+
+  canDeleteDeduction(): boolean {
+    return this.permissions.can('hr', 'delete');
+  }
+
   createDeduction(): void {
-    const employeeId = Number(window.prompt(this.i18n.instant('HR.EMPLOYEE_ID')));
-    if (!employeeId) return;
-    const amount = Number(window.prompt(this.i18n.instant('HR.DEDUCTION_AMOUNT')));
-    if (!amount || amount <= 0) {
-      this.snack.error('HR.VALIDATION_DEDUCTION_AMOUNT');
-      return;
-    }
-    const reason = (window.prompt(this.i18n.instant('HR.DEDUCTION_REASON')) || '').trim();
-    if (!reason) return;
-    const today = this.toYmd(new Date());
-    const payrollMonth = window.prompt(this.i18n.instant('HR.PAYROLL_MONTH'), today.slice(0, 7)) || today.slice(0, 7);
-    this.service.createDeduction({ employeeId, amount, reason, deductionDate: today, payrollMonth }).subscribe({
-      next: () => {
-        this.snack.success('HR.DEDUCTION_CREATED');
+    this.openDeductionDialog(null, false);
+  }
+
+  openViewDeduction(item: PayrollDeductionItem): void {
+    this.openDeductionDialog(item, true);
+  }
+
+  openEditDeduction(item: PayrollDeductionItem): void {
+    this.openDeductionDialog(item, false);
+  }
+
+  private openDeductionDialog(deduction: PayrollDeductionItem | null, readOnly: boolean): void {
+    this.dialog.open(DeductionDialogComponent, {
+      data: { employees: this.employees, deduction, readOnly },
+      width: '560px',
+      maxWidth: '94vw',
+      panelClass: 'app-dialog-panel',
+      disableClose: !readOnly
+    }).afterClosed().subscribe((ok) => {
+      if (ok) {
+        this.deductionsPageIndex = 0;
         this.loadDeductions();
       }
+    });
+  }
+
+  removeDeduction(item: PayrollDeductionItem): void {
+    this.deleteConfirm.openDeleteConfirm({
+      messageKey: 'DIALOG.DELETE_NAMED',
+      messageParams: { name: item.employeeName || `#${item.id}` }
+    }).subscribe((ok) => {
+      if (!ok) return;
+      this.service.deleteDeduction(item.id).subscribe({
+        next: () => {
+          this.snack.success(this.i18n.instant('HR.DEDUCTION_DELETED'));
+          this.loadDeductions();
+        },
+        error: (err: Error) => this.deleteConfirm.handleDeleteError(err, this.snack)
+      });
     });
   }
 
@@ -1041,7 +1412,13 @@ export class HrWorkspaceComponent implements OnInit {
   }
 
   payrollStatusLabel(status?: string | null): string {
-    return this.lookupCache.label('PAYROLL_STATUS', status || 'SUBMITTED') || status || 'SUBMITTED';
+    const key = (status || 'SUBMITTED').toUpperCase();
+    const fromLookup = this.lookupCache.label('PAYROLL_STATUS', key);
+    if (fromLookup && fromLookup.toUpperCase() !== key) return fromLookup;
+    const i18nKey = `HR.STATUS.${key}`;
+    const translated = this.i18n.instant(i18nKey);
+    if (translated && translated !== i18nKey) return translated;
+    return fromLookup || status || key;
   }
 
   deductionStatusLabel(status?: string | null): string {
@@ -1135,6 +1512,13 @@ export class HrWorkspaceComponent implements OnInit {
         error: (err: Error) => this.deleteConfirm.handleDeleteError(err, this.snack)
       });
     });
+  }
+
+  private propertyLovLabel(p: Property): string {
+    const name = this.i18n.currentLang === 'ar'
+      ? (p.propertyNameAr || p.propertyName)
+      : (p.propertyNameEn || p.propertyName);
+    return p.propertyCode ? `${p.propertyCode} — ${name}` : name;
   }
 
 }

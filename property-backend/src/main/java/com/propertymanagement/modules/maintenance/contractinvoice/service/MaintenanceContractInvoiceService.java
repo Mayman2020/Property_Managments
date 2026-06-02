@@ -15,12 +15,11 @@ import com.propertymanagement.modules.maintenance.contractinvoice.entity.Mainten
 import com.propertymanagement.modules.maintenance.contractinvoice.repository.MaintenanceContractInvoicePaymentRepository;
 import com.propertymanagement.modules.notification.entity.NotificationType;
 import com.propertymanagement.modules.notification.service.NotificationService;
-import com.propertymanagement.modules.owner.repository.OwnerRepository;
+import com.propertymanagement.modules.property.service.PropertyOwnerPortalRecipientService;
 import com.propertymanagement.modules.user.entity.User;
 import com.propertymanagement.modules.user.repository.UserRepository;
 import com.propertymanagement.shared.exception.AppException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,7 +47,7 @@ public class MaintenanceContractInvoiceService {
     private final ExpenseCategoryLookupRepository expenseCategoryLookupRepository;
     private final NotificationService notificationService;
     private final UserRepository userRepo;
-    private final OwnerRepository ownerRepo;
+    private final PropertyOwnerPortalRecipientService propertyOwnerPortalRecipientService;
     private final MaintenanceContractInvoicePaymentRepository paymentRepo;
 
     // ── List all invoices (admin) ─────────────────────────────────────────
@@ -482,12 +481,10 @@ public class MaintenanceContractInvoiceService {
 
         List<Long> recipients = new ArrayList<>();
         recipients.addAll(userRepo.findActiveContractorStaffForProperty(contract.getPropertyId(), contract.getContractorCompanyId())
-                .stream().map(User::getId).distinct().collect(Collectors.toList()));
-        List<Long> ownerIds = ownerRepo.findActiveLinkedToPropertyId(contract.getPropertyId(), Pageable.unpaged())
-                .stream().map(owner -> owner.getId()).toList();
-        if (!ownerIds.isEmpty()) {
-            recipients.addAll(ownerRepo.findPortalUserIdsByOwnerIds(ownerIds));
-        }
+                .stream().map(User::getId).toList());
+        recipients.addAll(userRepo.findActiveContractorStaffByCompanyId(contract.getContractorCompanyId())
+                .stream().map(User::getId).toList());
+        recipients.addAll(propertyOwnerPortalRecipientService.portalRecipientUserIds(contract.getPropertyId()));
         recipients = recipients.stream().distinct().toList();
         if (recipients.isEmpty()) {
             return;

@@ -1,86 +1,92 @@
-<div [dir]="i18n.currentLang === 'ar' ? 'rtl' : 'ltr'" class="dialog-host">
+<h2 mat-dialog-title>
+  <mat-icon class="dialog-title-icon">{{ isInstallmentMode ? 'payments' : 'receipt_long' }}</mat-icon>
+  <span class="app-dialog-title-text">
+    {{ (isInstallmentMode ? 'MAINTENANCE_INVOICE_PAYMENT.PAY_INSTALLMENT_TITLE' : 'MAINTENANCE_INVOICE_PAYMENT.TITLE') | translate }}
+    <small class="dialog-title-sub">{{ data.invoice.invoiceNumber }}</small>
+  </span>
+</h2>
 
-  <div mat-dialog-title class="dialog-header">
-    <div class="dialog-header-text">
-      <h2>{{ (isInstallmentMode ? 'MAINTENANCE_INVOICE_PAYMENT.PAY_INSTALLMENT_TITLE' : 'MAINTENANCE_INVOICE_PAYMENT.TITLE') | translate }}</h2>
-      <p class="dialog-subtitle">{{ data.invoice.invoiceNumber }}</p>
-    </div>
-    <button mat-icon-button type="button" mat-dialog-close class="close-btn" [attr.aria-label]="'COMMON.CANCEL' | translate">
-      <mat-icon>close</mat-icon>
-    </button>
-  </div>
+<mat-dialog-content class="payment-dialog-body">
+  <form [formGroup]="form" class="payment-dialog-form">
 
-  <mat-dialog-content>
-    <form [formGroup]="form" class="dialog-form">
-
-      <!-- Invoice summary -->
-      <div class="summary-row">
-        <div class="summary-chip">
-          <span class="chip-label">{{ 'MAINTENANCE_INVOICE_PAYMENT.TOTAL' | translate }}</span>
-          <strong class="chip-value">{{ data.invoice.amount | number:'1.2-2' }} {{ currency }}</strong>
+    <div class="invoice-summary-card full">
+      <div class="invoice-summary-header">
+        <mat-icon>summarize</mat-icon>
+        <span>{{ 'MAINTENANCE_INVOICES.INVOICE_DETAILS' | translate }}</span>
+      </div>
+      <div class="invoice-summary-grid">
+        <div class="summary-item">
+          <span class="summary-label">{{ 'MAINTENANCE_INVOICE_PAYMENT.TOTAL' | translate }}</span>
+          <strong>{{ data.invoice.amount | number:'1.2-2' }} {{ currency }}</strong>
         </div>
-        <div class="summary-chip">
-          <span class="chip-label">{{ 'MAINTENANCE_INVOICE_PAYMENT.PAID' | translate }}</span>
-          <strong class="chip-value">{{ (data.invoice.paidAmount || 0) | number:'1.2-2' }} {{ currency }}</strong>
+        <div class="summary-item">
+          <span class="summary-label">{{ 'MAINTENANCE_INVOICE_PAYMENT.PAID' | translate }}</span>
+          <strong>{{ (data.invoice.paidAmount || 0) | number:'1.2-2' }} {{ currency }}</strong>
         </div>
-        <div class="summary-chip">
-          <span class="chip-label">{{ 'MAINTENANCE_INVOICE_PAYMENT.REMAINING' | translate }}</span>
-          <strong class="chip-value accent">{{ (data.invoice.remainingAmount ?? data.invoice.amount) | number:'1.2-2' }} {{ currency }}</strong>
+        <div class="summary-item accent">
+          <span class="summary-label">{{ 'MAINTENANCE_INVOICE_PAYMENT.REMAINING' | translate }}</span>
+          <strong>{{ (data.invoice.remainingAmount ?? data.invoice.amount) | number:'1.2-2' }} {{ currency }}</strong>
         </div>
       </div>
+    </div>
 
-      <!-- Installment mode: show payment amount -->
-      <div class="installment-amount-row" *ngIf="isInstallmentMode">
-        <mat-icon>payments</mat-icon>
-        <span>{{ 'MAINTENANCE_INVOICE_PAYMENT.INSTALLMENT_AMOUNT' | translate }}</span>
+    <div class="installment-highlight full" *ngIf="isInstallmentMode">
+      <mat-icon>payments</mat-icon>
+      <div>
+        <span class="summary-label">{{ 'MAINTENANCE_INVOICE_PAYMENT.INSTALLMENT_AMOUNT' | translate }}</span>
         <strong>{{ paymentAmount() | number:'1.2-2' }} {{ currency }}</strong>
       </div>
+    </div>
 
-      <!-- Payment mode cards -->
-      <ng-container *ngIf="!isInstallmentMode">
-        <div class="mode-grid">
-          <button type="button" class="mode-card" [class.active]="selectedMode === 'FULL'" (click)="chooseMode('FULL')">
-            <mat-icon>task_alt</mat-icon>
-            <span class="mode-title">{{ 'MAINTENANCE_INVOICE_PAYMENT.FULL' | translate }}</span>
-            <span class="mode-hint">{{ 'MAINTENANCE_INVOICE_PAYMENT.FULL_HINT' | translate }}</span>
-          </button>
-          <button type="button" class="mode-card" [class.active]="selectedMode === 'SCHEDULED'" (click)="chooseMode('SCHEDULED')">
-            <mat-icon>event_repeat</mat-icon>
-            <span class="mode-title">{{ 'MAINTENANCE_INVOICE_PAYMENT.SCHEDULED' | translate }}</span>
-            <span class="mode-hint">{{ 'MAINTENANCE_INVOICE_PAYMENT.SCHEDULED_HINT' | translate }}</span>
-          </button>
+    <ng-container *ngIf="!isInstallmentMode">
+      <div class="section-divider full">
+        <span>{{ 'MAINTENANCE_INVOICE_PAYMENT.TITLE' | translate }}</span>
+      </div>
+
+      <button type="button" class="mode-card" [class.active]="selectedMode === 'FULL'" (click)="chooseMode('FULL')">
+        <mat-icon>task_alt</mat-icon>
+        <span class="mode-title">{{ 'MAINTENANCE_INVOICE_PAYMENT.FULL' | translate }}</span>
+        <span class="mode-hint">{{ 'MAINTENANCE_INVOICE_PAYMENT.FULL_HINT' | translate }}</span>
+      </button>
+
+      <button type="button" class="mode-card" [class.active]="selectedMode === 'SCHEDULED'" (click)="chooseMode('SCHEDULED')">
+        <mat-icon>event_repeat</mat-icon>
+        <span class="mode-title">{{ 'MAINTENANCE_INVOICE_PAYMENT.SCHEDULED' | translate }}</span>
+        <span class="mode-hint">{{ 'MAINTENANCE_INVOICE_PAYMENT.SCHEDULED_HINT' | translate }}</span>
+      </button>
+
+      <mat-form-field appearance="outline" class="full" subscriptSizing="dynamic" *ngIf="selectedMode === 'SCHEDULED'">
+        <mat-label>{{ 'MAINTENANCE_INVOICE_PAYMENT.INSTALLMENT_COUNT' | translate }}</mat-label>
+        <mat-select formControlName="installmentCount">
+          <mat-option *ngFor="let n of [1,2,3,4]" [value]="n">{{ n }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <div class="installments-table full" *ngIf="selectedMode === 'SCHEDULED'" formArrayName="installments">
+        <div class="it-head">
+          <span>{{ 'MAINTENANCE_INVOICE_PAYMENT.INSTALLMENT' | translate }}</span>
+          <span>{{ 'MAINTENANCE_INVOICE_PAYMENT.AMOUNT' | translate }}</span>
+          <span>{{ 'MAINTENANCE_INVOICE_PAYMENT.DUE_DATE' | translate }}</span>
         </div>
-
-        <!-- Installment count -->
-        <mat-form-field appearance="outline" *ngIf="selectedMode === 'SCHEDULED'" class="count-field">
-          <mat-label>{{ 'MAINTENANCE_INVOICE_PAYMENT.INSTALLMENT_COUNT' | translate }}</mat-label>
-          <mat-select formControlName="installmentCount">
-            <mat-option *ngFor="let n of [1,2,3,4]" [value]="n">{{ n }}</mat-option>
-          </mat-select>
-        </mat-form-field>
-
-        <!-- Installments table -->
-        <div class="installments-table" *ngIf="selectedMode === 'SCHEDULED'" formArrayName="installments">
-          <div class="it-head">
-            <span>{{ 'MAINTENANCE_INVOICE_PAYMENT.INSTALLMENT' | translate }}</span>
-            <span>{{ 'MAINTENANCE_INVOICE_PAYMENT.AMOUNT' | translate }}</span>
-            <span>{{ 'MAINTENANCE_INVOICE_PAYMENT.DUE_DATE' | translate }}</span>
-          </div>
-          <div class="it-row" *ngFor="let row of installments.controls; let i = index" [formGroupName]="i">
-            <span class="it-num">#{{ i + 1 }}</span>
-            <strong class="it-amount">{{ installmentAmount(i) | number:'1.2-2' }} {{ currency }}</strong>
-            <span *ngIf="i === 0" class="date-fixed">{{ todayDate | date:'dd/MM/yyyy' }}</span>
-            <mat-form-field *ngIf="i !== 0" appearance="outline" class="date-field">
-              <input matInput [matDatepicker]="picker" formControlName="dueDate" [min]="todayDate">
-              <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
-              <mat-datepicker #picker></mat-datepicker>
-            </mat-form-field>
-          </div>
-          <p class="hint-text">{{ 'MAINTENANCE_INVOICE_PAYMENT.FIRST_INSTALLMENT_HINT' | translate }}</p>
+        <div class="it-row" *ngFor="let row of installments.controls; let i = index" [formGroupName]="i">
+          <span class="it-num">#{{ i + 1 }}</span>
+          <strong class="it-amount">{{ installmentAmount(i) | number:'1.2-2' }} {{ currency }}</strong>
+          <span *ngIf="i === 0" class="date-fixed">{{ todayDate | date:'dd/MM/yyyy' }}</span>
+          <mat-form-field *ngIf="i !== 0" appearance="outline" class="date-field" subscriptSizing="dynamic">
+            <input matInput [matDatepicker]="picker" formControlName="dueDate" [min]="todayDate">
+            <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+            <mat-datepicker #picker></mat-datepicker>
+          </mat-form-field>
         </div>
-      </ng-container>
+        <p class="hint-text">{{ 'MAINTENANCE_INVOICE_PAYMENT.FIRST_INSTALLMENT_HINT' | translate }}</p>
+      </div>
+    </ng-container>
 
-      <!-- Receipt upload -->
+    <div class="section-divider full">
+      <span>{{ 'MAINTENANCE_INVOICE_PAYMENT.RECEIPT' | translate }}</span>
+    </div>
+
+    <div class="full media-block">
       <app-upload-zone
         [multiple]="false"
         [urlList]="receiptUrls"
@@ -91,23 +97,21 @@
       <p class="error-text" *ngIf="form.touched && receiptUrls.length === 0">
         {{ 'MAINTENANCE_INVOICE_PAYMENT.RECEIPT_REQUIRED' | translate }}
       </p>
+    </div>
 
-      <!-- Notes -->
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>{{ 'MAINTENANCE_INVOICE_PAYMENT.NOTES' | translate }}</mat-label>
-        <textarea matInput formControlName="notes" rows="3"
-                  [placeholder]="'MAINTENANCE_INVOICE_PAYMENT.NOTES_PLACEHOLDER' | translate"></textarea>
-      </mat-form-field>
+    <mat-form-field appearance="outline" class="full" subscriptSizing="dynamic">
+      <mat-label>{{ 'MAINTENANCE_INVOICE_PAYMENT.NOTES' | translate }}</mat-label>
+      <textarea matInput formControlName="notes" rows="3"
+                [placeholder]="'MAINTENANCE_INVOICE_PAYMENT.NOTES_PLACEHOLDER' | translate"></textarea>
+    </mat-form-field>
 
-    </form>
-  </mat-dialog-content>
+  </form>
+</mat-dialog-content>
 
-  <mat-dialog-actions align="end">
-    <button type="button" mat-button mat-dialog-close>{{ 'COMMON.CANCEL' | translate }}</button>
-    <button type="button" mat-flat-button color="primary" (click)="submit()" [disabled]="submitting">
-      <mat-icon>check</mat-icon>
-      {{ 'COMMON.SAVE' | translate }}
-    </button>
-  </mat-dialog-actions>
-
+<div mat-dialog-actions align="end" class="dialog-actions-row">
+  <button mat-stroked-button type="button" mat-dialog-close>{{ 'ACTIONS.CANCEL' | translate }}</button>
+  <button mat-flat-button class="navy-btn" type="button" (click)="submit()" [disabled]="submitting">
+    <mat-spinner *ngIf="submitting" diameter="18"></mat-spinner>
+    <span *ngIf="!submitting">{{ 'ACTIONS.SAVE' | translate }}</span>
+  </button>
 </div>

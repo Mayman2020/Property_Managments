@@ -3,6 +3,50 @@
   gap: 24px;
 }
 
+.overdue-alert-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px 20px;
+  border: 1px solid #ef9a9a;
+  background: #fff5f5;
+}
+
+.overdue-alert-icon mat-icon {
+  color: #c62828;
+  font-size: 28px;
+  width: 28px;
+  height: 28px;
+}
+
+.overdue-alert-body {
+  flex: 1;
+  min-width: 0;
+
+  strong {
+    display: block;
+    color: #b71c1c;
+    margin-bottom: 4px;
+  }
+
+  p {
+    margin: 0;
+    color: var(--text-muted, #5c5348);
+    line-height: 1.5;
+  }
+}
+
+.overdue-alert-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.app-icon-btn.warn mat-icon {
+  color: #c62828;
+}
+
 .badge-warn {
   display: inline-block;
   padding: 2px 10px;

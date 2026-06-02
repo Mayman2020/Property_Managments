@@ -1,5 +1,7 @@
 package com.propertymanagement.modules.maintenance.assignment.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -27,6 +29,40 @@ public interface MaintenanceContractRepository extends JpaRepository<Maintenance
     List<MaintenanceContract> findByStatusAndPropertyIdInOrderByCreatedAtDesc(String status, Collection<Long> propertyIds);
 
     List<MaintenanceContract> findByPropertyIdInOrderByCreatedAtDesc(Collection<Long> propertyIds);
+
+    @Query("""
+            SELECT mc FROM MaintenanceContract mc
+            WHERE (:status IS NULL OR :status = '' OR mc.status = :status)
+              AND (:ownerApprovalStatus IS NULL OR :ownerApprovalStatus = '' OR mc.ownerApprovalStatus = :ownerApprovalStatus)
+              AND (
+                :q IS NULL OR :q = '' OR
+                LOWER(COALESCE(mc.contractNumber, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
+                LOWER(COALESCE(mc.notes, '')) LIKE LOWER(CONCAT('%', :q, '%'))
+              )
+            """)
+    Page<MaintenanceContract> search(
+            @Param("status") String status,
+            @Param("ownerApprovalStatus") String ownerApprovalStatus,
+            @Param("q") String q,
+            Pageable pageable);
+
+    @Query("""
+            SELECT mc FROM MaintenanceContract mc
+            WHERE mc.propertyId IN :propertyIds
+              AND (:status IS NULL OR :status = '' OR mc.status = :status)
+              AND (:ownerApprovalStatus IS NULL OR :ownerApprovalStatus = '' OR mc.ownerApprovalStatus = :ownerApprovalStatus)
+              AND (
+                :q IS NULL OR :q = '' OR
+                LOWER(COALESCE(mc.contractNumber, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
+                LOWER(COALESCE(mc.notes, '')) LIKE LOWER(CONCAT('%', :q, '%'))
+              )
+            """)
+    Page<MaintenanceContract> searchInPropertyIds(
+            @Param("propertyIds") Collection<Long> propertyIds,
+            @Param("status") String status,
+            @Param("ownerApprovalStatus") String ownerApprovalStatus,
+            @Param("q") String q,
+            Pageable pageable);
 
     @Query("""
             SELECT c FROM MaintenanceContract c

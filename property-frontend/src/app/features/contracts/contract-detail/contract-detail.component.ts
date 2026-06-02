@@ -1,7 +1,6 @@
 ﻿import { Component, OnInit } from '@angular/core';
 import { Location, NgIf, NgFor, DatePipe, DecimalPipe, NgClass } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -20,6 +19,8 @@ import {
 } from '../terminate-contract-dialog/terminate-contract-dialog.component';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
+import { DEFAULT_TABLE_PAGE_SIZE, paginatedSlice } from '../../../core/utils/pagination.util';
 import { AuditTrailComponent } from '../../../shared/components/audit-trail/audit-trail.component';
 import { ContractFormComponent } from '../contract-form/contract-form.component';
 import {
@@ -47,6 +48,7 @@ import {
   RentPaymentSchedule,
   TenantComplaint
 } from '../../../core/models/contract.model';
+import { isOverdueNoticeSnoozed, snoozeOverdueNotice } from '../../../core/utils/overdue-notice.util';
 
 export type ContractDetailSection = 'info' | 'schedule' | 'complaints' | 'annexes' | 'fees' | 'inspections';
 
@@ -57,9 +59,9 @@ export type ContractDetailSection = 'info' | 'schedule' | 'complaints' | 'annexe
     NgIf, NgFor, DatePipe, DecimalPipe, NgClass, FormsModule,
     MatCardModule, MatButtonModule, MatIconModule,
     MatProgressSpinnerModule,
-    MatTableModule, MatDialogModule, MatPaginatorModule,
+    MatTableModule, MatDialogModule,
     MatTooltipModule,
-    TranslateModule, PageHeaderComponent, AuditTrailComponent,
+    TranslateModule, PageHeaderComponent, AuditTrailComponent, TablePagerComponent,
     ContractFormComponent, CancelDraftContractDialogComponent,
     OwnerDraftAmendDialogComponent, OwnerDraftRejectDialogComponent
   ],
@@ -94,10 +96,19 @@ export class ContractDetailComponent implements OnInit {
 
   section: ContractDetailSection = 'info';
 
-  /** Same default page size as {@link PropertyListComponent}. */
-  readonly schedulePageSize = 5;
+  readonly schedulePageSize = DEFAULT_TABLE_PAGE_SIZE;
   schedulePageIndex = 0;
+  complaintsPageIndex = 0;
+  annexesPageIndex = 0;
+  inspectionsPageIndex = 0;
+  feesPageIndex = 0;
+  regLogPageIndex = 0;
+  renewalLogPageIndex = 0;
+  termLogPageIndex = 0;
   highlightedScheduleId: number | null = null;
+  fromOverduePage = false;
+  reminderSendingId: number | null = null;
+  overdueBannerDismissed = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -144,10 +155,7 @@ export class ContractDetailComponent implements OnInit {
       this.annexes = annexes?.data ?? [];
       this.fees = fees?.data ?? [];
       this.focusHighlightedSchedule();
-      this.schedulePageIndex = Math.min(
-        this.schedulePageIndex,
-        Math.max(Math.ceil(this.schedule.length / this.schedulePageSize) - 1, 0)
-      );
+      this.resetTablePages();
       this.loading = false;
       if (this.contract?.tenantId) {
         this.tenantSvc.getById(this.contract.tenantId)
@@ -162,54 +170,43 @@ export class ContractDetailComponent implements OnInit {
     return this.schedule.slice(start, start + this.schedulePageSize);
   }
 
-  get scheduleTotalPages(): number {
-    return Math.max(1, Math.ceil(this.schedule.length / this.schedulePageSize));
+  get pagedComplaints(): TenantComplaint[] {
+    return paginatedSlice(this.complaints, this.complaintsPageIndex, this.schedulePageSize);
   }
 
-  get schedulePageStart(): number {
-    if (!this.schedule.length) return 0;
-    return this.schedulePageIndex * this.schedulePageSize + 1;
+  get pagedAnnexes(): ContractAnnex[] {
+    return paginatedSlice(this.annexes, this.annexesPageIndex, this.schedulePageSize);
   }
 
-  get schedulePageEnd(): number {
-    return Math.min((this.schedulePageIndex + 1) * this.schedulePageSize, this.schedule.length);
+  get pagedInspections(): Inspection[] {
+    return paginatedSlice(this.inspections, this.inspectionsPageIndex, this.schedulePageSize);
   }
 
-  onScheduleMatPage(event: PageEvent): void {
-    this.schedulePageIndex = event.pageIndex;
+  get pagedFees(): ContractFee[] {
+    return paginatedSlice(this.fees, this.feesPageIndex, this.schedulePageSize);
   }
 
-  goToSchedulePage(pageNumber: number): void {
-    const nextPage = pageNumber - 1;
-    if (nextPage < 0 || nextPage >= this.scheduleTotalPages || nextPage === this.schedulePageIndex) return;
-    this.schedulePageIndex = nextPage;
+  get pagedRegistrationLog() {
+    return paginatedSlice(this.registrationLog(), this.regLogPageIndex, this.schedulePageSize);
   }
 
-  previousSchedulePage(): void {
-    this.goToSchedulePage(this.schedulePageIndex + 1);
+  get pagedRenewalLog() {
+    return paginatedSlice(this.renewalLog(), this.renewalLogPageIndex, this.schedulePageSize);
   }
 
-  nextSchedulePage(): void {
-    this.goToSchedulePage(this.schedulePageIndex + 2);
+  get pagedTerminationLog() {
+    return paginatedSlice(this.terminationLog(), this.termLogPageIndex, this.schedulePageSize);
   }
 
-  schedulePageItems(): Array<number | 'ellipsis'> {
-    const total = this.scheduleTotalPages;
-    const current = this.schedulePageIndex + 1;
-
-    if (total <= 7) {
-      return Array.from({ length: total }, (_, index) => index + 1);
-    }
-
-    if (current <= 4) {
-      return [1, 2, 3, 4, 5, 'ellipsis', total];
-    }
-
-    if (current >= total - 3) {
-      return [1, 'ellipsis', total - 4, total - 3, total - 2, total - 1, total];
-    }
-
-    return [1, 'ellipsis', current - 1, current, current + 1, 'ellipsis', total];
+  private resetTablePages(): void {
+    this.schedulePageIndex = 0;
+    this.complaintsPageIndex = 0;
+    this.annexesPageIndex = 0;
+    this.inspectionsPageIndex = 0;
+    this.feesPageIndex = 0;
+    this.regLogPageIndex = 0;
+    this.renewalLogPageIndex = 0;
+    this.termLogPageIndex = 0;
   }
 
   setSection(s: ContractDetailSection): void {
@@ -345,6 +342,7 @@ export class ContractDetailComponent implements OnInit {
   private applyScheduleDeepLink(): void {
     const tab = this.route.snapshot.queryParamMap.get('tab');
     const scheduleId = Number(this.route.snapshot.queryParamMap.get('scheduleId'));
+    this.fromOverduePage = this.route.snapshot.queryParamMap.get('from') === 'overdue';
     if (tab === 'schedule') {
       this.section = 'schedule';
     }
@@ -710,7 +708,7 @@ export class ContractDetailComponent implements OnInit {
           actor: parts[1] ?? '',
           actionKey: key,
           action: this.translateAction(key),
-          detail: parts[3] ?? ''
+          detail: this.translateLogDetail(parts[3] ?? '')
         };
       })
       .reverse();
@@ -770,7 +768,13 @@ export class ContractDetailComponent implements OnInit {
       RENEWAL_REQUESTED: 'طلب تجديد العقد',
       RENEWAL_APPROVED: 'موافقة على التجديد',
       RENEWAL_REJECTED: 'رفض طلب التجديد',
-      RENEWAL_REQUEST_CANCELLED: 'سحب طلب التجديد',
+      SUBMITTED_FOR_OWNER_APPROVAL: 'إرسال للاعتماد من المالك',
+      NO_RENEWAL_INTENT: 'عدم الرغبة في التجديد',
+      DEPOSIT_RETURNED: 'إرجاع التأمين',
+      DAMAGES_REPORTED: 'تسجيل أضرار',
+      DAMAGE_RECEIPT_SUBMITTED: 'رفع إيصال الأضرار',
+      DAMAGE_PAYMENT_CONFIRMED: 'تأكيد سداد الأضرار',
+      UNIT_CLEARED: 'تفريغ الوحدة',
     };
     const mapEn: Record<string, string> = {
       DRAFT_CREATED: 'Draft contract created',
@@ -787,8 +791,113 @@ export class ContractDetailComponent implements OnInit {
       RENEWAL_APPROVED: 'Renewal approved',
       RENEWAL_REJECTED: 'Renewal rejected',
       RENEWAL_REQUEST_CANCELLED: 'Renewal request withdrawn',
+      SUBMITTED_FOR_OWNER_APPROVAL: 'Submitted for owner approval',
+      NO_RENEWAL_INTENT: 'No renewal intent',
+      DEPOSIT_RETURNED: 'Deposit returned',
+      DAMAGES_REPORTED: 'Damages reported',
+      DAMAGE_RECEIPT_SUBMITTED: 'Damage receipt submitted',
+      DAMAGE_PAYMENT_CONFIRMED: 'Damage payment confirmed',
+      UNIT_CLEARED: 'Unit cleared',
     };
     return (isAr ? mapAr : mapEn)[action] ?? action;
+  }
+
+  private translateLogDetail(detail: string): string {
+    const raw = (detail ?? '').trim();
+    if (!raw) return '-';
+    const isAr = this.i18n.currentLang === 'ar';
+    const exactAr: Record<string, string> = {
+      'awaiting owner': 'بانتظار موافقة المالك',
+      'owner approval decision': 'قرار اعتماد المالك',
+      'withdrawn by staff': 'سحب الطلب من الموظف',
+      'unit cleared for re-listing': 'تم تفريغ الوحدة لإعادة الإدراج',
+    };
+    const exactEn: Record<string, string> = {
+      'awaiting owner': 'Awaiting owner approval',
+      'owner approval decision': 'Owner approval decision',
+      'withdrawn by staff': 'Withdrawn by staff',
+      'unit cleared for re-listing': 'Unit cleared for re-listing',
+    };
+    const exact = (isAr ? exactAr : exactEn)[raw.toLowerCase()];
+    if (exact) return exact;
+    const draftMatch = raw.match(/^draft\s+(.+)$/i);
+    if (draftMatch) {
+      return isAr ? `مسودة ${draftMatch[1]}` : `Draft ${draftMatch[1]}`;
+    }
+    const depositMatch = raw.match(/^deposit\s+(.+)$/i);
+    if (depositMatch) {
+      return isAr ? `تأمين ${depositMatch[1]}` : `Deposit ${depositMatch[1]}`;
+    }
+    return raw;
+  }
+
+  overdueScheduleRows(): RentPaymentSchedule[] {
+    return this.schedule.filter((row) => this.isPastDueUnpaid(row));
+  }
+
+  primaryOverdueSchedule(): RentPaymentSchedule | null {
+    const rows = this.overdueScheduleRows();
+    if (!rows.length) return null;
+    if (this.highlightedScheduleId) {
+      const hit = rows.find((r) => r.id === this.highlightedScheduleId);
+      if (hit) return hit;
+    }
+    return rows[0];
+  }
+
+  showOverdueBanner(): boolean {
+    if (this.overdueBannerDismissed) return false;
+    const row = this.primaryOverdueSchedule();
+    if (!row) return false;
+    if (isOverdueNoticeSnoozed(row.id)) return false;
+    return this.fromOverduePage || this.overdueScheduleRows().length > 0;
+  }
+
+  isReminderBackendSnoozed(row: RentPaymentSchedule): boolean {
+    if (!row.overdueReminderSnoozedUntil) return false;
+    return new Date(row.overdueReminderSnoozedUntil).getTime() > Date.now();
+  }
+
+  canSendOverdueReminder(row: RentPaymentSchedule): boolean {
+    if (!this.isPastDueUnpaid(row) || this.isReminderBackendSnoozed(row)) return false;
+    const role = this.auth.getRole();
+    return role === 'SUPER_ADMIN' || role === 'GENERAL_MANAGER' || role === 'ACCOUNTANT' || role === 'OWNER';
+  }
+
+  sendOverdueReminder(row: RentPaymentSchedule): void {
+    if (!this.canSendOverdueReminder(row) || this.reminderSendingId != null) return;
+    this.reminderSendingId = row.id;
+    this.paymentSvc.sendOverdueReminder(row.id).subscribe({
+      next: (res) => {
+        this.reminderSendingId = null;
+        if (res.data) {
+          this.schedule = this.schedule.map((s) => s.id === row.id ? res.data! : s);
+        }
+        this.snack.success(this.i18n.instant('CONTRACTS.OVERDUE_REMINDER_SENT'));
+      },
+      error: (e: { error?: { message?: string; code?: string } }) => {
+        this.reminderSendingId = null;
+        const code = e?.error?.code;
+        if (code === 'OVERDUE_REMINDER_SNOOZED') {
+          this.snack.error(this.i18n.instant('CONTRACTS.OVERDUE_REMINDER_SNOOZED'));
+          return;
+        }
+        this.snack.error(e?.error?.message || this.i18n.instant('COMMON.ERROR'));
+      }
+    });
+  }
+
+  dismissOverdueBanner(): void {
+    const row = this.primaryOverdueSchedule();
+    if (row) snoozeOverdueNotice(row.id);
+    this.overdueBannerDismissed = true;
+  }
+
+  rentMonthLabel(row: RentPaymentSchedule): string {
+    const ref = row.periodFrom || row.dueDate;
+    if (!ref) return '-';
+    const d = new Date(ref);
+    return this.i18n.formatDateTime(d, { month: 'long', year: 'numeric' });
   }
 
   getStatusClass(status: string): string {

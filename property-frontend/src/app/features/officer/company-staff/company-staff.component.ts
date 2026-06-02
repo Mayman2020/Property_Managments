@@ -1,3 +1,4 @@
+import { DialogTitleCloseDirective } from './../../../shared/directives/dialog-title-close.directive';
 import { Component, Inject, OnInit } from '@angular/core';
 import { NgFor, NgIf, NgClass } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -9,6 +10,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatSelectModule } from '@angular/material/select';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
+import { DEFAULT_TABLE_PAGE_SIZE, paginatedSlice } from '../../../core/utils/pagination.util';
 import { CompanyStaffService, CompanyOfficer } from '../../../core/services/company-staff.service';
 import { SnackService } from '../../../core/services/snack.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
@@ -19,7 +22,7 @@ import { TranslateModule } from '@ngx-translate/core';
 @Component({
   selector: 'app-reassign-officer-dialog',
   standalone: true,
-  imports: [TranslateModule, NgFor, FormsModule, MatButtonModule, MatDialogModule, MatFormFieldModule, MatSelectModule],
+  imports: [TranslateModule, NgFor, FormsModule, MatButtonModule, MatDialogModule, MatFormFieldModule, MatSelectModule, DialogTitleCloseDirective],
   template: `
     <h2 mat-dialog-title>{{ ('INLINE_TEXT.TRANSFER_OFFICER_TASKS' | translate) }}</h2>
     <mat-dialog-content class="reassign-body">
@@ -78,6 +81,7 @@ class ReassignOfficerDialogComponent {
     FormsModule,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule, MatDialogModule,
     PageHeaderComponent,
+    TablePagerComponent,
     TranslateModule
   ],
   template: `
@@ -111,7 +115,7 @@ class ReassignOfficerDialogComponent {
         <div class="estate-table-toolbar">
           <label class="estate-search-inline">
             <span class="material-icons">search</span>
-            <input [(ngModel)]="searchQuery" [placeholder]="('INLINE_TEXT.SEARCH_OFFICER' | translate)" />
+            <input [(ngModel)]="searchQuery" (ngModelChange)="pageIndex = 0" [placeholder]="('INLINE_TEXT.SEARCH_OFFICER' | translate)" />
           </label>
           <span class="staff-count">{{ filtered.length }} {{ ('INLINE_TEXT.OFFICER_S' | translate) }}</span>
         </div>
@@ -127,7 +131,7 @@ class ReassignOfficerDialogComponent {
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let o of filtered">
+              <tr *ngFor="let o of pagedFiltered">
                 <td>
                   <div class="officer-cell">
                     <div class="officer-avatar" [style.background-image]="o.profileImageUrl ? 'url(' + o.profileImageUrl + ')' : null">
@@ -172,6 +176,12 @@ class ReassignOfficerDialogComponent {
             </tbody>
           </table>
         </div>
+        <app-table-pager
+          [length]="filtered.length"
+          [pageSize]="pageSize"
+          [pageIndex]="pageIndex"
+          (pageIndexChange)="pageIndex = $event">
+        </app-table-pager>
       </section>
     </div>
   `,
@@ -209,6 +219,8 @@ export class CompanyStaffComponent implements OnInit {
   loading = false;
   actionId: number | null = null;
   searchQuery = '';
+  readonly pageSize = DEFAULT_TABLE_PAGE_SIZE;
+  pageIndex = 0;
 
   constructor(
     private readonly staffSvc: CompanyStaffService,
@@ -232,12 +244,16 @@ export class CompanyStaffComponent implements OnInit {
     );
   }
 
+  get pagedFiltered(): CompanyOfficer[] {
+    return paginatedSlice(this.filtered, this.pageIndex, this.pageSize);
+  }
+
   ngOnInit(): void { this.load(); }
 
   load(): void {
     this.loading = true;
     this.staffSvc.listMyOfficers().subscribe({
-      next: (res) => { this.officers = res.data ?? []; this.loading = false; },
+      next: (res) => { this.officers = res.data ?? []; this.pageIndex = 0; this.loading = false; },
       error: () => { this.loading = false; }
     });
   }

@@ -1,3 +1,4 @@
+import { DialogTitleCloseDirective } from './../../../shared/directives/dialog-title-close.directive';
 ﻿import { Component, Inject } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -26,8 +27,7 @@ export interface ExpenseDialogData {
   imports: [
     NgIf, NgFor, ReactiveFormsModule, TranslateModule,
     MatDialogModule, MatButtonModule, MatDatepickerModule, MatFormFieldModule,
-    MatInputModule, MatProgressSpinnerModule, MatSelectModule
-  ],
+    MatInputModule, MatProgressSpinnerModule, MatSelectModule, DialogTitleCloseDirective],
   template: `
     <h2 mat-dialog-title>{{ 'FINANCE.ADD_EXPENSE' | translate }}</h2>
     <mat-dialog-content class="dialog-body">

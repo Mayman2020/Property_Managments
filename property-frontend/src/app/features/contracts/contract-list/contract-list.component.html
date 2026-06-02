@@ -16,18 +16,21 @@
     </button>
   </app-page-header>
 
-  <div *ngIf="loading" class="loading-wrap">
+  <div *ngIf="listLoad.showInitialSpinner" class="loading-wrap">
     <mat-spinner diameter="40"></mat-spinner>
   </div>
 
   <app-empty-state
-    *ngIf="!loading && contracts.length === 0 && !hasActiveFilters()"
+    *ngIf="listLoad.showSurface && contracts.length === 0 && !hasActiveFilters()"
     icon="description"
     [title]="'CONTRACTS.CONTRACTS_EMPTY_TITLE' | translate"
     [message]="'CONTRACTS.CONTRACTS_EMPTY_MSG' | translate">
   </app-empty-state>
 
-  <ng-container *ngIf="!loading && (contracts.length > 0 || hasActiveFilters())">
+  <div class="contracts-list-body app-list-surface"
+    [class.is-refreshing]="listLoad.refreshing"
+    *ngIf="listLoad.showSurface && (contracts.length > 0 || hasActiveFilters())">
+    <div class="list-refresh-spinner" *ngIf="listLoad.refreshing"><mat-spinner diameter="32"></mat-spinner></div>
     <section class="contracts-stats">
       <article class="stat-pill">
         <span class="stat-label">{{ 'COMMON.ALL' | translate }}</span>
@@ -56,22 +59,23 @@
           </label>
 
           <div class="contracts-select-group">
-            <label class="contracts-select-shell">
-              <span>{{ ('INLINE_TEXT.REQUEST_STATUS' | translate) }}</span>
-              <select [(ngModel)]="filterStatus" (change)="onFilterChange()" class="estate-property-select">
-                <option value="">{{ 'COMMON.ALL' | translate }}</option>
-                <option *ngFor="let s of statusOptions" [value]="s">{{ statusLabel(s) }}</option>
-              </select>
-            </label>
+            <div class="contracts-select-shell">
+              <app-estate-lov-select
+                [label]="'INLINE_TEXT.REQUEST_STATUS'"
+                [options]="statusLovOptions"
+                [(ngModel)]="filterStatus"
+                (ngModelChange)="onFilterChange()">
+              </app-estate-lov-select>
+            </div>
 
-            <label class="contracts-select-shell contracts-select-shell--type">
-              <span>{{ ('INLINE_TEXT.CONTRACT_TYPE' | translate) }}</span>
-              <select [(ngModel)]="filterType" (change)="onFilterChange()" class="estate-property-select">
-                <option value="">{{ ('INLINE_TEXT.ALL_CONTRACT_TYPES' | translate) }}</option>
-                <option value="LEASE">{{ ('INLINE_TEXT.LEASE_CONTRACTS' | translate) }}</option>
-                <option value="MAINTENANCE">{{ ('INLINE_TEXT.MAINTENANCE_CONTRACTS' | translate) }}</option>
-              </select>
-            </label>
+            <div class="contracts-select-shell contracts-select-shell--type">
+              <app-estate-lov-select
+                [label]="'INLINE_TEXT.CONTRACT_TYPE'"
+                [options]="contractTypeLovOptions"
+                [(ngModel)]="filterType"
+                (ngModelChange)="onFilterChange()">
+              </app-estate-lov-select>
+            </div>
 
             <button mat-icon-button class="clear-contract-filters" type="button" (click)="clearFilters()" *ngIf="hasActiveFilters()" [matTooltip]="'ACTIONS.CLEAR_FILTERS' | translate">
               <mat-icon>filter_alt_off</mat-icon>
@@ -106,6 +110,7 @@
         <table class="app-data-table source-table">
           <thead>
             <tr>
+              <th class="table-index-col">#</th>
               <th>{{ 'CONTRACTS.CONTRACT_NUMBER' | translate }}</th>
               <th>{{ ('INLINE_TEXT.TYPE' | translate) }}</th>
               <th>{{ partyHeader() }}</th>
@@ -117,7 +122,8 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let c of contracts">
+            <tr *ngFor="let c of contracts; let i = index">
+              <td class="table-index-col">{{ i | tableRowIndex:pageIndex:pageSize }}</td>
               <td>
                 <a *ngIf="c.source === 'LEASE'" [routerLink]="['/admin/contracts', c.id]" class="contract-link">{{ c.contractNumber }}</a>
                 <a *ngIf="c.source === 'MAINTENANCE'" [routerLink]="['/admin/contracts/maintenance', c.id]" class="contract-link">{{ c.contractNumber }}</a>
@@ -152,7 +158,7 @@
               </td>
             </tr>
             <tr *ngIf="contracts.length === 0">
-              <td colspan="8" class="empty-row">{{ 'COMMON.NO_DATA' | translate }}</td>
+              <td colspan="9" class="empty-row">{{ 'COMMON.NO_DATA' | translate }}</td>
             </tr>
           </tbody>
         </table>
@@ -160,5 +166,5 @@
 
       <app-table-pager [length]="totalElements" [pageSize]="pageSize" [pageIndex]="pageIndex" (pageIndexChange)="goToPage($event)"></app-table-pager>
     </section>
-  </ng-container>
+  </div>
 </div>

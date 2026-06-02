@@ -1,3 +1,4 @@
+import { DialogTitleCloseDirective } from './../../../shared/directives/dialog-title-close.directive';
 ﻿import { Component, OnInit } from '@angular/core';
 import { NgIf, NgFor, NgTemplateOutlet, DecimalPipe } from '@angular/common';
 import { forkJoin, of } from 'rxjs';
@@ -39,8 +40,7 @@ import { HrEmployeeService, HrEmployeeRow } from '../../../core/services/hr-empl
     MatDatepickerModule, MatNativeDateModule,
     MatCheckboxModule, MatStepperModule,
     MatProgressSpinnerModule, MatDialogModule,
-    TranslateModule, PageHeaderComponent
-  ],
+    TranslateModule, PageHeaderComponent, DialogTitleCloseDirective],
   templateUrl: './contract-form.component.html',
   styleUrl: './contract-form.component.scss'
 })

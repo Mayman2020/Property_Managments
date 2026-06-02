@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -39,10 +40,31 @@ public class LeaveController {
         return ResponseEntity.ok(ApiResponse.ok(service.balancesForProperty(propertyId, year)));
     }
 
+    @GetMapping("/{id}")
+    @RequiresPermission(module = "hr", action = "view")
+    public ResponseEntity<ApiResponse<LeaveRequestResponse>> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.ok(service.getById(id)));
+    }
+
     @PostMapping
     @RequiresPermission(module = "hr", action = "create")
     public ResponseEntity<ApiResponse<LeaveRequestResponse>> create(@Valid @RequestBody CreateLeaveRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(service.create(request)));
+    }
+
+    @PutMapping("/{id}")
+    @RequiresPermission(module = "hr", action = "edit")
+    public ResponseEntity<ApiResponse<LeaveRequestResponse>> update(
+            @PathVariable Long id,
+            @Valid @RequestBody CreateLeaveRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(service.update(id, request)));
+    }
+
+    @DeleteMapping("/{id}")
+    @RequiresPermission(module = "hr", action = "delete")
+    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
+        service.delete(id);
+        return ResponseEntity.ok(ApiResponse.ok(null));
     }
 
     @PostMapping("/{id}/approve")

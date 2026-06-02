@@ -1,4 +1,4 @@
-import { ApplicationConfig, APP_INITIALIZER, importProvidersFrom } from '@angular/core';
+import { ApplicationConfig, APP_INITIALIZER, LOCALE_ID, importProvidersFrom } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
@@ -50,6 +50,7 @@ export const appConfig: ApplicationConfig = {
     },
     provideRouter(routes),
     provideAnimationsAsync(),
+    { provide: LOCALE_ID, useValue: 'en-US' },
     { provide: MAT_DATE_LOCALE, useValue: 'en-GB' },
     { provide: DateAdapter, useClass: DateFormatAdapter },
     { provide: MAT_DATE_FORMATS, useValue: DD_MM_YYYY_DATE_FORMATS },

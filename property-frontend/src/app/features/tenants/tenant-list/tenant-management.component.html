@@ -12,22 +12,25 @@
     </button>
   </app-page-header>
 
-  <div class="loading-wrap" *ngIf="loading">
+  <div class="loading-wrap" *ngIf="listLoad.showInitialSpinner">
     <mat-spinner diameter="40"></mat-spinner>
   </div>
 
   <app-empty-state
-    *ngIf="!loading && groupedTenants.length === 0 && !searchTerm && !hasFiltersBar()"
+    *ngIf="listLoad.showSurface && groupedTenants.length === 0 && !searchTerm && !hasFiltersBar()"
     icon="people"
     [title]="'TENANTS.EMPTY_TITLE' | translate"
     [message]="'TENANTS.EMPTY_MESSAGE' | translate">
   </app-empty-state>
 
-  <section class="app-card directory-table-card" *ngIf="!loading && (groupedTenants.length > 0 || searchTerm || hasFiltersBar())">
+  <section class="app-card directory-table-card app-list-surface"
+    [class.is-refreshing]="listLoad.refreshing"
+    *ngIf="listLoad.showSurface && (groupedTenants.length > 0 || searchTerm || hasFiltersBar())">
+    <div class="list-refresh-spinner" *ngIf="listLoad.refreshing"><mat-spinner diameter="32"></mat-spinner></div>
     <div class="estate-table-toolbar directory-toolbar">
-      <div class="directory-toolbar-top">
-      <div class="estate-search-inline">
-        <span class="material-icons">search</span>
+      <div class="directory-toolbar-top table-list-toolbar">
+      <div class="directory-search">
+        <mat-icon>search</mat-icon>
         <input [value]="searchTerm" (input)="onSearch($any($event.target).value)" [placeholder]="'ACTIONS.SEARCH' | translate">
       </div>
       <app-filter-bar *ngIf="pageFilters.length" [filters]="pageFilters" [filterValues]="filterValues" (filtersChange)="onFilterBarChange($event)"></app-filter-bar>
@@ -48,6 +51,7 @@
       <table class="app-data-table source-table">
         <thead>
           <tr>
+            <th class="table-index-col">#</th>
             <th>{{ 'PROFILE.FULL_NAME' | translate }}</th>
             <th>{{ 'REQUEST_FORM.PROPERTY' | translate }}</th>
             <th class="center-col">{{ 'UNITS.UNIT_NUMBER' | translate }}</th>
@@ -59,17 +63,14 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let group of pagedTenants">
-
-            <!-- Name / ID -->
+          <tr *ngFor="let group of groupedTenants; let i = index">
+            <td class="table-index-col">{{ i | tableRowIndex:pageIndex:pageSize }}</td>
             <td>
-              <div class="user-cell">
-                <div class="user-avatar">{{ tenantCode(group.representative) }}</div>
-                <div class="user-info">
-                  <div class="user-name">{{ group.representative.fullName }}</div>
-                  <div class="user-email" *ngIf="group.representative.nationalId">ID: {{ group.representative.nationalId }}</div>
-                </div>
-              </div>
+              <app-table-entity-cell
+                [title]="group.representative.fullName"
+                [subtitle]="group.representative.nationalId ? ('ID: ' + group.representative.nationalId) : undefined"
+                [initial]="tenantCode(group.representative)">
+              </app-table-entity-cell>
             </td>
 
             <!-- Property — show last 3 units/contracts in row -->
@@ -167,12 +168,12 @@
               </div>
             </td>
           </tr>
-          <tr *ngIf="pagedTenants.length === 0">
-            <td colspan="8" class="empty-row">{{ 'COMMON.NO_DATA' | translate }}</td>
+          <tr *ngIf="groupedTenants.length === 0">
+            <td colspan="9" class="empty-row">{{ 'COMMON.NO_DATA' | translate }}</td>
           </tr>
         </tbody>
       </table>
     </div>
-    <app-table-pager [length]="groupedTenants.length" [pageSize]="pageSize" [pageIndex]="pageIndex" (pageIndexChange)="pageIndex = $event"></app-table-pager>
+    <app-table-pager [length]="totalElements" [pageSize]="pageSize" [pageIndex]="pageIndex" (pageIndexChange)="onPageChange($event)"></app-table-pager>
   </section>
 </div>

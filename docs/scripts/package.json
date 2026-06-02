@@ -3,7 +3,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "generate-four-documents": "node generate-four-documents.mjs"
+    "generate-four-documents": "node generate-four-documents.mjs",
+    "generate-manual-qa": "node generate-manual-qa-docx.mjs",
+    "generate-user-stories": "node generate-user-stories-docx.mjs",
+    "run-user-stories-qa": "node run-user-stories-qa.mjs",
+    "generate-test-results": "node generate-test-results-docx.mjs",
+    "run-full-runtime-qa": "node run-full-runtime-qa.mjs",
+    "merge-runtime-results": "node merge-runtime-results.mjs"
   },
   "dependencies": {
     "docx": "^9.5.0",

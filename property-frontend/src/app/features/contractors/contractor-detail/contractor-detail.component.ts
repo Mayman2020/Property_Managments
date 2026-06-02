@@ -11,6 +11,8 @@ import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
+import { DEFAULT_TABLE_PAGE_SIZE, paginatedSlice } from '../../../core/utils/pagination.util';
 import { ContractorCompany, ContractorCompanyService, ContractorPropertyContract } from '../../../core/services/contractor-company.service';
 import { CompanyOfficer } from '../../../core/services/company-staff.service';
 import { DashboardService, RatingDashboardItem } from '../../../core/services/dashboard.service';
@@ -32,7 +34,8 @@ type Tab = 'info' | 'contracts' | 'staff';
     MatIconModule,
     MatProgressSpinnerModule,
     MatTooltipModule,
-    PageHeaderComponent
+    PageHeaderComponent,
+    TablePagerComponent
   ],
   templateUrl: './contractor-detail.component.html',
   styleUrl: './contractor-detail.component.scss'
@@ -45,6 +48,17 @@ export class ContractorDetailComponent implements OnInit {
   companyRatings: RatingDashboardItem[] = [];
   loading = true;
   activeTab: Tab = 'info';
+  readonly pageSize = DEFAULT_TABLE_PAGE_SIZE;
+  contractsPageIndex = 0;
+  staffPageIndex = 0;
+
+  get pagedContracts(): ContractorPropertyContract[] {
+    return paginatedSlice(this.contracts, this.contractsPageIndex, this.pageSize);
+  }
+
+  get pagedStaff(): CompanyOfficer[] {
+    return paginatedSlice(this.staff, this.staffPageIndex, this.pageSize);
+  }
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -76,6 +90,8 @@ export class ContractorDetailComponent implements OnInit {
       this.contracts = contracts?.data ?? [];
       this.staff = staff?.data ?? [];
       this.companyRatings = (ratings?.data ?? []).filter((item) => item.contractorCompanyId === this.companyId);
+      this.contractsPageIndex = 0;
+      this.staffPageIndex = 0;
       this.loading = false;
       if (!this.company) {
         this.router.navigate(['/admin/contractors']);

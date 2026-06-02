@@ -42,16 +42,16 @@
     </app-page-header>
   </ng-container>
 
-  <div class="tenant-link-alert app-card" *ngIf="listContext === 'tenant' && missingTenantLink && !loading">
+  <div class="tenant-link-alert app-card" *ngIf="listContext === 'tenant' && missingTenantLink && listLoad.showSurface">
     <span class="material-icons">link_off</span>
     <p>{{ 'REQUEST_LIST.NO_TENANT_LINK' | translate }}</p>
   </div>
 
-  <div class="loading-center" *ngIf="loading">
+  <div class="loading-center" *ngIf="listLoad.showInitialSpinner">
     <mat-spinner diameter="40"></mat-spinner>
   </div>
 
-  <ng-container *ngIf="listContext === 'tenant' && !loading && !missingTenantLink">
+  <ng-container *ngIf="listContext === 'tenant' && listLoad.showSurface && !missingTenantLink">
     <section class="app-card tenant-units-card" *ngIf="tenantUnitRows.length > 0">
       <div class="section-card-header">
         <div>
@@ -124,7 +124,7 @@
         <table class="app-data-table source-table tenant-data-table">
           <thead>
             <tr>
-              <th>#</th>
+              <th class="table-index-col">#</th>
               <th>{{ 'REQUEST_LIST.REQUEST_TITLE' | translate }}</th>
               <th>{{ 'REQUEST_LIST.OFFICER' | translate }}</th>
               <th>{{ 'MAINTENANCE.STATUS' | translate }}</th>
@@ -134,8 +134,8 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let req of pagedTenantRequests">
-              <td><span class="req-number">{{ req.requestNumber }}</span></td>
+            <tr *ngFor="let req of pagedTenantRequests; let i = index">
+              <td class="table-index-col">{{ i | tableRowIndex:tenantCurrentPageIndex:pageSize }}</td>
               <td class="request-cell">
                 <span class="req-title">{{ req.title }}</span>
                 <span class="unit-info">{{ req.propertyName || '-' }} · {{ req.unitNumber || '-' }}</span>
@@ -155,7 +155,6 @@
       </div>
 
       <app-table-pager
-        *ngIf="filteredRequests.length > pageSize"
         [length]="filteredRequests.length"
         [pageSize]="pageSize"
         [pageIndex]="tenantCurrentPageIndex"
@@ -173,34 +172,42 @@
   </ng-container>
 
   <app-empty-state
-    *ngIf="(listContext === 'admin' || listContext === 'officer') && !loading && filteredAdminRequests.length === 0 && !hasFiltersBar()"
+    *ngIf="(listContext === 'admin' || listContext === 'officer') && listLoad.showSurface && filteredAdminRequests.length === 0 && !hasFiltersBar()"
     icon="build_circle"
     [title]="'REQUEST_LIST.EMPTY_TITLE' | translate"
     [message]="'REQUEST_LIST.EMPTY_MESSAGE' | translate">
   </app-empty-state>
 
-  <section class="app-card table-card" *ngIf="(listContext === 'admin' || listContext === 'officer') && !loading && (filteredAdminRequests.length > 0 || hasFiltersBar())">
+  <section class="app-card table-card app-list-surface"
+    [class.is-refreshing]="listLoad.refreshing"
+    *ngIf="(listContext === 'admin' || listContext === 'officer') && listLoad.showSurface && (filteredAdminRequests.length > 0 || hasFiltersBar())">
+    <div class="list-refresh-spinner" *ngIf="listLoad.refreshing"><mat-spinner diameter="32"></mat-spinner></div>
     <div class="estate-table-toolbar" *ngIf="listContext === 'admin' || listContext === 'officer'">
       <div class="estate-search-inline">
         <span class="material-icons" style="font-size: 18px; color: var(--ink-400)">search</span>
         <input [value]="searchTerm" (input)="onSearch($any($event.target).value)" [placeholder]="'ACTIONS.SEARCH' | translate">
       </div>
       <div class="finance-filter-strip" *ngIf="listContext === 'admin' && properties.length > 0">
-        <label>{{ 'REQUEST_FORM.PROPERTY' | translate }}</label>
-        <select [(ngModel)]="filterPropertyId" (change)="applyFilter()" class="estate-property-select">
-          <option [ngValue]="null">{{ 'COMMON.ALL' | translate }}</option>
-          <option *ngFor="let p of properties" [ngValue]="p.id">
-            {{ i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName) }}
-          </option>
-        </select>
-        <label>{{ 'MAINTENANCE.STATUS' | translate }}</label>
-        <select [(ngModel)]="filterStatus" (change)="applyFilter()" class="estate-property-select">
-          <option *ngFor="let s of statuses" [value]="s.value">{{ s.labelKey | translate }}</option>
-        </select>
-        <label>{{ 'MAINTENANCE.PRIORITY' | translate }}</label>
-        <select [(ngModel)]="filterPriority" (change)="applyFilter()" class="estate-property-select">
-          <option *ngFor="let p of priorities" [value]="p.value">{{ p.labelKey | translate }}</option>
-        </select>
+        <app-estate-lov-select
+          [label]="'REQUEST_FORM.PROPERTY'"
+          [options]="propertyLovOptions"
+          [showAll]="true"
+          allLabelKey="COMMON.ALL"
+          [(ngModel)]="filterPropertyId"
+          (ngModelChange)="applyFilter()">
+        </app-estate-lov-select>
+        <app-estate-lov-select
+          [label]="'MAINTENANCE.STATUS'"
+          [options]="statusLovOptions"
+          [(ngModel)]="filterStatus"
+          (ngModelChange)="applyFilter()">
+        </app-estate-lov-select>
+        <app-estate-lov-select
+          [label]="'MAINTENANCE.PRIORITY'"
+          [options]="priorityLovOptions"
+          [(ngModel)]="filterPriority"
+          (ngModelChange)="applyFilter()">
+        </app-estate-lov-select>
       </div>
       <button mat-icon-button class="clear-filters-btn" (click)="clearFiltersFromBar()" *ngIf="hasFiltersBar()" [matTooltip]="'ACTIONS.CLEAR_FILTERS' | translate">
         <mat-icon>filter_alt_off</mat-icon>
@@ -210,7 +217,7 @@
       <table class="app-data-table source-table">
         <thead>
           <tr>
-            <th>#</th>
+            <th class="table-index-col">#</th>
             <th>{{ 'REQUEST_LIST.REQUEST_TITLE' | translate }}</th>
             <th>{{ 'REQUEST_LIST.PROPERTY_UNIT' | translate }}</th>
             <th>{{ 'REQUEST_LIST.TENANT' | translate }}</th>
@@ -223,8 +230,8 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let req of pagedAdminRequests" [class.sla-breach-row]="isSlaAtRisk(req)">
-            <td><span class="req-number">{{ req.requestNumber }}</span></td>
+          <tr *ngFor="let req of pagedAdminRequests; let i = index" [class.sla-breach-row]="isSlaAtRisk(req)">
+            <td class="table-index-col">{{ i | tableRowIndex:adminPageIndex:pageSize }}</td>
             <td class="request-cell">
               <span class="req-title">{{ req.title }}</span>
             </td>
@@ -254,6 +261,6 @@
       </table>
     </div>
 
-    <app-table-pager [length]="filteredAdminRequests.length" [pageSize]="pageSize" [pageIndex]="adminPageIndex" (pageIndexChange)="adminPageIndex = $event"></app-table-pager>
+    <app-table-pager [length]="totalElements" [pageSize]="pageSize" [pageIndex]="adminPageIndex" (pageIndexChange)="onAdminPageChange($event)"></app-table-pager>
   </section>
 </div>

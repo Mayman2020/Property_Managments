@@ -7,6 +7,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
 import { TranslateModule } from '@ngx-translate/core';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { TablePagerComponent } from '../../shared/components/table-pager/table-pager.component';
+import { DEFAULT_TABLE_PAGE_SIZE, paginatedSlice } from '../../core/utils/pagination.util';
 import { LegalEntity, LegalEntityService } from '../../core/services/legal-entity.service';
 import { SnackService } from '../../core/services/snack.service';
 import { I18nService } from '../../core/i18n/i18n.service';
@@ -20,7 +22,7 @@ import { LegalEntityDialogComponent, LegalEntityDialogData } from './legal-entit
   imports: [
     NgIf, NgFor,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule,
-    TranslateModule, PageHeaderComponent
+    TranslateModule, PageHeaderComponent, TablePagerComponent
   ],
   template: `
     <div class="app-page">
@@ -79,6 +81,12 @@ import { LegalEntityDialogComponent, LegalEntityDialogData } from './legal-entit
             </tbody>
           </table>
         </div>
+        <app-table-pager
+          [length]="entities.length"
+          [pageSize]="pageSize"
+          [pageIndex]="pageIndex"
+          (pageIndexChange)="pageIndex = $event">
+        </app-table-pager>
         <ng-template #emptyTpl>
           <div class="app-empty-state">
             <span class="material-icons empty-icon">domain</span>
@@ -104,6 +112,12 @@ import { LegalEntityDialogComponent, LegalEntityDialogData } from './legal-entit
 export class LegalEntitiesComponent implements OnInit {
   entities: LegalEntity[] = [];
   loading = true;
+  readonly pageSize = DEFAULT_TABLE_PAGE_SIZE;
+  pageIndex = 0;
+
+  get pagedEntities(): LegalEntity[] {
+    return paginatedSlice(this.entities, this.pageIndex, this.pageSize);
+  }
 
   constructor(
     private readonly svc: LegalEntityService,
@@ -123,7 +137,7 @@ export class LegalEntitiesComponent implements OnInit {
   private load(): void {
     this.loading = true;
     this.svc.getAll().subscribe({
-      next: (res) => { this.entities = res.data ?? []; this.loading = false; },
+      next: (res) => { this.entities = res.data ?? []; this.pageIndex = 0; this.loading = false; },
       error: () => { this.entities = []; this.loading = false; }
     });
   }

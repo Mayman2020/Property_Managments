@@ -6,6 +6,7 @@
 
 import { test, expect } from './fixtures';
 import { recordRow, QaRow } from './record';
+import { QA_CREDENTIALS } from './credentials';
 
 const ITER = 1;
 
@@ -44,7 +45,7 @@ test.describe('Iteration 1 — bug-fix log', () => {
     const tests = [
       { method: 'GET', path: '/no-such-thing', expect: 404 },
       { method: 'GET', path: '/employees', expect: 404 },
-      { method: 'GET', path: '/units', expect: 405 }
+      { method: 'GET', path: '/auth/login', expect: 405 }
     ];
     const results: string[] = [];
     for (const t of tests) {
@@ -74,7 +75,7 @@ test.describe('Iteration 1 — bug-fix log', () => {
     // on /admin/hr/employees (the role's first accessible page).
     await page.goto(`${web}/auth/login`);
     await page.locator('input[type="email"]').fill('qa.clerk@propmgmt.com');
-    await page.locator('input[type="password"]').fill('12345');
+    await page.locator('input[type="password"]').fill(QA_CREDENTIALS.PROCEDURES_CLERK.password);
     await page.getByRole('button', { name: /enter|دخول|login/i }).click();
     let landed = '';
     try {

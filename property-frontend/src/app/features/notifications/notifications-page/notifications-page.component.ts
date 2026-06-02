@@ -13,7 +13,7 @@ import { NotificationService } from '../../../core/services/notification.service
 import { AppNotification } from '../../../core/models/notification.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
-import { resolveNotificationTargetUrl } from '../../../core/utils/notification-navigation.util';
+import { openNotification } from '../../../core/utils/notification-open.util';
 import { resolveNotificationBodyLine, resolveNotificationTitle } from '../../../core/utils/notification-display.util';
 
 @Component({
@@ -241,17 +241,7 @@ export class NotificationsPageComponent implements OnInit {
   }
 
   open(item: AppNotification): void {
-    if (!item.read) {
-      this.service.markRead(item.id).subscribe(() => {
-        item.read = true;
-      });
-    }
-    const target = resolveNotificationTargetUrl(item, this.auth);
-    if (target != null && target !== '') {
-      void this.router.navigateByUrl(target);
-      return;
-    }
-    /** No mapped screen — stay on the inbox (avoid sending users to the dashboard). */
+    openNotification(item, this.auth, this.router, this.service);
   }
 
   notificationTitle(notification: AppNotification): string {

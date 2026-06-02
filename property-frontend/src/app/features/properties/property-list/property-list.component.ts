@@ -28,6 +28,8 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state/empt
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { ExportColumn, TableExportToolbarComponent } from '../../../shared/components/table-export-toolbar/table-export-toolbar.component';
 import { FilterBarComponent, FilterSpec } from '../../../shared/components/filter-bar/filter-bar.component';
+import { TableEntityCellComponent } from '../../../shared/components/table-entity-cell/table-entity-cell.component';
+import { TableRowIndexPipe } from '../../../shared/pipes/table-row-index.pipe';
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
 import { Location } from '@angular/common';
 import { PropertyFormComponent } from '../property-form/property-form.component';
@@ -56,7 +58,9 @@ interface PropertyAccessSummaryDto {
     PageHeaderComponent,
     EmptyStateComponent,
     TableExportToolbarComponent,
-    FilterBarComponent
+    FilterBarComponent,
+    TableEntityCellComponent,
+    TableRowIndexPipe
   ],
   templateUrl: './property-list.component.html',
   styleUrl: './property-list.component.scss'
@@ -72,12 +76,15 @@ export class PropertyListComponent implements OnInit {
   occupancyByPropertyId: Partial<Record<number, { occupied: number; total: number }>> = {};
 
   searchTerm = '';
+  filterPropertyCode = '';
+  filterPropertyName = '';
   filterType: string | null = null;
   filterStatus: boolean | null = null;
   showFilters = false;
   pageFilters: FilterSpec[] = [];
   propertyTypes: LookupItem[] = [];
   propertyStatuses: LookupItem[] = [];
+  cities: LookupItem[] = [];
 
   /** From {@code GET /users/me/property-access} — drives scoped filter UI. */
   scopeSummary: PropertyAccessSummaryDto | null = null;
@@ -181,6 +188,16 @@ export class PropertyListComponent implements OnInit {
   private setupFilters(): void {
     this.pageFilters = [
       {
+        key: 'filterPropertyCode',
+        label: 'PROPERTY_FORM.PROPERTY_CODE',
+        type: 'text'
+      },
+      {
+        key: 'filterPropertyName',
+        label: 'PROPERTY_FORM.PROPERTY_NAME',
+        type: 'text'
+      },
+      {
         key: 'filterType',
         label: 'PROPERTY_FORM.PROPERTY_TYPE',
         type: 'select',
@@ -204,44 +221,76 @@ export class PropertyListComponent implements OnInit {
   }
 
   private loadFilterLookups(): void {
-    this.lookupCache.preload('PROPERTY_TYPE', 'PROPERTY_STATUS').subscribe({
+    this.lookupCache.preload('PROPERTY_TYPE', 'PROPERTY_STATUS', 'CITY').subscribe({
       next: () => {
         this.propertyTypes = this.lookupCache.items('PROPERTY_TYPE');
         this.propertyStatuses = this.lookupCache.items('PROPERTY_STATUS');
+        this.cities = this.lookupCache.items('CITY');
         this.setupFilters();
       },
       error: () => this.setupFilters()
     });
   }
 
-  onFilterBarChange(values: any): void {
-    if (values?.filterType !== undefined) this.filterType = values.filterType;
-    if (values?.filterStatus !== undefined) this.filterStatus = values.filterStatus;
+  onFilterBarChange(values: Record<string, unknown>): void {
+    if (values?.['filterPropertyCode'] !== undefined) {
+      this.filterPropertyCode = String(values['filterPropertyCode'] ?? '').trim();
+    }
+    if (values?.['filterPropertyName'] !== undefined) {
+      this.filterPropertyName = String(values['filterPropertyName'] ?? '').trim();
+    }
+    if (values?.['filterType'] !== undefined) this.filterType = values['filterType'] as string | null;
+    if (values?.['filterStatus'] !== undefined) this.filterStatus = values['filterStatus'] as boolean | null;
   }
 
   clearFiltersFromBar(): void {
     this.filterBar?.clear();
+    this.filterPropertyCode = '';
+    this.filterPropertyName = '';
     this.filterType = null;
     this.filterStatus = null;
   }
 
   hasFiltersBar(): boolean {
-    return this.filterType !== null || this.filterStatus !== null;
+    return !!this.filterPropertyCode
+      || !!this.filterPropertyName
+      || this.filterType !== null
+      || this.filterStatus !== null;
   }
 
   get filterValues(): Record<string, unknown> {
     return {
+      filterPropertyCode: this.filterPropertyCode || null,
+      filterPropertyName: this.filterPropertyName || null,
       filterType: this.filterType,
       filterStatus: this.filterStatus
     };
   }
 
   get filteredProperties(): Property[] {
-    return this.properties.filter(p => {
-      const matchType = !this.filterType || p.propertyType === this.filterType;
-      const matchStatus = this.filterStatus === null || p.isActive === this.filterStatus;
-      return matchType && matchStatus;
-    });
+    return this.properties.filter((p) => this.matchesPropertyFilters(p));
+  }
+
+  private matchesPropertyFilters(p: Property): boolean {
+    const codeQ = this.filterPropertyCode.trim().toLowerCase();
+    const nameQ = this.filterPropertyName.trim().toLowerCase();
+    const matchCode = !codeQ || (p.propertyCode || '').toLowerCase().includes(codeQ);
+    const matchName = !nameQ || this.propertySearchText(p).includes(nameQ);
+    const matchType = !this.filterType || p.propertyType === this.filterType;
+    const matchStatus = this.filterStatus === null || p.isActive === this.filterStatus;
+    return matchCode && matchName && matchType && matchStatus;
+  }
+
+  private propertySearchText(p: Property): string {
+    return [
+      p.propertyName,
+      p.propertyNameAr,
+      p.propertyNameEn,
+      this.propertyName(p)
+    ]
+      .filter((v) => !!v && String(v).trim())
+      .join(' ')
+      .toLowerCase();
   }
 
   get activeCount(): number {
@@ -283,7 +332,7 @@ export class PropertyListComponent implements OnInit {
     return [
       { header: this.i18n.instant('PROPERTY_FORM.PROPERTY_CODE'), value: (row) => row.propertyCode || '-' },
       { header: this.i18n.instant('PROPERTY_FORM.PROPERTY_NAME'), value: (row) => this.propertyName(row) },
-      { header: this.i18n.instant('PROPERTY_FORM.CITY'), value: (row) => row.city || '-' },
+      { header: this.i18n.instant('PROPERTY_FORM.CITY'), value: (row) => this.cityLabel(row) },
       { header: this.i18n.instant('PROPERTY_FORM.PROPERTY_TYPE'), value: (row) => this.typeLabel(row.propertyType) },
       { header: this.i18n.instant('PROPERTY_LIST.UNITS'), value: (row) => this.occupancyByPropertyId[row.id]?.total ?? row.totalUnits ?? 0 },
       { header: this.i18n.instant('MAINTENANCE.STATUS'), value: (row) => this.statusLabel(row.isActive) },
@@ -297,11 +346,7 @@ export class PropertyListComponent implements OnInit {
       this.propertySvc.getAll(0, size, this.searchTerm, this.narrowPropertyIdForRequest() ?? null)
     );
     const items = res.data?.content ?? [];
-    return items.filter((property) => {
-      const matchType = !this.filterType || property.propertyType === this.filterType;
-      const matchStatus = this.filterStatus === null || property.isActive === this.filterStatus;
-      return matchType && matchStatus;
-    });
+    return items.filter((property) => this.matchesPropertyFilters(property));
   };
 
   load(): void {
@@ -383,6 +428,8 @@ export class PropertyListComponent implements OnInit {
   }
 
   clearFilters(): void {
+    this.filterPropertyCode = '';
+    this.filterPropertyName = '';
     this.filterType = null;
     this.filterStatus = null;
   }
@@ -463,6 +510,16 @@ export class PropertyListComponent implements OnInit {
     return this.i18n.currentLang === 'ar'
       ? (property.propertyNameAr || property.propertyName)
       : (property.propertyNameEn || property.propertyName);
+  }
+
+  cityLabel(property: Property): string {
+    const raw = (property.city ?? '').trim();
+    if (!raw) return '-';
+    const match = this.cities.find(
+      (city) => city.nameAr === raw || city.nameEn === raw || city.code === raw
+    );
+    if (match) return this.lookupLabel(match);
+    return raw;
   }
 
   toggleActive(property: Property): void {

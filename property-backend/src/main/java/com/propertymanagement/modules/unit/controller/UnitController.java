@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,11 +22,24 @@ public class UnitController {
 
     private final UnitService unitService;
 
+    @GetMapping
+    public ResponseEntity<ApiResponse<Page<UnitResponse>>> getAll(
+            @RequestParam(required = false) Long propertyId,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) Integer floor,
+            @RequestParam(required = false) String unitType,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Boolean active,
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                unitService.getAll(pageable, propertyId, q, floor, unitType, status, active)));
+    }
+
     @GetMapping("/property/{propertyId}")
     public ResponseEntity<ApiResponse<Page<UnitResponse>>> getByProperty(
             @PathVariable Long propertyId,
             @RequestParam(required = false) String q,
-            @PageableDefault(size = 20) Pageable pageable) {
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.ok(unitService.getByProperty(propertyId, pageable, q)));
     }
 

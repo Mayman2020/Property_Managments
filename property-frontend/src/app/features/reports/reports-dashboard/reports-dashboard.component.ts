@@ -6,7 +6,10 @@ import { MatButtonModule } from '@angular/material/button';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { EstateLovOption, EstateLovSelectComponent } from '../../../shared/components/estate-lov-select/estate-lov-select.component';
 import { TableExportToolbarComponent, ExportColumn } from '../../../shared/components/table-export-toolbar/table-export-toolbar.component';
+import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
+import { DEFAULT_TABLE_PAGE_SIZE, paginatedSlice } from '../../../core/utils/pagination.util';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { MaintenanceRequest, MaintenanceService } from '../../../core/services/maintenance.service';
 import { Property, PropertyService } from '../../../core/services/property.service';
@@ -37,13 +40,19 @@ interface LeaderboardRow {
 @Component({
   selector: 'app-reports-dashboard',
   standalone: true,
-  imports: [NgFor, NgIf, DecimalPipe, FormsModule, TranslateModule, MatProgressSpinnerModule, MatButtonModule, PageHeaderComponent, TableExportToolbarComponent],
+  imports: [NgFor, NgIf, DecimalPipe, FormsModule, TranslateModule, MatProgressSpinnerModule, MatButtonModule, PageHeaderComponent, TableExportToolbarComponent, TablePagerComponent, EstateLovSelectComponent],
   templateUrl: './reports-dashboard.component.html',
   styleUrl: './reports-dashboard.component.scss'
 })
 export class ReportsDashboardComponent implements OnInit {
   loading = true;
   rows: PropertyReportRow[] = [];
+  readonly pageSize = DEFAULT_TABLE_PAGE_SIZE;
+  pageIndex = 0;
+
+  get pagedRows(): PropertyReportRow[] {
+    return paginatedSlice(this.rows, this.pageIndex, this.pageSize);
+  }
   monthlySeries: Array<{ label: string; value: number }> = [];
   leaderboard: LeaderboardRow[] = [];
   statTiles: ReportStatTile[] = [];
@@ -61,6 +70,13 @@ export class ReportsDashboardComponent implements OnInit {
   ) {}
 
   get isArabic(): boolean { return this.i18n.currentLang === 'ar'; }
+
+  get propertyLovOptions(): EstateLovOption[] {
+    return this.properties.map((p) => ({
+      value: p.id,
+      label: this.propertyLovLabel(p)
+    }));
+  }
 
   get exportTitle(): string {
     return this.translate.instant('REPORTS.MAINTENANCE_REPORT');
@@ -123,6 +139,7 @@ export class ReportsDashboardComponent implements OnInit {
     }
 
     this.rows = Array.from(grouped.values()).sort((a, b) => b.total - a.total);
+    this.pageIndex = 0;
     this.buildMonthlySeries(list);
     this.buildLeaderboard(list);
     this.buildStatTiles();
@@ -196,5 +213,10 @@ export class ReportsDashboardComponent implements OnInit {
 
   private sparkFromTotals(seed: number): number[] {
     return [0, 1, 2, 3, 4, 5, 6, 7].map((offset) => Math.max(1, seed - 4 + offset));
+  }
+
+  private propertyLovLabel(p: Property): string {
+    const name = this.isArabic ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName);
+    return p.propertyCode ? `${p.propertyCode} — ${name}` : name;
   }
 }

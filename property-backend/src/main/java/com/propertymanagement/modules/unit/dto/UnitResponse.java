@@ -24,6 +24,8 @@ public class UnitResponse {
     private Integer bathrooms;
     private boolean rented;
     private boolean reserved;
+    /** True when an active vacancy listing exists for this unit. */
+    private boolean vacancyPublished;
     private BigDecimal rentAmount;
     private String currency;
     private String notes;

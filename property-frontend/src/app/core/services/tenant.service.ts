@@ -3,6 +3,7 @@ import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
 import { AppConstants } from '../constants/app-constants';
 import { ApiResponse, PagedResponse } from '../models/api-response.model';
+import { withPageParams } from '../utils/pagination.util';
 
 export interface Tenant {
   id: number;
@@ -86,11 +87,11 @@ export interface TenantOnboardingResponse {
 export class TenantService {
   constructor(private readonly api: ApiService) {}
 
-  getAll(page = 0, size = 50, q?: string, propertyId?: number): Observable<ApiResponse<PagedResponse<Tenant>>> {
-    const params: Record<string, string | number | boolean> = { page, size };
-    if (q && q.trim()) params['q'] = q.trim();
-    if (propertyId != null && propertyId > 0) params['propertyId'] = propertyId;
-    return this.api.get(AppConstants.API.TENANTS, params);
+  getAll(page = 0, size = 20, q?: string, propertyId?: number): Observable<ApiResponse<PagedResponse<Tenant>>> {
+    return this.api.get(AppConstants.API.TENANTS, withPageParams(page, size, {
+      q: q?.trim() || undefined,
+      propertyId: propertyId != null && propertyId > 0 ? propertyId : undefined
+    }));
   }
 
   getById(id: number): Observable<ApiResponse<Tenant>> {

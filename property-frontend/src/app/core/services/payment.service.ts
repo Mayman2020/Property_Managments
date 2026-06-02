@@ -38,6 +38,10 @@ export class PaymentService {
     return this.api.post<ApiResponse<RentPaymentSchedule>>(AppConstants.API.PAYMENT_SCHEDULE_MARK_PAID(scheduleId), body);
   }
 
+  sendOverdueReminder(scheduleId: number): Observable<ApiResponse<RentPaymentSchedule>> {
+    return this.api.post<ApiResponse<RentPaymentSchedule>>(AppConstants.API.PAYMENT_SCHEDULE_OVERDUE_REMINDER(scheduleId), {});
+  }
+
   getFeesByContract(contractId: number): Observable<any> {
     return this.api.get<any>(AppConstants.API.CONTRACT_FEES_BY_CONTRACT(contractId));
   }

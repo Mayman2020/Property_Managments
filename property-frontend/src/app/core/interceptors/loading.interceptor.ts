@@ -5,18 +5,20 @@ import { LoadingService } from '../services/loading.service';
 import { shouldSkipGlobalLoaderForUpload } from '../constants/app-constants';
 
 export const loadingInterceptor: HttpInterceptorFn = (req, next) => {
-  // Keep full-screen loader for user-triggered/mutating requests only.
-  // Background GETs (dashboard cards, notification polling, etc.) should not block the whole app shell.
   const url = req.url ?? '';
   const method = req.method.toUpperCase();
   const isStaticAsset =
     url.includes('/assets/i18n/') ||
     url.includes('/assets/runtime-config.js');
   const isBackgroundGet = method === 'GET';
+  const isAuthFlow =
+    url.includes('/auth/login') ||
+    url.includes('/auth/logout') ||
+    url.includes('/auth/refresh');
   /** Form uploads show their own spinners; global overlay here often feels “stuck” on small files. */
   const isMultipartUpload = shouldSkipGlobalLoaderForUpload(url, method);
 
-  if (isStaticAsset || isBackgroundGet || isMultipartUpload) {
+  if (isStaticAsset || isBackgroundGet || isMultipartUpload || isAuthFlow) {
     return next(req);
   }
 

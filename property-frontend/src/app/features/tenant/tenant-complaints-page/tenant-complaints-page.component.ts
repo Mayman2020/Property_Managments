@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -10,6 +10,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
+import { DEFAULT_TABLE_PAGE_SIZE, paginatedSlice } from '../../../core/utils/pagination.util';
 import { ComplaintService } from '../../../core/services/complaint.service';
 import { SnackService } from '../../../core/services/snack.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
@@ -49,7 +51,7 @@ export interface ComplaintAttachment {
   imports: [
     CommonModule, FormsModule,
     MatTabsModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule,
-    MatTooltipModule, TranslateModule, PageHeaderComponent,
+    MatTooltipModule, TranslateModule, PageHeaderComponent, TablePagerComponent,
   ],
   templateUrl: './tenant-complaints-page.component.html',
   styleUrls: ['./tenant-complaints-page.component.scss'],
@@ -58,6 +60,9 @@ export class TenantComplaintsPageComponent implements OnInit {
 
   complaints: any[] = [];
   loading = false;
+  readonly pageSize = DEFAULT_TABLE_PAGE_SIZE;
+  activePageIndex = 0;
+  historyPageIndex = 0;
 
   // Detail panel
   selected: any = null;
@@ -86,6 +91,7 @@ export class TenantComplaintsPageComponent implements OnInit {
   ratingForId: number | null = null;
   selectedRating: RatingValue | null = null;
   ratingSending = false;
+  private pendingComplaintId: number | null = null;
 
   readonly RATINGS = RATINGS;
 
@@ -93,25 +99,64 @@ export class TenantComplaintsPageComponent implements OnInit {
     private readonly complaintSvc: ComplaintService,
     private readonly snack: SnackService,
     private readonly router: Router,
+    private readonly route: ActivatedRoute,
     private readonly api: ApiService,
     readonly i18n: I18nService,
     private readonly lookupCache: LookupCacheService,
   ) {}
 
   ngOnInit(): void {
+    this.route.queryParamMap.subscribe((params) => {
+      const id = Number(params.get('complaintId'));
+      this.pendingComplaintId = Number.isFinite(id) && id > 0 ? id : null;
+      this.tryOpenPendingComplaint();
+    });
     this.lookupCache.preload('COMPLAINT_TYPE', 'COMPLAINT_STATUS').subscribe(() => this.load());
   }
 
   load(): void {
     this.loading = true;
     this.complaintSvc.getMy().subscribe({
-      next: (res: any) => { this.complaints = res?.data ?? res ?? []; this.loading = false; },
+      next: (res: any) => {
+        this.complaints = res?.data ?? res ?? [];
+        this.loading = false;
+        this.tryOpenPendingComplaint();
+      },
       error: () => { this.loading = false; },
+    });
+  }
+
+  private tryOpenPendingComplaint(): void {
+    if (this.pendingComplaintId == null || this.loading) return;
+    const onPage = this.complaints.find((c) => c.id === this.pendingComplaintId);
+    if (onPage) {
+      this.openDetail(onPage);
+      this.pendingComplaintId = null;
+      return;
+    }
+    const id = this.pendingComplaintId;
+    this.complaintSvc.getById(id).subscribe({
+      next: (res: any) => {
+        const complaint = res?.data ?? res;
+        if (complaint?.id) {
+          this.openDetail(complaint);
+        }
+        this.pendingComplaintId = null;
+      },
+      error: () => { this.pendingComplaintId = null; },
     });
   }
 
   get activeComplaints()   { return this.complaints.filter(c => ['OPEN','IN_REVIEW'].includes(c.status)); }
   get previousComplaints() { return this.complaints.filter(c => ['RESOLVED','CLOSED'].includes(c.status)); }
+
+  get pagedActiveComplaints() {
+    return paginatedSlice(this.activeComplaints, this.activePageIndex, this.pageSize);
+  }
+
+  get pagedPreviousComplaints() {
+    return paginatedSlice(this.previousComplaints, this.historyPageIndex, this.pageSize);
+  }
 
   // ── Status helpers ────────────────────────────────────────────────────
 

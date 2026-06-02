@@ -90,6 +90,17 @@
       </app-upload-zone>
     </div>
   </form>
+
+  <app-audit-trail *ngIf="loadedContract" class="maintenance-contract-audit"
+    [createdAt]="loadedContract.createdAt"
+    [updatedAt]="loadedContract.updatedAt"
+    [createdBy]="loadedContract.createdByUserId"
+    [createdByName]="loadedContract.createdByName"
+    [modifiedBy]="loadedContract.modifiedBy"
+    [modifiedByName]="loadedContract.modifiedByName"
+    [approvedBy]="loadedContract.approvedBy"
+    [approvedByName]="loadedContract.approvedByName">
+  </app-audit-trail>
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">

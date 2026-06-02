@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 import com.propertymanagement.modules.unit.entity.Unit;
 import com.propertymanagement.modules.unit.entity.UnitType;
 import com.propertymanagement.modules.unit.repository.UnitRepository;
+import com.propertymanagement.modules.vacancy.repository.VacancyRepository;
 
 @Service
 @RequiredArgsConstructor
@@ -49,18 +50,65 @@ public class UnitService {
     private final LeaseContractService leaseContractService;
     private final NotificationService notificationService;
     private final PropertyOwnerPortalRecipientService propertyOwnerPortalRecipientService;
+    private final VacancyRepository vacancyRepository;
 
     public Page<UnitResponse> getByProperty(Long propertyId, Pageable pageable, String q) {
         assertCanAccessProperty(propertyId);
         Page<Unit> page = unitRepository.searchByProperty(propertyId, trimToNull(q), pageable);
         Map<Long, Integer> floorNumbers = loadFloorNumbersForUnits(page.getContent());
-        return page.map(u -> toResponse(u, floorNumbers));
+        Set<Long> publishedVacancyUnitIds = loadPublishedVacancyUnitIds(page.getContent());
+        return page.map(u -> toResponse(u, floorNumbers, publishedVacancyUnitIds.contains(u.getId())));
+    }
+
+    public Page<UnitResponse> getAll(
+            Pageable pageable,
+            Long propertyId,
+            String q,
+            Integer floorNumber,
+            String unitType,
+            String occupancy,
+            Boolean active) {
+        String trimmedQ = trimToNull(q);
+        String trimmedOccupancy = trimToNull(occupancy);
+        UnitType parsedUnitType = parseUnitType(unitType);
+        if (propertyId != null) {
+            assertCanAccessProperty(propertyId);
+        }
+        Set<Long> scope = propertyScopeService.propertyIdsOrNullIfUnrestricted();
+        Page<Unit> page;
+        if (scope != null) {
+            if (scope.isEmpty()) {
+                return Page.empty(pageable);
+            }
+            if (propertyId != null && !scope.contains(propertyId)) {
+                return Page.empty(pageable);
+            }
+            page = unitRepository.searchInPropertyIds(
+                    scope, propertyId, trimmedQ, floorNumber, parsedUnitType, trimmedOccupancy, active, pageable);
+        } else {
+            page = unitRepository.search(
+                    propertyId, trimmedQ, floorNumber, parsedUnitType, trimmedOccupancy, active, pageable);
+        }
+        Map<Long, Integer> floorNumbers = loadFloorNumbersForUnits(page.getContent());
+        Set<Long> publishedVacancyUnitIds = loadPublishedVacancyUnitIds(page.getContent());
+        return page.map(u -> toResponse(u, floorNumbers, publishedVacancyUnitIds.contains(u.getId())));
+    }
+
+    private UnitType parseUnitType(String unitType) {
+        if (unitType == null || unitType.isBlank()) {
+            return null;
+        }
+        try {
+            return UnitType.valueOf(unitType.trim().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            return null;
+        }
     }
 
     public UnitResponse getById(Long id) {
         Unit unit = findActive(id);
         assertCanAccessProperty(unit.getPropertyId());
-        return toResponse(unit, loadFloorNumbersForUnits(List.of(unit)));
+        return toResponse(unit, loadFloorNumbersForUnits(List.of(unit)), vacancyRepository.existsByUnitIdAndPublishedTrue(unit.getId()));
     }
 
     /** For embedded screens (e.g. contract renewal); includes inactive units. */
@@ -69,7 +117,7 @@ public class UnitService {
             return Optional.empty();
         }
         return unitRepository.findById(unitId)
-                .map(u -> toResponse(u, loadFloorNumbersForUnits(List.of(u))));
+                .map(u -> toResponse(u, loadFloorNumbersForUnits(List.of(u)), vacancyRepository.existsByUnitIdAndPublishedTrue(u.getId())));
     }
 
     @Transactional
@@ -95,7 +143,7 @@ public class UnitService {
                 .build();
         Unit saved = unitRepository.save(unit);
         notifyOwnersOfNewUnit(saved);
-        return toResponse(saved, loadFloorNumbersForUnits(List.of(saved)));
+        return toResponse(saved, loadFloorNumbersForUnits(List.of(saved)), false);
     }
 
     private void notifyOwnersOfNewUnit(Unit unit) {
@@ -166,7 +214,8 @@ public class UnitService {
         unit.setNotes(request.getNotes());
         unit.setFloorPlanUrl(request.getFloorPlanUrl());
         Unit saved = unitRepository.save(unit);
-        return toResponse(saved, loadFloorNumbersForUnits(List.of(saved)));
+        return toResponse(saved, loadFloorNumbersForUnits(List.of(saved)),
+                vacancyRepository.existsByUnitIdAndPublishedTrue(saved.getId()));
     }
 
     /**
@@ -191,7 +240,8 @@ public class UnitService {
         }
         unit.setActive(!unit.isActive());
         Unit saved = unitRepository.save(unit);
-        return toResponse(saved, loadFloorNumbersForUnits(List.of(saved)));
+        return toResponse(saved, loadFloorNumbersForUnits(List.of(saved)),
+                vacancyRepository.existsByUnitIdAndPublishedTrue(saved.getId()));
     }
 
     @Transactional
@@ -232,7 +282,18 @@ public class UnitService {
                 .collect(Collectors.toMap(Floor::getId, Floor::getFloorNumber));
     }
 
-    private UnitResponse toResponse(Unit u, Map<Long, Integer> floorNumberByFloorId) {
+    private Set<Long> loadPublishedVacancyUnitIds(List<Unit> units) {
+        if (units == null || units.isEmpty()) {
+            return Set.of();
+        }
+        List<Long> unitIds = units.stream().map(Unit::getId).filter(Objects::nonNull).toList();
+        if (unitIds.isEmpty()) {
+            return Set.of();
+        }
+        return vacancyRepository.findPublishedUnitIds(unitIds);
+    }
+
+    private UnitResponse toResponse(Unit u, Map<Long, Integer> floorNumberByFloorId, boolean vacancyPublished) {
         Integer floorNumber = u.getFloorId() == null ? null : floorNumberByFloorId.get(u.getFloorId());
         return UnitResponse.builder()
                 .id(u.getId())
@@ -247,6 +308,7 @@ public class UnitService {
                 .bathrooms(u.getBathrooms())
                 .rented(u.isRented())
                 .reserved(u.isReserved())
+                .vacancyPublished(vacancyPublished)
                 .rentAmount(u.getRentAmount())
                 .currency(u.getCurrency())
                 .notes(u.getNotes())

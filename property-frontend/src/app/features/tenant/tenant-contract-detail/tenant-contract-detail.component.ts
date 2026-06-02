@@ -18,6 +18,7 @@ import { I18nService } from '../../../core/i18n/i18n.service';
 import { SnackService } from '../../../core/services/snack.service';
 import { LeaseContract, RentPaymentSchedule } from '../../../core/models/contract.model';
 import { PaymentProofDialogComponent } from '../payment-proof-dialog/payment-proof-dialog.component';
+import { isOverdueNoticeSnoozed, snoozeOverdueNotice } from '../../../core/utils/overdue-notice.util';
 
 @Component({
   selector: 'app-tenant-contract-detail',
@@ -43,6 +44,7 @@ export class TenantContractDetailComponent implements OnInit {
   submittingAction = false;
   damageReceiptUrls: string[] = [];
   inspections: Inspection[] = [];
+  overdueBannerDismissed = false;
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -181,6 +183,35 @@ export class TenantContractDetailComponent implements OnInit {
   private dateOnly(value: string | Date): Date {
     const date = value instanceof Date ? value : new Date(value);
     return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  }
+
+  overdueScheduleRows(): RentPaymentSchedule[] {
+    return this.schedule.filter((row) => this.isPastDueUnpaid(row));
+  }
+
+  primaryOverdueSchedule(): RentPaymentSchedule | null {
+    const rows = this.overdueScheduleRows();
+    return rows.length ? rows[0] : null;
+  }
+
+  showTenantOverdueBanner(): boolean {
+    if (this.overdueBannerDismissed) return false;
+    const row = this.primaryOverdueSchedule();
+    if (!row) return false;
+    return !isOverdueNoticeSnoozed(row.id);
+  }
+
+  dismissTenantOverdueBanner(): void {
+    const row = this.primaryOverdueSchedule();
+    if (row) snoozeOverdueNotice(row.id);
+    this.overdueBannerDismissed = true;
+  }
+
+  rentMonthLabel(row: RentPaymentSchedule): string {
+    const ref = row.periodFrom || row.dueDate;
+    if (!ref) return '-';
+    const d = new Date(ref);
+    return this.i18n.formatDateTime(d, { month: 'long', year: 'numeric' });
   }
 
   getStatusClass(status: string): string {

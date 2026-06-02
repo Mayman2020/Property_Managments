@@ -1,98 +1,111 @@
-<h2 mat-dialog-title>{{ 'COMPLAINT.DETAIL_TITLE' | translate }}</h2>
+<h2 mat-dialog-title class="dialog-title">
+  <mat-icon class="dialog-title-icon">support_agent</mat-icon>
+  {{ 'COMPLAINT.DETAIL_TITLE' | translate }}
+</h2>
 
-<mat-dialog-content class="complaint-detail-dialog">
+<mat-dialog-content class="complaint-dialog-body">
   <div class="loading-wrap loading-contained" *ngIf="loading">
     <mat-spinner diameter="40"></mat-spinner>
   </div>
 
   <ng-container *ngIf="!loading && complaint">
-    <div class="detail-head">
-      <div class="detail-head-main">
+    <div class="complaint-summary full">
+      <div class="complaint-summary-main">
         <span class="detail-ref">#{{ complaint.id }}</span>
-        <h3>{{ complaintDisplayTitle() }}</h3>
-        <p class="detail-sub">{{ complaintTypeLabel(complaint.complaintType) }}</p>
+        <strong class="complaint-title">{{ complaintDisplayTitle() }}</strong>
+        <span class="complaint-type">{{ complaintTypeLabel(complaint.complaintType) }}</span>
       </div>
-      <div class="detail-badges">
-        <span class="status-chip" [ngClass]="getPriorityClass(complaint.priority)">{{ priorityLabel(complaint.priority) }}</span>
-        <span class="status-chip" [ngClass]="getStatusClass(complaint.status)">{{ statusLabel(complaint.status) }}</span>
+      <div class="complaint-badges">
+        <span class="status-badge" [attr.data-status]="priorityBadgeStatus(complaint.priority)">
+          {{ priorityLabel(complaint.priority) }}
+        </span>
+        <span class="status-badge" [attr.data-status]="complaintBadgeStatus(complaint.status)">
+          {{ statusLabel(complaint.status) }}
+        </span>
       </div>
     </div>
 
-    <section class="detail-section">
-      <h4>{{ 'COMPLAINT.TENANT_SECTION' | translate }}</h4>
-      <div class="detail-grid">
-        <div class="detail-item">
-          <span class="label">{{ 'CONTRACTS.TENANT' | translate }}</span>
-          <span class="value">{{ tenantDisplayName() }}</span>
-        </div>
-        <div class="detail-item">
-          <span class="label">{{ 'CONTRACTS.DATE' | translate }}</span>
-          <span class="value">{{ complaint.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
-        </div>
-        <div class="detail-item" *ngIf="complaint.resolvedAt">
-          <span class="label">{{ 'COMPLAINT.RESOLVED_AT' | translate }}</span>
-          <span class="value">{{ complaint.resolvedAt | date:'dd/MM/yyyy HH:mm' }}</span>
-        </div>
+    <div class="section-divider full">
+      <span>{{ 'COMPLAINT.TENANT_SECTION' | translate }}</span>
+    </div>
+    <div class="complaint-detail-grid">
+      <div class="detail-item">
+        <span class="detail-label">{{ 'CONTRACTS.TENANT' | translate }}</span>
+        <span class="detail-value">{{ tenantDisplayName() }}</span>
       </div>
-    </section>
+      <div class="detail-item">
+        <span class="detail-label">{{ 'CONTRACTS.DATE' | translate }}</span>
+        <span class="detail-value">{{ complaint.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+      </div>
+      <div class="detail-item full" *ngIf="complaint.resolvedAt">
+        <span class="detail-label">{{ 'COMPLAINT.RESOLVED_AT' | translate }}</span>
+        <span class="detail-value">{{ complaint.resolvedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+      </div>
+    </div>
 
-    <section class="detail-section">
-      <h4>{{ 'COMPLAINT.PROPERTY_SECTION' | translate }}</h4>
-      <div class="detail-grid">
-        <div class="detail-item">
-          <span class="label">{{ 'CONTRACTS.PROPERTY' | translate }}</span>
-          <span class="value">{{ propertyDisplayName() }}</span>
-        </div>
-        <div class="detail-item">
-          <span class="label">{{ 'CONTRACTS.UNIT' | translate }}</span>
-          <span class="value">{{ complaint.unitNumber || '—' }}</span>
-        </div>
+    <div class="section-divider full">
+      <span>{{ 'COMPLAINT.PROPERTY_SECTION' | translate }}</span>
+    </div>
+    <div class="complaint-detail-grid">
+      <div class="detail-item">
+        <span class="detail-label">{{ 'CONTRACTS.PROPERTY' | translate }}</span>
+        <span class="detail-value">{{ propertyDisplayName() }}</span>
       </div>
-    </section>
+      <div class="detail-item">
+        <span class="detail-label">{{ 'CONTRACTS.UNIT' | translate }}</span>
+        <span class="detail-value">{{ complaint.unitNumber || '—' }}</span>
+      </div>
+    </div>
 
-    <section class="detail-section" *ngIf="complaint.contractId">
-      <h4>{{ 'COMPLAINT.CONTRACT_SECTION' | translate }}</h4>
-      <div class="detail-grid">
+    <ng-container *ngIf="complaint.contractId">
+      <div class="section-divider full">
+        <span>{{ 'COMPLAINT.CONTRACT_SECTION' | translate }}</span>
+      </div>
+      <div class="complaint-detail-grid">
         <div class="detail-item">
-          <span class="label">{{ 'CONTRACTS.CONTRACT_NUMBER' | translate }}</span>
-          <span class="value">{{ complaint.contractNumber || ('#' + complaint.contractId) }}</span>
+          <span class="detail-label">{{ 'CONTRACTS.CONTRACT_NUMBER' | translate }}</span>
+          <span class="detail-value">{{ complaint.contractNumber || ('#' + complaint.contractId) }}</span>
         </div>
         <div class="detail-item">
-          <span class="label">{{ 'CONTRACTS.STATUS' | translate }}</span>
-          <span class="value">{{ contractStatusLabel(complaint.contractStatus) }}</span>
+          <span class="detail-label">{{ 'CONTRACTS.STATUS' | translate }}</span>
+          <span class="detail-value">{{ contractStatusLabel(complaint.contractStatus) }}</span>
         </div>
       </div>
-      <a mat-stroked-button class="link-btn" [routerLink]="['/admin/contracts', complaint.contractId]" (click)="close()">
+      <a mat-stroked-button class="link-btn full" [routerLink]="['/admin/contracts', complaint.contractId]" (click)="close()">
         <mat-icon>open_in_new</mat-icon>
         {{ 'COMPLAINT.VIEW_CONTRACT' | translate }}
       </a>
-    </section>
+    </ng-container>
 
-    <section class="detail-section">
-      <h4>{{ 'COMPLAINT.COMPLAINT_SECTION' | translate }}</h4>
-      <div class="detail-block">
-        <span class="label">{{ 'COMPLAINT.DESCRIPTION_LABEL' | translate }}</span>
-        <p class="description">{{ complaint.description || '—' }}</p>
-      </div>
-      <div class="detail-block" *ngIf="complaint.resolution">
-        <span class="label">{{ 'COMPLAINT.RESOLUTION' | translate }}</span>
-        <p class="description">{{ complaint.resolution }}</p>
-      </div>
-    </section>
+    <div class="section-divider full">
+      <span>{{ 'COMPLAINT.COMPLAINT_SECTION' | translate }}</span>
+    </div>
+    <div class="detail-panel full">
+      <span class="detail-label">{{ 'COMPLAINT.DESCRIPTION_LABEL' | translate }}</span>
+      <p class="detail-text">{{ complaint.description || '—' }}</p>
+    </div>
+    <div class="detail-panel full" *ngIf="complaint.resolution">
+      <span class="detail-label">{{ 'COMPLAINT.RESOLUTION' | translate }}</span>
+      <p class="detail-text">{{ complaint.resolution }}</p>
+    </div>
 
-    <section class="detail-section" *ngIf="complaint.attachments?.length">
-      <h4>{{ 'COMPLAINT.ATTACHMENTS_LABEL' | translate }}</h4>
-      <div class="attachment-list">
+    <ng-container *ngIf="complaint.attachments?.length">
+      <div class="section-divider full">
+        <span>{{ 'COMPLAINT.ATTACHMENTS_LABEL' | translate }}</span>
+      </div>
+      <div class="attachment-list full">
         <a *ngFor="let file of complaint.attachments" class="attachment-link" [href]="file.fileUrl" target="_blank" rel="noopener">
           <mat-icon>attach_file</mat-icon>
           {{ file.fileName || ('COMPLAINT.ATTACHMENT' | translate) }}
         </a>
       </div>
-    </section>
+    </ng-container>
 
-    <section class="detail-section" *ngIf="complaint.replies?.length">
-      <h4>{{ 'COMPLAINT.REPLIES_LABEL' | translate }}</h4>
-      <div class="reply-list">
+    <ng-container *ngIf="complaint.replies?.length">
+      <div class="section-divider full">
+        <span>{{ 'COMPLAINT.REPLIES_LABEL' | translate }}</span>
+      </div>
+      <div class="reply-list full">
         <article class="reply-item" *ngFor="let reply of complaint.replies">
           <div class="reply-meta">
             <strong>{{ reply.senderName || ('COMPLAINT.REPLY_SENDER' | translate) }}</strong>
@@ -101,29 +114,37 @@
           <p>{{ reply.message }}</p>
         </article>
       </div>
-    </section>
+    </ng-container>
 
-    <section class="detail-section" *ngIf="complaint.maintenanceRequestId">
-      <h4>{{ 'COMPLAINT.MAINTENANCE_SECTION' | translate }}</h4>
-      <p class="maintenance-note">{{ 'COMPLAINT.MAINTENANCE_LINKED' | translate }} #{{ complaint.maintenanceRequestId }}</p>
-      <a mat-stroked-button class="link-btn" [routerLink]="['/admin/maintenance', complaint.maintenanceRequestId]" (click)="close()">
+    <ng-container *ngIf="complaint.maintenanceRequestId">
+      <div class="section-divider full">
+        <span>{{ 'COMPLAINT.MAINTENANCE_SECTION' | translate }}</span>
+      </div>
+      <p class="maintenance-note full">{{ 'COMPLAINT.MAINTENANCE_LINKED' | translate }} #{{ complaint.maintenanceRequestId }}</p>
+      <a mat-stroked-button class="link-btn full" [routerLink]="['/admin/maintenance', complaint.maintenanceRequestId]" (click)="close()">
         <mat-icon>build</mat-icon>
         {{ 'COMPLAINT.VIEW_MAINTENANCE' | translate }}
       </a>
-    </section>
+    </ng-container>
+
+    <app-audit-trail class="complaint-audit full"
+      [createdAt]="complaint.createdAt">
+    </app-audit-trail>
   </ng-container>
 </mat-dialog-content>
 
-<mat-dialog-actions align="end" class="dialog-actions">
-  <button mat-button type="button" (click)="close()">{{ 'COMMON.CLOSE' | translate }}</button>
-  <button mat-stroked-button type="button" color="primary"
+<mat-dialog-actions align="end" class="dialog-actions-row">
+  <button mat-stroked-button type="button" class="btn-dialog-cancel" (click)="close()">
+    {{ 'ACTIONS.CLOSE' | translate }}
+  </button>
+  <button mat-stroked-button type="button"
           *ngIf="canCreateMaintenance()"
           [disabled]="acting"
           (click)="createMaintenanceRequest()">
     <mat-icon>build</mat-icon>
     {{ 'COMPLAINT.CREATE_MAINTENANCE' | translate }}
   </button>
-  <button mat-flat-button type="button" color="primary"
+  <button mat-flat-button type="button" class="navy-btn"
           *ngIf="canResolve()"
           [disabled]="acting"
           (click)="resolve()">

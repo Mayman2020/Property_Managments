@@ -1,3 +1,4 @@
+import { DialogTitleCloseDirective } from './../../../shared/directives/dialog-title-close.directive';
 import { NgIf } from '@angular/common';
 import { Component, Inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -49,8 +50,7 @@ function toYmd(d: Date | null | undefined): string | undefined {
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
-    MatNativeDateModule
-  ],
+    MatNativeDateModule, DialogTitleCloseDirective],
   template: `
     <h2 mat-dialog-title>
       {{ titleKey | translate }}

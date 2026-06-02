@@ -12,6 +12,7 @@ import { PropertyService, Property } from '../../../../core/services/property.se
 import { SnackService } from '../../../../core/services/snack.service';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { PageHeaderComponent } from '../../../../shared/components/page-header/page-header.component';
+import { EstateLovOption, EstateLovSelectComponent } from '../../../../shared/components/estate-lov-select/estate-lov-select.component';
 import { TablePagerComponent } from '../../../../shared/components/table-pager/table-pager.component';
 
 @Component({
@@ -21,7 +22,7 @@ import { TablePagerComponent } from '../../../../shared/components/table-pager/t
     NgIf, NgFor, DecimalPipe, FormsModule,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule,
     MatTooltipModule, TranslateModule,
-    PageHeaderComponent, TablePagerComponent,
+    PageHeaderComponent, TablePagerComponent, EstateLovSelectComponent,
   ],
   template: `
     <app-page-header
@@ -31,13 +32,14 @@ import { TablePagerComponent } from '../../../../shared/components/table-pager/t
 
     <div class="page-body">
       <div class="finance-filter-strip" *ngIf="properties.length">
-        <label>{{ ('INLINE_TEXT.PROPERTY' | translate) }}</label>
-        <select [(ngModel)]="filterPropertyId" (change)="load()" class="estate-property-select">
-          <option [ngValue]="null">{{ ('INLINE_TEXT.ALL' | translate) }}</option>
-          <option *ngFor="let p of properties" [ngValue]="p.id">
-            {{ i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName) }}
-          </option>
-        </select>
+        <app-estate-lov-select
+          [label]="'INLINE_TEXT.PROPERTY'"
+          [options]="propertyLovOptions"
+          [showAll]="true"
+          allLabelKey="INLINE_TEXT.ALL"
+          [(ngModel)]="filterPropertyId"
+          (ngModelChange)="load()">
+        </app-estate-lov-select>
         <button mat-icon-button (click)="load()" [matTooltip]="('INLINE_TEXT.REFRESH' | translate)" style="margin-inline-start:auto">
           <mat-icon>refresh</mat-icon>
         </button>
@@ -115,7 +117,6 @@ import { TablePagerComponent } from '../../../../shared/components/table-pager/t
           </div>
         </div>
         <app-table-pager
-          *ngIf="(data.byProperty?.length ?? 0) > pageSize"
           [length]="data.byProperty?.length ?? 0"
           [pageSize]="pageSize"
           [pageIndex]="pageIndex"
@@ -180,6 +181,13 @@ export class OccupancyAnalyticsComponent implements OnInit {
   readonly pageSize = 6;
   pageIndex = 0;
 
+  get propertyLovOptions(): EstateLovOption[] {
+    return this.properties.map((p) => ({
+      value: p.id,
+      label: this.propertyLovLabel(p)
+    }));
+  }
+
   get pagedByProperty(): PropertyOccupancy[] {
     const rows = this.data?.byProperty ?? [];
     const start = this.pageIndex * this.pageSize;
@@ -207,5 +215,12 @@ export class OccupancyAnalyticsComponent implements OnInit {
       next: (res) => { this.data = res.data ?? null; this.loading = false; },
       error: () => { this.loading = false; this.snack.error('INLINE_TEXT.FAILED_TO_LOAD_REPORT'); }
     });
+  }
+
+  private propertyLovLabel(p: Property): string {
+    const name = this.i18n.currentLang === 'ar'
+      ? (p.propertyNameAr || p.propertyName)
+      : (p.propertyNameEn || p.propertyName);
+    return p.propertyCode ? `${p.propertyCode} — ${name}` : name;
   }
 }

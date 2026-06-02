@@ -1,3 +1,4 @@
+import { DialogTitleCloseDirective } from './../../../shared/directives/dialog-title-close.directive';
 ﻿import { Component, Inject, OnInit } from '@angular/core';
 import { DatePipe, DecimalPipe, NgFor, NgIf } from '@angular/common';
 import { Router } from '@angular/router';
@@ -54,8 +55,7 @@ export interface UnitDialogData {
     MatSelectModule,
     MatRadioModule,
     SearchableSelectComponent,
-    AuditTrailComponent
-  ],
+    AuditTrailComponent, DialogTitleCloseDirective],
   template: `
     <h2 mat-dialog-title class="dialog-title">
       <mat-icon class="dialog-title-icon">door_front</mat-icon>

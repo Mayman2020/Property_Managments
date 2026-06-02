@@ -9,8 +9,10 @@ import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface VacancyRepository extends JpaRepository<VacancyListingEntity, Long> {
 
@@ -47,6 +49,12 @@ public interface VacancyRepository extends JpaRepository<VacancyListingEntity, L
                     SELECT 1 FROM property_owners po
                     WHERE po.property_id = vl.property_id AND po.owner_id = :ownerId
                   ) OR p.owner_id = :ownerId)
+              AND vl.is_published = TRUE
+              AND (u.id IS NULL OR (
+                    COALESCE(u.is_rented, FALSE) = FALSE
+                AND COALESCE(u.is_reserved, FALSE) = FALSE
+                AND COALESCE(u.is_active, TRUE) = TRUE
+              ))
             ORDER BY vl.created_at DESC
             """,
             countQuery = """
@@ -64,6 +72,12 @@ public interface VacancyRepository extends JpaRepository<VacancyListingEntity, L
                     SELECT 1 FROM property_owners po
                     WHERE po.property_id = vl.property_id AND po.owner_id = :ownerId
                   ) OR p.owner_id = :ownerId)
+              AND vl.is_published = TRUE
+              AND (u.id IS NULL OR (
+                    COALESCE(u.is_rented, FALSE) = FALSE
+                AND COALESCE(u.is_reserved, FALSE) = FALSE
+                AND COALESCE(u.is_active, TRUE) = TRUE
+              ))
             """,
             nativeQuery = true)
     Page<VacancyListingRow> search(
@@ -99,4 +113,7 @@ public interface VacancyRepository extends JpaRepository<VacancyListingEntity, L
               )
             """, nativeQuery = true)
     List<Long> findContractIdsNeedingVacancyPublish();
+
+    @Query("SELECT v.unitId FROM VacancyListingEntity v WHERE v.unitId IN :unitIds AND v.published = true")
+    Set<Long> findPublishedUnitIds(@Param("unitIds") Collection<Long> unitIds);
 }

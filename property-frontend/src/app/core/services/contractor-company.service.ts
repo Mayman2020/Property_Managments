@@ -1,8 +1,10 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { ApiService } from './api.service';
 import { AppConstants } from '../constants/app-constants';
-import { ApiResponse } from '../models/api-response.model';
+import { ApiResponse, PagedResponse } from '../models/api-response.model';
+import { withPageParams } from '../utils/pagination.util';
 import { CompanyOfficer } from './company-staff.service';
 
 export interface ContractorCompany {
@@ -86,9 +88,29 @@ export class ContractorCompanyService {
   constructor(private readonly api: ApiService) {}
 
   list(all = false, q?: string, propertyId?: number | null): Observable<ApiResponse<ContractorCompany[]>> {
-    const params: Record<string, string | number | boolean> = { all };
-    if (q && q.trim()) params['q'] = q.trim();
-    if (propertyId != null) params['propertyId'] = propertyId;
+    return this.listPaged(0, 500, q, propertyId, null, all).pipe(
+      map((res) => ({
+        ...res,
+        data: (res.data?.content ?? []) as unknown as ContractorCompany[]
+      }))
+    );
+  }
+
+  listPaged(
+    page = 0,
+    size = 20,
+    q?: string,
+    propertyId?: number | null,
+    active?: boolean | null,
+    all = false
+  ): Observable<ApiResponse<PagedResponse<ContractorCompany>>> {
+    const params = withPageParams(page, size, {
+      all,
+      q: q?.trim(),
+      propertyId: propertyId ?? undefined,
+      active: active ?? undefined
+    });
+    params['sort'] = 'name,asc';
     return this.api.get(AppConstants.API.CONTRACTOR_COMPANIES, params);
   }
 

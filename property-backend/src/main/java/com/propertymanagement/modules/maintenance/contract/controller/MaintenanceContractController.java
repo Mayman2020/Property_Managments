@@ -11,6 +11,10 @@ import com.propertymanagement.shared.exception.AppException;
 import com.propertymanagement.shared.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -28,11 +32,12 @@ public class MaintenanceContractController {
 
     @GetMapping("/maintenance-contracts")
     @RequiresPermission(module = "maintenance", action = "view")
-    public ResponseEntity<ApiResponse<List<MaintenanceContractResponse>>> listAll(
-            @RequestParam(required = false) String status) {
-        return ResponseEntity.ok(ApiResponse.ok(status == null || status.isBlank()
-                ? service.listVisibleForCurrentUser()
-                : service.listVisibleByStatusForCurrentUser(status)));
+    public ResponseEntity<ApiResponse<Page<MaintenanceContractResponse>>> listAll(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String ownerApprovalStatus,
+            @RequestParam(required = false) String q,
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.ok(service.getAll(pageable, status, ownerApprovalStatus, q)));
     }
 
     @PostMapping("/maintenance-contracts")

@@ -23,13 +23,15 @@ import { I18nService } from '../../../core/i18n/i18n.service';
 import { ContractSummary, ContractStatus } from '../../../core/models/contract.model';
 import { ContractService } from '../../../core/services/contract.service';
 import { MaintenanceContractResponse, MaintenanceContractService } from '../../../core/services/maintenance-contract.service';
-import { Property, PropertyService } from '../../../core/services/property.service';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { EstateLovOption, EstateLovSelectComponent } from '../../../shared/components/estate-lov-select/estate-lov-select.component';
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
+import { TableRowIndexPipe } from '../../../shared/pipes/table-row-index.pipe';
 import { PermissionService } from '../../../core/services/permission.service';
 import { SnackService } from '../../../core/services/snack.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { ListLoadController } from '../../../shared/utils/list-load.util';
 
 type ContractTypeFilter = '' | 'LEASE' | 'MAINTENANCE';
 
@@ -76,15 +78,16 @@ interface UnifiedContractRow {
     TranslateModule,
     PageHeaderComponent,
     TablePagerComponent,
-    EmptyStateComponent
+    EmptyStateComponent,
+    TableRowIndexPipe,
+    EstateLovSelectComponent
   ],
   templateUrl: './contract-list.component.html',
   styleUrl: './contract-list.component.scss'
 })
 export class ContractListComponent implements OnInit {
-  loading = true;
+  listLoad = new ListLoadController();
   contracts: UnifiedContractRow[] = [];
-  allRows: UnifiedContractRow[] = [];
   totalElements = 0;
   pageSize = 5;
   pageIndex = 0;
@@ -97,10 +100,24 @@ export class ContractListComponent implements OnInit {
   displayedColumns = ['contractNumber', 'tenant', 'unit', 'dates', 'rent', 'status', 'actions'];
   statusOptions = ['DRAFT', 'PENDING_OWNER_APPROVAL', 'PENDING_TERMINATION_APPROVAL', 'PENDING_RENEWAL_APPROVAL', 'ACTIVE', 'EXPIRED', 'TERMINATED', 'ENDED', 'CANCELLED', 'RENEWED', 'OWNER_REJECTED'];
 
+  get statusLovOptions(): EstateLovOption[] {
+    return [
+      { value: '', label: this.i18n.instant('COMMON.ALL') },
+      ...this.statusOptions.map((s) => ({ value: s, label: this.statusLabel(s) }))
+    ];
+  }
+
+  get contractTypeLovOptions(): EstateLovOption[] {
+    return [
+      { value: '', label: this.i18n.instant('INLINE_TEXT.ALL_CONTRACT_TYPES') },
+      { value: 'LEASE', label: this.i18n.instant('INLINE_TEXT.LEASE_CONTRACTS') },
+      { value: 'MAINTENANCE', label: this.i18n.instant('INLINE_TEXT.MAINTENANCE_CONTRACTS') }
+    ];
+  }
+
   constructor(
     private readonly contractSvc: ContractService,
     private readonly maintenanceContractSvc: MaintenanceContractService,
-    private readonly propertySvc: PropertyService,
     private readonly dialog: MatDialog,
     private readonly location: Location,
     private readonly route: ActivatedRoute,
@@ -134,8 +151,14 @@ export class ContractListComponent implements OnInit {
 
     this.search$.pipe(
       debounceTime(300),
-      switchMap(() => this.buildQuery())
-    ).subscribe((res) => this.handleResponse(res));
+      switchMap(() => {
+        this.listLoad.begin();
+        return this.buildQuery();
+      })
+    ).subscribe({
+      next: (res) => this.handleResponse(res),
+      error: () => this.listLoad.end()
+    });
 
     this.loadContracts();
 
@@ -175,8 +198,11 @@ export class ContractListComponent implements OnInit {
   }
 
   loadContracts(): void {
-    this.loading = true;
-    this.buildQuery().subscribe((res) => this.handleResponse(res));
+    this.listLoad.begin();
+    this.buildQuery().subscribe({
+      next: (res) => this.handleResponse(res),
+      error: () => this.listLoad.end()
+    });
   }
 
   onPage(event: PageEvent): void {
@@ -377,48 +403,65 @@ export class ContractListComponent implements OnInit {
   }
 
   private buildQuery() {
+    const q = this.searchQuery.trim() || undefined;
+    const { status, ownerApprovalStatus } = this.resolveStatusFilters();
+    const page = this.pageIndex;
+    const size = this.pageSize;
+    const leaseParams: Record<string, string | number | boolean> = { page, size };
+    if (status) leaseParams['status'] = status;
+    if (ownerApprovalStatus) leaseParams['ownerApprovalStatus'] = ownerApprovalStatus;
+    if (q) leaseParams['q'] = q;
+
+    if (this.filterType === 'LEASE') {
+      return this.contractSvc.getAll(leaseParams).pipe(
+        map((res) => ({
+          rows: ((res?.data?.content ?? []) as ContractSummary[]).map((c) => this.mapLeaseRow(c)),
+          total: res?.data?.totalElements ?? 0
+        })),
+        catchError(() => of({ rows: [], total: 0 }))
+      );
+    }
+
+    if (this.filterType === 'MAINTENANCE') {
+      return this.maintenanceContractSvc.getAll(page, size, status, ownerApprovalStatus, q).pipe(
+        map((res) => ({
+          rows: (res.data?.content ?? []).map((c) => this.mapMaintenanceRow(c)),
+          total: res.data?.totalElements ?? 0
+        })),
+        catchError(() => of({ rows: [], total: 0 }))
+      );
+    }
+
     return forkJoin({
-      leases: this.contractSvc.getAll({ page: 0, size: 500 }).pipe(catchError(() => of(null))),
-      maintenance: this.maintenanceContractSvc.listAll().pipe(catchError(() => of(null))),
-      properties: this.propertySvc.getAll(0, 500).pipe(catchError(() => of(null)))
+      leases: this.contractSvc.getAll(leaseParams).pipe(catchError(() => of(null))),
+      maintenance: this.maintenanceContractSvc.getAll(page, size, status, ownerApprovalStatus, q).pipe(catchError(() => of(null)))
     }).pipe(
-      map(({ leases, maintenance, properties }) => {
-        const propertyMap = new Map<number, string>();
-        ((properties?.data?.content ?? []) as Property[]).forEach((p) => {
-          propertyMap.set(p.id, this.propertyLabel(p));
-        });
-        const leaseRows = ((leases?.data?.content ?? leases?.data ?? []) as ContractSummary[])
-          .map((c) => this.mapLeaseRow(c));
-        const maintenanceRows = ((maintenance?.data ?? []) as MaintenanceContractResponse[])
-          .map((c) => this.mapMaintenanceRow(c, propertyMap));
-        return [...leaseRows, ...maintenanceRows]
-          .sort((a, b) => String(b.createdAt ?? b.startDate).localeCompare(String(a.createdAt ?? a.startDate)));
+      map(({ leases, maintenance }) => {
+        const leaseRows = ((leases?.data?.content ?? []) as ContractSummary[]).map((c) => this.mapLeaseRow(c));
+        const maintenanceRows = (maintenance?.data?.content ?? []).map((c) => this.mapMaintenanceRow(c));
+        const merged = [...leaseRows, ...maintenanceRows]
+          .sort((a, b) => String(b.createdAt ?? b.startDate).localeCompare(String(a.createdAt ?? a.startDate)))
+          .slice(0, size);
+        const total = (leases?.data?.totalElements ?? 0) + (maintenance?.data?.totalElements ?? 0);
+        return { rows: merged, total };
       })
     );
   }
 
-  private handleResponse(rows: UnifiedContractRow[] | null): void {
-    this.allRows = rows ?? [];
-    const query = this.searchQuery.trim().toLowerCase();
-    const filtered = this.allRows.filter((row) => {
-      if (this.filterType && row.source !== this.filterType) return false;
-      if (this.filterStatus === 'OWNER_REJECTED') {
-        return row.ownerApprovalStatus === 'REJECTED';
-      }
-      if (this.filterStatus && row.status !== this.filterStatus) return false;
-      if (!query) return true;
-      return [
-        row.contractNumber,
-        row.partyName,
-        row.propertyName ?? '',
-        row.unitNumber ?? '',
-        row.status
-      ].join(' ').toLowerCase().includes(query);
-    });
-    this.totalElements = filtered.length;
-    const start = this.pageIndex * this.pageSize;
-    this.contracts = filtered.slice(start, start + this.pageSize);
-    this.loading = false;
+  private resolveStatusFilters(): { status?: string; ownerApprovalStatus?: string } {
+    if (this.filterStatus === 'OWNER_REJECTED') {
+      return { ownerApprovalStatus: 'REJECTED' };
+    }
+    if (this.filterStatus) {
+      return { status: this.filterStatus };
+    }
+    return {};
+  }
+
+  private handleResponse(result: { rows: UnifiedContractRow[]; total: number } | null): void {
+    this.contracts = result?.rows ?? [];
+    this.totalElements = result?.total ?? 0;
+    this.listLoad.end();
   }
 
   private mapLeaseRow(c: ContractSummary): UnifiedContractRow {
@@ -441,7 +484,7 @@ export class ContractListComponent implements OnInit {
     };
   }
 
-  private mapMaintenanceRow(c: MaintenanceContractResponse, propertyMap: Map<number, string>): UnifiedContractRow {
+  private mapMaintenanceRow(c: MaintenanceContractResponse): UnifiedContractRow {
     return {
       id: c.contractId,
       source: 'MAINTENANCE',
@@ -449,7 +492,7 @@ export class ContractListComponent implements OnInit {
       partyName: this.contractorLabel(c),
       tenantName: this.contractorLabel(c),
       unitNumber: this.i18n.instant('INLINE_TEXT.ALL_PROPERTY_UNITS'),
-      propertyName: propertyMap.get(c.propertyId) ?? `#${c.propertyId}`,
+      propertyName: this.maintenancePropertyLabel(c),
       startDate: c.startDate,
       endDate: c.endDate,
       amount: c.contractValue,
@@ -461,6 +504,15 @@ export class ContractListComponent implements OnInit {
     };
   }
 
+  private maintenancePropertyLabel(c: MaintenanceContractResponse): string {
+    const ar = (c.propertyNameAr ?? '').trim();
+    const en = (c.propertyNameEn ?? '').trim();
+    const fallback = (c.propertyName ?? '').trim();
+    return this.i18n.currentLang === 'ar'
+      ? (ar || en || fallback || `#${c.propertyId}`)
+      : (en || ar || fallback || `#${c.propertyId}`);
+  }
+
   private contractorLabel(c: MaintenanceContractResponse): string {
     const ar = (c.contractorCompanyNameAr ?? '').trim();
     const en = (c.contractorCompanyNameEn ?? '').trim();
@@ -468,15 +520,6 @@ export class ContractListComponent implements OnInit {
     return this.i18n.currentLang === 'ar'
       ? (ar || en || fallback || `#${c.contractorCompanyId}`)
       : (en || ar || fallback || `#${c.contractorCompanyId}`);
-  }
-
-  private propertyLabel(p: Property): string {
-    const ar = (p.propertyNameAr ?? '').trim();
-    const en = (p.propertyNameEn ?? '').trim();
-    const fallback = (p.propertyName ?? '').trim();
-    return this.i18n.currentLang === 'ar'
-      ? (ar || en || fallback || `#${p.id}`)
-      : (en || ar || fallback || `#${p.id}`);
   }
 }
 

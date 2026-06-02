@@ -1,0 +1,118 @@
+.app-loading-shell {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+body:has(.app-shell) .app-loading-shell {
+  top: var(--topbar-height, 64px);
+  inset-inline-start: var(--sidebar-w, 248px);
+}
+
+body:has(.app-shell.sidebar-collapsed) .app-loading-shell {
+  inset-inline-start: var(--sidebar-w-collapsed, 76px);
+}
+
+@media (max-width: 768px) {
+  body:has(.app-shell) .app-loading-shell {
+    inset-inline-start: 0;
+  }
+}
+
+.app-loading-veil {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--navy-900, #0f172a) 6%, transparent);
+  pointer-events: all;
+}
+
+.app-loading-bar {
+  position: absolute;
+  top: 0;
+  inset-inline: 0;
+  height: 3px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--line, #e2e8f0) 40%, transparent);
+  pointer-events: none;
+}
+
+.app-loading-bar::after {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  width: 42%;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--brass-400, #cca55b) 35%,
+    var(--amber-500, #e8622a) 65%,
+    transparent
+  );
+  animation: app-loading-bar-slide 1.05s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.app-loading-pill {
+  position: absolute;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface, #fff) 92%, transparent);
+  border: 1px solid color-mix(in srgb, var(--line, #e2e8f0) 80%, transparent);
+  box-shadow:
+    0 10px 28px color-mix(in srgb, var(--navy-900, #0f172a) 14%, transparent),
+    0 1px 0 color-mix(in srgb, #fff 60%, transparent) inset;
+  pointer-events: none;
+  animation: app-loading-pill-in 0.22s ease-out;
+}
+
+.app-loading-ring {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--brass-400, #cca55b) 28%, transparent);
+  border-top-color: var(--amber-600, #c45a12);
+  animation: app-loading-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+.app-loading-text {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-muted, #64748b);
+  white-space: nowrap;
+}
+
+@keyframes app-loading-bar-slide {
+  0% {
+    inset-inline-start: -45%;
+  }
+  100% {
+    inset-inline-start: 105%;
+  }
+}
+
+@keyframes app-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes app-loading-pill-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}

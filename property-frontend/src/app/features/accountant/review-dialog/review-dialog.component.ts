@@ -1,3 +1,4 @@
+import { DialogTitleCloseDirective } from './../../../shared/directives/dialog-title-close.directive';
 import { Component, Inject } from '@angular/core';
 import { NgIf } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -19,8 +20,7 @@ export interface ReviewDialogData {
   imports: [
     NgIf, ReactiveFormsModule, TranslateModule,
     MatDialogModule, MatButtonModule, MatFormFieldModule,
-    MatInputModule, MatRadioModule
-  ],
+    MatInputModule, MatRadioModule, DialogTitleCloseDirective],
   template: `
     <h2 mat-dialog-title>{{ data.title }}</h2>
     <mat-dialog-content [formGroup]="form">

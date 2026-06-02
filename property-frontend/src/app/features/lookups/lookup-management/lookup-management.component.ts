@@ -17,6 +17,7 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
 import { ExportColumn, TableExportToolbarComponent } from '../../../shared/components/table-export-toolbar/table-export-toolbar.component';
 import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
+import { TableRowIndexPipe } from '../../../shared/pipes/table-row-index.pipe';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { LookupItem, LookupService, LookupType } from '../../../core/services/lookup.service';
 import { PermissionService } from '../../../core/services/permission.service';
@@ -56,7 +57,8 @@ interface ClassificationList {
     PageHeaderComponent,
     TablePagerComponent,
     TableExportToolbarComponent,
-    HasPermissionDirective
+    HasPermissionDirective,
+    TableRowIndexPipe
   ],
   templateUrl: './lookup-management.component.html',
   styleUrl: './lookup-management.component.scss'

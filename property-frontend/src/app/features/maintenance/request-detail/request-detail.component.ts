@@ -390,23 +390,19 @@ export class RequestDetailComponent implements OnInit {
     if (!date) return '—';
     const parsed = new Date(date);
     if (Number.isNaN(parsed.getTime())) return date;
-    return new Intl.DateTimeFormat(this.i18n.currentLang === 'ar' ? 'ar' : 'en', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    }).format(parsed);
+    return this.i18n.formatDateTime(parsed, { month: 'short', day: 'numeric', year: 'numeric' });
   }
 
   formatDateTime(date: string | null | undefined): string {
     if (!date) return '—';
     const parsed = new Date(date);
     if (Number.isNaN(parsed.getTime())) return date;
-    return new Intl.DateTimeFormat(this.i18n.currentLang === 'ar' ? 'ar' : 'en', {
+    return this.i18n.formatDateTime(parsed, {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
-    }).format(parsed);
+    });
   }
 
   statusLabel(status: string): string { return this.i18n.instant(`STATUS.${status}`); }

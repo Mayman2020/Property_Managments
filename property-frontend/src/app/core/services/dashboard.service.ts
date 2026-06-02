@@ -61,6 +61,8 @@ export interface RatingDashboardItem {
   tenantName?: string;
   tenantNameAr?: string;
   tenantNameEn?: string;
+  tenantId?: number;
+  tenantNationalId?: string;
   categoryNameAr?: string;
   categoryNameEn?: string;
   requestStatus?: string;
@@ -108,6 +110,8 @@ export interface ComplaintRatingDashboardItem {
   tenantName?: string;
   tenantNameAr?: string;
   tenantNameEn?: string;
+  tenantId?: number;
+  tenantNationalId?: string;
 }
 
 @Injectable({ providedIn: 'root' })

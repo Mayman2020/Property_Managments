@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
 import { AppConstants } from '../constants/app-constants';
+import { DEFAULT_LIST_SORT } from '../utils/pagination.util';
 import {
   LeaseContract, ContractSummary, ContractTemplate,
   CreateContractRequest, RenewContractRequest, ContractRenewalRequest, TerminateContractRequest,
@@ -14,7 +15,7 @@ export class ContractService {
   constructor(private api: ApiService) {}
 
   getAll(params?: Record<string, string | number | boolean>): Observable<any> {
-    return this.api.get<any>(AppConstants.API.CONTRACTS, params);
+    return this.api.get<any>(AppConstants.API.CONTRACTS, { sort: DEFAULT_LIST_SORT, ...params });
   }
 
   getById(id: number): Observable<any> {

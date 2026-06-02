@@ -3,6 +3,7 @@ import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
 import { AppConstants } from '../constants/app-constants';
 import { ApiResponse, PagedResponse } from '../models/api-response.model';
+import { DEFAULT_LIST_SORT } from '../utils/pagination.util';
 
 export type RequestStatus =
   | 'PENDING' | 'ASSIGNED' | 'SCHEDULED' | 'IN_PROGRESS'
@@ -128,19 +129,19 @@ export class MaintenanceService {
   constructor(private readonly api: ApiService) {}
 
   getRequests(params?: Record<string, string | number | boolean>): Observable<ApiResponse<PagedResponse<MaintenanceRequest>>> {
-    return this.api.get(AppConstants.API.MAINTENANCE_REQUESTS, params);
+    return this.api.get(AppConstants.API.MAINTENANCE_REQUESTS, { sort: DEFAULT_LIST_SORT, ...params });
   }
 
   getByTenant(tenantId: number, params?: Record<string, string | number | boolean>): Observable<ApiResponse<PagedResponse<MaintenanceRequest>>> {
-    return this.api.get(AppConstants.API.MAINTENANCE_REQUESTS_TENANT(tenantId), params);
+    return this.api.get(AppConstants.API.MAINTENANCE_REQUESTS_TENANT(tenantId), { sort: DEFAULT_LIST_SORT, ...params });
   }
 
   getByOfficer(officerId: number, params?: Record<string, string | number | boolean>): Observable<ApiResponse<PagedResponse<MaintenanceRequest>>> {
-    return this.api.get(AppConstants.API.MAINTENANCE_REQUESTS_OFFICER(officerId), params);
+    return this.api.get(AppConstants.API.MAINTENANCE_REQUESTS_OFFICER(officerId), { sort: DEFAULT_LIST_SORT, ...params });
   }
 
   getCompanyQueue(params?: Record<string, string | number | boolean>): Observable<ApiResponse<PagedResponse<MaintenanceRequest>>> {
-    return this.api.get(AppConstants.API.MAINTENANCE_REQUESTS_COMPANY_QUEUE, params);
+    return this.api.get(AppConstants.API.MAINTENANCE_REQUESTS_COMPANY_QUEUE, { sort: DEFAULT_LIST_SORT, ...params });
   }
 
   getOfficerOpenCount(officerId: number): Observable<ApiResponse<number>> {

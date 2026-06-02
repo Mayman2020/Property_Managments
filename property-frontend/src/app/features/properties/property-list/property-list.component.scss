@@ -107,6 +107,14 @@
   margin-bottom: 0;
 }
 
+::ng-deep .property-list-page app-filter-bar .filter-field--filterPropertyCode {
+  width: 175px;
+}
+
+::ng-deep .property-list-page app-filter-bar .filter-field--filterPropertyName {
+  width: 200px;
+}
+
 ::ng-deep .property-list-page app-filter-bar .filter-field--filterType {
   width: 190px;
 }

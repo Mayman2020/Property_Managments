@@ -14,6 +14,7 @@ import com.propertymanagement.modules.maintenance.assignment.repository.Maintena
 import com.propertymanagement.shared.exception.AppException;
 import lombok.RequiredArgsConstructor;
 import com.propertymanagement.codegen.CodeGenerationService;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -94,7 +95,7 @@ public class MaintenanceInvoiceService {
                                                                 Long propertyId, Long companyId) {
         List<MaintenanceInvoice> invoices = (year != null && month != null)
                 ? invoiceRepository.findByPeriod(year, month)
-                : invoiceRepository.findByStatusOrderByCreatedAtDesc("PENDING");
+                : invoiceRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
 
         Set<Long> ownerScope = ownerPropertyAccessService.ownerPropertyIdsOrNullIfNotOwner();
         if (ownerScope != null) {

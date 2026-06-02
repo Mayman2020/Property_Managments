@@ -8,6 +8,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { TranslateModule } from '@ngx-translate/core';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
+import { DEFAULT_TABLE_PAGE_SIZE, paginatedSlice } from '../../../core/utils/pagination.util';
 import { ApiService } from '../../../core/services/api.service';
 import { Inspection, InspectionService, ItemCondition } from '../../../core/services/inspection.service';
 import { SnackService } from '../../../core/services/snack.service';
@@ -18,7 +20,7 @@ import { I18nService } from '../../../core/i18n/i18n.service';
   standalone: true,
   imports: [
     NgIf, NgFor, FormsModule, TranslateModule, MatButtonModule, MatIconModule,
-    MatProgressSpinnerModule, MatSelectModule, PageHeaderComponent
+    MatProgressSpinnerModule, MatSelectModule, PageHeaderComponent, TablePagerComponent
   ],
   templateUrl: './inspection-detail.component.html',
   styleUrl: './inspection-detail.component.scss'
@@ -29,6 +31,12 @@ export class InspectionDetailComponent implements OnInit {
   inspectionId = 0;
   inspection: Inspection | null = null;
   linkResult: { totalDeduction: number; depositAmount: number; remainingDeposit: number } | null = null;
+  readonly pageSize = DEFAULT_TABLE_PAGE_SIZE;
+  itemsPageIndex = 0;
+
+  get pagedInspectionItems() {
+    return paginatedSlice(this.inspection?.items, this.itemsPageIndex, this.pageSize);
+  }
 
   readonly conditions: ItemCondition[] = ['GOOD', 'FAIR', 'DAMAGED', 'MISSING'];
 
@@ -51,6 +59,7 @@ export class InspectionDetailComponent implements OnInit {
     this.service.getById(this.inspectionId).subscribe({
       next: (res) => {
         this.inspection = res.data ?? null;
+        this.itemsPageIndex = 0;
         this.loading = false;
       },
       error: () => {

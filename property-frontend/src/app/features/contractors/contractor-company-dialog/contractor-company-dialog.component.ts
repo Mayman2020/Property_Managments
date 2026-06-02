@@ -1,3 +1,4 @@
+import { DialogTitleCloseDirective } from './../../../shared/directives/dialog-title-close.directive';
 import { Component, Inject, OnInit } from '@angular/core';
 import { NgIf, NgFor } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -77,8 +78,7 @@ function parseFlexibleDate(value: string | undefined | null): Date | null {
     MatIconModule,
     UploadZoneComponent,
     IdentityMediaFieldsComponent,
-    AuditTrailComponent
-  ],
+    AuditTrailComponent, DialogTitleCloseDirective],
   template: `
     <h2 mat-dialog-title>{{ titleKey | translate }}</h2>
     <mat-dialog-content class="dialog-body">

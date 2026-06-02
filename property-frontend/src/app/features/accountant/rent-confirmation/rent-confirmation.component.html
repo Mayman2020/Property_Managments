@@ -13,23 +13,30 @@
     <div class="estate-table-toolbar directory-toolbar">
       <div class="directory-toolbar-top" [formGroup]="filterForm">
         <div class="finance-filter-strip">
-          <label *ngIf="properties.length">{{ 'REQUEST_FORM.PROPERTY' | translate }}</label>
-          <select *ngIf="properties.length" formControlName="propertyId" class="estate-property-select">
-            <option [ngValue]="null">{{ 'COMMON.ALL_PROPERTIES' | translate }}</option>
-            <option *ngFor="let p of properties" [ngValue]="p.id">{{ propertyLabel(p) }}</option>
-          </select>
+          <app-estate-lov-select
+            *ngIf="properties.length"
+            formControlName="propertyId"
+            [label]="'REQUEST_FORM.PROPERTY'"
+            [options]="propertyLovOptions"
+            [showAll]="true"
+            allLabelKey="COMMON.ALL_PROPERTIES">
+          </app-estate-lov-select>
 
-          <label>{{ 'COMMON.MONTH' | translate }}</label>
-          <select formControlName="month" class="estate-property-select">
-            <option [ngValue]="null">{{ 'COMMON.ALL' | translate }}</option>
-            <option *ngFor="let m of months" [ngValue]="m">{{ monthLabel(m) }}</option>
-          </select>
+          <app-estate-lov-select
+            formControlName="month"
+            [label]="'COMMON.MONTH'"
+            [options]="monthLovOptions"
+            [showAll]="true"
+            allLabelKey="COMMON.ALL">
+          </app-estate-lov-select>
 
-          <label>{{ 'COMMON.YEAR' | translate }}</label>
-          <select formControlName="year" class="estate-property-select">
-            <option [ngValue]="null">{{ 'COMMON.ALL' | translate }}</option>
-            <option *ngFor="let y of years" [ngValue]="y">{{ y }}</option>
-          </select>
+          <app-estate-lov-select
+            formControlName="year"
+            [label]="'COMMON.YEAR'"
+            [options]="yearLovOptions"
+            [showAll]="true"
+            allLabelKey="COMMON.ALL">
+          </app-estate-lov-select>
         </div>
 
         <button class="app-icon-btn" type="button" (click)="load()" [matTooltip]="'ACTIONS.REFRESH' | translate">

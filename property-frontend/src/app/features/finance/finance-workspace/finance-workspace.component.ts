@@ -1,12 +1,16 @@
 ﻿import { Component, OnInit } from '@angular/core';
 import { CurrencyPipe, DatePipe, DecimalPipe, NgFor, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { SnackService } from '../../../core/services/snack.service';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { EstateLovOption, EstateLovSelectComponent } from '../../../shared/components/estate-lov-select/estate-lov-select.component';
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
 import { ExportColumn, TableExportToolbarComponent } from '../../../shared/components/table-export-toolbar/table-export-toolbar.component';
 import { BudgetItem, ExpenseItem, FinanceDashboardDto, FinanceService, RevenueItem } from '../../../core/services/finance.service';
@@ -15,11 +19,12 @@ import { I18nService } from '../../../core/i18n/i18n.service';
 import { ExpenseDialogComponent } from '../expense-dialog/expense-dialog.component';
 import { RevenueDialogComponent } from '../revenue-dialog/revenue-dialog.component';
 import { PermissionService } from '../../../core/services/permission.service';
+import { TableRowIndexPipe } from '../../../shared/pipes/table-row-index.pipe';
 
 @Component({
   selector: 'app-finance-workspace',
   standalone: true,
-  imports: [NgIf, NgFor, DecimalPipe, CurrencyPipe, DatePipe, RouterLink, FormsModule, TranslateModule, MatButtonModule, PageHeaderComponent, TablePagerComponent, TableExportToolbarComponent],
+  imports: [NgIf, NgFor, DecimalPipe, CurrencyPipe, DatePipe, RouterLink, FormsModule, TranslateModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule, PageHeaderComponent, TablePagerComponent, TableExportToolbarComponent, TableRowIndexPipe, EstateLovSelectComponent],
   template: `
     <div class="app-page">
       <app-page-header [eyebrow]="'NAV.FINANCE_DASHBOARD' | translate" [title]="title" [subtitle]="subtitle">
@@ -67,11 +72,25 @@ import { PermissionService } from '../../../core/services/permission.service';
       </app-page-header>
 
       <div class="finance-filter-strip" *ngIf="properties.length > 0">
-        <label>{{ 'REQUEST_FORM.PROPERTY' | translate }}</label>
-        <select [(ngModel)]="selectedPropertyId" (change)="onPropertyChange()" class="estate-property-select">
-          <option [ngValue]="null">{{ 'COMMON.ALL' | translate }}</option>
-          <option *ngFor="let p of properties" [ngValue]="p.id">{{ propertyLabel(p) }}</option>
-        </select>
+        <app-estate-lov-select
+          [label]="'REQUEST_FORM.PROPERTY'"
+          [options]="propertyLovOptions"
+          [showAll]="true"
+          allLabelKey="COMMON.ALL"
+          [(ngModel)]="selectedPropertyId"
+          (ngModelChange)="onPropertyChange()">
+        </app-estate-lov-select>
+        <app-estate-lov-select
+          *ngIf="section === 'budget'"
+          [label]="'FINANCE.YEAR_LABEL'"
+          [options]="budgetYearLovOptions"
+          [(ngModel)]="budgetYear"
+          (ngModelChange)="onBudgetYearChange()">
+        </app-estate-lov-select>
+        <a mat-stroked-button routerLink="/admin/reports/budget-vs-actual" *ngIf="section === 'budget'">
+          <mat-icon>bar_chart</mat-icon>
+          {{ 'FINANCE.BUDGET_VS_ACTUAL_LINK' | translate }}
+        </a>
       </div>
 
       <ng-container *ngIf="section === 'dashboard'">
@@ -149,7 +168,7 @@ import { PermissionService } from '../../../core/services/permission.service';
           <table class="app-data-table">
             <thead>
               <tr>
-                <th>#</th>
+                <th class="table-index-col">#</th>
                 <th>{{ 'FINANCE.DESCRIPTION_COL' | translate }}</th>
                 <th>{{ 'FINANCE.AMOUNT_COL' | translate }}</th>
                 <th>{{ 'FINANCE.DATE_COL' | translate }}</th>
@@ -157,8 +176,8 @@ import { PermissionService } from '../../../core/services/permission.service';
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let item of pagedExpenses">
-                <td>{{ item.expenseNumber }}</td>
+              <tr *ngFor="let item of pagedExpenses; let i = index">
+                <td class="table-index-col">{{ i | tableRowIndex:expensesPageIndex:pageSize }}</td>
                 <td>{{ expenseDescription(item) }}</td>
                 <td>{{ item.amount | number:'1.0-2' }} {{ currencyLabel(item.currency) }}</td>
                 <td>{{ item.expenseDate | date:'dd/MM/yyyy' }}</td>
@@ -175,15 +194,15 @@ import { PermissionService } from '../../../core/services/permission.service';
           <table class="app-data-table">
             <thead>
               <tr>
-                <th>#</th>
+                <th class="table-index-col">#</th>
                 <th>{{ 'FINANCE.DESCRIPTION_COL' | translate }}</th>
                 <th>{{ 'FINANCE.AMOUNT_COL' | translate }}</th>
                 <th>{{ 'FINANCE.DATE_COL' | translate }}</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let item of pagedRevenues">
-                <td>{{ item.revenueNumber }}</td>
+              <tr *ngFor="let item of pagedRevenues; let i = index">
+                <td class="table-index-col">{{ i | tableRowIndex:revenuesPageIndex:pageSize }}</td>
                 <td>{{ revenueDescription(item) }}</td>
                 <td>{{ item.amount | number:'1.0-2' }} {{ currencyLabel(item.currency) }}</td>
                 <td>{{ item.revenueDate | date:'dd/MM/yyyy' }}</td>
@@ -194,27 +213,86 @@ import { PermissionService } from '../../../core/services/permission.service';
         <app-table-pager [length]="revenues.length" [pageSize]="pageSize" [pageIndex]="revenuesPageIndex" (pageIndexChange)="revenuesPageIndex = $event"></app-table-pager>
       </div>
 
-      <div class="app-card" *ngIf="section === 'budget'">
-        <div class="app-table-wrap">
-          <table class="app-data-table">
-            <thead>
-              <tr>
-                <th>{{ 'FINANCE.CATEGORY_COL' | translate }}</th>
-                <th>{{ 'FINANCE.BUDGET_COL' | translate }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let item of pagedBudgets">
-                <td>{{ item.categoryName || '-' }}</td>
-                <td>{{ item.budgetedAmount | number:'1.0-2' }}</td>
-              </tr>
-            </tbody>
-          </table>
+      <ng-container *ngIf="section === 'budget'">
+        <div class="loading-center" *ngIf="budgetLoading">
+          <mat-spinner diameter="40"></mat-spinner>
         </div>
-        <app-table-pager [length]="budgets.length" [pageSize]="pageSize" [pageIndex]="budgetPageIndex" (pageIndexChange)="budgetPageIndex = $event"></app-table-pager>
-      </div>
 
-      <div class="app-empty-state" *ngIf="showEmptyState">
+        <ng-container *ngIf="!budgetLoading && budgets.length > 0">
+          <div class="budget-kpi-grid">
+            <article class="budget-kpi-card budgeted">
+              <div class="bk-icon"><mat-icon>account_balance_wallet</mat-icon></div>
+              <div>
+                <div class="bk-value">{{ budgetTotals.budgeted | number:'1.0-0' }}</div>
+                <div class="bk-label">{{ 'FINANCE.TOTAL_BUDGETED' | translate }}</div>
+              </div>
+            </article>
+            <article class="budget-kpi-card actual">
+              <div class="bk-icon"><mat-icon>payments</mat-icon></div>
+              <div>
+                <div class="bk-value">{{ budgetTotals.actual | number:'1.0-0' }}</div>
+                <div class="bk-label">{{ 'FINANCE.TOTAL_ACTUAL' | translate }}</div>
+              </div>
+            </article>
+            <article class="budget-kpi-card" [class.over]="budgetTotals.variance < 0">
+              <div class="bk-icon"><mat-icon>{{ budgetTotals.variance >= 0 ? 'trending_down' : 'trending_up' }}</mat-icon></div>
+              <div>
+                <div class="bk-value">{{ (budgetTotals.variance < 0 ? -budgetTotals.variance : budgetTotals.variance) | number:'1.0-0' }}</div>
+                <div class="bk-label">{{ budgetTotals.variance >= 0 ? ('FINANCE.REMAINING' | translate) : ('FINANCE.OVERSPENT' | translate) }}</div>
+              </div>
+            </article>
+            <article class="budget-kpi-card utilization" [class.warn]="budgetTotals.utilization > 85 && budgetTotals.utilization <= 100" [class.over]="budgetTotals.utilization > 100">
+              <div class="bk-icon"><mat-icon>donut_large</mat-icon></div>
+              <div>
+                <div class="bk-value">{{ budgetTotals.utilization | number:'1.1-1' }}%</div>
+                <div class="bk-label">{{ 'FINANCE.UTILIZATION' | translate }}</div>
+              </div>
+            </article>
+          </div>
+
+          <div class="app-card">
+            <div class="app-table-wrap">
+              <table class="app-data-table">
+                <thead>
+                  <tr>
+                    <th class="table-index-col">#</th>
+                    <th *ngIf="!selectedPropertyId">{{ 'REQUEST_FORM.PROPERTY' | translate }}</th>
+                    <th>{{ 'FINANCE.CATEGORY_COL' | translate }}</th>
+                    <th>{{ 'FINANCE.PERIOD_COL' | translate }}</th>
+                    <th class="num-col">{{ 'FINANCE.BUDGET_COL' | translate }}</th>
+                    <th class="num-col">{{ 'FINANCE.ACTUAL_COL' | translate }}</th>
+                    <th class="num-col">{{ 'FINANCE.VARIANCE_COL' | translate }}</th>
+                    <th class="num-col">{{ 'FINANCE.UTILIZATION' | translate }}</th>
+                    <th class="center-col">{{ 'FINANCE.STATUS_COL' | translate }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let item of pagedBudgets; let i = index" [class.over-row]="item.overBudget">
+                    <td class="table-index-col">{{ i | tableRowIndex:budgetPageIndex:pageSize }}</td>
+                    <td *ngIf="!selectedPropertyId">{{ item.propertyName || '-' }}</td>
+                    <td>{{ budgetCategoryLabel(item) }}</td>
+                    <td>{{ item.periodName || budgetYear }}</td>
+                    <td class="num-col">{{ item.budgetedAmount | number:'1.0-2' }}</td>
+                    <td class="num-col">{{ (item.actualAmount || 0) | number:'1.0-2' }}</td>
+                    <td class="num-col" [class.positive]="(item.variance || 0) >= 0" [class.negative]="(item.variance || 0) < 0">
+                      {{ (item.variance || 0) >= 0 ? '+' : '' }}{{ (item.variance || 0) | number:'1.0-2' }}
+                    </td>
+                    <td class="num-col">{{ (item.utilizationPercent || 0) | number:'1.1-1' }}%</td>
+                    <td class="center-col">
+                      <span class="status-badge" [class.badge-over]="item.overBudget" [class.badge-ok]="!item.overBudget">
+                        {{ item.overBudget ? ('FINANCE.OVER_BUDGET' | translate) : ('FINANCE.WITHIN_BUDGET' | translate) }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <app-table-pager [length]="budgets.length" [pageSize]="pageSize" [pageIndex]="budgetPageIndex" (pageIndexChange)="budgetPageIndex = $event"></app-table-pager>
+          </div>
+        </ng-container>
+      </ng-container>
+
+      <div class="app-empty-state" *ngIf="showEmptyState && !(section === 'budget' && budgetLoading)">
         <span class="material-icons empty-icon">finance_mode</span>
         <h4>{{ 'FINANCE.NO_DATA' | translate }}</h4>
         <p>{{ 'FINANCE.NO_DATA_DESC' | translate }}</p>
@@ -315,12 +393,35 @@ import { PermissionService } from '../../../core/services/permission.service';
     .status-badge { display: inline-flex; align-items: center; border-radius: 999px; padding: 4px 10px; background: #eef2f7; color: #475569; font-weight: 700; font-size: 0.78rem; }
     .status-badge[data-status="PAID"] { background: #e8f7ed; color: #16803a; }
     .status-badge[data-status="PENDING"] { background: #fff3d6; color: #9a6a1f; }
+    .loading-center { display: flex; justify-content: center; padding: 48px; }
+    .budget-kpi-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .budget-kpi-card {
+      display: flex; align-items: center; gap: 14px; padding: 18px;
+      border: 1px solid var(--line); border-radius: 12px; background: var(--surface);
+    }
+    .budget-kpi-card .bk-icon {
+      width: 42px; height: 42px; border-radius: 10px; display: grid; place-items: center;
+      background: #f0f9ff; color: #0284c7;
+    }
+    .budget-kpi-card.budgeted .bk-icon { background: #e0f2fe; color: #0284c7; }
+    .budget-kpi-card.actual .bk-icon { background: #fce7f3; color: #db2777; }
+    .budget-kpi-card.over .bk-icon, .budget-kpi-card.utilization.over .bk-icon { background: #fef2f2; color: #dc2626; }
+    .budget-kpi-card.utilization.warn .bk-value { color: #d97706; }
+    .bk-value { font-size: 1.45rem; font-weight: 800; color: var(--navy-900); line-height: 1.1; }
+    .bk-label { font-size: 0.82rem; color: var(--text-muted); margin-top: 4px; }
+    .num-col { text-align: end; }
+    .center-col { text-align: center; }
+    .positive { color: #16803a; font-weight: 600; }
+    .negative { color: #d32f2f; font-weight: 600; }
+    .over-row { background: #fff5f5; }
+    .status-badge.badge-ok { background: #e8f7ed; color: #16803a; }
+    .status-badge.badge-over { background: #fdecea; color: #d32f2f; }
     @media (max-width: 1100px) {
-      .finance-stat-grid, .quick-actions-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .finance-stat-grid, .quick-actions-grid, .budget-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .finance-overview, .ledger-grid { grid-template-columns: 1fr; }
     }
     @media (max-width: 680px) {
-      .finance-stat-grid, .quick-actions-grid { grid-template-columns: 1fr; }
+      .finance-stat-grid, .quick-actions-grid, .budget-kpi-grid { grid-template-columns: 1fr; }
     }
   `]
 })
@@ -332,6 +433,8 @@ export class FinanceWorkspaceComponent implements OnInit {
   budgets: BudgetItem[] = [];
   properties: Property[] = [];
   selectedPropertyId: number | null = null;
+  budgetYear = new Date().getFullYear();
+  budgetLoading = false;
   readonly pageSize = 5;
   expensesPageIndex = 0;
   revenuesPageIndex = 0;
@@ -343,6 +446,7 @@ export class FinanceWorkspaceComponent implements OnInit {
     private readonly propertySvc: PropertyService,
     private readonly dialog: MatDialog,
     private readonly translate: TranslateService,
+    private readonly snack: SnackService,
     readonly i18n: I18nService,
     readonly permissions: PermissionService
   ) {}
@@ -384,8 +488,24 @@ export class FinanceWorkspaceComponent implements OnInit {
     if (this.section === 'dashboard') return !this.dashboardCards.length;
     if (this.section === 'expenses') return !this.expenses.length;
     if (this.section === 'revenues') return !this.revenues.length;
-    if (this.section === 'budget') return !this.budgets.length;
+    if (this.section === 'budget') return !this.budgetLoading && !this.budgets.length;
     return false;
+  }
+
+  get budgetTotals(): { budgeted: number; actual: number; variance: number; utilization: number } {
+    const budgeted = this.budgets.reduce((sum, row) => sum + (row.budgetedAmount || 0), 0);
+    const actual = this.budgets.reduce((sum, row) => sum + (row.actualAmount || 0), 0);
+    const variance = budgeted - actual;
+    const utilization = budgeted > 0 ? (actual / budgeted) * 100 : 0;
+    return { budgeted, actual, variance, utilization };
+  }
+
+  get budgetYearLovOptions(): EstateLovOption[] {
+    const current = new Date().getFullYear();
+    return Array.from({ length: 5 }, (_, i) => {
+      const year = current - i;
+      return { value: year, label: String(year) };
+    });
   }
 
   get pagedExpenses(): ExpenseItem[] { return this.pageSlice(this.expenses, this.expensesPageIndex); }
@@ -417,6 +537,11 @@ export class FinanceWorkspaceComponent implements OnInit {
     this.loadSection();
   }
 
+  onBudgetYearChange(): void {
+    this.budgetPageIndex = 0;
+    this.loadSection();
+  }
+
   loadSection(): void {
     const propertyId = this.normalizedPropertyId();
     if (this.section === 'dashboard') {
@@ -443,9 +568,17 @@ export class FinanceWorkspaceComponent implements OnInit {
       });
     }
     if (this.section === 'budget') {
-      this.service.getBudgets(propertyId).subscribe({
-        next: (res) => { this.budgets = res.data ?? []; },
-        error: () => { this.budgets = []; }
+      this.budgetLoading = true;
+      this.service.getBudgets(propertyId, this.budgetYear).subscribe({
+        next: (res) => {
+          this.budgets = res.data ?? [];
+          this.budgetLoading = false;
+        },
+        error: () => {
+          this.budgets = [];
+          this.budgetLoading = false;
+          this.snack.error('FINANCE.BUDGET_LOAD_FAILED');
+        }
       });
     }
   }
@@ -463,9 +596,17 @@ export class FinanceWorkspaceComponent implements OnInit {
     const ar = (p.propertyNameAr ?? '').trim();
     const en = (p.propertyNameEn ?? '').trim();
     const fallback = (p.propertyName ?? '').trim();
-    return this.i18n.currentLang === 'ar'
+    const name = this.i18n.currentLang === 'ar'
       ? (ar || en || fallback || `#${p.id}`)
       : (en || ar || fallback || `#${p.id}`);
+    return p.propertyCode ? `${p.propertyCode} — ${name}` : name;
+  }
+
+  get propertyLovOptions(): EstateLovOption[] {
+    return this.properties.map((p) => ({
+      value: p.id,
+      label: this.propertyLabel(p)
+    }));
   }
 
   get expenseExportColumns(): ExportColumn<ExpenseItem>[] {
@@ -491,9 +632,21 @@ export class FinanceWorkspaceComponent implements OnInit {
 
   get budgetExportColumns(): ExportColumn<BudgetItem>[] {
     return [
-      { header: this.translate.instant('FINANCE.CATEGORY_COL'), value: (row) => row.categoryName || '-' },
-      { header: this.translate.instant('FINANCE.BUDGET_COL'), value: 'budgetedAmount' }
+      { header: this.translate.instant('REQUEST_FORM.PROPERTY'), value: (row) => row.propertyName || '-' },
+      { header: this.translate.instant('FINANCE.CATEGORY_COL'), value: (row) => this.budgetCategoryLabel(row) },
+      { header: this.translate.instant('FINANCE.PERIOD_COL'), value: (row) => row.periodName || String(this.budgetYear) },
+      { header: this.translate.instant('FINANCE.BUDGET_COL'), value: 'budgetedAmount' },
+      { header: this.translate.instant('FINANCE.ACTUAL_COL'), value: (row) => row.actualAmount ?? 0 },
+      { header: this.translate.instant('FINANCE.VARIANCE_COL'), value: (row) => row.variance ?? 0 },
+      { header: this.translate.instant('FINANCE.UTILIZATION'), value: (row) => row.utilizationPercent ?? 0 }
     ];
+  }
+
+  budgetCategoryLabel(item: BudgetItem): string {
+    if (this.isArabic) {
+      return item.categoryNameAr || item.categoryName || '-';
+    }
+    return item.categoryNameEn || item.categoryName || '-';
   }
 
   statusLabel(status?: string): string {
@@ -507,7 +660,7 @@ export class FinanceWorkspaceComponent implements OnInit {
   }
 
   format(value = 0): string {
-    return `${new Intl.NumberFormat(this.isArabic ? 'ar' : 'en-US', { maximumFractionDigits: 0 }).format(value)} ${this.translate.instant('COMMON.OMR')}`;
+    return `${this.i18n.formatNumber(value, { maximumFractionDigits: 0 })} ${this.translate.instant('COMMON.OMR')}`;
   }
 
   currencyLabel(currency?: string): string {

@@ -3,20 +3,26 @@
     [eyebrow]="pageEyebrow"
     [title]="'DASHBOARD.TITLE' | translate"
     [subtitle]="'DASHBOARD.SUBTITLE' | translate">
-    <select *ngIf="properties.length > 0" [(ngModel)]="selectedPropertyId" (change)="onPropertyChange()" class="estate-property-select">
-      <option [ngValue]="null">{{ 'COMMON.ALL_PROPERTIES' | translate }}</option>
-      <option *ngFor="let p of properties" [ngValue]="p.id">
-        {{ getPropertyLabel(p) }}
-      </option>
-    </select>
+    <app-estate-lov-select
+      *ngIf="properties.length > 0"
+      [label]="'REQUEST_FORM.PROPERTY'"
+      [options]="propertyLovOptions"
+      [showAll]="true"
+      allLabelKey="COMMON.ALL_PROPERTIES"
+      [(ngModel)]="selectedPropertyId"
+      (ngModelChange)="onPropertyChange()">
+    </app-estate-lov-select>
     
   </app-page-header>
 
-  <div class="loading-center" *ngIf="loading">
+  <div class="loading-center" *ngIf="listLoad.showInitialSpinner">
     <mat-spinner diameter="48"></mat-spinner>
   </div>
 
-  <ng-container *ngIf="!loading && stats as summary">
+  <div class="dashboard-content app-list-surface"
+    [class.is-refreshing]="listLoad.refreshing"
+    *ngIf="listLoad.showSurface && stats as summary">
+    <div class="list-refresh-spinner" *ngIf="listLoad.refreshing"><mat-spinner diameter="32"></mat-spinner></div>
     <section class="estate-stat-grid">
       <article class="estate-stat-card navy kpi-link" routerLink="/admin/properties">
         <div class="estate-stat-top">
@@ -196,15 +202,15 @@
           <table class="app-data-table dashboard-table">
             <thead>
               <tr>
-                <th>#</th>
+                <th class="table-index-col">#</th>
                 <th>{{ 'REQUEST_LIST.REQUEST_TITLE' | translate }}</th>
                 <th>{{ 'REQUEST_LIST.PROPERTY_UNIT' | translate }}</th>
                 <th>{{ 'MAINTENANCE.STATUS' | translate }}</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let req of recentRequests">
-                <td><span class="mono-cell">{{ req.requestNumber }}</span></td>
+              <tr *ngFor="let req of recentRequests; let i = index">
+                <td class="table-index-col">{{ i | tableRowIndex:0:recentRequests.length }}</td>
                 <td>
                   <div class="table-title">{{ req.title }}</div>
                   <div class="table-meta">
@@ -260,50 +266,5 @@
         </ng-template>
       </article>
     </section>
-
-    <article class="app-card estate-panel recent-activity-panel">
-      <div class="app-card-header">
-        <span class="app-card-title">{{ 'DASHBOARD.RECENT_ACTIVITY' | translate }}</span>
-      </div>
-      <div class="activity-feed" *ngIf="recentActivity.length > 0; else emptyActivity">
-        <a class="activity-row" *ngFor="let item of pagedRecentActivity" [routerLink]="item.routePath || null">
-          <span class="material-icons activity-icon">{{ item.icon || 'notifications' }}</span>
-          <span class="activity-copy">
-            <strong>{{ item.title }}</strong>
-            <span class="activity-meta">{{ activityLabel(item) }} · {{ item.description }}</span>
-            <span class="activity-time">{{ item.occurredAt | date:'dd/MM/yyyy HH:mm' }}</span>
-          </span>
-          <span class="material-icons activity-arrow">chevron_right</span>
-        </a>
-      </div>
-      <app-table-pager
-        *ngIf="recentActivity.length > 0"
-        [length]="recentActivity.length"
-        [pageSize]="activityPageSize"
-        [pageIndex]="activityPageIndex"
-        (pageIndexChange)="activityPageIndex = $event">
-      </app-table-pager>
-      <ng-template #emptyActivity>
-        <div class="card-empty">
-          <span class="material-icons">history</span>
-          <span>{{ 'DASHBOARD.NO_RECENT_ACTIVITY' | translate }}</span>
-        </div>
-      </ng-template>
-    </article>
-
-    <article class="app-card estate-panel status-strip" *ngIf="showMaintenanceInsights">
-      <div class="app-card-header">
-        <span class="app-card-title">{{ requestsStatusLabel }}</span>
-      </div>
-      <div class="status-strip-grid">
-        <div class="status-strip-item kpi-link" *ngFor="let tile of statusTiles"
-             [attr.data-status]="tile.status"
-             routerLink="/admin/maintenance"
-             [queryParams]="{status: tile.status}">
-          <span class="status-badge" [attr.data-status]="tile.status">{{ tile.label }}</span>
-          <div class="status-strip-value">{{ tile.value }}</div>
-        </div>
-      </div>
-    </article>
-  </ng-container>
+  </div>
 </div>

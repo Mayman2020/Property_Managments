@@ -1,3 +1,4 @@
+import { DialogTitleCloseDirective } from './../../../shared/directives/dialog-title-close.directive';
 ﻿import { Component, Inject, OnInit } from '@angular/core';
 import { NgClass, NgFor, NgIf } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
@@ -18,6 +19,7 @@ import { UserService } from '../../../core/services/user.service';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
 import { ExportColumn, TableExportToolbarComponent } from '../../../shared/components/table-export-toolbar/table-export-toolbar.component';
+import { TableRowIndexPipe } from '../../../shared/pipes/table-row-index.pipe';
 
 interface ScreenConfig {
   key: string;
@@ -49,8 +51,7 @@ interface ScreenDetailsDialogData {
     MatButtonModule,
     MatDialogModule,
     MatIconModule,
-    MatSlideToggleModule
-  ],
+    MatSlideToggleModule, DialogTitleCloseDirective],
   template: `
     <h2 mat-dialog-title>
       <span class="material-icons">{{ data.screen.icon }}</span>
@@ -248,7 +249,8 @@ export class ScreenDetailsDialogComponent {
     MatTooltipModule,
     PageHeaderComponent,
     TablePagerComponent,
-    TableExportToolbarComponent
+    TableExportToolbarComponent,
+    TableRowIndexPipe
   ],
   template: `
     <div class="app-page screen-mgmt-page">
@@ -274,7 +276,7 @@ export class ScreenDetailsDialogComponent {
           <table class="app-data-table screen-table">
             <thead>
               <tr>
-                <th>#</th>
+                <th class="table-index-col">#</th>
                 <th>{{ ('INLINE_TEXT.SCREEN' | translate) }}</th>
                 <th>{{ 'SCREENS.GLOBAL' | translate }}</th>
                 <th>{{ ('INLINE_TEXT.USERS_WHO_CAN_SEE' | translate) }}</th>
@@ -284,7 +286,7 @@ export class ScreenDetailsDialogComponent {
             </thead>
             <tbody>
               <tr *ngFor="let screen of pagedScreens; let i = index" (click)="openDetails(screen)" class="screen-row">
-                <td>{{ screenPageIndex * screenPageSize + i + 1 }}</td>
+                <td class="table-index-col">{{ i | tableRowIndex:screenPageIndex:screenPageSize }}</td>
                 <td>
                   <div class="screen-title-cell">
                     <span class="material-icons">{{ screen.icon }}</span>

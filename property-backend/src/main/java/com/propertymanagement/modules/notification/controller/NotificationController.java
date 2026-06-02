@@ -6,6 +6,7 @@ import com.propertymanagement.shared.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,7 +28,7 @@ public class NotificationController {
     @GetMapping("/my")
     public ResponseEntity<ApiResponse<Page<NotificationResponseDTO>>> getMy(
             @RequestParam(defaultValue = "recent") String scope,
-            @PageableDefault(size = 5) Pageable pageable) {
+            @PageableDefault(size = 5, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.ok(notificationService.getMyNotifications(pageable, scope)));
     }
 

@@ -3,6 +3,7 @@ import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
 import { AppConstants } from '../constants/app-constants';
 import { ApiResponse, PagedResponse } from '../models/api-response.model';
+import { DEFAULT_LIST_SORT } from '../utils/pagination.util';
 
 export interface EmployeeItem {
   id: number;
@@ -23,6 +24,8 @@ export interface EmployeeItem {
   totalSalary?: number;
   status?: string;
   hireDate?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface EmployeePayload {
@@ -198,7 +201,7 @@ export class HrService {
   constructor(private readonly api: ApiService) {}
 
   getEmployees(params: Record<string, string | number> = {}): Observable<ApiResponse<PagedResponse<EmployeeItem>>> {
-    return this.api.get(AppConstants.API.HR_EMPLOYEES, params);
+    return this.api.get(AppConstants.API.HR_EMPLOYEES, { sort: DEFAULT_LIST_SORT, ...params });
   }
 
   getEmployee(id: number): Observable<ApiResponse<EmployeeItem>> {
@@ -257,6 +260,14 @@ export class HrService {
     return this.api.post(AppConstants.API.HR_DEDUCTIONS, payload);
   }
 
+  updateDeduction(id: number, payload: PayrollDeductionPayload): Observable<ApiResponse<PayrollDeductionItem>> {
+    return this.api.put(AppConstants.API.HR_DEDUCTION_BY_ID(id), payload);
+  }
+
+  deleteDeduction(id: number): Observable<ApiResponse<void>> {
+    return this.api.delete(AppConstants.API.HR_DEDUCTION_BY_ID(id));
+  }
+
   sendDeduction(id: number): Observable<ApiResponse<PayrollDeductionItem>> {
     return this.api.post(AppConstants.API.HR_DEDUCTION_SEND(id), {});
   }
@@ -292,6 +303,18 @@ export class HrService {
 
   createLeave(payload: CreateLeavePayload): Observable<ApiResponse<LeaveRequestItem>> {
     return this.api.post(AppConstants.API.HR_LEAVES, payload);
+  }
+
+  getLeaveById(id: number): Observable<ApiResponse<LeaveRequestItem>> {
+    return this.api.get(AppConstants.API.HR_LEAVE_BY_ID(id));
+  }
+
+  updateLeave(id: number, payload: CreateLeavePayload): Observable<ApiResponse<LeaveRequestItem>> {
+    return this.api.put(AppConstants.API.HR_LEAVE_BY_ID(id), payload);
+  }
+
+  deleteLeave(id: number): Observable<ApiResponse<void>> {
+    return this.api.delete(AppConstants.API.HR_LEAVE_BY_ID(id));
   }
 
   approveLeave(id: number, note?: string): Observable<ApiResponse<LeaveRequestItem>> {

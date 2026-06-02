@@ -75,6 +75,19 @@ export class OwnerPortalService {
     return this.api.patch(AppConstants.API.OWNER_PORTAL_DRAFT_CONTRACT_AMEND(id), body);
   }
 
+  getPendingApprovals(ownerId?: number): Observable<ApiResponse<LeaseContract[]>> {
+    const params: Record<string, string> = {};
+    if (ownerId != null) params['ownerId'] = String(ownerId);
+    return this.api.get(AppConstants.API.OWNER_PORTAL_PENDING_APPROVALS, params);
+  }
+
+  submitContractDecision(
+    contractId: number,
+    body: { decision: 'APPROVED' | 'REJECTED'; notes?: string }
+  ): Observable<ApiResponse<LeaseContract>> {
+    return this.api.post(AppConstants.API.OWNER_PORTAL_CONTRACT_DECISION(contractId), body);
+  }
+
   getPendingTerminations(ownerId?: number): Observable<ApiResponse<LeaseContract[]>> {
     return this.api.get(AppConstants.API.OWNER_PORTAL_PENDING_TERMINATIONS,
       ownerId != null ? { ownerId } : undefined);

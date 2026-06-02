@@ -7,31 +7,54 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatOptionModule } from '@angular/material/core';
 import { TranslateModule } from '@ngx-translate/core';
 
+import { SearchableSelectComponent } from '../searchable-select/searchable-select.component';
+
 export interface FilterSpec {
   key: string;
   label: string;
-  type: 'text'|'number'|'select';
+  type: 'text' | 'number' | 'select' | 'lov';
   options?: { value: any; label: string }[];
+  dialogThreshold?: number;
+  serverSide?: boolean;
 }
 
 @Component({
   selector: 'app-filter-bar',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatOptionModule, TranslateModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatOptionModule,
+    TranslateModule,
+    SearchableSelectComponent
+  ],
   template: `
     <div class="estate-filter-bar">
       <ng-container *ngFor="let f of filters">
-        <mat-form-field appearance="outline" [class]="'filter-field filter-field--' + f.key" floatLabel="always" *ngIf="f.type !== 'select'">
+        <mat-form-field
+          appearance="outline"
+          [class]="'filter-field filter-field--' + f.key"
+          floatLabel="always"
+          *ngIf="f.type === 'text' || f.type === 'number'">
           <mat-label>{{ f.label | translate }}</mat-label>
           <input matInput [type]="f.type === 'number' ? 'number' : 'text'" [(ngModel)]="values[f.key]" (ngModelChange)="emit()">
         </mat-form-field>
-        <mat-form-field appearance="outline" [class]="'filter-field filter-field--' + f.key" floatLabel="always" *ngIf="f.type === 'select'">
-          <mat-label>{{ f.label | translate }}</mat-label>
-          <mat-select [(ngModel)]="values[f.key]" (selectionChange)="emit()">
-            <mat-option [value]="null">—</mat-option>
-            <mat-option *ngFor="let o of f.options || []" [value]="o.value">{{ o.label }}</mat-option>
-          </mat-select>
-        </mat-form-field>
+
+        <app-searchable-select
+          *ngIf="usesLov(f)"
+          [class]="'filter-lov filter-lov--' + f.key"
+          [label]="f.label"
+          [items]="lovItems(f)"
+          bindLabel="label"
+          bindValue="value"
+          variant="toolbar"
+          [serverSide]="!!f.serverSide"
+          [(ngModel)]="values[f.key]"
+          (ngModelChange)="emit()">
+        </app-searchable-select>
       </ng-container>
     </div>
   `,
@@ -44,7 +67,8 @@ export interface FilterSpec {
       padding: 0;
     }
 
-    .filter-field {
+    .filter-field,
+    .filter-lov {
       flex: 0 1 auto;
       width: 180px;
       min-width: 0;
@@ -100,7 +124,6 @@ export class FilterBarComponent implements OnChanges {
   @Input() filterValues: { [key: string]: any } = {};
   @Output() filtersChange = new EventEmitter<any>();
 
-  // Holds current values for all keys
   values: { [key: string]: any } = {};
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -119,11 +142,19 @@ export class FilterBarComponent implements OnChanges {
     }
   }
 
-  emit() {
+  usesLov(filter: FilterSpec): boolean {
+    return filter.type === 'lov' || filter.type === 'select';
+  }
+
+  lovItems(filter: FilterSpec): { value: unknown; label: string }[] {
+    return filter.options ?? [];
+  }
+
+  emit(): void {
     this.filtersChange.emit({ ...this.values });
   }
 
-  clear() {
+  clear(): void {
     for (const k of Object.keys(this.values)) {
       this.values[k] = null;
     }

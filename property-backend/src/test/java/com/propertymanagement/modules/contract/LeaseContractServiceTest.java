@@ -20,6 +20,7 @@ import com.propertymanagement.modules.tenant.service.TenantPortalWelcomeService;
 import com.propertymanagement.modules.tenant.repository.TenantRepository;
 import com.propertymanagement.modules.unit.entity.Unit;
 import com.propertymanagement.modules.unit.repository.UnitRepository;
+import com.propertymanagement.modules.vacancy.service.VacancyPublishingService;
 import com.propertymanagement.modules.user.entity.User;
 import com.propertymanagement.modules.user.repository.UserRepository;
 import com.propertymanagement.modules.user.entity.UserRole;
@@ -65,6 +66,7 @@ class LeaseContractServiceTest {
     @Mock PropertyScopeService propertyScopeService;
     @Mock NotificationService notificationService;
     @Mock PropertyOwnerPortalRecipientService propertyOwnerPortalRecipientService;
+    @Mock VacancyPublishingService vacancyPublishingService;
 
     @InjectMocks LeaseContractService service;
 
@@ -226,6 +228,7 @@ class LeaseContractServiceTest {
                 argThat(list -> list.contains(ContractStatus.DRAFT)))).thenReturn(0L);
         when(unitRepository.findById(5L)).thenReturn(Optional.of(u));
         when(unitRepository.save(any())).thenReturn(u);
+        doNothing().when(vacancyPublishingService).unpublishIfUnitOccupied(5L);
 
         service.syncUnitRentedFromContracts(5L);
 
@@ -241,6 +244,7 @@ class LeaseContractServiceTest {
                 argThat(list -> list.contains(ContractStatus.DRAFT)))).thenReturn(1L);
         when(unitRepository.findById(5L)).thenReturn(Optional.of(u));
         when(unitRepository.save(any())).thenReturn(u);
+        doNothing().when(vacancyPublishingService).unpublishIfUnitOccupied(5L);
 
         service.syncUnitRentedFromContracts(5L);
 
@@ -281,7 +285,7 @@ class LeaseContractServiceTest {
     @Test
     void getAll_queriesAllContracts_whenNoScopeRestriction() {
         when(propertyScopeService.propertyIdsOrNullIfUnrestricted()).thenReturn(null);
-        when(contractRepository.findAll(any(org.springframework.data.domain.Pageable.class)))
+        when(contractRepository.search(isNull(), isNull(), isNull(), any(org.springframework.data.domain.Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(buildDraftContract(1L, 10L, 5L, 3L))));
 
         // Stub fields that toResponse() needs

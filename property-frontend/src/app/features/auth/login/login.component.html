@@ -79,12 +79,13 @@
           {{ error }}
         </div>
 
-        <button type="submit" class="login-submit" [disabled]="form.invalid || loading">
-          <mat-spinner *ngIf="loading" diameter="20"></mat-spinner>
+        <button type="submit" class="login-submit" [disabled]="form.invalid || loading" [class.is-loading]="loading">
+          <span class="login-btn-loader" *ngIf="loading" aria-hidden="true"></span>
           <ng-container *ngIf="!loading">
             <span>{{ 'AUTH.ENTER' | translate }}</span>
             <span class="material-icons">{{ i18n.currentLang === 'ar' ? 'arrow_back' : 'arrow_forward' }}</span>
           </ng-container>
+          <span class="login-btn-loading-label" *ngIf="loading">{{ 'COMMON.LOADING' | translate }}</span>
         </button>
       </form>
     </div>

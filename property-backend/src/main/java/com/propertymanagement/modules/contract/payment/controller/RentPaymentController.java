@@ -23,14 +23,14 @@ import com.propertymanagement.modules.user.entity.User;
 
 @RestController
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT')")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT','OWNER')")
 public class RentPaymentController {
 
     private final RentPaymentService paymentService;
 
     @GetMapping("/payments")
     public ResponseEntity<ApiResponse<Page<PaymentResponse>>> getAll(
-            @PageableDefault(size = 20) Pageable pageable) {
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.ok(paymentService.getAll(pageable)));
     }
 
@@ -70,6 +70,13 @@ public class RentPaymentController {
             @PathVariable Long scheduleId,
             @RequestBody(required = false) AccountantMarkPaidRequest req) {
         return ResponseEntity.ok(ApiResponse.ok(paymentService.markPaidByAccountant(scheduleId, req, currentUserId())));
+    }
+
+    @PostMapping("/payment-schedule/{scheduleId}/overdue-reminder")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','GENERAL_MANAGER','ACCOUNTANT','OWNER')")
+    public ResponseEntity<ApiResponse<ScheduleItemResponse>> sendOverdueReminder(
+            @PathVariable Long scheduleId) {
+        return ResponseEntity.ok(ApiResponse.ok(paymentService.sendOverdueReminder(scheduleId, currentUserId())));
     }
 
     @PostMapping("/payments")

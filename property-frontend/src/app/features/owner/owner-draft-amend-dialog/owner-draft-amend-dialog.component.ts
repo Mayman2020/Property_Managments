@@ -1,3 +1,4 @@
+import { DialogTitleCloseDirective } from './../../../shared/directives/dialog-title-close.directive';
 ﻿import { Component, Inject, OnInit } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -24,8 +25,7 @@ export interface OwnerDraftAmendDialogData {
   imports: [
     NgIf, NgFor, ReactiveFormsModule, TranslateModule,
     MatDialogModule, MatButtonModule, MatFormFieldModule, MatInputModule,
-    MatSelectModule, MatProgressSpinnerModule
-  ],
+    MatSelectModule, MatProgressSpinnerModule, DialogTitleCloseDirective],
   template: `
     <h2 mat-dialog-title>{{ 'OWNER_PORTAL.AMEND_DRAFT_TITLE' | translate }}</h2>
     <mat-dialog-content>

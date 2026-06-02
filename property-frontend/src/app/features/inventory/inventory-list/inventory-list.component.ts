@@ -9,9 +9,12 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { EstateLovOption, EstateLovSelectComponent } from '../../../shared/components/estate-lov-select/estate-lov-select.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { TablePagerComponent } from '../../../shared/components/table-pager/table-pager.component';
 import { ExportColumn, TableExportToolbarComponent } from '../../../shared/components/table-export-toolbar/table-export-toolbar.component';
+import { TableEntityCellComponent } from '../../../shared/components/table-entity-cell/table-entity-cell.component';
+import { TableRowIndexPipe } from '../../../shared/pipes/table-row-index.pipe';
 import { DeleteConfirmService } from '../../../core/services/delete-confirm.service';
 import { InventoryService, InventoryItem } from '../../../core/services/inventory.service';
 import { PropertyService, Property } from '../../../core/services/property.service';
@@ -19,6 +22,7 @@ import { SnackService } from '../../../core/services/snack.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { InventoryItemDialogComponent } from '../inventory-item-dialog/inventory-item-dialog.component';
 import { PermissionService } from '../../../core/services/permission.service';
+import { ListLoadController } from '../../../shared/utils/list-load.util';
 
 @Component({
   selector: 'app-inventory-list',
@@ -26,7 +30,8 @@ import { PermissionService } from '../../../core/services/permission.service';
   imports: [
     NgFor, NgIf, DecimalPipe, FormsModule, TranslateModule,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule,
-    PageHeaderComponent, EmptyStateComponent, TablePagerComponent, TableExportToolbarComponent
+    PageHeaderComponent, EmptyStateComponent, TablePagerComponent, TableExportToolbarComponent, TableEntityCellComponent, TableRowIndexPipe,
+    EstateLovSelectComponent
   ],
   templateUrl: './inventory-list.component.html',
   styleUrl: './inventory-list.component.scss'
@@ -36,9 +41,17 @@ export class InventoryListComponent implements OnInit {
   properties: Property[] = [];
   readonly pageSize = 5;
   pageIndex = 0;
-  loading = true;
+  totalElements = 0;
+  listLoad = new ListLoadController();
   searchTerm = '';
   filterPropertyId: number | null = null;
+
+  get propertyLovOptions(): EstateLovOption[] {
+    return this.properties.map((p) => ({
+      value: p.id,
+      label: this.propertyLovLabel(p)
+    }));
+  }
 
   get isAr(): boolean { return this.i18n.currentLang === 'ar'; }
 
@@ -76,15 +89,15 @@ export class InventoryListComponent implements OnInit {
   }
 
   load(): void {
-    this.loading = true;
-    this.invSvc.getItems(this.filterPropertyId ?? undefined, 0, 200, this.searchTerm).subscribe({
+    this.listLoad.begin();
+    this.invSvc.getItems(this.filterPropertyId ?? undefined, this.pageIndex, this.pageSize, this.searchTerm).subscribe({
       next: (res) => {
         this.items = res.data?.content ?? [];
-        this.pageIndex = 0;
-        this.loading = false;
+        this.totalElements = res.data?.totalElements ?? this.items.length;
+        this.listLoad.end();
       },
       error: () => {
-        this.loading = false;
+        this.listLoad.end();
         this.snack.error(this.i18n.instant('INVENTORY.LOAD_ERROR'));
       }
     });
@@ -145,8 +158,12 @@ export class InventoryListComponent implements OnInit {
   }
 
   get pagedItems(): InventoryItem[] {
-    const start = this.pageIndex * this.pageSize;
-    return this.items.slice(start, start + this.pageSize);
+    return this.items;
+  }
+
+  onPageChange(index: number): void {
+    this.pageIndex = index;
+    this.load();
   }
 
   get exportColumns(): ExportColumn<InventoryItem>[] {
@@ -161,10 +178,15 @@ export class InventoryListComponent implements OnInit {
   }
 
   get totalPages(): number {
-    return Math.max(1, Math.ceil(this.items.length / this.pageSize));
+    return Math.max(1, Math.ceil(this.totalElements / this.pageSize));
   }
 
   changePage(step: number): void {
-    this.pageIndex = Math.max(0, Math.min(this.pageIndex + step, this.totalPages - 1));
+    this.onPageChange(Math.max(0, Math.min(this.pageIndex + step, this.totalPages - 1)));
+  }
+
+  private propertyLovLabel(p: Property): string {
+    const name = this.isAr ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName);
+    return p.propertyCode ? `${p.propertyCode} — ${name}` : name;
   }
 }

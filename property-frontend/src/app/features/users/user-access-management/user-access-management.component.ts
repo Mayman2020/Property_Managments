@@ -1,3 +1,4 @@
+import { DialogTitleCloseDirective } from './../../../shared/directives/dialog-title-close.directive';
 ﻿import { Component, Inject, OnInit } from '@angular/core';
 import { DatePipe, NgClass, NgFor, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -47,7 +48,7 @@ interface UserAccessDetailsData {
 @Component({
   selector: 'app-user-access-details-dialog',
   standalone: true,
-  imports: [NgClass, NgFor, NgIf, TranslateModule, MatButtonModule, MatDialogModule, MatIconModule],
+  imports: [NgClass, NgFor, NgIf, TranslateModule, MatButtonModule, MatDialogModule, MatIconModule, DialogTitleCloseDirective],
   template: `
     <h2 mat-dialog-title class="dialog-title">
       <mat-icon class="dialog-title-icon">security</mat-icon>

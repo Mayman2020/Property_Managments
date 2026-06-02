@@ -1,3 +1,4 @@
+import { DialogTitleCloseDirective } from './../../../shared/directives/dialog-title-close.directive';
 ﻿import { Component, Inject, OnInit } from '@angular/core';
 import { DatePipe, NgFor, NgIf } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
@@ -20,7 +21,7 @@ interface TimelineStep {
 @Component({
   selector: 'app-request-timeline-dialog',
   standalone: true,
-  imports: [NgIf, NgFor, DatePipe, MatDialogModule, MatButtonModule, MatProgressSpinnerModule, TranslateModule],
+  imports: [NgIf, NgFor, DatePipe, MatDialogModule, MatButtonModule, MatProgressSpinnerModule, TranslateModule, DialogTitleCloseDirective],
   template: `
     <h2 mat-dialog-title class="timeline-dialog-title">
       <span class="timeline-req-num">{{ req.requestNumber }}</span>

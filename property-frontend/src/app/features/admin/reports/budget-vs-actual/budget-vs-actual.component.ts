@@ -11,7 +11,10 @@ import { PropertyService, Property } from '../../../../core/services/property.se
 import { SnackService } from '../../../../core/services/snack.service';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { PageHeaderComponent } from '../../../../shared/components/page-header/page-header.component';
+import { EstateLovOption, EstateLovSelectComponent } from '../../../../shared/components/estate-lov-select/estate-lov-select.component';
 import { EmptyStateComponent } from '../../../../shared/components/empty-state/empty-state.component';
+import { TablePagerComponent } from '../../../../shared/components/table-pager/table-pager.component';
+import { DEFAULT_TABLE_PAGE_SIZE, paginatedSlice } from '../../../../core/utils/pagination.util';
 
 @Component({
   selector: 'app-budget-vs-actual',
@@ -19,7 +22,7 @@ import { EmptyStateComponent } from '../../../../shared/components/empty-state/e
   imports: [
     NgIf, NgFor, NgClass, DecimalPipe, FormsModule,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule,
-    TranslateModule, PageHeaderComponent, EmptyStateComponent
+    TranslateModule, PageHeaderComponent, EmptyStateComponent, TablePagerComponent, EstateLovSelectComponent
   ],
   template: `
     <app-page-header
@@ -29,18 +32,21 @@ import { EmptyStateComponent } from '../../../../shared/components/empty-state/e
 
     <div class="page-body">
       <div class="finance-filter-strip">
-        <label>{{ 'INLINE_TEXT.PROPERTY' | translate }}</label>
-        <select [(ngModel)]="filterPropertyId" (change)="load()" class="estate-property-select">
-          <option [ngValue]="null">{{ 'INLINE_TEXT.ALL' | translate }}</option>
-          <option *ngFor="let p of properties" [ngValue]="p.id">
-            {{ i18n.currentLang === 'ar' ? (p.propertyNameAr || p.propertyName) : (p.propertyNameEn || p.propertyName) }}
-          </option>
-        </select>
+        <app-estate-lov-select
+          [label]="'INLINE_TEXT.PROPERTY'"
+          [options]="propertyLovOptions"
+          [showAll]="true"
+          allLabelKey="INLINE_TEXT.ALL"
+          [(ngModel)]="filterPropertyId"
+          (ngModelChange)="load()">
+        </app-estate-lov-select>
 
-        <label>{{ 'INLINE_TEXT.YEAR' | translate }}</label>
-        <select [(ngModel)]="filterYear" (change)="load()" class="estate-property-select">
-          <option *ngFor="let y of yearOptions" [ngValue]="y">{{ y }}</option>
-        </select>
+        <app-estate-lov-select
+          [label]="'INLINE_TEXT.YEAR'"
+          [options]="yearLovOptions"
+          [(ngModel)]="filterYear"
+          (ngModelChange)="load()">
+        </app-estate-lov-select>
 
         <button mat-stroked-button (click)="exportCsv()" [disabled]="!data || data.rows.length === 0">
           <mat-icon>download</mat-icon>
@@ -108,7 +114,7 @@ import { EmptyStateComponent } from '../../../../shared/components/empty-state/e
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let row of data.rows" [class.over-row]="row.overBudget">
+              <tr *ngFor="let row of pagedRows" [class.over-row]="row.overBudget">
                 <td class="cat-name">{{ i18n.currentLang === 'ar' ? (row.categoryNameAr || row.categoryName) : (row.categoryNameEn || row.categoryName) }}</td>
                 <td class="prop-name">{{ row.propertyName || (('INLINE_TEXT.ALL' | translate)) }}</td>
                 <td class="num-col">{{ row.budgetedAmount | number:'1.0-0' }}</td>
@@ -139,6 +145,12 @@ import { EmptyStateComponent } from '../../../../shared/components/empty-state/e
               </tr>
             </tbody>
           </table>
+          <app-table-pager
+            [length]="data.rows.length"
+            [pageSize]="pageSize"
+            [pageIndex]="pageIndex"
+            (pageIndexChange)="pageIndex = $event">
+          </app-table-pager>
         </div>
       </ng-container>
     </div>
@@ -226,6 +238,23 @@ export class BudgetVsActualComponent implements OnInit {
   filterPropertyId: number | null = null;
   filterYear: number = new Date().getFullYear();
   yearOptions: number[] = [];
+  readonly pageSize = DEFAULT_TABLE_PAGE_SIZE;
+  pageIndex = 0;
+
+  get propertyLovOptions(): EstateLovOption[] {
+    return this.properties.map((p) => ({
+      value: p.id,
+      label: this.propertyLovLabel(p)
+    }));
+  }
+
+  get yearLovOptions(): EstateLovOption[] {
+    return this.yearOptions.map((y) => ({ value: y, label: String(y) }));
+  }
+
+  get pagedRows() {
+    return paginatedSlice(this.data?.rows, this.pageIndex, this.pageSize);
+  }
 
   constructor(
     private readonly reportsService: ReportsService,
@@ -249,7 +278,7 @@ export class BudgetVsActualComponent implements OnInit {
   load(): void {
     this.loading = true;
     this.reportsService.getBudgetVsActual(this.filterPropertyId ?? undefined, this.filterYear).subscribe({
-      next: (res) => { this.data = res.data ?? null; this.loading = false; },
+      next: (res) => { this.data = res.data ?? null; this.pageIndex = 0; this.loading = false; },
       error: () => { this.loading = false; this.snack.error('INLINE_TEXT.FAILED_TO_LOAD_REPORT'); }
     });
   }
@@ -277,5 +306,12 @@ export class BudgetVsActualComponent implements OnInit {
     a.download = `budget-vs-actual-${this.filterYear}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  private propertyLovLabel(p: Property): string {
+    const name = this.i18n.currentLang === 'ar'
+      ? (p.propertyNameAr || p.propertyName)
+      : (p.propertyNameEn || p.propertyName);
+    return p.propertyCode ? `${p.propertyCode} — ${name}` : name;
   }
 }

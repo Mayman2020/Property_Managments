@@ -3,6 +3,13 @@ import { OverlayContainer } from '@angular/cdk/overlay';
 import { TranslateService } from '@ngx-translate/core';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
+import {
+  ARABIC_LATIN_DIGITS_LANG,
+  formatCurrency as formatCurrencyLatin,
+  formatDateTime as formatDateTimeLatin,
+  formatNumber as formatNumberLatin,
+  toLatinDigits as toLatinDigitsUtil
+} from './locale-format';
 
 export type LangCode = 'ar' | 'en';
 export type Direction = 'rtl' | 'ltr';
@@ -67,6 +74,30 @@ export class I18nService {
     return this.translate.instant(key, params);
   }
 
+  /** Always Western digits (0–9), regardless of UI language. */
+  formatNumber(value: number | null | undefined, options?: Intl.NumberFormatOptions): string {
+    return formatNumberLatin(value, options);
+  }
+
+  formatCurrency(
+    value: number | null | undefined,
+    currency = 'SAR',
+    options?: Intl.NumberFormatOptions
+  ): string {
+    return formatCurrencyLatin(value, currency, options);
+  }
+
+  formatDateTime(
+    value: Date | string | number | null | undefined,
+    options?: Intl.DateTimeFormatOptions
+  ): string {
+    return formatDateTimeLatin(value, options, this.currentLang);
+  }
+
+  toLatinDigits(text: string | number | null | undefined): string {
+    return toLatinDigitsUtil(text);
+  }
+
   /**
    * In-app notifications persisted before full i18n keys sometimes store both languages using the same
    * separators as {@code BilingualNotificationText} on the backend: title {@code "ar | en"}, body {@code "ar\\n\\n—\\n\\nen"}.
@@ -101,7 +132,7 @@ export class I18nService {
 
   private applyLang(code: LangCode): void {
     const lang = this.languages.find((l) => l.code === code) ?? this.languages[0];
-    const htmlLang = code === 'ar' ? 'ar-OM' : 'en';
+    const htmlLang = code === 'ar' ? ARABIC_LATIN_DIGITS_LANG : 'en';
 
     document.documentElement.setAttribute('dir', lang.dir);
     document.documentElement.setAttribute('lang', htmlLang);

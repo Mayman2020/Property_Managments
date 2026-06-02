@@ -3,6 +3,7 @@ import { Observable, map } from 'rxjs';
 import { ApiService } from './api.service';
 import { AppConstants } from '../constants/app-constants';
 import { ApiResponse, PagedResponse } from '../models/api-response.model';
+import { withPageParams } from '../utils/pagination.util';
 import {
   EmployeeProfileLink,
   MaintenanceOfficerType,
@@ -43,11 +44,11 @@ export class UserService {
     );
   }
 
-  getAll(page = 0, size = 50, q?: string, role?: UserRole): Observable<ApiResponse<PagedResponse<User>>> {
-    const params: Record<string, string | number | boolean> = { page, size };
-    if (q && q.trim()) params['q'] = q.trim();
-    if (role) params['role'] = role;
-    return this.api.get<ApiResponse<PagedResponse<User>>>(AppConstants.API.USERS, params).pipe(
+  getAll(page = 0, size = 20, q?: string, role?: UserRole): Observable<ApiResponse<PagedResponse<User>>> {
+    return this.api.get<ApiResponse<PagedResponse<User>>>(AppConstants.API.USERS, withPageParams(page, size, {
+      q: q?.trim() || undefined,
+      role
+    })).pipe(
       map((res) => ({
         ...res,
         data: res.data

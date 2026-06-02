@@ -76,6 +76,12 @@ public class RentPaymentSchedule {
     @Column(name = "late_fee_applied")
     private boolean lateFeeApplied = false;
 
+    @Column(name = "overdue_reminder_sent_at")
+    private LocalDateTime overdueReminderSentAt;
+
+    @Column(name = "overdue_reminder_snoozed_until")
+    private LocalDateTime overdueReminderSnoozedUntil;
+
     @CreatedDate
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

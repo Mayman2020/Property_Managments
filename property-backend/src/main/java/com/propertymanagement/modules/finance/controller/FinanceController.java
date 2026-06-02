@@ -82,8 +82,10 @@ public class FinanceController {
     @GetMapping("/budgets")
     @RequiresPermission(module = "finance", action = "view")
     public ResponseEntity<ApiResponse<List<BudgetResponse>>> budgets(
-            @RequestParam(required = false) Long propertyId) {
-        return ResponseEntity.ok(ApiResponse.ok(service.getBudgets(propertyId)));
+            @RequestParam(required = false) Long propertyId,
+            @RequestParam(required = false) Integer year,
+            @RequestHeader(name = "Accept-Language", required = false) String lang) {
+        return ResponseEntity.ok(ApiResponse.ok(service.getBudgets(propertyId, year, lang)));
     }
 
     @GetMapping("/reports/pnl")
