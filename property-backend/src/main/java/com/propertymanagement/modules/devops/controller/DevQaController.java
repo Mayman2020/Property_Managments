@@ -5,6 +5,7 @@ import com.propertymanagement.shared.security.LoginAttemptService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,7 +20,9 @@ import java.util.Map;
 
 /**
  * QA-only data helpers (no public business API). Restricted to SUPER_ADMIN.
+ * Disabled entirely in the 'prod' Spring profile.
  */
+@Profile("!prod")
 @RestController
 @RequestMapping("/dev/qa")
 @RequiredArgsConstructor

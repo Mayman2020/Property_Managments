@@ -195,6 +195,13 @@ public class RentPaymentService {
             if (schedule.getStatus() != PaymentScheduleStatus.PENDING_CONFIRMATION) {
                 throw com.propertymanagement.shared.exception.AppException.badRequest("Payment proof is not pending review");
             }
+            // Verify proof exists before approving — never approve a payment with no uploaded evidence
+            List<String> proofList = normalizeProofUrls(schedule.getProofUrl(), parseProofUrls(schedule.getProofUrls(), schedule.getProofUrl()));
+            if (proofList.isEmpty()) {
+                throw com.propertymanagement.shared.exception.AppException.badRequest(
+                        "Cannot approve payment: no proof document has been uploaded. The tenant must upload a payment receipt first.",
+                        "PROOF_REQUIRED");
+            }
             RentPayment payment = createPaymentFromSchedule(schedule, reviewerUserId, req.getNotes(), schedule.getProofUrl(), false);
             schedule.setStatus(PaymentScheduleStatus.PAID);
             schedule.setReviewedBy(reviewerUserId);

@@ -7,6 +7,7 @@ import com.propertymanagement.modules.finance.service.FinanceExportService;
 import com.propertymanagement.modules.vacancy.service.VacancyPublishingService;
 import com.propertymanagement.shared.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,8 +21,9 @@ import java.util.Map;
 
 /**
  * Manual triggers for scheduled jobs — useful for QA and demos.
- * Available in all profiles; restricted to SUPER_ADMIN.
+ * Disabled in the 'prod' Spring profile; restricted to SUPER_ADMIN in other profiles.
  */
+@Profile("!prod")
 @RestController
 @RequestMapping("/dev/schedulers")
 @RequiredArgsConstructor

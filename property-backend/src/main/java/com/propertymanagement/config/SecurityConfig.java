@@ -37,10 +37,14 @@ public class SecurityConfig {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
-                        // Both GET and POST require a valid JWT.
-                        // Image tags can pass ?tk=<jwt> query param; the JwtAuthFilter will pick it up.
+                        // Upload and sign endpoints require a valid Bearer JWT.
                         .requestMatchers(HttpMethod.POST, "/files/**").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/files/**").authenticated()
+                        // File GET is handled by the controller itself:
+                        //   - valid Bearer JWT in SecurityContext (populated by JwtAuthFilter), OR
+                        //   - valid short-lived signed token (?st=) issued by POST /files/sign.
+                        // We mark it permitAll here so Spring Security doesn't block ?st= requests
+                        // that arrive without an Authorization header; the controller enforces auth.
+                        .requestMatchers(HttpMethod.GET, "/files/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .anyRequest().authenticated()
                 )

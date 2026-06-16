@@ -3,15 +3,18 @@ package com.propertymanagement.modules.unit.repository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import com.propertymanagement.modules.unit.entity.Unit;
 import com.propertymanagement.modules.unit.entity.UnitType;
 import com.propertymanagement.modules.property.entity.Floor;
+import jakarta.persistence.LockModeType;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface UnitRepository extends JpaRepository<Unit, Long> {
@@ -115,4 +118,10 @@ public interface UnitRepository extends JpaRepository<Unit, Long> {
     long countReservedByPropertyId(@Param("propertyId") Long propertyId);
 
     long countByPropertyIdAndFloorIdAndActiveTrue(Long propertyId, Long floorId);
+
+    /** Acquires a row-level exclusive lock on the unit row. Use during contract activation
+     *  to prevent concurrent activations on the same unit. */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT u FROM Unit u WHERE u.id = :id")
+    Optional<Unit> findByIdForUpdate(@Param("id") Long id);
 }

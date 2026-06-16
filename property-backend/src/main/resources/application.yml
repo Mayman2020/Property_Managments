@@ -63,10 +63,10 @@ property:
 
 file:
   upload-dir: ${UPLOAD_DIR:D:/files}
-  base-url: ${FILE_BASE_URL:http://localhost:8080}
+  base-url: ${FILE_BASE_URL:http://localhost:8081}
 
 server:
-  port: 8080
+  port: 8081
   servlet:
     context-path: /api/v1
 

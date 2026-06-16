@@ -1,13 +1,13 @@
-package com.propertymanagement.modules.LookupEntity.service;
+package com.propertymanagement.modules.lookup.service;
 
-import com.propertymanagement.modules.LookupEntity.entity.LookupEntity;
-import com.propertymanagement.modules.LookupEntity.entity.LookupType;
-import com.propertymanagement.modules.LookupEntity.repository.LookupRepository;
-import com.propertymanagement.modules.LookupEntity.dto.CreateCityRequestDTO;
-import com.propertymanagement.modules.LookupEntity.dto.CreateClassificationRequestDTO;
-import com.propertymanagement.modules.LookupEntity.dto.CreateCountryRequestDTO;
-import com.propertymanagement.modules.LookupEntity.dto.LookupResponseDTO;
-import com.propertymanagement.modules.LookupEntity.dto.UpdateLookupRequestDTO;
+import com.propertymanagement.modules.lookup.entity.LookupEntity;
+import com.propertymanagement.modules.lookup.entity.LookupType;
+import com.propertymanagement.modules.lookup.repository.LookupRepository;
+import com.propertymanagement.modules.lookup.dto.CreateCityRequestDTO;
+import com.propertymanagement.modules.lookup.dto.CreateClassificationRequestDTO;
+import com.propertymanagement.modules.lookup.dto.CreateCountryRequestDTO;
+import com.propertymanagement.modules.lookup.dto.LookupResponseDTO;
+import com.propertymanagement.modules.lookup.dto.UpdateLookupRequestDTO;
 import com.propertymanagement.shared.exception.AppException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

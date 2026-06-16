@@ -1,12 +1,12 @@
-package com.propertymanagement.modules.LookupEntity.controller;
+package com.propertymanagement.modules.lookup.controller;
 
-import com.propertymanagement.modules.LookupEntity.entity.LookupType;
-import com.propertymanagement.modules.LookupEntity.service.LookupService;
-import com.propertymanagement.modules.LookupEntity.dto.CreateCityRequestDTO;
-import com.propertymanagement.modules.LookupEntity.dto.CreateClassificationRequestDTO;
-import com.propertymanagement.modules.LookupEntity.dto.CreateCountryRequestDTO;
-import com.propertymanagement.modules.LookupEntity.dto.LookupResponseDTO;
-import com.propertymanagement.modules.LookupEntity.dto.UpdateLookupRequestDTO;
+import com.propertymanagement.modules.lookup.entity.LookupType;
+import com.propertymanagement.modules.lookup.service.LookupService;
+import com.propertymanagement.modules.lookup.dto.CreateCityRequestDTO;
+import com.propertymanagement.modules.lookup.dto.CreateClassificationRequestDTO;
+import com.propertymanagement.modules.lookup.dto.CreateCountryRequestDTO;
+import com.propertymanagement.modules.lookup.dto.LookupResponseDTO;
+import com.propertymanagement.modules.lookup.dto.UpdateLookupRequestDTO;
 import com.propertymanagement.shared.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

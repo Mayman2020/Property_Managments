@@ -1,4 +1,4 @@
-package com.propertymanagement.modules.LookupEntity.dto;
+package com.propertymanagement.modules.lookup.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

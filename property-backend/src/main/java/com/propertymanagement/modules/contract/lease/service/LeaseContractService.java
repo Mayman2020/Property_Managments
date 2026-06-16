@@ -337,13 +337,18 @@ public class LeaseContractService {
 
     @Transactional
     public ContractResponse activate(Long id, Long approvedByUserId) {
-        LeaseContract contract = findById(id);
+        // Acquire a row-level exclusive lock on the contract itself first to
+        // prevent two concurrent activation requests for the same contract.
+        LeaseContract contract = contractRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> AppException.notFound("Lease contract not found: " + id));
         if (contract.getStatus() != ContractStatus.DRAFT
                 && contract.getStatus() != ContractStatus.PENDING_OWNER_APPROVAL) {
             throw AppException.badRequest("Only DRAFT or owner-pending contracts can be activated");
         }
-        // Prevent duplicate active contracts: reject if the unit already has a live lease
+        // Acquire a row-level exclusive lock on the unit to prevent two concurrent
+        // activations for different contracts on the same unit from both succeeding.
         if (contract.getUnitId() != null) {
+            unitRepository.findByIdForUpdate(contract.getUnitId());   // holds unit lock for transaction duration
             long activeLiveContracts = contractRepository.countByUnitIdAndStatusIn(
                     contract.getUnitId(), UNIT_LIVE_LEASE_STATUSES);
             if (activeLiveContracts > 0) {
@@ -355,6 +360,14 @@ public class LeaseContractService {
         User acting = userRepository.findById(approvedByUserId).orElse(null);
         if (acting != null && acting.getRole() == UserRole.OWNER) {
             ownerPropertyAccessService.assertOwnerCanAccessProperty(contract.getPropertyId());
+        }
+        // Block activation if owner has explicitly rejected this contract (non-SUPER_ADMIN only)
+        boolean isOwnerRejected = "REJECTED".equals(contract.getOwnerApprovalStatus());
+        boolean isSuperAdmin = acting != null && acting.getRole() == UserRole.SUPER_ADMIN;
+        if (isOwnerRejected && !isSuperAdmin) {
+            throw AppException.badRequest(
+                    "Cannot activate a contract that the owner has rejected. The owner must re-approve it first.",
+                    "OWNER_REJECTED_CONTRACT");
         }
         contract.setStatus(ContractStatus.ACTIVE);
         contract.setApprovedBy(approvedByUserId);

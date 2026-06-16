@@ -19,6 +19,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -87,7 +88,10 @@ public class PayrollService {
     public PayrollRunDetailResponse generate(GeneratePayrollRequest request) {
         User user = currentUser();
         Long propertyId = resolvePropertyId(user, request.getPropertyId());
-        repository.findByPropertyIdAndPayPeriodYearAndPayPeriodMonth(propertyId, request.getPayPeriodYear(), request.getPayPeriodMonth())
+        // Use a locking query: if a row already exists it is locked, preventing concurrent
+        // duplicate generation. When no row exists the DB UNIQUE constraint on
+        // (property_id, pay_period_year, pay_period_month) catches the race on INSERT.
+        repository.findByPeriodForUpdate(propertyId, request.getPayPeriodYear(), request.getPayPeriodMonth())
                 .ifPresent(existing -> {
                     throw AppException.conflict("Payroll already exists for this property and period");
                 });
@@ -97,15 +101,21 @@ public class PayrollService {
             throw AppException.badRequest("No active employees found for this property");
         }
 
-        PayrollRun run = repository.save(PayrollRun.builder()
-                .propertyId(propertyId)
-                .payPeriodYear(request.getPayPeriodYear())
-                .payPeriodMonth(request.getPayPeriodMonth())
-                .payDate(LocalDate.of(request.getPayPeriodYear(), request.getPayPeriodMonth(), 25))
-                .status("SUBMITTED")
-                .preparedBy(user.getId())
-                .notes("Generated from active employees")
-                .build());
+        PayrollRun run;
+        try {
+            run = repository.save(PayrollRun.builder()
+                    .propertyId(propertyId)
+                    .payPeriodYear(request.getPayPeriodYear())
+                    .payPeriodMonth(request.getPayPeriodMonth())
+                    .payDate(LocalDate.of(request.getPayPeriodYear(), request.getPayPeriodMonth(), 25))
+                    .status("SUBMITTED")
+                    .preparedBy(user.getId())
+                    .notes("Generated from active employees")
+                    .build());
+        } catch (DataIntegrityViolationException ex) {
+            // Concurrent INSERT hit the UNIQUE(property_id, pay_period_year, pay_period_month) constraint
+            throw AppException.conflict("Payroll already exists for this property and period");
+        }
 
         for (Employee employee : employees) {
             BigDecimal advanceDeduction = salaryAdvanceRepository

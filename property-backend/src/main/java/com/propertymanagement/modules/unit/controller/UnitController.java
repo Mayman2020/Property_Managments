@@ -23,6 +23,7 @@ public class UnitController {
     private final UnitService unitService;
 
     @GetMapping
+    @RequiresPermission(module = "units", action = "view")
     public ResponseEntity<ApiResponse<Page<UnitResponse>>> getAll(
             @RequestParam(required = false) Long propertyId,
             @RequestParam(required = false) String q,
@@ -36,6 +37,7 @@ public class UnitController {
     }
 
     @GetMapping("/property/{propertyId}")
+    @RequiresPermission(module = "units", action = "view")
     public ResponseEntity<ApiResponse<Page<UnitResponse>>> getByProperty(
             @PathVariable Long propertyId,
             @RequestParam(required = false) String q,
@@ -44,6 +46,7 @@ public class UnitController {
     }
 
     @GetMapping("/{id}")
+    @RequiresPermission(module = "units", action = "view")
     public ResponseEntity<ApiResponse<UnitResponse>> getById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok(unitService.getById(id)));
     }

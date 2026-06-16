@@ -63,15 +63,18 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    /** Extract JWT from Authorization header first, then fall back to ?tk= query param (for file img src). */
+    /**
+     * Extracts the JWT exclusively from the {@code Authorization: Bearer <token>} header.
+     *
+     * The legacy {@code ?tk=} query-parameter shortcut has been removed because it caused
+     * the main long-lived JWT to appear in server access logs, proxy logs, and browser
+     * history.  File previews that need URL-based auth must use the short-lived signed
+     * token issued by {@code POST /files/sign}.
+     */
     private String resolveToken(HttpServletRequest request) {
         String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             return authHeader.substring(7);
-        }
-        String tk = request.getParameter("tk");
-        if (tk != null && !tk.isBlank()) {
-            return tk;
         }
         return null;
     }

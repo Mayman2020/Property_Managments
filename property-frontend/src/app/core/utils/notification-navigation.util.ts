@@ -269,6 +269,16 @@ export function resolveNotificationTargetUrl(n: AppNotification, auth: AuthServi
     if (isAdminStaff(role)) return `/admin/vacancies/${ids.listingId}/inquiries`;
   }
 
+  // Owner-approval notifications always land on the approvals hub — check before
+  // generic maintenanceContractId routing so MAINTENANCE_CONTRACT_AWAITING_OWNER_REVIEW
+  // doesn't shortcut to the contract detail page.
+  if (OWNER_APPROVAL_TYPES.has(type)) {
+    if (isAdminStaff(role)) return '/admin/owner-portal/contract-approvals';
+    if (isMaintenanceOfficer(role) && ids.maintenanceContractId != null) {
+      return maintenanceContractUrl(role, ids.maintenanceContractId) ?? '/admin/owner-portal/contract-approvals';
+    }
+  }
+
   if (ids.maintenanceContractId != null) {
     const url = maintenanceContractUrl(role, ids.maintenanceContractId, ids.invoiceId);
     if (url) return url;
@@ -276,14 +286,6 @@ export function resolveNotificationTargetUrl(n: AppNotification, auth: AuthServi
 
   if (MAINTENANCE_CONTRACT_FOLLOWUP_TYPES.has(type) && isAdminStaff(role)) {
     return '/admin/contracts/list?type=MAINTENANCE';
-  }
-
-  if (OWNER_APPROVAL_TYPES.has(type)) {
-    if (ids.maintenanceContractId != null) {
-      const url = maintenanceContractUrl(role, ids.maintenanceContractId);
-      if (url) return url;
-    }
-    if (isAdminStaff(role)) return '/admin/owner-portal/contract-approvals';
   }
 
   if (ids.contractId != null) {

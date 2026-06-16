@@ -595,15 +595,15 @@ test.describe.serial('Iteration 2 — Properties / Floors / Attachments / Owner 
     await page.locator('input[type="password"]').fill('12345');
     await page.getByRole('button', { name: /enter|دخول|login/i }).click();
     await page.waitForURL((u) => !/\/auth\/login/.test(u.pathname), { timeout: 20000 });
-    await page.goto(`${web}/admin/properties/list`);
+    await page.goto(`${web}/admin/properties`);
     await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {});
     const bodyText = await page.locator('body').innerText({ timeout: 10000 }).catch(() => '');
     const visible = bodyText.includes(name) || bodyText.includes(prop!.id.toString());
     recordRow(row({
       module: 'properties',
-      route: '/admin/properties/list',
+      route: '/admin/properties',
       scenario: 'New property is listed on the admin properties screen',
-      steps: 'API-create property → UI login as admin → GET /admin/properties/list',
+      steps: 'API-create property → UI login as admin → GET /admin/properties',
       testData: `name=${name} id=${prop!.id}`,
       expected: 'List renders and shows the new property',
       actual: `visible=${visible} url=${page.url()}`,

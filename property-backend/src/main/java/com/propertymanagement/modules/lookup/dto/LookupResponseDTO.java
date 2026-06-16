@@ -1,6 +1,6 @@
-package com.propertymanagement.modules.LookupEntity.dto;
+package com.propertymanagement.modules.lookup.dto;
 
-import com.propertymanagement.modules.LookupEntity.entity.LookupType;
+import com.propertymanagement.modules.lookup.entity.LookupType;
 import lombok.Builder;
 import lombok.Data;
 

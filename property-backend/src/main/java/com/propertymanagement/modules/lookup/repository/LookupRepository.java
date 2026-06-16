@@ -1,7 +1,7 @@
-package com.propertymanagement.modules.LookupEntity.repository;
+package com.propertymanagement.modules.lookup.repository;
 
-import com.propertymanagement.modules.LookupEntity.entity.LookupEntity;
-import com.propertymanagement.modules.LookupEntity.entity.LookupType;
+import com.propertymanagement.modules.lookup.entity.LookupEntity;
+import com.propertymanagement.modules.lookup.entity.LookupType;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

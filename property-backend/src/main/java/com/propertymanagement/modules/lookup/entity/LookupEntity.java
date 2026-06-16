@@ -1,4 +1,4 @@
-package com.propertymanagement.modules.LookupEntity.entity;
+package com.propertymanagement.modules.lookup.entity;
 
 import jakarta.persistence.*;
 import lombok.*;

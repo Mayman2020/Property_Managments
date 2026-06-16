@@ -188,14 +188,21 @@ async function clickNotificationById(page: Page, api: QaApi, targetId: number): 
   let scope: 'recent' | 'older' = 'recent';
   let scopedList: NotifRow[] = [];
   for (const s of ['recent', 'older'] as const) {
-    const r = await api.raw('GET', `/notifications/my?scope=${s}&page=0&size=50`);
-    const content = ((r.body as ApiEnvelope<PageEnv<NotifRow>>).data?.content) ?? [];
-    const idx = content.findIndex((n) => n.id === targetId);
-    if (idx >= 0) {
-      scope = s;
-      scopedList = content;
-      break;
+    // Fetch up to 3 pages to locate notifications deep in the inbox
+    let found = false;
+    for (let pg = 0; pg <= 2 && !found; pg++) {
+      const r = await api.raw('GET', `/notifications/my?scope=${s}&page=${pg}&size=50`);
+      const content = ((r.body as ApiEnvelope<PageEnv<NotifRow>>).data?.content) ?? [];
+      if (content.length === 0) break;
+      const idx = content.findIndex((n) => n.id === targetId);
+      if (idx >= 0) {
+        scope = s;
+        scopedList = content;
+        found = true;
+        break;
+      }
     }
+    if (found) break;
   }
   const index = scopedList.findIndex((n) => n.id === targetId);
   if (index < 0) throw new Error(`notification ${targetId} not in API list`);
@@ -434,10 +441,11 @@ test.describe.serial('Iteration 15 — Final QA', () => {
   });
 
   test('15.5 Notification deep links — click each type from UI', async ({ page, api }) => {
+    test.setTimeout(240_000); // 21+ types × ~5s each needs generous timeout
     await api.loginRole('SUPER_ADMIN');
     const all: NotifRow[] = [];
     for (const scope of ['recent', 'older'] as const) {
-      const r = await api.raw('GET', `/notifications/my?scope=${scope}&page=0&size=50`);
+      const r = await api.raw('GET', `/notifications/my?scope=${scope}&page=0&size=100`);
       all.push(...(((r.body as ApiEnvelope<PageEnv<NotifRow>>).data?.content) ?? []));
     }
     const byType = new Map<string, NotifRow>();
@@ -453,7 +461,7 @@ test.describe.serial('Iteration 15 — Final QA', () => {
     for (const [type, n] of byType) {
       const expected = expectedDeepLink(type, n);
       await clickNotificationById(page, api as QaApi, n.id);
-      await page.waitForTimeout(1200);
+      await page.waitForTimeout(800);
       const urlAfter = page.url();
 
       let ok = true;
