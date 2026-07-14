@@ -1,6 +1,0 @@
-﻿{
-    "updatedAt":  "2026-05-24T19:36:11.8527341+04:00",
-    "backendPort":  8087,
-    "backendFileBaseUrl":  "http://localhost:8087/api/v1/files",
-    "backendBaseUrl":  "http://localhost:8087/api/v1"
-}
