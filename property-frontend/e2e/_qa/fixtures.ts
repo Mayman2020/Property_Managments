@@ -14,7 +14,7 @@ export function passwordForEmail(email: string): string {
   return '12345';
 }
 
-const WEB = process.env['E2E_WEB_URL'] ?? 'http://localhost:4500';
+const WEB = process.env['E2E_WEB_URL'] ?? 'http://localhost:4208';
 
 function resolveApiUrl(): string {
   if (process.env['E2E_API_URL']) return process.env['E2E_API_URL'];
@@ -25,7 +25,7 @@ function resolveApiUrl(): string {
       if (state.backendBaseUrl) return state.backendBaseUrl;
     }
   } catch { /* fall through */ }
-  return 'http://localhost:8081/api/v1';
+  return 'http://localhost:8089/api/v1';
 }
 
 const API = resolveApiUrl();

@@ -67,7 +67,7 @@ test.describe.serial('Iteration 18.2 — RBAC exhaustive', () => {
   for (const role of ALL_ROLES) {
     test(`18.2 [${role}] login + landing + API probes`, async ({ page, web, api }) => {
       const cred = QA_CREDENTIALS[role];
-      const apiUrl = process.env['E2E_API_URL'] ?? 'http://localhost:8081/api/v1';
+      const apiUrl = process.env['E2E_API_URL'] ?? 'http://localhost:8089/api/v1';
       const probe = await page.request.post(`${apiUrl}/auth/login`, {
         data: { email: cred.email, password: cred.password }
       });

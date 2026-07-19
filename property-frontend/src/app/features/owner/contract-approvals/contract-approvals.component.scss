@@ -2,64 +2,45 @@
 .loading-center { display: flex; justify-content: center; padding: 64px; }
 
 .approval-tabs {
-  margin-top: 4px;
-}
-
-::ng-deep .approval-tabs .mat-mdc-tab-header {
-  border: 1px solid var(--card-border, #e2e8f0);
-  border-radius: 10px;
-  background: var(--paper-2, #f8fafc);
-  padding: 6px;
-}
-
-::ng-deep .approval-tabs .mat-mdc-tab-labels {
   display: flex;
   flex-wrap: nowrap;
   gap: 6px;
   overflow-x: auto;
+  margin-top: 4px;
+  padding: 6px;
+  border: 1px solid var(--card-border, #e2e8f0);
+  border-radius: 12px;
+  background: var(--paper-2, #f8fafc);
 }
 
-::ng-deep .approval-tabs .mat-mdc-tab {
+.approval-tab {
   flex: 1 1 0;
   min-width: 0;
-  max-width: none;
-  border-radius: 8px;
-  height: auto;
-  min-height: 48px;
-}
-
-::ng-deep .approval-tabs .mat-mdc-tab .mdc-tab__content {
-  padding: 8px 10px;
-}
-
-::ng-deep .approval-tabs .mat-mdc-tab .mdc-tab__text-label {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  color: var(--text-main) !important;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-main);
   font-weight: 700;
   font-size: 0.82rem;
   line-height: 1.35;
-  white-space: normal;
   text-align: center;
-}
+  padding: 12px 10px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
 
-::ng-deep .approval-tabs .mat-mdc-tab.mdc-tab--active {
-  background: var(--navy-900, #0c2340);
-}
+  &:hover {
+    background: rgba(12, 35, 64, 0.06);
+  }
 
-::ng-deep .approval-tabs .mat-mdc-tab.mdc-tab--active .mdc-tab__text-label {
-  color: #f4e7c4 !important;
-}
-
-::ng-deep .approval-tabs .mat-mdc-tab-indicator {
-  display: none;
-}
-
-::ng-deep .approval-tabs .mat-mdc-tab-body-content {
-  padding-top: 18px;
-  overflow: visible;
+  &.active {
+    background: var(--navy-900, #0c2340);
+    color: #f4e7c4;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12);
+  }
 }
 
 .tab-label-text {
@@ -81,9 +62,13 @@
   flex-shrink: 0;
 }
 
-::ng-deep .approval-tabs .mat-mdc-tab.mdc-tab--active .tab-badge {
+.approval-tab.active .tab-badge {
   background: rgba(255, 255, 255, 0.22);
   color: #fff;
+}
+
+.approval-tab-panels {
+  margin-top: 18px;
 }
 
 .tab-panel {
@@ -280,7 +265,7 @@
 }
 
 @media (max-width: 900px) {
-  ::ng-deep .approval-tabs .mat-mdc-tab {
+  .approval-tab {
     flex: 0 0 auto;
     min-width: 180px;
   }

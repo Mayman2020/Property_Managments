@@ -34,7 +34,7 @@ function row(p: Partial<QaRow>): QaRow {
 
 test.describe('Iteration 1 — bug-fix log', () => {
   test('BUG-002 unmapped URLs and wrong HTTP method returned HTTP 500 instead of 404 / 405', async ({ page }) => {
-    const apiUrl = process.env['E2E_API_URL'] ?? 'http://localhost:8081/api/v1';
+    const apiUrl = process.env['E2E_API_URL'] ?? 'http://localhost:8089/api/v1';
     // Need an authenticated token for the security filter to reach Spring MVC.
     const login = await page.request.post(`${apiUrl}/auth/login`, {
       data: { email: 'admin@propmgmt.com', password: '12345' }

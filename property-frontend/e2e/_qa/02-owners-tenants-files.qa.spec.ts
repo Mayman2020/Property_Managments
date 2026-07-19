@@ -467,7 +467,7 @@ test.describe.serial('Iteration 2 — File uploads', () => {
 
     // Bad extension (.exe)
     const exeBuf = Buffer.from('MZ\x90\x00\x03\x00\x00\x00'.padEnd(64, 'A'));
-    const bad = await request.post('http://localhost:8081/api/v1/files/upload', {
+    const bad = await request.post('http://localhost:8089/api/v1/files/upload', {
       headers: { Authorization: `Bearer ${token}` },
       multipart: { file: { name: 'malicious.exe', mimeType: 'application/octet-stream', buffer: exeBuf } }
     });
@@ -492,7 +492,7 @@ test.describe.serial('Iteration 2 — File uploads', () => {
       '0d0a2db40000000049454e44ae426082',
       'hex'
     );
-    const good = await request.post('http://localhost:8081/api/v1/files/upload', {
+    const good = await request.post('http://localhost:8089/api/v1/files/upload', {
       headers: { Authorization: `Bearer ${token}` },
       multipart: { file: { name: 'qa-good.png', mimeType: 'image/png', buffer: tinyPng } }
     });

@@ -113,7 +113,7 @@ SELECT new com.propertymanagement.modules.maintenance.rating.dto.RatingDashboard
 
 **Date:** 2026-05-11  
 **Environment:** Local profile, Java 17.0.12, PostgreSQL 16.9, Spring Boot 3.2.5  
-**Port:** 8081 (port 8080 occupied by Oracle TNS Listener on this machine)
+**Port:** 8089
 
 ### Startup Metrics
 

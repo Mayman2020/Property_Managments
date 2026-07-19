@@ -5,7 +5,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatTabsModule } from '@angular/material/tabs';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
@@ -36,7 +35,7 @@ import { forkJoin } from 'rxjs';
   standalone: true,
   imports: [
     NgFor, NgIf, NgClass, DatePipe, DecimalPipe, RouterLink,
-    TranslateModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatDialogModule, MatTabsModule,
+    TranslateModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatDialogModule,
     PageHeaderComponent, TablePagerComponent
   ],
   templateUrl: './contract-approvals.component.html',

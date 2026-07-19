@@ -1,7 +1,7 @@
 import { expect, test, Page, APIRequestContext } from '@playwright/test';
 
 const E2E = !!process.env['E2E_ENABLED'];
-const WEB = process.env['E2E_WEB_URL'] ?? 'http://localhost:4500';
+const WEB = process.env['E2E_WEB_URL'] ?? 'http://localhost:4208';
 const API = process.env['E2E_API_URL'] ?? 'http://localhost:8080/api/v1';
 const ADMIN = { email: 'admin@propmgmt.com', password: '12345' };
 const TENANT = { email: 'tenant@propmgmt.com', password: '12345' };

@@ -6,9 +6,9 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$DefaultPort = 8080
-$PreferredDevPort = 8081
-$PortRangeEnd = 8090
+$DefaultPort = 8089
+$PreferredDevPort = 8089
+$PortRangeEnd = 8099
 $ExpectedProcess = "java"
 $ContextPath = "/api/v1"
 
@@ -154,7 +154,7 @@ function Resolve-BackendPort {
     if ($RequestedPort -gt 0) {
         return $RequestedPort
     }
-    # This machine often has Oracle TNS on 8080; prefer 8081 when 8080 is not Java.
+    # Property dev backend listens on 8089 by default.
     $defaultState = Get-ProcessOnPort -Port $DefaultPort
     if ($defaultState -and ($defaultState.Process.ProcessName -notlike "*$ExpectedProcess*")) {
         $preferredState = Get-ProcessOnPort -Port $PreferredDevPort

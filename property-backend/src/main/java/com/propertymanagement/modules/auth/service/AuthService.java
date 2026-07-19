@@ -75,6 +75,7 @@ public class AuthService {
         }
         User resolved = userRepository.findByEmail(rawEmail)
                 .or(() -> userRepository.findByEmailIgnoreCase(rawEmail))
+                .or(() -> userRepository.findByUsernameIgnoreCase(rawEmail))
                 .orElseThrow(() -> {
                     loginAttemptService.recordFailure(rawEmail);
                     return AppException.badRequest(appMessages.get("auth.error.invalid_password"));

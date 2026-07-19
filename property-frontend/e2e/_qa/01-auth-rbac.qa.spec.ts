@@ -147,7 +147,7 @@ test.describe.serial('Iteration 1 — Auth & RBAC', () => {
     for (const role of Object.keys(expectedHome) as RoleKey[]) {
       const cred = QA_CREDENTIALS[role];
       // Skip roles whose bootstrap login never succeeded.
-      const probe = await page.request.post(`${process.env['E2E_API_URL'] ?? 'http://localhost:8081/api/v1'}/auth/login`, {
+      const probe = await page.request.post(`${process.env['E2E_API_URL'] ?? 'http://localhost:8089/api/v1'}/auth/login`, {
         data: { email: cred.email, password: cred.password }
       });
       if (!probe.ok()) {
@@ -201,7 +201,7 @@ test.describe.serial('Iteration 1 — Auth & RBAC', () => {
     'MAINTENANCE_OFFICER_INTERNAL', 'MAINTENANCE_OFFICER_COMPANY', 'OWNER', 'TENANT'] as RoleKey[]) {
     test(`1.4 [${role}] route inventory smoke`, async ({ page, web }) => {
       test.setTimeout(360_000);
-      const authApi = process.env['E2E_API_URL'] ?? 'http://localhost:8081/api/v1';
+      const authApi = process.env['E2E_API_URL'] ?? 'http://localhost:8089/api/v1';
       const cred = QA_CREDENTIALS[role];
       const browser = page.context().browser()!;
       const ctx = await browser.newContext();
@@ -311,7 +311,7 @@ test.describe.serial('Iteration 1 — Auth & RBAC', () => {
    * and tenant-token access without producing 500s.
    */
   test('1.5 protected endpoints reject unauth / wrong role with 4xx (not 500)', async ({ api, page }) => {
-    const apiUrl = process.env['E2E_API_URL'] ?? 'http://localhost:8081/api/v1';
+    const apiUrl = process.env['E2E_API_URL'] ?? 'http://localhost:8089/api/v1';
     // Unauth.
     const targets = ['/properties', '/users', '/owners', '/tenants', '/finance/dashboard', '/audit-logs?page=0&size=5'];
     for (const t of targets) {

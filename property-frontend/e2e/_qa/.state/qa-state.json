@@ -71,7 +71,7 @@
     "MAINTENANCE_COMPANY": "qa.mc@propmgmt.com"
   },
   "blockers": [],
-  "placeholderFileUrl": "http://localhost:8081/api/v1/files/3e90ec9d-6fa6-4252-bd99-e054d83ae79e.png",
+  "placeholderFileUrl": "http://localhost:8089/api/v1/files/3e90ec9d-6fa6-4252-bd99-e054d83ae79e.png",
   "firstContractorCompanyId": 8,
   "firstContractId": 1,
   "firstMaintenanceRequestId": 64

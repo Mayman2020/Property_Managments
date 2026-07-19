@@ -65,7 +65,7 @@ test.describe.serial('Iteration 2 — Properties / Floors / Attachments / Owner 
   test.beforeAll(async ({ request }) => {
     resetIterationLog(ITER);
     // Sanity: admin login must work, frontend must be reachable.
-    const r = await request.post('http://localhost:8081/api/v1/auth/login', {
+    const r = await request.post('http://localhost:8089/api/v1/auth/login', {
       data: { email: 'admin@propmgmt.com', password: '12345' }
     });
     if (!r.ok()) throw new Error(`admin login failed: ${r.status()}`);
@@ -512,7 +512,7 @@ test.describe.serial('Iteration 2 — Properties / Floors / Attachments / Owner 
       '0d0a2db40000000049454e44ae426082',
       'hex'
     );
-    const up = await request.post(`http://localhost:8081/api/v1/properties/${prop!.id}/attachments`, {
+    const up = await request.post(`http://localhost:8089/api/v1/properties/${prop!.id}/attachments`, {
       headers: { Authorization: `Bearer ${token}` },
       multipart: {
         file: { name: 'qa-attachment.png', mimeType: 'image/png', buffer: tinyPng },

@@ -307,10 +307,10 @@ export function buildTechnicalHtml(d) {
   p.push(`<h1>2. High-Level Architecture Diagram</h1>`);
   p.push(mermaid('System context', `flowchart LR
     subgraph Client
-      A[Angular SPA :4500]
+      A[Angular SPA :4208]
     end
     subgraph Server
-      B[Spring Boot :8081/api/v1]
+      B[Spring Boot :8089/api/v1]
       C[Schedulers]
       D[File storage]
     end
@@ -333,7 +333,7 @@ ${table(['Module package', 'Responsibility'], BACKEND_MODULES.map((m) => [esc(m)
 <p>Schema: <code>property_mgmt</code>. Hibernate ddl-auto: validate. Flyway manages ${d.migrations.length} migrations (V1–V${d.migrations[d.migrations.length - 1]?.match(/V(\d+)/)?.[1] ?? '?'}). JSONB used for notification params. Multi-owner via <code>property_owners</code> join table.</p>`);
 
   p.push(`<h1>6. Deployment Architecture</h1>
-<p>Development: <code>run-backend.ps1</code> (port 8081 via launcher), <code>run-frontend.ps1</code> (port 4500). Production: JVM 17 + PostgreSQL 16; configure JWT_SECRET, DB credentials, UPLOAD_DIR, FILE_BASE_URL via environment variables.</p>`);
+<p>Development: <code>run-backend.ps1</code> (port 8089 via launcher), <code>run-frontend.ps1</code> (port 4208). Production: JVM 17 + PostgreSQL 16; configure JWT_SECRET, DB credentials, UPLOAD_DIR, FILE_BASE_URL via environment variables.</p>`);
 
   p.push(`<h1>7. Security Architecture</h1>
 <p>Spring Security + JWT filter. Token blacklist on logout. Login attempt lock (in-memory, 5 attempts / 15 min). <code>PropertyScopeService</code> enforces property boundaries. <code>@PreAuthorize</code> and <code>@RequiresPermission</code> on controllers.</p>`);
@@ -490,8 +490,8 @@ ${d.migrations.slice(-15).map((m) => `<li>${esc(m)}</li>`).join('')}
   p.push(`<h1>39. Deployment Instructions</h1><ol>
 <li>Provision PostgreSQL 16; create database with property_mgmt schema.</li>
 <li>Set DB_URL, DB_USER, DB_PASS, JWT_SECRET environment variables.</li>
-<li>Run <code>./mvnw spring-boot:run</code> or packaged JAR on port 8081.</li>
-<li>Build Angular: <code>ng build --configuration production</code>; serve via nginx or similar on 4500.</li>
+<li>Run <code>./mvnw spring-boot:run</code> or packaged JAR on port 8089.</li>
+<li>Build Angular: <code>ng build --configuration production</code>; serve via nginx or similar on 4208.</li>
 <li>Configure FILE_BASE_URL and UPLOAD_DIR for file serving.</li>
 </ol>`);
 
@@ -706,7 +706,7 @@ export function buildTestCasesHtml(d) {
         module: 'ui-sweep',
         feature: route.path,
         priority: 'Low',
-        pre: `Login as ${role}; E2E_WEB_URL=http://localhost:4500`,
+        pre: `Login as ${role}; E2E_WEB_URL=http://localhost:4208`,
         steps: `1. Navigate to ${route.path}. 2. Wait for network idle. 3. Check no console errors. 4. Verify guard allows or denies.`,
         expected: role === 'SUPER_ADMIN' ? 'Page loads without JS errors' : 'Load or redirect per RBAC',
         actual: '[Template]',

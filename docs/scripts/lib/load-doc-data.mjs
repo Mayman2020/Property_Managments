@@ -180,8 +180,8 @@ export function loadDocData() {
       backend: 'Spring Boot 3.2.5 / Java 17',
       frontend: 'Angular 17',
       database: 'PostgreSQL 16 (schema: property_mgmt)',
-      apiBase: 'http://localhost:8081/api/v1',
-      webBase: 'http://localhost:4500',
+      apiBase: 'http://localhost:8089/api/v1',
+      webBase: 'http://localhost:4208',
       auth: 'JWT (24h access, 7d refresh)',
       orm: 'JPA/Hibernate validate + Flyway migrations',
       qa: 'Playwright E2E (playwright.qa.config.ts), iterations 0–23'

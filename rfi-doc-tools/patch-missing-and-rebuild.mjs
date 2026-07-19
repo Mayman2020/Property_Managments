@@ -4,8 +4,8 @@ import path from 'path';
 import { DYNAMIC_PAGES } from './screens-catalog.mjs';
 import { buildWord } from './generate-full-catalog.mjs';
 
-const BASE_URL = 'http://localhost:4500';
-const API_BASE = 'http://localhost:8081/api/v1';
+const BASE_URL = 'http://localhost:4208';
+const API_BASE = 'http://localhost:8089/api/v1';
 const OUT_DIR = path.resolve('..', 'rfi-output', 'full-catalog');
 const SHOTS_DIR = path.join(OUT_DIR, 'screenshots');
 const MANIFEST = path.join(OUT_DIR, 'manifest.json');

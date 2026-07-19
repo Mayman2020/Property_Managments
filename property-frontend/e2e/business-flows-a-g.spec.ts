@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 const API_BASE = process.env['E2E_API_URL'] ?? 'http://localhost:8080/api/v1';
-const WEB_BASE = process.env['E2E_WEB_URL'] ?? 'http://localhost:4500';
+const WEB_BASE = process.env['E2E_WEB_URL'] ?? 'http://localhost:4208';
 const ADMIN_EMAIL = process.env['E2E_ADMIN_EMAIL'];
 const ADMIN_PASSWORD = process.env['E2E_ADMIN_PASSWORD'];
 const E2E_UI = process.env['E2E_ENABLED'] === 'true';

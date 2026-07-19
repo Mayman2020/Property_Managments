@@ -19,8 +19,8 @@ import {
 import { STATIC_PAGES, DYNAMIC_PAGES, DIALOG_RECIPES, PORTALS } from './screens-catalog.mjs';
 import { apiLogin, newArabicContext, waitStable } from './i18n-screenshot-utils.mjs';
 
-const BASE_URL = 'http://localhost:4500';
-const API_BASE = 'http://localhost:8081/api/v1';
+const BASE_URL = 'http://localhost:4208';
+const API_BASE = 'http://localhost:8089/api/v1';
 const OUT_DIR = path.resolve('..', 'rfi-output', 'full-catalog');
 const SHOTS_DIR = path.join(OUT_DIR, 'screenshots');
 const MANIFEST = path.join(OUT_DIR, 'manifest.json');

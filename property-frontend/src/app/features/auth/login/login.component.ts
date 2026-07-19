@@ -40,7 +40,7 @@ export class LoginComponent {
     readonly i18n: I18nService
   ) {
     this.form = this.fb.group({
-      email: ['', [Validators.required, Validators.email]],
+      email: ['admin', Validators.required],
       password: ['', Validators.required]
     });
 

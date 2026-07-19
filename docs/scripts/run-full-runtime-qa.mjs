@@ -21,8 +21,8 @@ async function ensureQaResultsDir() {
   }
 }
 
-const WEB = process.env.QA_FRONTEND || 'http://localhost:4500';
-const API = process.env.QA_API_BASE || 'http://localhost:8081/api/v1';
+const WEB = process.env.QA_FRONTEND || 'http://localhost:4208';
+const API = process.env.QA_API_BASE || 'http://localhost:8089/api/v1';
 
 const US_BY_MODULE = {
   auth: ['US-001', 'US-002', 'US-003', 'US-004'],

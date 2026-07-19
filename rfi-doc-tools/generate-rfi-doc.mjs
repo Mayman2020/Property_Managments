@@ -19,7 +19,7 @@ import {
 } from 'docx';
 import { newArabicContext, waitStable } from './i18n-screenshot-utils.mjs';
 
-const BASE_URL = 'http://localhost:4500';
+const BASE_URL = 'http://localhost:4208';
 const LOGIN_EMAIL = 'admin@propmgmt.com';
 const LOGIN_PASSWORD = '12345';
 const OUT_DIR = path.resolve('..', 'rfi-output');

@@ -33,7 +33,7 @@
 
 | الطبقة | التقنية | المسار |
 |--------|---------|--------|
-| Frontend | Angular | `property-frontend` — منفذ 4500 |
+| Frontend | Angular | `property-frontend` — منفذ 4208 |
 | Backend | Spring Boot | `property-backend` — `/api/v1` منفذ 8080 |
 | المصادقة | JWT + أدوار نشطة | رؤوس: `Authorization`, `X-Active-Role`, `X-Selected-Property-Id` |
 

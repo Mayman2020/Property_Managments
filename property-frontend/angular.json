@@ -65,6 +65,9 @@
         },
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
+          "options": {
+            "port": 4208
+          },
           "configurations": {
             "production": {
               "buildTarget": "property-managments:build:production"

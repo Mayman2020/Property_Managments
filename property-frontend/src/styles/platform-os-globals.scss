@@ -42,6 +42,11 @@ html[dir='rtl'] {
 
   --btn-primary-bg: var(--navy-900);
   --btn-primary-color: var(--brass-100);
+
+  /* Full-width content (rms-premium-shell) */
+  --content-max-w: none;
+  --content-pad-inline: 24px;
+  --content-pad-block: 28px;
 }
 
 html, body {
@@ -81,10 +86,12 @@ html[dir='rtl'] body {
 }
 
 .app-page {
-  padding: 32px 40px 56px;
+  width: 100%;
+  max-width: var(--content-max-w);
+  margin-inline: 0;
+  padding: var(--content-pad-block) var(--content-pad-inline) 48px;
   min-height: calc(100vh - var(--topbar-height, 64px));
-  max-width: 1400px;
-  margin-inline: auto;
+  box-sizing: border-box;
 }
 
 .app-page-header {

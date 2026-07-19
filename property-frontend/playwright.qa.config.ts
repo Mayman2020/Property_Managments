@@ -1,6 +1,6 @@
 import { defineConfig } from '@playwright/test';
 
-const WEB = process.env['E2E_WEB_URL'] ?? 'http://localhost:4500';
+const WEB = process.env['E2E_WEB_URL'] ?? 'http://localhost:4208';
 
 export default defineConfig({
   testDir: './e2e/_qa',

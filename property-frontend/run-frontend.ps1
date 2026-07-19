@@ -4,7 +4,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$DefaultPort = 4500
+$DefaultPort = 4208
 
 $ScriptDir = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $MyInvocation.MyCommand.Path }
 $ProjectRoot = $ScriptDir
@@ -22,6 +22,14 @@ function Write-Success { param([string]$Message) Write-Step $Message "Green" }
 function Write-Warn { param([string]$Message) Write-Step $Message "Yellow" }
 function Write-Err { param([string]$Message) Write-Step $Message "Red" }
 function Write-Info { param([string]$Message) Write-Step $Message "Gray" }
+
+function Get-LocalAngularCliPath {
+    $cliPath = Join-Path $ProjectRoot "node_modules\@angular\cli\bin\ng.js"
+    if (Test-Path $cliPath) {
+        return $cliPath
+    }
+    return $null
+}
 
 function Get-ProcessOnPort {
     param([int]$Port)
@@ -83,7 +91,7 @@ function Test-BackendBaseUrlReachable {
     try {
         $probeUrl = "$BaseUrl/auth/login"
         $resp = Invoke-WebRequest -Uri $probeUrl -Method Options -Headers @{
-            Origin = "http://localhost:4500"
+            Origin = "http://localhost:4208"
             "Access-Control-Request-Method" = "POST"
         } -UseBasicParsing -TimeoutSec 3
         $allowOrigin = $resp.Headers["Access-Control-Allow-Origin"]
@@ -184,13 +192,21 @@ if (-not $SkipInstall -and -not (Test-Path (Join-Path $ProjectRoot "node_modules
     Write-Info "node_modules found. Skipping npm install."
 }
 
+$angularCliPath = Get-LocalAngularCliPath
+if (-not $angularCliPath) {
+    Write-Err "Local Angular CLI was not found in node_modules."
+    Write-Info "Run npm install in $ProjectRoot, then start the frontend again."
+    exit 1
+}
+Write-Info "Using local Angular CLI: $angularCliPath"
+
 Apply-AngularViteOverlayHotfix
 
 $servePort = $DefaultPort
 Ensure-FixedPortAvailable -Port $servePort
 
-$backendApiUrl = "http://localhost:8081/api/v1"
-$backendFileUrl = "http://localhost:8081/api/v1/files"
+$backendApiUrl = "http://localhost:8089/api/v1"
+$backendFileUrl = "http://localhost:8089/api/v1/files"
 if (Test-Path $RuntimeStateFile) {
     try {
         $runtimeState = Get-Content -Path $RuntimeStateFile -Raw | ConvertFrom-Json
@@ -200,15 +216,15 @@ if (Test-Path $RuntimeStateFile) {
         Write-Warn "Runtime state file found but unreadable: $RuntimeStateFile"
     }
 } else {
-    Write-Warn "Runtime state file not found. Falling back to default backend http://localhost:8081."
+    Write-Warn "Runtime state file not found. Falling back to default backend http://localhost:8089."
 }
 
 if (-not (Test-BackendBaseUrlReachable -BaseUrl $backendApiUrl)) {
     Write-Warn "Runtime backend URL is not reachable: $backendApiUrl"
     $candidates = @(
+        "http://localhost:8089/api/v1",
         "http://localhost:8082/api/v1",
         "http://localhost:8083/api/v1",
-        "http://localhost:8081/api/v1",
         "http://localhost:8080/api/v1"
     )
     $found = $null
@@ -223,8 +239,8 @@ if (-not (Test-BackendBaseUrlReachable -BaseUrl $backendApiUrl)) {
         $backendFileUrl = "$found/files"
         Write-Info "Fallback backend API target: $backendApiUrl"
     } else {
-        $backendApiUrl = "http://localhost:8081/api/v1"
-        $backendFileUrl = "http://localhost:8081/api/v1/files"
+        $backendApiUrl = "http://localhost:8089/api/v1"
+        $backendFileUrl = "http://localhost:8089/api/v1/files"
         Write-Warn "No reachable backend candidate found. Keeping default: $backendApiUrl"
     }
 }
@@ -242,7 +258,7 @@ Write-Info "  URL: http://localhost:$servePort"
 Write-Info "  Stop with Ctrl+C"
 Write-Host ""
 
-& npx ng serve --project property-managments --port=$servePort
+& node $angularCliPath serve --project property-managments --port=$servePort
 $exitCode = $LASTEXITCODE
 
 Write-Host ""

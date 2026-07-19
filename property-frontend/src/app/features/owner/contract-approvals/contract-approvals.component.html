@@ -14,18 +14,35 @@
     <p>{{ 'OWNER_PORTAL.NO_PENDING_APPROVALS' | translate }}</p>
   </div>
 
-  <mat-tab-group
-    *ngIf="isFullyLoaded && hasAnyApprovals"
-    class="approval-tabs"
-    [(selectedIndex)]="selectedTab"
-    animationDuration="180ms">
+  <div *ngIf="isFullyLoaded && hasAnyApprovals" class="approval-tabs">
+    <button type="button" class="approval-tab" [class.active]="selectedTab === 0" (click)="selectedTab = 0">
+      <span class="tab-label-text">{{ 'OWNER_PORTAL.PENDING_DRAFTS_HEADING' | translate }}</span>
+      <span class="tab-badge" *ngIf="contracts.length">{{ contracts.length }}</span>
+    </button>
+    <button type="button" class="approval-tab" [class.active]="selectedTab === 1" (click)="selectedTab = 1">
+      <span class="tab-label-text">{{ 'OWNER_PORTAL.PENDING_TERMINATIONS_HEADING' | translate }}</span>
+      <span class="tab-badge" *ngIf="pendingTerminations.length">{{ pendingTerminations.length }}</span>
+    </button>
+    <button type="button" class="approval-tab" [class.active]="selectedTab === 2" (click)="selectedTab = 2">
+      <span class="tab-label-text">{{ 'OWNER_PORTAL.RENEWALS.TITLE' | translate }}</span>
+      <span class="tab-badge" *ngIf="pendingRenewals.length">{{ pendingRenewals.length }}</span>
+    </button>
+    <button type="button" class="approval-tab" [class.active]="selectedTab === 3" (click)="selectedTab = 3">
+      <span class="tab-label-text">{{ 'INLINE_TEXT.MAINTENANCE_CONTRACTS_AWAITING_APPROVAL' | translate }}</span>
+      <span class="tab-badge" *ngIf="maintenanceDrafts.length">{{ maintenanceDrafts.length }}</span>
+    </button>
+    <button type="button" class="approval-tab" [class.active]="selectedTab === 4" (click)="selectedTab = 4">
+      <span class="tab-label-text">{{ 'INLINE_TEXT.MAINTENANCE_CONTRACT_TERMINATION_REQUESTS' | translate }}</span>
+      <span class="tab-badge" *ngIf="maintenancePendingTerminations.length">{{ maintenancePendingTerminations.length }}</span>
+    </button>
+    <button type="button" class="approval-tab" [class.active]="selectedTab === 5" (click)="selectedTab = 5">
+      <span class="tab-label-text">{{ 'INLINE_TEXT.MAINTENANCE_CONTRACT_RENEWAL_REQUESTS' | translate }}</span>
+      <span class="tab-badge" *ngIf="maintenancePendingRenewals.length">{{ maintenancePendingRenewals.length }}</span>
+    </button>
+  </div>
 
-    <mat-tab>
-      <ng-template mat-tab-label>
-        <span class="tab-label-text">{{ 'OWNER_PORTAL.PENDING_DRAFTS_HEADING' | translate }}</span>
-        <span class="tab-badge" *ngIf="contracts.length">{{ contracts.length }}</span>
-      </ng-template>
-      <div class="tab-panel">
+  <div *ngIf="isFullyLoaded && hasAnyApprovals" class="approval-tab-panels">
+    <div class="tab-panel" *ngIf="selectedTab === 0">
         <div *ngIf="contracts.length === 0" class="tab-empty">{{ 'OWNER_PORTAL.TAB_EMPTY_DRAFTS' | translate }}</div>
         <div *ngIf="contracts.length > 0" class="contracts-grid">
           <div class="contract-card" *ngFor="let c of pagedContracts">
@@ -95,14 +112,8 @@
         </div>
         <app-table-pager [length]="contracts.length" [pageSize]="pageSize" [pageIndex]="contractsPage" (pageIndexChange)="contractsPage = $event"></app-table-pager>
       </div>
-    </mat-tab>
 
-    <mat-tab>
-      <ng-template mat-tab-label>
-        <span class="tab-label-text">{{ 'OWNER_PORTAL.PENDING_TERMINATIONS_HEADING' | translate }}</span>
-        <span class="tab-badge" *ngIf="pendingTerminations.length">{{ pendingTerminations.length }}</span>
-      </ng-template>
-      <div class="tab-panel">
+    <div class="tab-panel" *ngIf="selectedTab === 1">
         <div *ngIf="pendingTerminations.length === 0" class="tab-empty">{{ 'OWNER_PORTAL.TAB_EMPTY_TERMINATIONS' | translate }}</div>
         <div *ngIf="pendingTerminations.length > 0" class="contracts-grid">
           <div class="contract-card pending-termination" *ngFor="let c of pagedTerminations">
@@ -169,14 +180,8 @@
         </div>
         <app-table-pager [length]="pendingTerminations.length" [pageSize]="pageSize" [pageIndex]="terminationsPage" (pageIndexChange)="terminationsPage = $event"></app-table-pager>
       </div>
-    </mat-tab>
 
-    <mat-tab>
-      <ng-template mat-tab-label>
-        <span class="tab-label-text">{{ 'OWNER_PORTAL.RENEWALS.TITLE' | translate }}</span>
-        <span class="tab-badge" *ngIf="pendingRenewals.length">{{ pendingRenewals.length }}</span>
-      </ng-template>
-      <div class="tab-panel">
+    <div class="tab-panel" *ngIf="selectedTab === 2">
         <div *ngIf="pendingRenewals.length === 0" class="tab-empty">{{ 'OWNER_PORTAL.RENEWALS.EMPTY' | translate }}</div>
         <div *ngIf="pendingRenewals.length > 0" class="contracts-grid">
           <div class="contract-card pending-renewal" *ngFor="let c of pagedRenewals">
@@ -239,14 +244,8 @@
         </div>
         <app-table-pager [length]="pendingRenewals.length" [pageSize]="pageSize" [pageIndex]="renewalsPage" (pageIndexChange)="renewalsPage = $event"></app-table-pager>
       </div>
-    </mat-tab>
 
-    <mat-tab>
-      <ng-template mat-tab-label>
-        <span class="tab-label-text">{{ 'INLINE_TEXT.MAINTENANCE_CONTRACTS_AWAITING_APPROVAL' | translate }}</span>
-        <span class="tab-badge" *ngIf="maintenanceDrafts.length">{{ maintenanceDrafts.length }}</span>
-      </ng-template>
-      <div class="tab-panel">
+    <div class="tab-panel" *ngIf="selectedTab === 3">
         <div *ngIf="maintenanceDrafts.length === 0" class="tab-empty">{{ 'OWNER_PORTAL.TAB_EMPTY_MAINT_DRAFTS' | translate }}</div>
         <div *ngIf="maintenanceDrafts.length > 0" class="contracts-grid">
           <div class="contract-card" *ngFor="let c of pagedMaintenanceDrafts">
@@ -312,14 +311,8 @@
         </div>
         <app-table-pager [length]="maintenanceDrafts.length" [pageSize]="pageSize" [pageIndex]="maintenanceDraftsPage" (pageIndexChange)="maintenanceDraftsPage = $event"></app-table-pager>
       </div>
-    </mat-tab>
 
-    <mat-tab>
-      <ng-template mat-tab-label>
-        <span class="tab-label-text">{{ 'INLINE_TEXT.MAINTENANCE_CONTRACT_TERMINATION_REQUESTS' | translate }}</span>
-        <span class="tab-badge" *ngIf="maintenancePendingTerminations.length">{{ maintenancePendingTerminations.length }}</span>
-      </ng-template>
-      <div class="tab-panel">
+    <div class="tab-panel" *ngIf="selectedTab === 4">
         <div *ngIf="maintenancePendingTerminations.length === 0" class="tab-empty">{{ 'OWNER_PORTAL.TAB_EMPTY_MAINT_TERMINATIONS' | translate }}</div>
         <div *ngIf="maintenancePendingTerminations.length > 0" class="contracts-grid">
           <div class="contract-card pending-termination" *ngFor="let c of pagedMaintenanceTerminations">
@@ -380,14 +373,8 @@
         </div>
         <app-table-pager [length]="maintenancePendingTerminations.length" [pageSize]="pageSize" [pageIndex]="maintenanceTerminationsPage" (pageIndexChange)="maintenanceTerminationsPage = $event"></app-table-pager>
       </div>
-    </mat-tab>
 
-    <mat-tab>
-      <ng-template mat-tab-label>
-        <span class="tab-label-text">{{ 'INLINE_TEXT.MAINTENANCE_CONTRACT_RENEWAL_REQUESTS' | translate }}</span>
-        <span class="tab-badge" *ngIf="maintenancePendingRenewals.length">{{ maintenancePendingRenewals.length }}</span>
-      </ng-template>
-      <div class="tab-panel">
+    <div class="tab-panel" *ngIf="selectedTab === 5">
         <div *ngIf="maintenancePendingRenewals.length === 0" class="tab-empty">{{ 'OWNER_PORTAL.TAB_EMPTY_MAINT_RENEWALS' | translate }}</div>
         <div *ngIf="maintenancePendingRenewals.length > 0" class="contracts-grid">
           <div class="contract-card pending-renewal" *ngFor="let c of pagedMaintenanceRenewals">
@@ -456,7 +443,6 @@
         </div>
         <app-table-pager [length]="maintenancePendingRenewals.length" [pageSize]="pageSize" [pageIndex]="maintenanceRenewalsPage" (pageIndexChange)="maintenanceRenewalsPage = $event"></app-table-pager>
       </div>
-    </mat-tab>
 
-  </mat-tab-group>
+  </div>
 </div>

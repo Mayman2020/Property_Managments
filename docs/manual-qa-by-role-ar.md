@@ -2,7 +2,7 @@
 ## Manual QA Walkthrough (Role by Role)
 
 **التاريخ:** 2026-05-31  
-**البيئة:** Frontend `http://localhost:4500` | Backend `http://localhost:8081/api/v1`
+**البيئة:** Frontend `http://localhost:4208` | Backend `http://localhost:8089/api/v1`
 
 ---
 

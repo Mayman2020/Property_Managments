@@ -13,8 +13,8 @@ const JSONL_PATH = path.join(QA_DIR, 'iteration-1.jsonl');
 const MD_PATH = path.join(DOCS_DIR, 'user-stories-test-results-ar.md');
 const SEED_PATH = path.join(QA_DIR, 'seed-context.json');
 
-const BASE = process.env.QA_API_BASE || 'http://localhost:8081/api/v1';
-const FRONTEND = process.env.QA_FRONTEND || 'http://localhost:4500';
+const BASE = process.env.QA_API_BASE || 'http://localhost:8089/api/v1';
+const FRONTEND = process.env.QA_FRONTEND || 'http://localhost:4208';
 const DEFAULT_PWD = '12345';
 
 const US_META = {

@@ -152,7 +152,7 @@ test.describe.serial('Iteration 17.1 — Report re-audit', () => {
       const errors: string[] = [];
       p.on('pageerror', (err) => errors.push(err.message));
 
-      const probe = await p.request.post(`${process.env['E2E_API_URL'] ?? 'http://localhost:8081/api/v1'}/auth/login`, {
+      const probe = await p.request.post(`${process.env['E2E_API_URL'] ?? 'http://localhost:8089/api/v1'}/auth/login`, {
         data: { email: cred.email, password: cred.password }
       });
       if (!probe.ok()) {

@@ -15,8 +15,8 @@
 | User Stories (100) | **100 Pass · 0 Fail** |
 | Retest (specs المتأثرة) | **139 passed · 0 failed** |
 | JSONL UI (آخر صف لكل مسار) | 710+ صف |
-| Frontend | http://localhost:4500 |
-| Backend | http://localhost:8081/api/v1 |
+| Frontend | http://localhost:4208 |
+| Backend | http://localhost:8089/api/v1 |
 | طريقة الاختبار | Login + تنقل شاشات + forms (headless) |
 
 ### الجولة الأولى (تاريخية — قبل الإصلاح)
@@ -41,8 +41,8 @@
 
 | العنصر | القيمة |
 |--------|--------|
-| Backend | http://localhost:8081/api/v1 |
-| Frontend | http://localhost:4500 |
+| Backend | http://localhost:8089/api/v1 |
+| Frontend | http://localhost:4208 |
 | Super Admin | admin@propmgmt.com / 12345 |
 | QA GM | qa.gm@propmgmt.com / 111111 (plan: 1) |
 | QA AC | qa.ac@propmgmt.com / 222222 (plan: 2) |

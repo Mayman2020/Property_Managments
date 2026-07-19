@@ -33,8 +33,10 @@ export class TopbarComponent implements OnInit, OnDestroy {
   @Input() sidebarCollapsed = false;
   @Output() sidebarToggle = new EventEmitter<void>();
   unreadCount = 0;
+  now = new Date();
   private pollSub?: Subscription;
   private unreadSyncSub?: Subscription;
+  private clockSub?: Subscription;
   propertyOptions: Property[] = [];
   selectedPropertyId: number | null = null;
 
@@ -74,6 +76,13 @@ export class TopbarComponent implements OnInit, OnDestroy {
   get activeLanguage(): LanguageOption {
     return this.languages.find((l) => l.code === this.i18n.currentLang) ?? this.languages[0];
   }
+  get clockText(): string {
+    const locale = this.i18n.currentLang === 'ar' ? 'ar-u-nu-latn' : 'en-GB';
+    return new Intl.DateTimeFormat(locale, {
+      weekday: 'short', year: 'numeric', month: 'short', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    }).format(this.now);
+  }
   languageLabel(lang: LanguageOption): string { return lang.label; }
   languageNativeLabel(lang: LanguageOption): string { return lang.nativeLabel; }
   showPropertySelector(): boolean {
@@ -111,6 +120,9 @@ export class TopbarComponent implements OnInit, OnDestroy {
     this.pollSub = timer(0, 30000).subscribe(() => {
       this.loadUnreadCount();
     });
+    this.clockSub = timer(0, 1000).subscribe(() => {
+      this.now = new Date();
+    });
     this.unreadSyncSub = this.notificationService.unreadCount$.subscribe((count) => {
       if (count == null) return;
       this.unreadCount = count;
@@ -120,6 +132,7 @@ export class TopbarComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.pollSub?.unsubscribe();
     this.unreadSyncSub?.unsubscribe();
+    this.clockSub?.unsubscribe();
   }
 
   switchLang(lang: LanguageOption): void { this.i18n.setLang(lang.code).subscribe(); }

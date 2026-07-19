@@ -7,6 +7,11 @@
   </div>
 
   <div class="topbar-end">
+    <div class="tb-clock" aria-live="off">
+      <span class="material-icons">schedule</span>
+      <span>{{ clockText }}</span>
+    </div>
+
     <app-estate-lov-select
       *ngIf="showPropertySelector()"
       cssClass="estate-lov-select tb-property-scope-field"

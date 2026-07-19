@@ -15,8 +15,8 @@ const API_JSONL = path.join(QA, 'iteration-1.jsonl');
 const SEED_PATH = path.join(QA, 'seed-context.json');
 const PW_LOG = path.join(QA, 'playwright-last-run.log');
 
-const WEB = process.env.QA_FRONTEND || 'http://localhost:4500';
-const API = process.env.QA_API_BASE || 'http://localhost:8081/api/v1';
+const WEB = process.env.QA_FRONTEND || 'http://localhost:4208';
+const API = process.env.QA_API_BASE || 'http://localhost:8089/api/v1';
 
 const US_META = {
   'US-001': { epic: 'Auth', role: 'ALL', path: '/auth/login' },

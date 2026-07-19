@@ -8,7 +8,7 @@ Generated from `docs/stabilization/qa-results/iteration-*.jsonl` via `docs/scrip
 
 Stack: Spring Boot 3.2.5 / Java 17 / PostgreSQL 16 + Angular 17.
 
-The QA harness (Playwright, `property-frontend/playwright.qa.config.ts`) drives the running backend (`http://localhost:8081/api/v1`) and frontend (`http://localhost:4500`). All iterations preserve the existing PostgreSQL data — no destructive migrations are run.
+The QA harness (Playwright, `property-frontend/playwright.qa.config.ts`) drives the running backend (`http://localhost:8089/api/v1`) and frontend (`http://localhost:4208`). All iterations preserve the existing PostgreSQL data — no destructive migrations are run.
 
 ---
 
@@ -633,9 +633,9 @@ node docs/scripts/discover-notification-triggers.mjs
 node docs/scripts/discover-routes.mjs
 node docs/scripts/discover-api-endpoints.mjs
 
-# 1. Stack: run-backend.ps1 + run-frontend.ps1 (ports 8081 / 4500)
+# 1. Stack: run-backend.ps1 + run-frontend.ps1 (ports 8089 / 4208)
 # 2. From property-frontend/:
-$env:E2E_WEB_URL = "http://localhost:4500"
+$env:E2E_WEB_URL = "http://localhost:4208"
 npx playwright test --config=playwright.qa.config.ts e2e/_qa/17-report-reaudit.qa.spec.ts
 npx playwright test --config=playwright.qa.config.ts e2e/_qa/17-notifications-exhaustive.qa.spec.ts
 npx playwright test --config=playwright.qa.config.ts e2e/_qa/17-workflows-exhaustive.qa.spec.ts

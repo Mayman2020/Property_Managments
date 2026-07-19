@@ -4,7 +4,7 @@
 **التاريخ:** 2026-05-31  
 **الإصدار:** 1.0  
 **الغرض:** مرجع اختبار شامل (يدوي + AI آلي) يغطي كل شاشة وكل تدفّق وكل دور في النظام.  
-**البيئة:** Frontend `http://localhost:4500` · Backend `http://localhost:8081/api/v1` · DB schema `property_mgmt`
+**البيئة:** Frontend `http://localhost:4208` · Backend `http://localhost:8089/api/v1` · DB schema `property_mgmt`
 
 ---
 
@@ -870,7 +870,7 @@ SA = SUPER_ADMIN · GM = GENERAL_MANAGER · AC = ACCOUNTANT · HR = HR_OFFICER �
 
 # ملحق الأتمتة — خطوات API لكل Story (AI / Automation)
 
-> **الأساس (Base URL):** `http://localhost:8081/api/v1`  
+> **الأساس (Base URL):** `http://localhost:8089/api/v1`  
 > **المصادقة:** كل الطلبات (عدا `/auth/login`) تحتاج Header: `Authorization: Bearer <token>`  
 > **التحقق العام:** الاستجابة بصيغة `ApiResponse` — تحقق من `success=true` و`data` غير فارغة، وكود الحالة المتوقع.
 
